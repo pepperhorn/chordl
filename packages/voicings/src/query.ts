@@ -15,6 +15,8 @@ const ARTIST_STYLE_MAP: Record<string, { style?: VoicingStyle; era?: string }> =
   "bud powell": { style: "Shell" },
   "thelonious monk": { style: "Shell" },
   "bebop": { style: "Shell" },
+  "count basie": { style: "Shell" },
+  "basie": { style: "Shell" },
   "bill evans": { style: "Rootless Type A" },
   "wynton kelly": { style: "Rootless Type A" },
   "comping": { style: "Rootless Type A" },

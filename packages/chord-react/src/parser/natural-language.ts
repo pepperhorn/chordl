@@ -41,7 +41,7 @@ const OVER_BASS_NOTE_RE =
 const STYLE_RE =
   /(?:(?:in\s+)?(?:the\s+)?style\s+of\s+|like\s+|a\s+la\s+)([\w\s]+?)(?:\s*$|\s*,|\s+(?:starting|spanning|with|compact|exact))/i;
 const STYLE_KEYWORD_RE =
-  /\b(bebop|modal|comping|rootless|quartal|block\s*chords?|locked\s*hands|drop\s*2\s*\+?\s*4|drop\s*2|upper\s*structure|shell|stride)\b/i;
+  /\b(bebop|basie|modal|comping|rootless|quartal|block\s*chords?|locked\s*hands|drop\s*2\s*\+?\s*4|drop\s*2|upper\s*structure|shell|stride)\b/i;
 
 // "with 2 notes on either side" / "with 3 keys on each side"
 const PADDING_RE =
