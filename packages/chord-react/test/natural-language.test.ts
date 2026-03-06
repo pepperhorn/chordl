@@ -73,4 +73,75 @@ describe("parseChordDescription", () => {
     expect(result.styleHint).toBe("Bill Evans");
     expect(result.startingNote).toBe("G");
   });
+
+  // Padding
+  it("parses 'Cmaj7 with 3 notes on either side'", () => {
+    const result = parseChordDescription("Cmaj7 with 3 notes on either side");
+    expect(result.chordName).toBe("Cmaj7");
+    expect(result.padding).toBe(3);
+  });
+
+  // Bass note via "over"
+  it("parses 'C6/9 over D'", () => {
+    const result = parseChordDescription("C6/9 over D");
+    expect(result.chordName).toBe("C6/9");
+    expect(result.bassNote).toBe("D");
+  });
+
+  it("parses 'Cmaj7 over E in the bass'", () => {
+    const result = parseChordDescription("Cmaj7 over E in the bass");
+    expect(result.chordName).toBe("Cmaj7");
+    expect(result.bassNote).toBe("E");
+  });
+
+  // Bass degree
+  it("parses 'Cmaj7 with the 5th in the bass'", () => {
+    const result = parseChordDescription("Cmaj7 with the 5th in the bass");
+    expect(result.chordName).toBe("Cmaj7");
+    expect(result.bassDegree).toBe(5);
+  });
+
+  // Starting degree
+  it("parses 'Dbmaj9 starting on the 9th'", () => {
+    const result = parseChordDescription("Dbmaj9 starting on the 9th");
+    expect(result.chordName).toBe("Dbmaj9");
+    expect(result.startingDegree).toBe(9);
+  });
+
+  // Style keywords - new ones
+  it("parses 'G7 drop 2'", () => {
+    const result = parseChordDescription("G7 drop 2");
+    expect(result.chordName).toBe("G7");
+    expect(result.styleHint).toBe("drop 2");
+  });
+
+  it("parses 'G7 drop 2+4'", () => {
+    const result = parseChordDescription("G7 drop 2+4");
+    expect(result.chordName).toBe("G7");
+    expect(result.styleHint).toBe("drop 2+4");
+  });
+
+  it("parses 'Cmaj7 spread'", () => {
+    const result = parseChordDescription("Cmaj7 spread");
+    expect(result.chordName).toBe("Cmaj7");
+    expect(result.styleHint).toBe("spread");
+  });
+
+  it("parses 'G7 nestico'", () => {
+    const result = parseChordDescription("G7 nestico");
+    expect(result.chordName).toBe("G7");
+    expect(result.styleHint).toBe("nestico");
+  });
+
+  it("parses 'Dm7 basie'", () => {
+    const result = parseChordDescription("Dm7 basie");
+    expect(result.chordName).toBe("Dm7");
+    expect(result.styleHint).toBe("basie");
+  });
+
+  it("parses 'C7 ellington'", () => {
+    const result = parseChordDescription("C7 ellington");
+    expect(result.chordName).toBe("C7");
+    expect(result.styleHint).toBe("ellington");
+  });
 });

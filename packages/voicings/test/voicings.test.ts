@@ -9,7 +9,7 @@ import {
 } from "../src/index";
 
 describe("VOICING_LIBRARY", () => {
-  it("contains entries from all 5 categories", () => {
+  it("contains entries from all 8 categories", () => {
     const styles = new Set(VOICING_LIBRARY.map((v) => v.tags.style));
     expect(styles.has("Shell")).toBe(true);
     expect(styles.has("Rootless Type A")).toBe(true);
@@ -17,6 +17,9 @@ describe("VOICING_LIBRARY", () => {
     expect(styles.has("Quartal")).toBe(true);
     expect(styles.has("Upper Structure")).toBe(true);
     expect(styles.has("Drop 2")).toBe(true);
+    expect(styles.has("Drop 2+4")).toBe(true);
+    expect(styles.has("Spread")).toBe(true);
+    expect(styles.has("4-Note Closed")).toBe(true);
   });
 
   it("has unique IDs", () => {
@@ -65,6 +68,30 @@ describe("inferStyle", () => {
   it("returns undefined for unknown styles", () => {
     expect(inferStyle("unknown pianist")).toBeUndefined();
   });
+
+  it("maps 'Count Basie' to Shell", () => {
+    expect(inferStyle("Count Basie")).toBe("Shell");
+  });
+
+  it("maps 'basie' to Shell", () => {
+    expect(inferStyle("basie")).toBe("Shell");
+  });
+
+  it("maps 'Duke Ellington' to Drop 2", () => {
+    expect(inferStyle("Duke Ellington")).toBe("Drop 2");
+  });
+
+  it("maps 'nestico' to 4-Note Closed", () => {
+    expect(inferStyle("nestico")).toBe("4-Note Closed");
+  });
+
+  it("maps 'spread' to Spread", () => {
+    expect(inferStyle("spread")).toBe("Spread");
+  });
+
+  it("maps 'drop 2+4' to Drop 2+4", () => {
+    expect(inferStyle("drop 2+4")).toBe("Drop 2+4");
+  });
 });
 
 describe("findVoicing", () => {
@@ -89,6 +116,36 @@ describe("findVoicing", () => {
   it("falls back to any voicing when no style matches", () => {
     const v = findVoicing("maj7");
     expect(v).toBeDefined();
+  });
+
+  it("finds drop 2 voicing", () => {
+    const v = findVoicing("dom7", "drop 2");
+    expect(v).toBeDefined();
+    expect(v!.tags.style).toBe("Drop 2");
+  });
+
+  it("finds drop 2+4 voicing", () => {
+    const v = findVoicing("dom7", "drop 2+4");
+    expect(v).toBeDefined();
+    expect(v!.tags.style).toBe("Drop 2+4");
+  });
+
+  it("finds spread voicing", () => {
+    const v = findVoicing("dom7", "spread");
+    expect(v).toBeDefined();
+    expect(v!.tags.style).toBe("Spread");
+  });
+
+  it("finds 4-note closed voicing for Nestico", () => {
+    const v = findVoicing("dom7", "Sammy Nestico");
+    expect(v).toBeDefined();
+    expect(v!.tags.style).toBe("4-Note Closed");
+  });
+
+  it("finds shell voicing for Basie", () => {
+    const v = findVoicing("dom7", "Count Basie");
+    expect(v).toBeDefined();
+    expect(v!.tags.style).toBe("Shell");
   });
 });
 

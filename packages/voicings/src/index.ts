@@ -10,6 +10,9 @@ export {
   mapToVoicingQuality,
 } from "./query";
 export { selectByRange, autoSelectVoicing } from "./range-algorithm";
+export { generateLockedHands } from "./locked-hands";
+export { solvePolychord, solveSlashChord } from "./polychord";
+export type { ChordDescriptor } from "./polychord";
 export type {
   VoicingEntry,
   VoicingQuery,

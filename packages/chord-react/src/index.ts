@@ -20,6 +20,9 @@ export {
   mapToVoicingQuality,
   selectByRange,
   autoSelectVoicing,
+  generateLockedHands,
+  solvePolychord,
+  solveSlashChord,
 } from "@better-chord/voicings";
 export type {
   VoicingEntry,
@@ -29,6 +32,7 @@ export type {
   VoicingStyle,
   Hand,
   RealizedNote,
+  ChordDescriptor,
 } from "@better-chord/voicings";
 
 export type {
