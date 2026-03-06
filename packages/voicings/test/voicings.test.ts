@@ -6,7 +6,7 @@ import {
   realizeVoicing,
   voicingPitchClasses,
   inferStyle,
-} from "../src/voicings";
+} from "../src/index";
 
 describe("VOICING_LIBRARY", () => {
   it("contains entries from all 5 categories", () => {

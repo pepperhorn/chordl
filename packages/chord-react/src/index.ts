@@ -4,22 +4,31 @@ export { resolveChord } from "./resolver/chord-resolver";
 export { calculateLayout } from "./resolver/auto-layout";
 export { parseChordDescription } from "./parser/natural-language";
 export { getTheme } from "./themes";
+
+// Re-export voicings from the workspace package
 export {
   VOICING_LIBRARY,
   queryVoicings,
   findVoicing,
   realizeVoicing,
+  realizeVoicingFull,
   voicingPitchClasses,
+  getAlternativeVoicings,
   inferStyle,
   mapToVoicingQuality,
-} from "./voicings";
+  selectByRange,
+  autoSelectVoicing,
+} from "@better-chord/voicings";
 export type {
   VoicingEntry,
   VoicingQuery,
   VoicingQuality,
   VoicingEra,
   VoicingStyle,
-} from "./voicings";
+  Hand,
+  RealizedNote,
+} from "@better-chord/voicings";
+
 export type {
   Format,
   WhiteNote,

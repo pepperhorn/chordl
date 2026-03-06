@@ -12,7 +12,8 @@ export type VoicingStyle =
   | "Rootless Type B"
   | "Quartal"
   | "Upper Structure"
-  | "Drop 2";
+  | "Drop 2"
+  | "Drop 2+4";
 
 export type VoicingQuality =
   | "maj7"
@@ -27,6 +28,8 @@ export type VoicingQuality =
   | "6/9"
   | "m6/9";
 
+export type Hand = "LH" | "RH";
+
 export interface VoicingEntry {
   id: string;
   name: string;
@@ -34,6 +37,13 @@ export interface VoicingEntry {
 
   /** Semitone offsets relative to root. e.g. [3, 7, 10, 14] = b3, 5, b7, 9 */
   intervals: number[];
+
+  /**
+   * Hand assignment per interval. Same length as intervals array.
+   * "LH" = left hand, "RH" = right hand.
+   * If omitted, all notes are assigned to LH.
+   */
+  hands?: Hand[];
 
   tags: {
     era: VoicingEra;
@@ -47,6 +57,14 @@ export interface VoicingEntry {
     min: number; // default ~48 (C3)
     max: number; // default ~72 (C5)
   };
+}
+
+/** A realized note with pitch, hand assignment, and pitch class */
+export interface RealizedNote {
+  note: string;       // e.g. "Eb3"
+  midi: number;       // e.g. 51
+  pitchClass: string; // e.g. "D#" (normalized to sharps)
+  hand: Hand;         // "LH" or "RH"
 }
 
 export interface VoicingQuery {

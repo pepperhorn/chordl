@@ -44,6 +44,7 @@ export interface ParsedChordRequest {
   spanTo?: string;
   format?: Format;
   styleHint?: string;
+  padding?: number;
 }
 
 export interface KeyDescriptor {

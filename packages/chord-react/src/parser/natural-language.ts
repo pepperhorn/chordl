@@ -33,12 +33,19 @@ const BASS_DEGREE_RE =
   /(?:with\s+)?(?:the\s+)?(\d+)(?:st|nd|rd|th)\s+(?:in\s+)?(?:the\s+)?(?:bottom|bass|lowest)/i;
 const BASS_NOTE_RE =
   /(?:with\s+)?([A-Ga-g][#b]?)\s+(?:in\s+)?(?:the\s+)?(?:bottom|bass|lowest)/i;
+// "C6/9 over D" or "Cmaj7 over E"
+const OVER_BASS_NOTE_RE =
+  /\bover\s+([A-Ga-g][#b]?)(?:\s|$)/i;
 
 // "in the style of Bill Evans" / "like McCoy Tyner" / "bebop style"
 const STYLE_RE =
   /(?:(?:in\s+)?(?:the\s+)?style\s+of\s+|like\s+|a\s+la\s+)([\w\s]+?)(?:\s*$|\s*,|\s+(?:starting|spanning|with|compact|exact))/i;
 const STYLE_KEYWORD_RE =
-  /\b(bebop|modal|comping|rootless|quartal|block\s*chords?|locked\s*hands|drop\s*2|upper\s*structure|shell|stride)\b/i;
+  /\b(bebop|modal|comping|rootless|quartal|block\s*chords?|locked\s*hands|drop\s*2\s*\+?\s*4|drop\s*2|upper\s*structure|shell|stride)\b/i;
+
+// "with 2 notes on either side" / "with 3 keys on each side"
+const PADDING_RE =
+  /(?:with\s+)?(\d+)\s+(?:notes?|keys?)\s+(?:on\s+)?(?:either|each|both)\s+side/i;
 
 // Quality word mapping for descriptive chord names
 const QUALITY_WORDS: Record<string, string> = {
@@ -91,13 +98,22 @@ export function parseChordDescription(input: string): ParsedChordRequest {
     result.spanTo = capitalizeNote(spanMatch[2]);
   }
 
-  // Extract bass note or degree ("with the 5th in the bottom")
+  // Extract padding ("with 2 notes on either side")
+  const paddingMatch = input.match(PADDING_RE);
+  if (paddingMatch) {
+    result.padding = parseInt(paddingMatch[1], 10);
+  }
+
+  // Extract bass note or degree ("with the 5th in the bottom" / "over D")
   const bassDegreeMatch = input.match(BASS_DEGREE_RE);
   const bassNoteMatch = input.match(BASS_NOTE_RE);
+  const overBassMatch = input.match(OVER_BASS_NOTE_RE);
   if (bassDegreeMatch) {
     result.bassDegree = parseInt(bassDegreeMatch[1], 10);
   } else if (bassNoteMatch) {
     result.bassNote = capitalizeNote(bassNoteMatch[1]);
+  } else if (overBassMatch) {
+    result.bassNote = capitalizeNote(overBassMatch[1]);
   }
 
   // Extract style hint
@@ -125,10 +141,12 @@ export function parseChordDescription(input: string): ParsedChordRequest {
     .replace(INVERSION_WORD_RE, "")
     .replace(ROOT_POSITION_RE, "")
     .replace(SPAN_RE, "")
+    .replace(PADDING_RE, "")
     .replace(STYLE_RE, "")
     .replace(STYLE_KEYWORD_RE, "")
     .replace(BASS_DEGREE_RE, "")
     .replace(BASS_NOTE_RE, "")
+    .replace(OVER_BASS_NOTE_RE, "")
     .replace(STARTING_DEGREE_RE, "")
     .replace(STARTING_NOTE_RE, "")
     .replace(FILLER_WORDS, "")

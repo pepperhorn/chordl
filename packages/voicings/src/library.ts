@@ -4,7 +4,7 @@ import type { VoicingEntry } from "./types";
  * Jazz Piano Voicing Library
  *
  * All intervals are semitones relative to the chord root.
- * Derived from Mark Levine's "The Jazz Piano Book".
+ * Based on standard jazz piano pedagogy.
  *
  * Interval reference:
  *   m2=1  M2=2  m3=3  M3=4  P4=5  TT=6  P5=7
@@ -24,7 +24,7 @@ const shells: VoicingEntry[] = [
     name: "Shell Maj7 (Root + 7)",
     quality: "maj7",
     intervals: [0, 11], // Root, M7
-    tags: { era: "Bebop", style: "Shell", artist: "Bud Powell", source: "Levine Ch. 2" },
+    tags: { era: "Bebop", style: "Shell", artist: "Bud Powell", source: "Shell Voicings" },
     range: { min: 36, max: 60 }, // C2–C4
   },
   {
@@ -32,7 +32,7 @@ const shells: VoicingEntry[] = [
     name: "Shell Maj7 (Root + 3)",
     quality: "maj7",
     intervals: [0, 4], // Root, M3
-    tags: { era: "Bebop", style: "Shell", artist: "Bud Powell", source: "Levine Ch. 2" },
+    tags: { era: "Bebop", style: "Shell", artist: "Bud Powell", source: "Shell Voicings" },
     range: { min: 36, max: 60 },
   },
   {
@@ -40,7 +40,7 @@ const shells: VoicingEntry[] = [
     name: "Shell Maj7 (Tenth)",
     quality: "maj7",
     intervals: [0, 16], // Root, M3 up an octave
-    tags: { era: "Bebop", style: "Shell", artist: "Bud Powell", source: "Levine Ch. 2" },
+    tags: { era: "Bebop", style: "Shell", artist: "Bud Powell", source: "Shell Voicings" },
     range: { min: 36, max: 55 },
   },
   {
@@ -48,7 +48,7 @@ const shells: VoicingEntry[] = [
     name: "Shell m7 (Root + b7)",
     quality: "min7",
     intervals: [0, 10], // Root, m7
-    tags: { era: "Bebop", style: "Shell", artist: "Bud Powell", source: "Levine Ch. 2" },
+    tags: { era: "Bebop", style: "Shell", artist: "Bud Powell", source: "Shell Voicings" },
     range: { min: 36, max: 60 },
   },
   {
@@ -56,7 +56,7 @@ const shells: VoicingEntry[] = [
     name: "Shell m7 (Root + b3)",
     quality: "min7",
     intervals: [0, 3], // Root, m3
-    tags: { era: "Bebop", style: "Shell", artist: "Bud Powell", source: "Levine Ch. 2" },
+    tags: { era: "Bebop", style: "Shell", artist: "Bud Powell", source: "Shell Voicings" },
     range: { min: 36, max: 60 },
   },
   {
@@ -64,7 +64,7 @@ const shells: VoicingEntry[] = [
     name: "Shell m7 (Tenth)",
     quality: "min7",
     intervals: [0, 15], // Root, m3 up an octave
-    tags: { era: "Bebop", style: "Shell", artist: "Bud Powell", source: "Levine Ch. 2" },
+    tags: { era: "Bebop", style: "Shell", artist: "Bud Powell", source: "Shell Voicings" },
     range: { min: 36, max: 55 },
   },
   {
@@ -72,7 +72,7 @@ const shells: VoicingEntry[] = [
     name: "Shell Dom7 (Root + b7)",
     quality: "dom7",
     intervals: [0, 10], // Root, m7
-    tags: { era: "Bebop", style: "Shell", artist: "Bud Powell", source: "Levine Ch. 2" },
+    tags: { era: "Bebop", style: "Shell", artist: "Bud Powell", source: "Shell Voicings" },
     range: { min: 36, max: 60 },
   },
   {
@@ -80,7 +80,7 @@ const shells: VoicingEntry[] = [
     name: "Shell Dom7 (Root + 3)",
     quality: "dom7",
     intervals: [0, 4], // Root, M3
-    tags: { era: "Bebop", style: "Shell", artist: "Bud Powell", source: "Levine Ch. 2" },
+    tags: { era: "Bebop", style: "Shell", artist: "Bud Powell", source: "Shell Voicings" },
     range: { min: 36, max: 60 },
   },
   {
@@ -88,7 +88,7 @@ const shells: VoicingEntry[] = [
     name: "Shell Dom7 (Tenth)",
     quality: "dom7",
     intervals: [0, 16], // Root, M3 up an octave
-    tags: { era: "Bebop", style: "Shell", artist: "Bud Powell", source: "Levine Ch. 2" },
+    tags: { era: "Bebop", style: "Shell", artist: "Bud Powell", source: "Shell Voicings" },
     range: { min: 36, max: 55 },
   },
 ];
@@ -107,7 +107,7 @@ const rootless: VoicingEntry[] = [
     name: "Rootless Maj7 Type A (3-5-7-9)",
     quality: "maj7",
     intervals: [4, 7, 11, 14], // M3, P5, M7, M9
-    tags: { era: "Post-Bop", style: "Rootless Type A", artist: "Bill Evans", source: "Levine Ch. 3" },
+    tags: { era: "Post-Bop", style: "Rootless Type A", artist: "Bill Evans", source: "Rootless Voicings" },
     range: { min: 50, max: 67 }, // D3–G4
   },
   {
@@ -115,7 +115,7 @@ const rootless: VoicingEntry[] = [
     name: "Rootless Maj7 Type B (7-9-3-5)",
     quality: "maj7",
     intervals: [11, 14, 16, 19], // M7, M9, M3+8va, P5+8va
-    tags: { era: "Post-Bop", style: "Rootless Type B", artist: "Bill Evans", source: "Levine Ch. 3" },
+    tags: { era: "Post-Bop", style: "Rootless Type B", artist: "Bill Evans", source: "Rootless Voicings" },
     range: { min: 50, max: 67 },
   },
 
@@ -125,7 +125,7 @@ const rootless: VoicingEntry[] = [
     name: "Rootless m7 Type A (b3-5-b7-9)",
     quality: "min7",
     intervals: [3, 7, 10, 14], // m3, P5, m7, M9
-    tags: { era: "Post-Bop", style: "Rootless Type A", artist: "Bill Evans", source: "Levine Ch. 3" },
+    tags: { era: "Post-Bop", style: "Rootless Type A", artist: "Bill Evans", source: "Rootless Voicings" },
     range: { min: 50, max: 67 },
   },
   {
@@ -133,7 +133,7 @@ const rootless: VoicingEntry[] = [
     name: "Rootless m7 Type B (b7-9-b3-5)",
     quality: "min7",
     intervals: [10, 14, 15, 19], // m7, M9, m3+8va, P5+8va
-    tags: { era: "Post-Bop", style: "Rootless Type B", artist: "Bill Evans", source: "Levine Ch. 3" },
+    tags: { era: "Post-Bop", style: "Rootless Type B", artist: "Bill Evans", source: "Rootless Voicings" },
     range: { min: 50, max: 67 },
   },
 
@@ -143,7 +143,7 @@ const rootless: VoicingEntry[] = [
     name: "Rootless Dom7 Type A (3-13-b7-9)",
     quality: "dom7",
     intervals: [4, 9, 10, 14], // M3, M6(13), m7, M9
-    tags: { era: "Post-Bop", style: "Rootless Type A", artist: "Bill Evans", source: "Levine Ch. 3" },
+    tags: { era: "Post-Bop", style: "Rootless Type A", artist: "Bill Evans", source: "Rootless Voicings" },
     range: { min: 50, max: 67 },
   },
   {
@@ -151,7 +151,7 @@ const rootless: VoicingEntry[] = [
     name: "Rootless Dom7 Type B (b7-9-3-13)",
     quality: "dom7",
     intervals: [10, 14, 16, 21], // m7, M9, M3+8va, M13+8va
-    tags: { era: "Post-Bop", style: "Rootless Type B", artist: "Bill Evans", source: "Levine Ch. 3" },
+    tags: { era: "Post-Bop", style: "Rootless Type B", artist: "Bill Evans", source: "Rootless Voicings" },
     range: { min: 50, max: 67 },
   },
 
@@ -161,7 +161,7 @@ const rootless: VoicingEntry[] = [
     name: "Rootless Alt Type A (3-b7-#9-b13)",
     quality: "alt",
     intervals: [4, 10, 15, 20], // M3, m7, #9(m10), b13(m6+8va)
-    tags: { era: "Post-Bop", style: "Rootless Type A", artist: "Bill Evans", source: "Levine Ch. 4" },
+    tags: { era: "Post-Bop", style: "Rootless Type A", artist: "Bill Evans", source: "Altered Voicings" },
     range: { min: 50, max: 67 },
   },
   {
@@ -169,7 +169,7 @@ const rootless: VoicingEntry[] = [
     name: "Rootless Alt Type B (b7-#9-3-b13)",
     quality: "alt",
     intervals: [10, 15, 16, 20], // m7, #9, M3+8va, b13
-    tags: { era: "Post-Bop", style: "Rootless Type B", artist: "Bill Evans", source: "Levine Ch. 4" },
+    tags: { era: "Post-Bop", style: "Rootless Type B", artist: "Bill Evans", source: "Altered Voicings" },
     range: { min: 50, max: 67 },
   },
 
@@ -179,7 +179,7 @@ const rootless: VoicingEntry[] = [
     name: "Rootless m7b5 Type A (b3-b5-b7-9)",
     quality: "m7b5",
     intervals: [3, 6, 10, 14], // m3, dim5, m7, M9
-    tags: { era: "Post-Bop", style: "Rootless Type A", artist: "Bill Evans", source: "Levine Ch. 3" },
+    tags: { era: "Post-Bop", style: "Rootless Type A", artist: "Bill Evans", source: "Rootless Voicings" },
     range: { min: 50, max: 67 },
   },
   {
@@ -187,7 +187,7 @@ const rootless: VoicingEntry[] = [
     name: "Rootless m7b5 Type B (b7-9-b3-b5)",
     quality: "m7b5",
     intervals: [10, 14, 15, 18], // m7, M9, m3+8va, dim5+8va
-    tags: { era: "Post-Bop", style: "Rootless Type B", artist: "Bill Evans", source: "Levine Ch. 3" },
+    tags: { era: "Post-Bop", style: "Rootless Type B", artist: "Bill Evans", source: "Rootless Voicings" },
     range: { min: 50, max: 67 },
   },
 ];
@@ -204,7 +204,7 @@ const quartal: VoicingEntry[] = [
     name: "Quartal Stack (3 notes)",
     quality: "sus4",
     intervals: [0, 5, 10], // Root, P4, m7
-    tags: { era: "Modal", style: "Quartal", artist: "McCoy Tyner", source: "Levine Ch. 11" },
+    tags: { era: "Modal", style: "Quartal", artist: "McCoy Tyner", source: "Quartal Voicings" },
     range: { min: 48, max: 72 },
   },
   {
@@ -212,7 +212,7 @@ const quartal: VoicingEntry[] = [
     name: "Quartal Stack (4 notes)",
     quality: "min7",
     intervals: [0, 5, 10, 15], // Root, P4, m7, m3+8va
-    tags: { era: "Modal", style: "Quartal", artist: "McCoy Tyner", source: "Levine Ch. 11" },
+    tags: { era: "Modal", style: "Quartal", artist: "McCoy Tyner", source: "Quartal Voicings" },
     range: { min: 48, max: 72 },
   },
   {
@@ -220,7 +220,7 @@ const quartal: VoicingEntry[] = [
     name: "So What Chord (3 P4ths + M3)",
     quality: "min7",
     intervals: [0, 5, 10, 15, 19], // Root, P4, m7, m3+8va, P5+8va
-    tags: { era: "Modal", style: "Quartal", artist: "McCoy Tyner", source: "Levine Ch. 11" },
+    tags: { era: "Modal", style: "Quartal", artist: "McCoy Tyner", source: "Quartal Voicings" },
     range: { min: 48, max: 72 },
   },
   {
@@ -228,7 +228,7 @@ const quartal: VoicingEntry[] = [
     name: "Phrygian Stack (5 notes)",
     quality: "sus4",
     intervals: [0, 5, 10, 15, 20], // Root, P4, m7, m3+8va, m6+8va
-    tags: { era: "Modal", style: "Quartal", artist: "Kenny Barron", source: "Levine Ch. 11" },
+    tags: { era: "Modal", style: "Quartal", artist: "Kenny Barron", source: "Quartal Voicings" },
     range: { min: 48, max: 72 },
   },
 ];
@@ -246,31 +246,35 @@ const upperStructures: VoicingEntry[] = [
     name: "Upper Structure II (Lydian Dominant)",
     quality: "dom7",
     intervals: [4, 10, 14, 18, 21], // LH: M3, m7 | RH: M9, #11, M13
-    tags: { era: "Modern", style: "Upper Structure", artist: "Herbie Hancock", source: "Levine Ch. 14" },
+    hands: ["LH", "LH", "RH", "RH", "RH"],
+    tags: { era: "Modern", style: "Upper Structure", artist: "Herbie Hancock", source: "Upper Structures" },
     range: { min: 48, max: 72 },
   },
   {
     id: "us-bVI",
     name: "Upper Structure bVI (Altered)",
     quality: "alt",
-    intervals: [4, 10, 20, 24, 27], // LH: M3, m7 | RH: b13, Root+8va, #9+8va (Ab, C, Eb over C7)
-    tags: { era: "Modern", style: "Upper Structure", artist: "Herbie Hancock", source: "Levine Ch. 14" },
+    intervals: [4, 10, 20, 24, 27], // LH: M3, m7 | RH: b13, Root+8va, #9+8va
+    hands: ["LH", "LH", "RH", "RH", "RH"],
+    tags: { era: "Modern", style: "Upper Structure", artist: "Herbie Hancock", source: "Upper Structures" },
     range: { min: 48, max: 72 },
   },
   {
     id: "us-bV",
     name: "Upper Structure bV (Altered #2)",
     quality: "alt",
-    intervals: [4, 10, 18, 22, 25], // LH: M3, m7 | RH: #11, b7+8va, b9+8va (Gb, Bb, Db over C7)
-    tags: { era: "Modern", style: "Upper Structure", artist: "Herbie Hancock", source: "Levine Ch. 14" },
+    intervals: [4, 10, 18, 22, 25], // LH: M3, m7 | RH: #11, b7+8va, b9+8va
+    hands: ["LH", "LH", "RH", "RH", "RH"],
+    tags: { era: "Modern", style: "Upper Structure", artist: "Herbie Hancock", source: "Upper Structures" },
     range: { min: 48, max: 72 },
   },
   {
     id: "us-VI",
     name: "Upper Structure VI (Diminished Sound)",
     quality: "dom7",
-    intervals: [4, 10, 21, 25, 28], // LH: M3, m7 | RH: M13, b9+8va, M3+2oct (A, C#, E over C7)
-    tags: { era: "Modern", style: "Upper Structure", artist: "Herbie Hancock", source: "Levine Ch. 14" },
+    intervals: [4, 10, 21, 25, 28], // LH: M3, m7 | RH: M13, b9+8va, M3+2oct
+    hands: ["LH", "LH", "RH", "RH", "RH"],
+    tags: { era: "Modern", style: "Upper Structure", artist: "Herbie Hancock", source: "Upper Structures" },
     range: { min: 48, max: 72 },
   },
 ];
@@ -287,7 +291,7 @@ const drop2: VoicingEntry[] = [
     name: "Drop 2 Maj6 (5th in bass)",
     quality: "maj6",
     intervals: [-5, 0, 4, 9], // P5 below, Root, M3, M6
-    tags: { era: "Hard Bop", style: "Drop 2", artist: "Barry Harris", source: "Levine Ch. 10" },
+    tags: { era: "Hard Bop", style: "Drop 2", artist: "Barry Harris", source: "Drop 2 Voicings" },
     range: { min: 48, max: 72 },
   },
   {
@@ -295,7 +299,7 @@ const drop2: VoicingEntry[] = [
     name: "Drop 2 Maj6 (6th in bass)",
     quality: "maj6",
     intervals: [-3, 4, 7, 12], // M6 below, M3, P5, Root+8va
-    tags: { era: "Hard Bop", style: "Drop 2", artist: "Barry Harris", source: "Levine Ch. 10" },
+    tags: { era: "Hard Bop", style: "Drop 2", artist: "Barry Harris", source: "Drop 2 Voicings" },
     range: { min: 48, max: 72 },
   },
   {
@@ -303,7 +307,7 @@ const drop2: VoicingEntry[] = [
     name: "Drop 2 m7 (5th in bass)",
     quality: "min7",
     intervals: [-5, 0, 3, 10], // P5 below, Root, m3, m7
-    tags: { era: "Hard Bop", style: "Drop 2", artist: "Bill Evans", source: "Levine Ch. 10" },
+    tags: { era: "Hard Bop", style: "Drop 2", artist: "Bill Evans", source: "Drop 2 Voicings" },
     range: { min: 48, max: 72 },
   },
   {
@@ -311,7 +315,7 @@ const drop2: VoicingEntry[] = [
     name: "Drop 2 Dom7 (5th in bass)",
     quality: "dom7",
     intervals: [-5, 0, 4, 10], // P5 below, Root, M3, m7
-    tags: { era: "Hard Bop", style: "Drop 2", source: "Levine Ch. 10" },
+    tags: { era: "Hard Bop", style: "Drop 2", source: "Drop 2 Voicings" },
     range: { min: 48, max: 72 },
   },
   {
@@ -319,7 +323,48 @@ const drop2: VoicingEntry[] = [
     name: "Drop 2 m7b5 (b5 in bass)",
     quality: "m7b5",
     intervals: [-6, 0, 3, 10], // dim5 below, Root, m3, m7
-    tags: { era: "Hard Bop", style: "Drop 2", source: "Levine Ch. 10" },
+    tags: { era: "Hard Bop", style: "Drop 2", source: "Drop 2 Voicings" },
+    range: { min: 48, max: 72 },
+  },
+];
+
+// ============================================================
+// CATEGORY F: DROP 2+4 VOICINGS (BIG BAND / OPEN VOICINGS)
+// Drops 2nd and 4th voices from close position down an octave.
+// Creates wide, open voicings common in big band and combo writing.
+// ============================================================
+
+const drop24: VoicingEntry[] = [
+  {
+    id: "drop24-maj7",
+    name: "Drop 2+4 Maj7",
+    quality: "maj7",
+    intervals: [-8, -1, 4, 7], // 5th-8va below, M7 below, M3, P5
+    tags: { era: "Hard Bop", style: "Drop 2+4", source: "Drop 2+4 Voicings" },
+    range: { min: 48, max: 72 },
+  },
+  {
+    id: "drop24-min7",
+    name: "Drop 2+4 m7",
+    quality: "min7",
+    intervals: [-9, -2, 3, 7], // 5th-8va below, m7 below, m3, P5
+    tags: { era: "Hard Bop", style: "Drop 2+4", source: "Drop 2+4 Voicings" },
+    range: { min: 48, max: 72 },
+  },
+  {
+    id: "drop24-dom7",
+    name: "Drop 2+4 Dom7",
+    quality: "dom7",
+    intervals: [-8, -2, 4, 7], // 5th-8va below, m7 below, M3, P5
+    tags: { era: "Hard Bop", style: "Drop 2+4", source: "Drop 2+4 Voicings" },
+    range: { min: 48, max: 72 },
+  },
+  {
+    id: "drop24-m7b5",
+    name: "Drop 2+4 m7b5",
+    quality: "m7b5",
+    intervals: [-8, -2, 3, 6], // b5-8va below, m7 below, m3, dim5
+    tags: { era: "Hard Bop", style: "Drop 2+4", source: "Drop 2+4 Voicings" },
     range: { min: 48, max: 72 },
   },
 ];
@@ -334,4 +379,5 @@ export const VOICING_LIBRARY: VoicingEntry[] = [
   ...quartal,
   ...upperStructures,
   ...drop2,
+  ...drop24,
 ];

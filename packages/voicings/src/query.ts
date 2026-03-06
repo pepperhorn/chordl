@@ -1,7 +1,14 @@
 import { Note } from "tonal";
-import type { VoicingEntry, VoicingQuery, VoicingQuality, VoicingStyle } from "./types";
+import type { VoicingEntry, VoicingQuery, VoicingQuality, VoicingStyle, RealizedNote, Hand } from "./types";
 import { VOICING_LIBRARY } from "./library";
-import { normalizeNote } from "../engine/highlight-mapper";
+
+const FLAT_TO_SHARP: Record<string, string> = {
+  Db: "C#", Eb: "D#", Gb: "F#", Ab: "G#", Bb: "A#",
+};
+
+function normalizeNote(note: string): string {
+  return FLAT_TO_SHARP[note] ?? note;
+}
 
 /** Map artist names / keywords to voicing styles */
 const ARTIST_STYLE_MAP: Record<string, { style?: VoicingStyle; era?: string }> = {
@@ -21,6 +28,8 @@ const ARTIST_STYLE_MAP: Record<string, { style?: VoicingStyle; era?: string }> =
   "george shearing": { style: "Drop 2" },
   "barry harris": { style: "Drop 2" },
   "block": { style: "Drop 2" },
+  "drop 2+4": { style: "Drop 2+4" },
+  "drop 2 and 4": { style: "Drop 2+4" },
   "drop 2": { style: "Drop 2" },
   "locked hands": { style: "Drop 2" },
 };
@@ -80,27 +89,40 @@ export function queryVoicings(query: VoicingQuery): VoicingEntry[] {
 }
 
 /**
- * Realize a voicing: given a root note name and a voicing entry,
- * return the concrete note names with octaves (scientific pitch notation).
- *
- * @param root - Root note name (e.g. "C", "Db")
- * @param voicing - A VoicingEntry from the library
- * @param octave - Base octave for the root (default 3)
- * @returns Array of note names like ["E3", "G3", "B3", "D4"]
+ * Realize a voicing with full note data including hand assignments.
+ */
+export function realizeVoicingFull(
+  root: string,
+  voicing: VoicingEntry,
+  octave: number = 3
+): RealizedNote[] {
+  const rootMidi = Note.midi(`${root}${octave}`);
+  if (rootMidi == null) return [];
+
+  return voicing.intervals.map((interval, i) => {
+    const midi = rootMidi + interval;
+    const noteName = Note.fromMidi(midi);
+    const pc = Note.pitchClass(noteName);
+    const hand: Hand = voicing.hands?.[i] ?? "LH";
+    return {
+      note: noteName,
+      midi,
+      pitchClass: normalizeNote(pc),
+      hand,
+    };
+  });
+}
+
+/**
+ * Realize a voicing: returns note name strings (scientific pitch notation).
+ * For backwards compatibility.
  */
 export function realizeVoicing(
   root: string,
   voicing: VoicingEntry,
   octave: number = 3
 ): string[] {
-  const rootMidi = Note.midi(`${root}${octave}`);
-  if (rootMidi == null) return [];
-
-  return voicing.intervals.map((interval) => {
-    const midi = rootMidi + interval;
-    const noteName = Note.fromMidi(midi);
-    return noteName;
-  });
+  return realizeVoicingFull(root, voicing, octave).map((n) => n.note);
 }
 
 /**
@@ -112,11 +134,19 @@ export function voicingPitchClasses(
   voicing: VoicingEntry,
   octave: number = 3
 ): string[] {
-  const realized = realizeVoicing(root, voicing, octave);
-  return realized.map((note) => {
-    const pc = Note.pitchClass(note);
-    return normalizeNote(pc);
-  });
+  return realizeVoicingFull(root, voicing, octave).map((n) => n.pitchClass);
+}
+
+/**
+ * Get all alternative voicings for a quality (excluding the given one).
+ */
+export function getAlternativeVoicings(
+  quality: VoicingQuality,
+  excludeId?: string
+): VoicingEntry[] {
+  return VOICING_LIBRARY.filter(
+    (v) => v.quality === quality && v.id !== excludeId
+  );
 }
 
 /**
