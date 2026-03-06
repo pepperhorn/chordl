@@ -1,5 +1,9 @@
 export { PianoKeyboard } from "./components/PianoKeyboard";
 export { PianoChord } from "./components/PianoChord";
+export { ChordGroup } from "./components/ChordGroup";
+export { ProgressionView } from "./components/ProgressionView";
+export type { ChordGroupProps } from "./components/ChordGroup";
+export type { ProgressionViewProps, GroupMode } from "./components/ProgressionView";
 export { resolveChord } from "./resolver/chord-resolver";
 export { calculateLayout } from "./resolver/auto-layout";
 export { parseChordDescription } from "./parser/natural-language";
@@ -34,6 +38,28 @@ export type {
   RealizedNote,
   ChordDescriptor,
 } from "@better-chord/voicings";
+
+// Progression resolver
+export {
+  resolveProgression,
+  tokenizeProgression,
+  FORM_TEMPLATES,
+  findTemplate,
+  resolveProgressionRequest,
+} from "./progression";
+export type {
+  FormTemplate,
+  ProgressionRequest,
+  ProgressionResult,
+  ProgressionExample,
+  ProgressionChord,
+} from "./progression";
+export {
+  isProgressionRequest,
+  parseProgressionRequest,
+} from "./parser/progression-parser";
+export type { ParsedProgressionRequest } from "./parser/progression-parser";
+export { MAX_EXAMPLES } from "./config";
 
 export type {
   Format,
