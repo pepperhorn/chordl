@@ -1,11 +1,28 @@
 import React, { useState } from "react";
 import { createRoot } from "react-dom/client";
-import { PianoKeyboard, PianoChord } from "../src";
+import { PianoKeyboard, PianoChord, ProgressionView, isProgressionRequest, parseProgressionRequest, resolveProgressionRequest } from "../src";
 
 function InteractiveInput() {
   const [input, setInput] = useState("Cmaj7#5 starting on G#");
   const [theme, setTheme] = useState<string>("simple");
   const [error, setError] = useState<string | null>(null);
+
+  const isProg = isProgressionRequest(input);
+
+  let progressionResult = null;
+  if (isProg) {
+    try {
+      const parsed = parseProgressionRequest(input);
+      progressionResult = resolveProgressionRequest({
+        progression: parsed.progression,
+        key: parsed.key,
+        numExamples: parsed.numExamples,
+        styleHint: parsed.styleHint,
+      });
+    } catch (e: any) {
+      // will show via error boundary
+    }
+  }
 
   return (
     <div className="interactive">
@@ -14,7 +31,7 @@ function InteractiveInput() {
           type="text"
           value={input}
           onChange={(e) => { setInput(e.target.value); setError(null); }}
-          placeholder='Try: "D minor seventh in first inversion"'
+          placeholder='Try: "ii-V-I in G" or "D minor seventh in first inversion"'
           style={{
             flex: 1,
             minWidth: 300,
@@ -44,10 +61,19 @@ function InteractiveInput() {
           <option value="boomwhacker">Boomwhacker</option>
         </select>
       </div>
+      {isProg && (
+        <div style={{ fontSize: 12, color: "#a0c6e8", marginTop: 4 }}>
+          Detected as progression
+        </div>
+      )}
       {error && <p style={{ color: "#ff6b6b", margin: "0.5rem 0" }}>{error}</p>}
       <div style={{ marginTop: "1rem" }}>
         <ErrorBoundary key={input + theme} onError={setError}>
-          <PianoChord chord={input} theme={theme} />
+          {isProg && progressionResult ? (
+            <ProgressionView result={progressionResult} theme={theme} />
+          ) : (
+            <PianoChord chord={input} theme={theme} />
+          )}
         </ErrorBoundary>
       </div>
     </div>
@@ -125,6 +151,30 @@ function App() {
           <label>Custom highlight color: chord="Am" highlightColor="#ff6b6b"</label>
           <PianoChord chord="Am" highlightColor="#ff6b6b" />
         </div>
+      </div>
+
+      <h2>Progressions</h2>
+      <div className="example">
+        <label>ii-V-I in G — 3 contrasting voicing styles</label>
+        <ProgressionView
+          result={resolveProgressionRequest({
+            progression: "ii-V-I",
+            key: "G",
+            numExamples: 3,
+          })}
+        />
+      </div>
+      <div className="example" style={{ marginTop: "2rem" }}>
+        <label>Blues in Bb — Bill Evans style</label>
+        <ProgressionView
+          result={resolveProgressionRequest({
+            progression: "blues",
+            key: "Bb",
+            numExamples: 1,
+            styleHint: "Bill Evans",
+          })}
+          showPlayback={false}
+        />
       </div>
     </div>
   );
