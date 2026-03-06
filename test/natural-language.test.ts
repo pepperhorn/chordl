@@ -46,4 +46,31 @@ describe("parseChordDescription", () => {
     const result = parseChordDescription("C root position");
     expect(result.inversion).toBe(0);
   });
+
+  it("parses 'Cmaj7 in the style of Bill Evans'", () => {
+    const result = parseChordDescription("Cmaj7 in the style of Bill Evans");
+    expect(result.chordName).toBe("Cmaj7");
+    expect(result.styleHint).toBe("Bill Evans");
+  });
+
+  it("parses 'Dm7 like McCoy Tyner'", () => {
+    const result = parseChordDescription("Dm7 like McCoy Tyner");
+    expect(result.chordName).toBe("Dm7");
+    expect(result.styleHint).toBe("McCoy Tyner");
+  });
+
+  it("parses 'C7 bebop'", () => {
+    const result = parseChordDescription("C7 bebop");
+    expect(result.chordName).toBe("C7");
+    expect(result.styleHint).toBe("bebop");
+  });
+
+  it("parses 'Cmaj7#5#9 in the style of Bill Evans starting on G'", () => {
+    const result = parseChordDescription(
+      "Cmaj7#5#9 in the style of Bill Evans starting on G"
+    );
+    expect(result.chordName).toBe("Cmaj7#5#9");
+    expect(result.styleHint).toBe("Bill Evans");
+    expect(result.startingNote).toBe("G");
+  });
 });

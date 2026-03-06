@@ -34,6 +34,12 @@ const BASS_DEGREE_RE =
 const BASS_NOTE_RE =
   /(?:with\s+)?([A-Ga-g][#b]?)\s+(?:in\s+)?(?:the\s+)?(?:bottom|bass|lowest)/i;
 
+// "in the style of Bill Evans" / "like McCoy Tyner" / "bebop style"
+const STYLE_RE =
+  /(?:(?:in\s+)?(?:the\s+)?style\s+of\s+|like\s+|a\s+la\s+)([\w\s]+?)(?:\s*$|\s*,|\s+(?:starting|spanning|with|compact|exact))/i;
+const STYLE_KEYWORD_RE =
+  /\b(bebop|modal|comping|rootless|quartal|block\s*chords?|locked\s*hands|drop\s*2|upper\s*structure|shell|stride)\b/i;
+
 // Quality word mapping for descriptive chord names
 const QUALITY_WORDS: Record<string, string> = {
   major: "",
@@ -94,6 +100,15 @@ export function parseChordDescription(input: string): ParsedChordRequest {
     result.bassNote = capitalizeNote(bassNoteMatch[1]);
   }
 
+  // Extract style hint
+  const styleMatch = input.match(STYLE_RE);
+  const styleKeywordMatch = input.match(STYLE_KEYWORD_RE);
+  if (styleMatch) {
+    result.styleHint = styleMatch[1].trim();
+  } else if (styleKeywordMatch) {
+    result.styleHint = styleKeywordMatch[1].trim();
+  }
+
   // Extract starting note or degree
   const startDegreeMatch = input.match(STARTING_DEGREE_RE);
   const startMatch = input.match(STARTING_NOTE_RE);
@@ -110,6 +125,8 @@ export function parseChordDescription(input: string): ParsedChordRequest {
     .replace(INVERSION_WORD_RE, "")
     .replace(ROOT_POSITION_RE, "")
     .replace(SPAN_RE, "")
+    .replace(STYLE_RE, "")
+    .replace(STYLE_KEYWORD_RE, "")
     .replace(BASS_DEGREE_RE, "")
     .replace(BASS_NOTE_RE, "")
     .replace(STARTING_DEGREE_RE, "")

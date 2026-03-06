@@ -43,6 +43,7 @@ export interface ParsedChordRequest {
   spanFrom?: string;
   spanTo?: string;
   format?: Format;
+  styleHint?: string;
 }
 
 export interface KeyDescriptor {
