@@ -27,6 +27,8 @@ const ARTIST_STYLE_MAP: Record<string, { style?: VoicingStyle; era?: string }> =
   "herbie hancock": { style: "Upper Structure" },
   "upper structure": { style: "Upper Structure" },
   "altered": { style: "Upper Structure" },
+  "duke ellington": { style: "Drop 2" },
+  "ellington": { style: "Drop 2" },
   "george shearing": { style: "Drop 2" },
   "barry harris": { style: "Drop 2" },
   "block": { style: "Drop 2" },
