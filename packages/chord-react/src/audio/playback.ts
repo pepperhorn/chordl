@@ -19,9 +19,16 @@ async function ensurePiano(): Promise<Soundfont> {
   }
 
   const context = getContext();
-  piano = new Soundfont(context, { instrument: "acoustic_grand_piano" });
-  loading = piano.load.then(() => {});
-  await loading;
+  const instance = new Soundfont(context, { instrument: "acoustic_grand_piano" });
+  loading = instance.load.then(() => {});
+  try {
+    await loading;
+    piano = instance;
+  } catch {
+    // Reset so next call retries instead of returning a broken instance
+    loading = null;
+    throw new Error("Failed to load piano soundfont");
+  }
   return piano;
 }
 

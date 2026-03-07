@@ -57,11 +57,16 @@ export function mapToVoicingQuality(chordType: string, notes?: string[]): Voicin
   if (t.includes("m7b5") || t.includes("half")) return "m7b5";
   if (t.includes("sus")) return "sus4";
   if (t.includes("min") || t.includes("minor")) {
+    // Plain triads ("minor", "minor triad") don't map to 7th voicings
+    if (t === "minor" || t === "minor triad") return undefined;
     if (t.includes("6/9") || t.includes("6add9")) return "m6/9";
     if (t.includes("6")) return "min6";
     return "min7";
   }
-  if (t.includes("maj") || t.includes("major")) return "maj7";
+  if (t.includes("maj") || t.includes("major")) {
+    if (t === "major" || t === "major triad") return undefined;
+    return "maj7";
+  }
   if (t.includes("dom") || t.includes("7") || t.includes("9") || t.includes("13")) return "dom7";
   if (t.includes("6/9")) return "6/9";
   if (t.includes("6")) return "maj6";

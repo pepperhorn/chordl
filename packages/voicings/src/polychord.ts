@@ -69,7 +69,8 @@ function tritonePitchClasses(root: string): string[] {
   const chordData = Chord.get(`${root}7`);
   if (!chordData || chordData.empty || chordData.notes.length < 4) {
     // Manual fallback: 3rd = root + 4 semitones, b7th = root + 10 semitones
-    const rootMidi = Note.midi(`${root}4`)!;
+    const rootMidi = Note.midi(`${root}4`);
+    if (rootMidi == null) throw new Error(`Invalid root note: ${root}`);
     return [
       Note.pitchClass(Note.fromMidi(rootMidi + 4)),
       Note.pitchClass(Note.fromMidi(rootMidi + 10)),

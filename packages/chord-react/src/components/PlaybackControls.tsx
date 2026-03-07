@@ -29,12 +29,14 @@ export function PlaybackControls({ notes, lhNotes, rhOctave, lhOctave, chordName
   const lhCount = lhNotes?.length ?? 0;
   const lhOct = lhOctave ?? 3;
   const rhOct = rhOctave ?? 4;
+  // Strip octave-qualifier colon format ("C#:0" → "C#") before building playable notes
+  const cleanNotes = notes.map((n) => n.replace(/:.*$/, ""));
   const playableNotes = lhCount > 0
-    ? notes.map((n, i) => {
+    ? cleanNotes.map((n, i) => {
         if (/[0-9]$/.test(n)) return n;
         return i < lhCount ? `${n}${lhOct}` : `${n}${rhOct}`;
       })
-    : notes;
+    : cleanNotes.map((n) => (/[0-9]$/.test(n) ? n : `${n}${rhOct}`));
 
   const handleBlock = useCallback(async () => {
     if (playing) return;

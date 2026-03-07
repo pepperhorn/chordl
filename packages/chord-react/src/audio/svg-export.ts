@@ -4,7 +4,7 @@
  */
 
 function sanitizeFilename(name: string): string {
-  return name.replace(/[/\\#]/g, "_");
+  return name.replace(/[^a-zA-Z0-9\-_ ]/g, "_").slice(0, 100);
 }
 
 export function downloadSvg(svgElement: SVGSVGElement, filename: string): void {

@@ -74,9 +74,9 @@ function buildTrackData(
     );
   }
 
-  // Track name
-  data.push(0x00, 0xff, 0x03, trackName.length);
-  for (const ch of trackName) data.push(ch.charCodeAt(0));
+  // Track name (ASCII only, VarLen-encoded length)
+  const nameBytes = Array.from(trackName, (ch) => ch.charCodeAt(0) & 0x7f);
+  data.push(0x00, 0xff, 0x03, ...toVarLen(nameBytes.length), ...nameBytes);
 
   // Note-on events
   if (arpeggiated && arpDelayTicks) {
@@ -224,7 +224,7 @@ export function downloadMidi(
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `${chordName.replace(/[/\\#]/g, "_")}.mid`;
+  a.download = `${chordName.replace(/[^a-zA-Z0-9\-_ ]/g, "_").slice(0, 100)}.mid`;
   a.click();
   URL.revokeObjectURL(url);
 }

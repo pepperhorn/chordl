@@ -13,20 +13,16 @@ const NOTE_TO_SEMITONE: Record<string, number> = {
 
 // Map a note to its nearest white key (the white key it sits on or just below)
 function nearestWhiteKey(note: string): WhiteNote {
-  // Normalize flats to sharps first
   const normalized = FLAT_TO_SHARP[note] ?? note;
-  const base = normalized.replace("#", "");
-  if (WHITE_NOTE_ORDER.includes(base as WhiteNote)) {
-    return base as WhiteNote;
-  }
-  return base as WhiteNote;
+  const base = normalized.replace("#", "") as WhiteNote;
+  return base;
 }
 
 // Count white keys from one white note to another (inclusive of start, exclusive of end)
 function whiteKeySpan(from: WhiteNote, to: WhiteNote): number {
   const fromIdx = WHITE_NOTE_ORDER.indexOf(from);
   let toIdx = WHITE_NOTE_ORDER.indexOf(to);
-  if (toIdx <= fromIdx) toIdx += 7;
+  if (toIdx < fromIdx) toIdx += 7;
   return toIdx - fromIdx;
 }
 

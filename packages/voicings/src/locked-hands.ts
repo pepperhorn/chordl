@@ -42,6 +42,13 @@ export function generateLockedHands(
     return midi! % 12;
   });
 
+  // Locked hands requires at least 4 distinct pitch classes (e.g. 7th chords)
+  if (chordPCs.length < 4) {
+    throw new Error(
+      `${chordSymbol} has only ${chordPCs.length} notes — locked hands requires a 7th chord or richer`,
+    );
+  }
+
   const melodyPC = melodyMidi % 12;
 
   // Verify the melody note is a chord tone
@@ -53,20 +60,19 @@ export function generateLockedHands(
 
   // Build 4-way close voicing beneath the melody note.
   // Starting from the melody, pick the next 3 chord tones moving downward
-  // through the chord tones chromatically.
-
-  // Sort chord pitch classes and find all MIDI pitches at or below the melody
-  // that belong to the chord, then pick the 3 closest below the melody.
+  // through the chord tones chromatically (no duplicate pitch classes).
   const closePitches: number[] = [melodyMidi];
+  const usedPCs = new Set<number>([melodyPC]);
 
   let current = melodyMidi - 1;
   while (closePitches.length < 4) {
-    if (chordPCs.includes(current % 12)) {
+    const pc = ((current % 12) + 12) % 12;
+    if (chordPCs.includes(pc) && !usedPCs.has(pc)) {
       closePitches.push(current);
+      usedPCs.add(pc);
     }
     current--;
-    // Safety: don't search more than an octave + a bit
-    if (melodyMidi - current > 13) {
+    if (melodyMidi - current > 24) {
       throw new Error(
         `Could not find enough chord tones below ${melodyNote} for ${chordSymbol}`,
       );
