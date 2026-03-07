@@ -4,10 +4,10 @@
   "workspaces": ["packages/*"],
   "scripts": {
     "dev": "npm run dev -w @better-chord/react",
-    "build": "npm run build -w @better-chord/voicings && npm run build -w @better-chord/react",
-    "test": "npm run test -w @better-chord/voicings && npm run test -w @better-chord/react",
-    "test:run": "npm run test:run -w @better-chord/voicings && npm run test:run -w @better-chord/react",
-    "lint": "npm run lint -w @better-chord/voicings && npm run lint -w @better-chord/react"
+    "build": "npm run build -w @better-chord/voicings && npm run build -w @better-chord/core && npm run build -w @better-chord/react",
+    "test": "npm run test -w @better-chord/voicings && npm run test -w @better-chord/core && npm run test -w @better-chord/react",
+    "test:run": "npm run test:run -w @better-chord/voicings && npm run test:run -w @better-chord/core && npm run test:run -w @better-chord/react",
+    "lint": "npm run lint -w @better-chord/voicings && npm run lint -w @better-chord/core && npm run lint -w @better-chord/react"
   },
   "devDependencies": {
     "typescript": "^5.7.0",
