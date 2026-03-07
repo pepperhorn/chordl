@@ -135,7 +135,7 @@ function InteractiveInput({ uiTheme }: { uiTheme: UIThemeMode }) {
       <div style={{
         display: "flex",
         gap: "0.75rem",
-        alignItems: "flex-start",
+        alignItems: "flex-end",
         flexWrap: "wrap",
         justifyContent: "center",
         opacity: 0.75,
