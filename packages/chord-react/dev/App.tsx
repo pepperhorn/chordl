@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { createRoot } from "react-dom/client";
-import { PianoKeyboard, PianoChord, ProgressionView, isProgressionRequest, parseProgressionRequest, resolveProgressionRequest } from "../src";
+import { PianoKeyboard, PianoChord, StaffNotation, ProgressionView, isProgressionRequest, parseProgressionRequest, resolveProgressionRequest } from "../src";
 import type { UIThemeMode } from "../src";
 
 const SCALE_OPTIONS = [
@@ -391,6 +391,33 @@ function App() {
             <div className="glass-card">
               <span className="example-label">Custom · highlightColor="#ff6b6b"</span>
               <PianoChord chord="Am" highlightColor="#ff6b6b" uiTheme={uiTheme} />
+            </div>
+          </div>
+        </Collapsible>
+
+        <Collapsible title="Staff Notation">
+          <div className="row" style={{ marginBottom: "1rem" }}>
+            <div className="glass-card">
+              <span className="example-label">Staff: Cmaj7</span>
+              <PianoChord chord="Cmaj7" display="staff" uiTheme={uiTheme} />
+            </div>
+            <div className="glass-card">
+              <span className="example-label">Staff: Dm7</span>
+              <PianoChord chord="Dm7" display="staff" uiTheme={uiTheme} />
+            </div>
+            <div className="glass-card">
+              <span className="example-label">Both: G7</span>
+              <PianoChord chord="G7" display="both" uiTheme={uiTheme} />
+            </div>
+          </div>
+          <div className="row" style={{ marginBottom: "1rem" }}>
+            <div className="glass-card">
+              <span className="example-label">StaffNotation direct — C E G B</span>
+              <StaffNotation notes={["C", "E", "G", "B"]} chordLabel="Cmaj7" scale={0.7} />
+            </div>
+            <div className="glass-card">
+              <span className="example-label">Grand staff — with bass</span>
+              <StaffNotation notes={["G", "C", "E", "G", "B"]} lhNotes={["G"]} lhOctave={2} rhOctave={4} chordLabel="Cmaj7/G" scale={0.7} />
             </div>
           </div>
         </Collapsible>
