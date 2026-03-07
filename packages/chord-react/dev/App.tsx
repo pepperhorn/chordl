@@ -91,24 +91,22 @@ function InteractiveInput({ uiTheme }: { uiTheme: UIThemeMode }) {
             fontSize: "1.05rem",
             fontFamily: "'DM Sans', system-ui, sans-serif",
             fontWeight: 400,
-            background: "var(--input-bg)",
-            backdropFilter: "blur(12px)",
-            WebkitBackdropFilter: "blur(12px)",
-            border: "1.5px solid var(--input-border)",
-            borderRadius: 14,
+            background: "var(--input-floating-bg)",
+            border: "1px solid var(--input-floating-border)",
+            borderRadius: 50,
             color: "var(--text)",
             outline: "none",
             transition: "border-color 0.25s ease, box-shadow 0.25s ease",
-            boxShadow: "0 2px 16px rgba(0,0,0,0.03)",
+            boxShadow: "var(--input-floating-shadow)",
             letterSpacing: "-0.01em",
           }}
           onFocus={(e) => {
             e.currentTarget.style.borderColor = "var(--input-focus)";
-            e.currentTarget.style.boxShadow = "0 0 0 3px var(--accent-soft), 0 2px 16px rgba(0,0,0,0.03)";
+            e.currentTarget.style.boxShadow = "var(--input-floating-shadow-focus)";
           }}
           onBlur={(e) => {
-            e.currentTarget.style.borderColor = "var(--input-border)";
-            e.currentTarget.style.boxShadow = "0 2px 16px rgba(0,0,0,0.03)";
+            e.currentTarget.style.borderColor = "var(--input-floating-border)";
+            e.currentTarget.style.boxShadow = "var(--input-floating-shadow)";
           }}
         />
         {isProg && (
@@ -138,11 +136,11 @@ function InteractiveInput({ uiTheme }: { uiTheme: UIThemeMode }) {
         alignItems: "flex-end",
         flexWrap: "wrap",
         justifyContent: "center",
-        opacity: 0.75,
-        transition: "opacity 0.2s ease",
+        opacity: 0.55,
+        transition: "opacity 0.25s ease",
       }}
-        onMouseEnter={(e) => e.currentTarget.style.opacity = "1"}
-        onMouseLeave={(e) => e.currentTarget.style.opacity = "0.75"}
+        onMouseEnter={(e) => e.currentTarget.style.opacity = "0.9"}
+        onMouseLeave={(e) => e.currentTarget.style.opacity = "0.55"}
       >
         <PillGroup
           label="Theme"
@@ -312,10 +310,9 @@ function App() {
         />
       </div>
 
-      {/* Hero card */}
-      <div className="glass-card fade-in fade-in-delay-1" style={{
-        padding: "2rem 1.75rem",
-        marginBottom: "2rem",
+      {/* Hero — no card, input floats directly */}
+      <div className="fade-in fade-in-delay-1" style={{
+        padding: "1.5rem 0 2rem",
       }}>
         <InteractiveInput uiTheme={uiTheme} />
       </div>
