@@ -79,18 +79,29 @@ export function StaffNotation({
     return lines;
   }
 
+  // Font glyphs are Y-up; SVG is Y-down. Scale with negative Y to flip.
+  const upm = g.upm || 1000;
+
   function renderClef(type: "treble" | "bass", staffTopY: number) {
     const clef = type === "treble" ? g.trebleClef : g.bassClef;
     const clefX = BRACE_WIDTH + 4;
-    const clefY = staffTopY - clef.originY + (type === "treble" ? STAFF_LINE_SPACING * 2 : STAFF_LINE_SPACING);
-    const clefScale = type === "treble"
-      ? (STAFF_LINE_SPACING * 4) / clef.height * 1.8
-      : (STAFF_LINE_SPACING * 3) / clef.height * 1.5;
+    // Scale so the clef spans the right number of staff spaces
+    const targetHeight = type === "treble"
+      ? STAFF_LINE_SPACING * 4 * 1.8
+      : STAFF_LINE_SPACING * 3 * 1.5;
+    const s = targetHeight / clef.height;
+    // In font coords, y=0 is the baseline (reference line for the clef).
+    // After scale(s, -s), font y=0 maps to the translate Y.
+    // Treble clef: baseline = G4 line = 2nd line from bottom = staffTopY + 3*spacing
+    // Bass clef: baseline = F3 line = 2nd line from top = staffTopY + spacing
+    const refLineY = type === "treble"
+      ? staffTopY + STAFF_LINE_SPACING * 3
+      : staffTopY + STAFF_LINE_SPACING;
 
     return (
       <g
         className={`bc-staff__clef--${type}`}
-        transform={`translate(${clefX}, ${clefY}) scale(${clefScale})`}
+        transform={`translate(${clefX}, ${refLineY}) scale(${s}, ${-s})`}
       >
         <path d={clef.path} fill={staffColor} />
       </g>
@@ -103,13 +114,16 @@ export function StaffNotation({
     y: number,
   ) {
     const glyph = type === "sharp" ? g.sharp : g.flat;
-    const accScale = STAFF_LINE_SPACING / glyph.height * 2.2;
-    const accX = x - glyph.width * accScale / 2;
-    const accY = y - glyph.height * accScale / 2;
+    // Scale accidental to ~2.2 staff spaces tall
+    const targetHeight = STAFF_LINE_SPACING * 2.2;
+    const s = targetHeight / glyph.height;
+    // Center horizontally at x, vertically at y
+    const accX = x - (glyph.width * s) / 2;
+
     return (
       <g
         className="bc-staff__accidental"
-        transform={`translate(${accX}, ${accY}) scale(${accScale})`}
+        transform={`translate(${accX}, ${y}) scale(${s}, ${-s})`}
       >
         <path d={glyph.path} fill={noteColor} />
       </g>

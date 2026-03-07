@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { createRoot } from "react-dom/client";
-import { PianoKeyboard, PianoChord, StaffNotation, ProgressionView, isProgressionRequest, parseProgressionRequest, resolveProgressionRequest } from "../src";
+import { PianoKeyboard, PianoChord, StaffNotation, ProgressionView, isProgressionRequest, parseProgressionRequest, resolveProgressionRequest, BRAVURA_GLYPHS, PETALUMA_GLYPHS } from "../src";
+import type { StaffGlyphSet } from "../src";
 import type { UIThemeMode } from "../src";
 
 const SCALE_OPTIONS = [
@@ -278,6 +279,55 @@ function Collapsible({ title, children }: { title: string; children: React.React
   );
 }
 
+const GLYPH_OPTIONS: { label: string; value: StaffGlyphSet }[] = [
+  { label: "Bravura", value: BRAVURA_GLYPHS },
+  { label: "Petaluma", value: PETALUMA_GLYPHS },
+];
+
+function StaffNotationDemo({ uiTheme }: { uiTheme: UIThemeMode }) {
+  const [glyphs, setGlyphs] = useState<StaffGlyphSet>(BRAVURA_GLYPHS);
+
+  return (
+    <>
+      <div style={{ marginBottom: "1rem", display: "flex", justifyContent: "center" }}>
+        <PillGroup
+          label="Font"
+          options={GLYPH_OPTIONS.map((o) => ({ label: o.label, value: o.label }))}
+          value={glyphs.name}
+          onChange={(name) => {
+            const found = GLYPH_OPTIONS.find((o) => o.label === name);
+            if (found) setGlyphs(found.value);
+          }}
+        />
+      </div>
+      <div className="row" style={{ marginBottom: "1rem" }}>
+        <div className="glass-card">
+          <span className="example-label">Staff: Cmaj7 ({glyphs.name})</span>
+          <StaffNotation notes={["C", "E", "G", "B"]} chordLabel="Cmaj7" scale={0.7} glyphs={glyphs} />
+        </div>
+        <div className="glass-card">
+          <span className="example-label">Staff: Dm7 ({glyphs.name})</span>
+          <StaffNotation notes={["D", "F", "A", "C"]} chordLabel="Dm7" scale={0.7} glyphs={glyphs} />
+        </div>
+        <div className="glass-card">
+          <span className="example-label">Staff: G7 ({glyphs.name})</span>
+          <StaffNotation notes={["G", "B", "D", "F"]} chordLabel="G7" scale={0.7} glyphs={glyphs} />
+        </div>
+      </div>
+      <div className="row" style={{ marginBottom: "1rem" }}>
+        <div className="glass-card">
+          <span className="example-label">Both: Cmaj7</span>
+          <PianoChord chord="Cmaj7" display="both" uiTheme={uiTheme} />
+        </div>
+        <div className="glass-card">
+          <span className="example-label">Grand staff — Cmaj7/G ({glyphs.name})</span>
+          <StaffNotation notes={["G", "C", "E", "G", "B"]} lhNotes={["G"]} lhOctave={2} rhOctave={4} chordLabel="Cmaj7/G" scale={0.7} glyphs={glyphs} />
+        </div>
+      </div>
+    </>
+  );
+}
+
 function App() {
   const [uiTheme, setUiTheme] = useState<UIThemeMode>("light");
 
@@ -396,30 +446,7 @@ function App() {
         </Collapsible>
 
         <Collapsible title="Staff Notation">
-          <div className="row" style={{ marginBottom: "1rem" }}>
-            <div className="glass-card">
-              <span className="example-label">Staff: Cmaj7</span>
-              <PianoChord chord="Cmaj7" display="staff" uiTheme={uiTheme} />
-            </div>
-            <div className="glass-card">
-              <span className="example-label">Staff: Dm7</span>
-              <PianoChord chord="Dm7" display="staff" uiTheme={uiTheme} />
-            </div>
-            <div className="glass-card">
-              <span className="example-label">Both: G7</span>
-              <PianoChord chord="G7" display="both" uiTheme={uiTheme} />
-            </div>
-          </div>
-          <div className="row" style={{ marginBottom: "1rem" }}>
-            <div className="glass-card">
-              <span className="example-label">StaffNotation direct — C E G B</span>
-              <StaffNotation notes={["C", "E", "G", "B"]} chordLabel="Cmaj7" scale={0.7} />
-            </div>
-            <div className="glass-card">
-              <span className="example-label">Grand staff — with bass</span>
-              <StaffNotation notes={["G", "C", "E", "G", "B"]} lhNotes={["G"]} lhOctave={2} rhOctave={4} chordLabel="Cmaj7/G" scale={0.7} />
-            </div>
-          </div>
+          <StaffNotationDemo uiTheme={uiTheme} />
         </Collapsible>
 
         <Collapsible title="Progressions">

@@ -27,7 +27,7 @@ export {
   mapHighlights, normalizeNote,
   autoFingering,
   computeStaffLayout,
-  getDefaultGlyphs, setDefaultGlyphs, BRAVURA_GLYPHS,
+  getDefaultGlyphs, setDefaultGlyphs, BRAVURA_GLYPHS, PETALUMA_GLYPHS,
   // SVG constants
   WHITE_KEY_WIDTH, WHITE_KEY_WIDTH_EXACT, WHITE_KEY_HEIGHT_COMPACT, WHITE_KEY_HEIGHT_EXACT,
   WHITE_KEY_RY,

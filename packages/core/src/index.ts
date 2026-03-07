@@ -9,7 +9,7 @@ export { mapHighlights, normalizeNote } from "./engine/highlight-mapper";
 export { autoFingering } from "./engine/auto-fingering";
 export { computeStaffLayout } from "./engine/staff-layout";
 export type { StaffNote, StaffLayoutResult, StaffLayoutOptions } from "./engine/staff-layout";
-export { getDefaultGlyphs, setDefaultGlyphs, BRAVURA_GLYPHS } from "./engine/staff-glyphs";
+export { getDefaultGlyphs, setDefaultGlyphs, BRAVURA_GLYPHS, PETALUMA_GLYPHS } from "./engine/staff-glyphs";
 export type { StaffGlyphSet } from "./engine/staff-glyphs";
 export {
   STAFF_LINE_SPACING, HALF_STAFF_SPACING, STAFF_WIDTH, CLEF_AREA_WIDTH,
