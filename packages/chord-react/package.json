@@ -1,0 +1,49 @@
+{
+  "name": "@better-chord/react",
+  "version": "0.1.0",
+  "description": "React component library for SVG piano chord diagrams",
+  "type": "module",
+  "main": "./dist/better-chord-react.cjs",
+  "module": "./dist/better-chord-react.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/better-chord-react.js",
+      "require": "./dist/better-chord-react.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "lint": "tsc --noEmit",
+    "test": "vitest",
+    "test:run": "vitest run"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
+  },
+  "dependencies": {
+    "@better-chord/voicings": "*",
+    "smplr": "^0.18.1",
+    "tonal": "^6.3.0"
+  },
+  "devDependencies": {
+    "@testing-library/react": "^16.1.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "jsdom": "^25.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "typescript": "^5.7.0",
+    "vite": "^6.0.0",
+    "vite-plugin-dts": "^4.3.0",
+    "vitest": "^2.1.0"
+  },
+  "license": "MIT"
+}
