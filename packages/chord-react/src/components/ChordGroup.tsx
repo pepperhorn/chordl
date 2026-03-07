@@ -1,5 +1,6 @@
-import type { Format, ColorTheme, WhiteNote } from "../types";
+import type { Format, ColorTheme, WhiteNote, DisplayMode } from "../types";
 import { PianoKeyboard } from "./PianoKeyboard";
+import { StaffNotation } from "./StaffNotation";
 import { calculateLayout, normalizeNote, WHITE_NOTE_ORDER } from "@better-chord/core";
 import type { ProgressionChord } from "@better-chord/core";
 import { useUITheme } from "../ui-theme";
@@ -12,6 +13,7 @@ export interface ChordGroupProps {
   highlightColor?: string;
   showPlayback?: boolean;
   scale?: number;
+  display?: DisplayMode;
 }
 
 /**
@@ -33,6 +35,7 @@ export function ChordGroup({
   highlightColor,
   showPlayback = true,
   scale,
+  display = "keyboard",
 }: ChordGroupProps) {
   const { tokens: ui } = useUITheme();
   // Calculate all layouts, then use the max size for uniform keyboards
@@ -91,17 +94,46 @@ export function ChordGroup({
             <div className="bc-chord-group__symbol" style={{ fontSize: 12, fontWeight: 500, marginBottom: 4 }}>
               {chord.symbol}
             </div>
-            <PianoKeyboard
-              format={format}
-              size={uniformSize}
-              startFrom={layouts[i].startFrom as WhiteNote}
-              highlightKeys={highlightKeys}
-              theme={theme}
-              highlightColor={highlightColor}
-              showPlayback={showPlayback}
-              chordLabel={chord.symbol}
-              scale={scale}
-            />
+            {display === "staff" ? (
+              <StaffNotation
+                notes={chord.notes}
+                chordLabel={chord.symbol}
+                showPlayback={showPlayback}
+                scale={scale}
+              />
+            ) : display === "both" ? (
+              <div className="bc-display-both" style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+                <StaffNotation
+                  notes={chord.notes}
+                  chordLabel={chord.symbol}
+                  showPlayback={false}
+                  scale={scale}
+                />
+                <PianoKeyboard
+                  format={format}
+                  size={uniformSize}
+                  startFrom={layouts[i].startFrom as WhiteNote}
+                  highlightKeys={highlightKeys}
+                  theme={theme}
+                  highlightColor={highlightColor}
+                  showPlayback={showPlayback}
+                  chordLabel={chord.symbol}
+                  scale={scale}
+                />
+              </div>
+            ) : (
+              <PianoKeyboard
+                format={format}
+                size={uniformSize}
+                startFrom={layouts[i].startFrom as WhiteNote}
+                highlightKeys={highlightKeys}
+                theme={theme}
+                highlightColor={highlightColor}
+                showPlayback={showPlayback}
+                chordLabel={chord.symbol}
+                scale={scale}
+              />
+            )}
             {chord.voicingStyle && (
               <div className="bc-chord-group__voicing-style" style={{ fontSize: 10, color: ui.textSubtle, marginTop: 2 }}>
                 {chord.voicingStyle}

@@ -3,6 +3,8 @@ export { PianoKeyboard } from "./components/PianoKeyboard";
 export { PianoChord } from "./components/PianoChord";
 export { ChordGroup } from "./components/ChordGroup";
 export { ProgressionView } from "./components/ProgressionView";
+export { StaffNotation } from "./components/StaffNotation";
+export type { StaffNotationProps } from "./components/StaffNotation";
 export type { ChordGroupProps } from "./components/ChordGroup";
 export type { ProgressionViewProps, GroupMode } from "./components/ProgressionView";
 
@@ -16,7 +18,7 @@ export { SHOW_NOTE_NAMES, LIGHT_THEME, DARK_THEME, DEFAULT_UI_THEME, getUIThemeT
 export type { UIThemeMode, UIThemeTokens } from "./config";
 
 // ─── React-specific types (local) ──────────────────────────────────────────
-export type { KeyboardProps, ChordProps, PianoChordProps } from "./types";
+export type { KeyboardProps, ChordProps, PianoChordProps, DisplayMode } from "./types";
 
 // ─── Re-export everything from @better-chord/core for backwards compat ─────
 export {
@@ -24,6 +26,8 @@ export {
   computeKeyboard, computeSvgDimensions,
   mapHighlights, normalizeNote,
   autoFingering,
+  computeStaffLayout,
+  getDefaultGlyphs, setDefaultGlyphs, BRAVURA_GLYPHS,
   // SVG constants
   WHITE_KEY_WIDTH, WHITE_KEY_WIDTH_EXACT, WHITE_KEY_HEIGHT_COMPACT, WHITE_KEY_HEIGHT_EXACT,
   WHITE_KEY_RY,
@@ -58,6 +62,9 @@ export type {
   Format, TextSize, WhiteNote, NoteName, ColorTheme,
   ParsedChordRequest, KeyDescriptor, HandBracket,
   ResolvedChord,
+  // Staff types
+  StaffNote, StaffLayoutResult, StaffLayoutOptions,
+  StaffGlyphSet,
   // Parser types
   ParsedProgressionRequest,
   // Layout types

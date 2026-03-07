@@ -44,6 +44,8 @@ export interface KeyboardProps {
   style?: CSSProperties;
 }
 
+export type DisplayMode = "keyboard" | "staff" | "both";
+
 export interface ChordProps {
   chord: string;
   format?: Format;
@@ -52,6 +54,8 @@ export interface ChordProps {
   padding?: number;
   /** Display scale factor (0.5 = 50%, 1 = 100%). Controls maxWidth of the SVG. */
   scale?: number;
+  /** Display mode: keyboard (default), staff notation, or both side-by-side. */
+  display?: DisplayMode;
   /** UI chrome theme: "light" (default) or "dark". */
   uiTheme?: UIThemeMode;
   className?: string;
