@@ -1,7 +1,7 @@
 import { MAX_EXAMPLES } from "../config";
+import { resolveChord } from "../resolver/chord-resolver";
 import { resolveProgression, tokenizeProgression } from "./roman-numeral";
 import { findTemplate, FORM_TEMPLATES } from "./form-templates";
-import { resolveChord } from "../resolver/chord-resolver";
 import {
   findVoicing,
   voicingPitchClasses,
