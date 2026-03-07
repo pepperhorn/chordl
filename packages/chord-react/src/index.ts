@@ -10,6 +10,8 @@ export { parseChordDescription } from "./parser/natural-language";
 export { getTheme } from "./themes";
 export { playBlock, playArpeggiated } from "./audio/playback";
 export { generateMidiFile, downloadMidi } from "./audio/midi-export";
+export { downloadSvg, downloadPng } from "./audio/svg-export";
+export { autoFingering } from "./engine/auto-fingering";
 
 // Re-export voicings from the workspace package
 export {
@@ -59,7 +61,9 @@ export {
   parseProgressionRequest,
 } from "./parser/progression-parser";
 export type { ParsedProgressionRequest } from "./parser/progression-parser";
-export { MAX_EXAMPLES } from "./config";
+export { MAX_EXAMPLES, SHOW_NOTE_NAMES, LIGHT_THEME, DARK_THEME, DEFAULT_UI_THEME, getUIThemeTokens } from "./config";
+export type { UIThemeMode, UIThemeTokens } from "./config";
+export { UIThemeProvider, useUITheme, resolveUITheme } from "./ui-theme";
 
 export type {
   Format,
@@ -71,4 +75,5 @@ export type {
   PianoChordProps,
   ParsedChordRequest,
   KeyDescriptor,
+  TextSize,
 } from "./types";
