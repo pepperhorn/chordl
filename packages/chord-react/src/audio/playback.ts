@@ -32,6 +32,33 @@ function toPlayableNote(note: string, defaultOctave: number = 4): string {
   return `${note}${defaultOctave}`;
 }
 
+/** Semitone value for a pitch class (C=0, C#=1, ..., B=11) */
+const PC_SEMITONES: Record<string, number> = {
+  C: 0, "C#": 1, Db: 1, D: 2, "D#": 3, Eb: 3,
+  E: 4, F: 5, "F#": 6, Gb: 6, G: 7, "G#": 8, Ab: 8,
+  A: 9, "A#": 10, Bb: 10, B: 11,
+};
+
+/**
+ * Assign ascending octaves to pitch classes so they form a rising sequence.
+ * Notes are assumed to be in voicing order (bottom to top).
+ */
+function toAscendingNotes(notes: string[], baseOctave: number = 4): string[] {
+  let octave = baseOctave;
+  let prevSemitone = -1;
+
+  return notes.map((note) => {
+    if (/[0-9]$/.test(note)) return note;
+    const semitone = PC_SEMITONES[note];
+    if (semitone == null) return `${note}${octave}`;
+    if (prevSemitone >= 0 && semitone <= prevSemitone) {
+      octave++;
+    }
+    prevSemitone = semitone;
+    return `${note}${octave}`;
+  });
+}
+
 /**
  * Play all notes simultaneously (block chord).
  */
@@ -44,9 +71,10 @@ export async function playBlock(
   const context = getContext();
   if (context.state === "suspended") await context.resume();
 
+  const ascending = toAscendingNotes(notes, octave);
   const now = context.currentTime;
-  for (const note of notes) {
-    p.start({ note: toPlayableNote(note, octave), time: now, duration });
+  for (const note of ascending) {
+    p.start({ note, time: now, duration });
   }
 }
 
@@ -63,10 +91,11 @@ export async function playArpeggiated(
   const context = getContext();
   if (context.state === "suspended") await context.resume();
 
+  const ascending = toAscendingNotes(notes, octave);
   const now = context.currentTime;
-  for (let i = 0; i < notes.length; i++) {
+  for (let i = 0; i < ascending.length; i++) {
     p.start({
-      note: toPlayableNote(notes[i], octave),
+      note: ascending[i],
       time: now + (i * delayMs) / 1000,
       duration,
     });
