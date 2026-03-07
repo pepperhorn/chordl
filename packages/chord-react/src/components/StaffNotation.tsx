@@ -162,7 +162,7 @@ export function StaffNotation({
         {chordLabel && (
           <text
             className="bc-staff__label"
-            x={STAFF_WIDTH / 2}
+            x={NOTE_COLUMN_X}
             y={STAFF_TOP_MARGIN - 8}
             textAnchor="middle"
             fontSize={13}
