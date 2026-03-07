@@ -75,7 +75,7 @@ function annotationRowHeight(size: TextSize = "base"): number {
 function renderAnnotations(
   keys: { note: string; octave: number; isBlack: boolean; x: number; width: number }[],
   highlightKeys: string[],
-  fingering: number[] | undefined,
+  fingering: (number | string)[] | undefined,
   hasNoteNames: boolean,
   hasFingering: boolean,
   noteNameSize: TextSize,
@@ -133,8 +133,10 @@ function renderAnnotations(
         </text>
       ))}
       {hasFingering && highlighted.map((h, i) => {
-        const finger = fingering![h.index];
-        if (finger == null) return null;
+        const raw = fingering![h.index];
+        if (raw == null) return null;
+        // Numbers beyond 1–5 display as "?" to prompt the user to fix
+        const display = typeof raw === "number" && (raw < 0 || raw > 5) ? "?" : raw;
         return (
           <text
             key={`finger-${i}`}
@@ -146,7 +148,7 @@ function renderAnnotations(
             fill={uiTokens.textMuted}
             fontFamily="system-ui, sans-serif"
           >
-            {finger}
+            {display}
           </text>
         );
       })}
@@ -173,6 +175,8 @@ export function PianoKeyboard({
   noteNameSize = "base",
   fingering,
   fingeringSize = "base",
+  clipLeft = false,
+  clipRight = false,
   uiTheme,
   className,
   style,
@@ -183,7 +187,11 @@ export function PianoKeyboard({
   const keys = computeKeyboard(startFrom, size, format);
   const resolvedTheme = resolveTheme(theme, highlightColor);
   const fills = mapHighlights(keys, highlightKeys, resolvedTheme);
-  const { width, height: keyboardHeight } = computeSvgDimensions(size, format);
+  const { width: fullWidth, height: keyboardHeight } = computeSvgDimensions(size, format);
+  const clipInset = WHITE_KEY_WIDTH / 2;
+  const vbX = clipLeft ? clipInset : 0;
+  const vbW = fullWidth - (clipLeft ? clipInset : 0) - (clipRight ? clipInset : 0);
+  const width = fullWidth;
   const hasPlayback = showPlayback && highlightKeys.length > 0;
   const hasBrackets = handBrackets && handBrackets.length > 0;
   const controlsHeight = hasPlayback ? 30 : 0;
@@ -204,16 +212,16 @@ export function PianoKeyboard({
     .map((k, i) => ({ key: k, fill: fills[i], index: i }))
     .filter(({ key }) => key.isBlack);
 
-  // Position controls in top-right
-  const controlsX = width - 144; // 5 buttons * 22px + 4 gaps * 4px + 10px section gap = 136, plus margin
+  // Position controls in top-right of visible area
+  const controlsX = vbX + vbW - 146;
   const controlsY = 4;
 
   const svg = (
     <svg
-      viewBox={`0 0 ${width} ${height}`}
+      viewBox={`${vbX} 0 ${vbW} ${height}`}
       xmlns="http://www.w3.org/2000/svg"
       className={`bc-keyboard ${className ?? ""}`.trim()}
-      style={{ width: "100%", maxWidth: width * scale * 2, ...style }}
+      style={{ width: "100%", maxWidth: vbW * scale * 2, ...style }}
       role="img"
       aria-label="Piano keyboard"
     >

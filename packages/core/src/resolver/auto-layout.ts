@@ -46,6 +46,10 @@ export interface LayoutResult {
   size: number;
   /** Relative octave where the lowest chord note sits (for octave-qualified highlights). */
   chordOctave: number;
+  /** True when the left edge was extended for black-key context (crop half a key). */
+  clipLeft?: boolean;
+  /** True when the right edge was extended for black-key context (crop half a key). */
+  clipRight?: boolean;
 }
 
 export function calculateLayout(
@@ -69,8 +73,9 @@ export function calculateLayout(
       const maxIdx = Math.max(...indices);
       let span = maxIdx - startIdx + 1 + padding;
       // Black-key context: extend right edge if it lands on a sharp key
-      if (whiteIdxHasSharp(startIdx + span - 1)) span += 1;
-      return { startFrom: start, size: Math.max(span, notes.length + 2), chordOctave: 0 };
+      let clipRight = false;
+      if (whiteIdxHasSharp(startIdx + span - 1)) { span += 1; clipRight = true; }
+      return { startFrom: start, size: Math.max(span, notes.length + 2), chordOctave: 0, clipRight };
     }
     return { startFrom: start, size: 8, chordOctave: 0 };
   }
@@ -111,8 +116,10 @@ export function calculateLayout(
 
   // Black-key context padding: if an edge white key has a sharp, extend by 1
   // so the neighboring black key is visible, giving orientation landmarks.
-  if (whiteIdxHasSharp(startIdx)) startIdx -= 1;
-  if (whiteIdxHasSharp(endIdx)) endIdx += 1;
+  let clipLeft = false;
+  let clipRight = false;
+  if (whiteIdxHasSharp(startIdx)) { startIdx -= 1; clipLeft = true; }
+  if (whiteIdxHasSharp(endIdx)) { endIdx += 1; clipRight = true; }
 
   const startNote = WHITE_NOTE_ORDER[((startIdx % 7) + 7) % 7] as WhiteNote;
   const keyCount = endIdx - startIdx + 1;
@@ -131,5 +138,7 @@ export function calculateLayout(
     startFrom: startNote,
     size: Math.max(keyCount, notes.length + 2),
     chordOctave,
+    clipLeft,
+    clipRight,
   };
 }
