@@ -11,6 +11,14 @@ const NOTE_TO_SEMITONE: Record<string, number> = {
   B: 11,
 };
 
+// White notes that have a sharp (black key to their right)
+const HAS_SHARP = new Set<string>(["C", "D", "F", "G", "A"]);
+
+/** Check if a white-key index (mod 7) has a sharp. */
+export function whiteIdxHasSharp(idx: number): boolean {
+  return HAS_SHARP.has(WHITE_NOTE_ORDER[((idx % 7) + 7) % 7]);
+}
+
 // Map a note to its nearest white key (the white key it sits on or just below)
 function nearestWhiteKey(note: string): WhiteNote {
   const normalized = FLAT_TO_SHARP[note] ?? note;
@@ -59,7 +67,9 @@ export function calculateLayout(
         return idx;
       });
       const maxIdx = Math.max(...indices);
-      const span = maxIdx - startIdx + 1 + padding;
+      let span = maxIdx - startIdx + 1 + padding;
+      // Black-key context: extend right edge if it lands on a sharp key
+      if (whiteIdxHasSharp(startIdx + span - 1)) span += 1;
       return { startFrom: start, size: Math.max(span, notes.length + 2), chordOctave: 0 };
     }
     return { startFrom: start, size: 8, chordOctave: 0 };
@@ -97,16 +107,22 @@ export function calculateLayout(
   const maxAsc = ascending[ascending.length - 1];
 
   let startIdx = minAsc - padding;
-  const endIdx = maxAsc + padding;
+  let endIdx = maxAsc + padding;
+
+  // Black-key context padding: if an edge white key has a sharp, extend by 1
+  // so the neighboring black key is visible, giving orientation landmarks.
+  if (whiteIdxHasSharp(startIdx)) startIdx -= 1;
+  if (whiteIdxHasSharp(endIdx)) endIdx += 1;
 
   const startNote = WHITE_NOTE_ORDER[((startIdx % 7) + 7) % 7] as WhiteNote;
   const keyCount = endIdx - startIdx + 1;
 
   // Calculate which relative octave the chord notes live in.
   // Count how many times we cross C going from startNote to the first chord note.
+  const actualPadding = minAsc - startIdx;
   const startNoteIdx = WHITE_NOTE_ORDER.indexOf(startNote);
   let chordOctave = 0;
-  for (let i = 1; i <= padding; i++) {
+  for (let i = 1; i <= actualPadding; i++) {
     const noteIdx = (startNoteIdx + i) % 7;
     if (WHITE_NOTE_ORDER[noteIdx] === "C") chordOctave++;
   }
