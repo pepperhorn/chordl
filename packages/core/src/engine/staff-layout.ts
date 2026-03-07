@@ -6,9 +6,11 @@ import {
   STAFF_GAP,
   STAFF_TOP_MARGIN,
   STAFF_BOTTOM_MARGIN,
-  LEDGER_LINE_EXTEND,
   NOTE_COLUMN_X,
+  NOTE_HEAD_RX,
   ACCIDENTAL_OFFSET,
+  SECOND_OFFSET,
+  ACCIDENTAL_COL_WIDTH,
 } from "./staff-constants";
 
 export interface StaffNote {
@@ -16,9 +18,11 @@ export interface StaffNote {
   octave: number;
   staff: "treble" | "bass";
   y: number;
+  noteX: number; // X center of notehead (may be offset for seconds)
   accidental: "sharp" | "flat" | null;
-  ledgerLines: number[];
   accidentalX: number;
+  ledgerLines: number[];
+  diatonicPos: number; // absolute diatonic position (for collision detection)
 }
 
 export interface StaffLayoutResult {
@@ -40,14 +44,8 @@ const DIATONIC_INDEX: Record<string, number> = {
   C: 0, D: 1, E: 2, F: 3, G: 4, A: 5, B: 6,
 };
 
-// Treble staff bottom line = E4 → absolutePos = 4*7 + 2 = 30
-const TREBLE_BOTTOM_LINE_POS = 30;
-// Bass staff bottom line = G2 → absolutePos = 2*7 + 4 = 18
-const BASS_BOTTOM_LINE_POS = 18;
-
-// Middle C = C4 → absolutePos = 4*7 + 0 = 28
-// In treble, C4 is 1 step below bottom line (E4=30), so 1 ledger line below
-// In bass, C4 is 2 steps above top line (A3=26), so 1 ledger line above
+const TREBLE_BOTTOM_LINE_POS = 30; // E4
+const BASS_BOTTOM_LINE_POS = 18;   // G2
 
 function normalizePitchClass(note: string): string {
   return FLAT_TO_SHARP[note] ?? note;
@@ -63,8 +61,8 @@ function noteToMidi(pitchClass: string, octave: number): number {
     C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11,
   };
   const base = chromaticBase[letter] ?? 0;
-  const accidental = pitchClass.includes("#") ? 1 : pitchClass.includes("b") ? -1 : 0;
-  return (octave + 1) * 12 + base + accidental;
+  const acc = pitchClass.includes("#") ? 1 : pitchClass.includes("b") ? -1 : 0;
+  return (octave + 1) * 12 + base + acc;
 }
 
 function absoluteDiatonicPos(pitchClass: string, octave: number): number {
@@ -73,8 +71,7 @@ function absoluteDiatonicPos(pitchClass: string, octave: number): number {
 }
 
 function computeY(absolutePos: number, staffBottomLineY: number, refPos: number): number {
-  const relativeSteps = absolutePos - refPos;
-  return staffBottomLineY - relativeSteps * HALF_STAFF_SPACING;
+  return staffBottomLineY - (absolutePos - refPos) * HALF_STAFF_SPACING;
 }
 
 function computeLedgerLines(
@@ -82,23 +79,18 @@ function computeLedgerLines(
   staffBottomLinePos: number,
   staffBottomLineY: number,
 ): number[] {
-  const staffTopLinePos = staffBottomLinePos + 8; // 5 lines = 4 spaces = 8 diatonic steps
+  const staffTopLinePos = staffBottomLinePos + 8;
   const ledgers: number[] = [];
 
   if (absolutePos < staffBottomLinePos) {
-    // Below staff — ledger lines at even steps below bottom line
     for (let pos = staffBottomLinePos - 2; pos >= absolutePos; pos -= 2) {
       ledgers.push(computeY(pos, staffBottomLineY, staffBottomLinePos));
     }
   } else if (absolutePos > staffTopLinePos) {
-    // Above staff — ledger lines at even steps above top line
     for (let pos = staffTopLinePos + 2; pos <= absolutePos; pos += 2) {
       ledgers.push(computeY(pos, staffBottomLineY, staffBottomLinePos));
     }
   }
-  // Special case: notes ON a ledger line position (like middle C)
-  // The above loops already include them since they go >=/>= the note position
-
   return ledgers;
 }
 
@@ -119,35 +111,83 @@ function assignOctaves(
       currentOctave++;
     }
     prevDiatonic = diatonic;
-
     result.push({ pitchClass: pc, octave: currentOctave });
   }
   return result;
 }
 
-function staggerAccidentals(notes: StaffNote[]): void {
-  // Find notes with accidentals and stagger their X positions
-  // when they are close together (within 2 diatonic steps)
-  const accNotes = notes.filter((n) => n.accidental !== null);
-  if (accNotes.length <= 1) return;
+/**
+ * Standard engraving: when two adjacent notes form a second (1 diatonic step),
+ * the higher note shifts right so the noteheads sit side-by-side.
+ *
+ * Process bottom-to-top. When a note is exactly 1 diatonic step above
+ * the previous, and the previous was NOT offset, offset this one right.
+ * If the previous was already offset, don't offset this one (alternating pattern).
+ */
+function resolveNoteheadOffsets(notes: StaffNote[]): void {
+  // Sort by diatonic position ascending (lowest first)
+  const sorted = [...notes].sort((a, b) => a.diatonicPos - b.diatonicPos);
 
-  // Sort by Y (top to bottom, lower Y = higher on staff)
-  accNotes.sort((a, b) => a.y - b.y);
+  const offsetSet = new Set<StaffNote>();
 
-  let staggered = false;
-  for (let i = 1; i < accNotes.length; i++) {
-    const yDiff = Math.abs(accNotes[i].y - accNotes[i - 1].y);
-    // If notes are within ~3 staff positions, stagger
-    if (yDiff < STAFF_LINE_SPACING * 1.5) {
-      if (!staggered) {
-        accNotes[i].accidentalX = NOTE_COLUMN_X - ACCIDENTAL_OFFSET * 2;
-        staggered = true;
-      } else {
-        staggered = false;
+  for (let i = 1; i < sorted.length; i++) {
+    const gap = sorted[i].diatonicPos - sorted[i - 1].diatonicPos;
+    if (gap === 1) {
+      // Second interval — the upper note gets offset, unless the lower was already offset
+      if (!offsetSet.has(sorted[i - 1])) {
+        offsetSet.add(sorted[i]);
+        sorted[i].noteX = NOTE_COLUMN_X + SECOND_OFFSET;
       }
-    } else {
-      staggered = false;
+      // If lower was offset, upper stays normal (alternating)
     }
+  }
+}
+
+/**
+ * Standard engraving accidental placement.
+ *
+ * Process notes top-to-bottom (highest pitch first). Each accidental
+ * tries the closest column to the notehead first (column 0 = just left of note).
+ * If that column is occupied by an accidental whose Y is too close (within
+ * ~3 staff spaces), try the next column further left.
+ *
+ * Also: if a note's notehead is offset right (second), its accidental
+ * must clear the offset notehead — so it starts from column 0 relative
+ * to the LEFT notehead position (normal noteX).
+ */
+function resolveAccidentalPositions(notes: StaffNote[]): void {
+  const accNotes = notes
+    .filter((n) => n.accidental !== null)
+    .sort((a, b) => a.y - b.y); // top-to-bottom (lower Y = higher on staff)
+
+  if (accNotes.length === 0) return;
+
+  // Track occupied columns: array of { column, y } entries
+  const occupied: Array<{ col: number; y: number }> = [];
+
+  // Minimum Y distance before two accidentals can share a column
+  const minYGap = STAFF_LINE_SPACING * 2.5;
+
+  for (const note of accNotes) {
+    // Base X: just left of the notehead. If any note is offset right,
+    // accidentals should clear it by starting further left.
+    const hasOffsetNeighbor = notes.some(
+      (n) => n.noteX > NOTE_COLUMN_X && Math.abs(n.y - note.y) < STAFF_LINE_SPACING * 2,
+    );
+    const startCol = hasOffsetNeighbor ? 1 : 0;
+
+    let col = startCol;
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const conflict = occupied.some(
+        (o) => o.col === col && Math.abs(o.y - note.y) < minYGap,
+      );
+      if (!conflict) break;
+      col++;
+    }
+
+    occupied.push({ col, y: note.y });
+    note.accidentalX = NOTE_COLUMN_X - ACCIDENTAL_OFFSET - col * ACCIDENTAL_COL_WIDTH;
   }
 }
 
@@ -157,7 +197,6 @@ export function computeStaffLayout(
 ): StaffLayoutResult {
   const { lhNotes, rhOctave = 4, lhOctave = 3 } = options;
 
-  // Assign octaves to RH notes
   const rhNotesList = lhNotes
     ? notes.filter((n) => !lhNotes.includes(n))
     : notes;
@@ -167,7 +206,6 @@ export function computeStaffLayout(
   const lhWithOctaves = assignOctaves(lhNotesList, lhOctave);
   const allWithOctaves = [...lhWithOctaves, ...rhWithOctaves];
 
-  // Determine staff assignment
   const hasTreble = allWithOctaves.some(
     (n) => noteToMidi(n.pitchClass, n.octave) >= 60,
   );
@@ -175,14 +213,10 @@ export function computeStaffLayout(
     (n) => noteToMidi(n.pitchClass, n.octave) < 60,
   );
 
-  // Override: if lhNotes is explicitly set, those go to bass
   const staffMode: "treble" | "bass" | "grand" =
     hasTreble && hasBass ? "grand" : hasTreble ? "treble" : "bass";
 
-  // Compute Y positions for staff lines
-  // Treble bottom line (E4) Y position
   const trebleBottomLineY = STAFF_TOP_MARGIN + STAFF_LINE_SPACING * 4;
-  // Bass top line starts after treble + gap
   const bassTopLineY =
     staffMode === "grand"
       ? trebleBottomLineY + STAFF_GAP
@@ -202,25 +236,22 @@ export function computeStaffLayout(
       : midi < 60;
 
     let staff: "treble" | "bass";
-    let refPos: number;
     let bottomLineY: number;
     let bottomLinePos: number;
 
     if (isLH && staffMode !== "treble") {
       staff = "bass";
-      refPos = BASS_BOTTOM_LINE_POS;
       bottomLineY = bassBottomLineY;
       bottomLinePos = BASS_BOTTOM_LINE_POS;
     } else {
       staff = "treble";
-      refPos = TREBLE_BOTTOM_LINE_POS;
       bottomLineY = trebleBottomLineY;
       bottomLinePos = TREBLE_BOTTOM_LINE_POS;
     }
 
-    const absPos = absoluteDiatonicPos(n.pitchClass, n.octave);
-    const y = computeY(absPos, bottomLineY, refPos);
-    const ledgerLines = computeLedgerLines(absPos, bottomLinePos, bottomLineY);
+    const diatonicPos = absoluteDiatonicPos(n.pitchClass, n.octave);
+    const y = computeY(diatonicPos, bottomLineY, bottomLinePos);
+    const ledgerLines = computeLedgerLines(diatonicPos, bottomLinePos, bottomLineY);
 
     const accidental: "sharp" | "flat" | null = n.pitchClass.includes("#")
       ? "sharp"
@@ -233,23 +264,26 @@ export function computeStaffLayout(
       octave: n.octave,
       staff,
       y,
+      noteX: NOTE_COLUMN_X,
       accidental,
-      ledgerLines,
       accidentalX: NOTE_COLUMN_X - ACCIDENTAL_OFFSET,
+      ledgerLines,
+      diatonicPos,
     };
   });
 
-  // Stagger accidentals that overlap
-  staggerAccidentals(staffNotes);
+  // Resolve notehead offsets for seconds
+  resolveNoteheadOffsets(staffNotes);
+
+  // Resolve accidental column positions
+  resolveAccidentalPositions(staffNotes);
 
   // Total height
   const lastLineY =
     staffMode === "bass" || staffMode === "grand"
       ? bassBottomLineY
       : trebleBottomLineY;
-  // Account for notes that extend below the bottom
   const maxNoteY = Math.max(lastLineY, ...staffNotes.map((n) => n.y));
-  // Account for ledger lines below
   const maxLedgerY = Math.max(
     lastLineY,
     ...staffNotes.flatMap((n) => n.ledgerLines),

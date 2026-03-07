@@ -220,16 +220,21 @@ export function StaffNotation({
 
           {/* Notes */}
           <g className="bc-staff__notes">
-            {layout.notes.map((note, i) => (
+            {layout.notes.map((note, i) => {
+              // Ledger lines extend to cover offset noteheads
+              const ledgerLeft = Math.min(note.noteX, NOTE_COLUMN_X) - NOTE_HEAD_RX - LEDGER_LINE_EXTEND;
+              const ledgerRight = Math.max(note.noteX, NOTE_COLUMN_X) + NOTE_HEAD_RX + LEDGER_LINE_EXTEND;
+
+              return (
               <g key={i} className="bc-staff__note">
                 {/* Ledger lines */}
                 {note.ledgerLines.map((ly, j) => (
                   <line
                     key={`ledger-${j}`}
                     className="bc-staff__ledger"
-                    x1={NOTE_COLUMN_X - NOTE_HEAD_RX - LEDGER_LINE_EXTEND}
+                    x1={ledgerLeft}
                     y1={ly}
-                    x2={NOTE_COLUMN_X + NOTE_HEAD_RX + LEDGER_LINE_EXTEND}
+                    x2={ledgerRight}
                     y2={ly}
                     stroke={staffColor}
                     strokeWidth={LEDGER_LINE_STROKE}
@@ -246,17 +251,18 @@ export function StaffNotation({
                 {/* Notehead (open whole note) */}
                 <ellipse
                   className="bc-staff__notehead"
-                  cx={NOTE_COLUMN_X}
+                  cx={note.noteX}
                   cy={note.y}
                   rx={NOTE_HEAD_RX}
                   ry={NOTE_HEAD_RY}
                   fill="none"
                   stroke={noteColor}
                   strokeWidth={NOTE_HEAD_STROKE_WIDTH}
-                  transform={`rotate(${NOTE_HEAD_TILT}, ${NOTE_COLUMN_X}, ${note.y})`}
+                  transform={`rotate(${NOTE_HEAD_TILT}, ${note.noteX}, ${note.y})`}
                 />
               </g>
-            ))}
+              );
+            })}
           </g>
         </g>
       </g>

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { computeStaffLayout } from "../src/engine/staff-layout";
-import { HALF_STAFF_SPACING, STAFF_LINE_SPACING } from "../src/engine/staff-constants";
+import { HALF_STAFF_SPACING, STAFF_LINE_SPACING, NOTE_COLUMN_X, SECOND_OFFSET } from "../src/engine/staff-constants";
 
 describe("computeStaffLayout", () => {
   describe("staff mode detection", () => {
@@ -91,17 +91,52 @@ describe("computeStaffLayout", () => {
     });
   });
 
-  describe("accidental staggering", () => {
+  describe("notehead offsets (seconds)", () => {
+    it("offsets the upper note when two notes are a second apart", () => {
+      // E and F are a second apart — F (upper) should be offset right
+      const result = computeStaffLayout(["E", "F"], { rhOctave: 4 });
+      const eNote = result.notes.find((n) => n.pitchClass === "E")!;
+      const fNote = result.notes.find((n) => n.pitchClass === "F")!;
+      expect(eNote.noteX).toBe(NOTE_COLUMN_X);
+      expect(fNote.noteX).toBe(NOTE_COLUMN_X + SECOND_OFFSET);
+    });
+
+    it("does not offset notes a third or more apart", () => {
+      const result = computeStaffLayout(["C", "E", "G"], { rhOctave: 4 });
+      for (const note of result.notes) {
+        expect(note.noteX).toBe(NOTE_COLUMN_X);
+      }
+    });
+
+    it("alternates offsets for consecutive seconds (cluster)", () => {
+      // C, D, E — C normal, D offset, E normal (since D is already offset)
+      const result = computeStaffLayout(["C", "D", "E"], { rhOctave: 4 });
+      const c = result.notes.find((n) => n.pitchClass === "C")!;
+      const d = result.notes.find((n) => n.pitchClass === "D")!;
+      const e = result.notes.find((n) => n.pitchClass === "E")!;
+      expect(c.noteX).toBe(NOTE_COLUMN_X);
+      expect(d.noteX).toBe(NOTE_COLUMN_X + SECOND_OFFSET);
+      expect(e.noteX).toBe(NOTE_COLUMN_X); // alternates back
+    });
+  });
+
+  describe("accidental collision avoidance", () => {
     it("staggers accidentals on adjacent notes", () => {
       // C# and D# are adjacent — should get different X positions
       const result = computeStaffLayout(["C#", "D#", "G#"], { rhOctave: 4 });
       const accNotes = result.notes.filter((n) => n.accidental === "sharp");
-      // At least two accidentals should exist
       expect(accNotes.length).toBe(3);
-      // C# and D# are close — one should be staggered
       const xPositions = accNotes.map((n) => n.accidentalX);
       const uniquePositions = new Set(xPositions);
       expect(uniquePositions.size).toBeGreaterThan(1);
+    });
+
+    it("pushes accidentals left when notehead is offset", () => {
+      // E and F# — F# is offset right, so its accidental needs to clear E's notehead
+      const result = computeStaffLayout(["E", "F#"], { rhOctave: 4 });
+      const fSharp = result.notes.find((n) => n.pitchClass === "F#")!;
+      // accidentalX should be further left than default
+      expect(fSharp.accidentalX).toBeLessThan(NOTE_COLUMN_X - 14);
     });
   });
 
