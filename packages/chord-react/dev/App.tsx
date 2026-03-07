@@ -55,6 +55,7 @@ function InteractiveInput({ uiTheme }: { uiTheme: UIThemeMode }) {
   const [theme, setTheme] = useState<string>("simple");
   const [keyFormat, setKeyFormat] = useState<"compact" | "exact">("compact");
   const [scale, setScale] = useState(0.5);
+  const [highlightColor, setHighlightColor] = useState("#a0c6e8");
   const [error, setError] = useState<string | null>(null);
 
   const isProg = isProgressionRequest(input);
@@ -177,6 +178,27 @@ function InteractiveInput({ uiTheme }: { uiTheme: UIThemeMode }) {
               </span>
             </div>
           </div>
+        {theme === "simple" && (
+          <div className="control-item">
+            <span className="control-label">Color</span>
+            <div className="control-content">
+              <input
+                type="color"
+                value={highlightColor}
+                onChange={(e) => setHighlightColor(e.target.value)}
+                style={{
+                  width: 32,
+                  height: 32,
+                  border: "none",
+                  borderRadius: 8,
+                  cursor: "pointer",
+                  background: "transparent",
+                  padding: 0,
+                }}
+              />
+            </div>
+          </div>
+        )}
         </div>
       </div>
 
@@ -195,11 +217,11 @@ function InteractiveInput({ uiTheme }: { uiTheme: UIThemeMode }) {
 
       {/* Chord output */}
       <div className="chord-output" style={{ width: "100%" }}>
-        <ErrorBoundary key={input + theme + keyFormat + scale} onError={setError}>
+        <ErrorBoundary key={input + theme + keyFormat + scale + highlightColor} onError={setError}>
           {isProg && progressionResult ? (
             <ProgressionView result={progressionResult} theme={theme} uiTheme={uiTheme} />
           ) : (
-            <PianoChord chord={input} theme={theme} format={keyFormat} scale={scale} uiTheme={uiTheme} />
+            <PianoChord chord={input} theme={theme} format={keyFormat} scale={scale} highlightColor={theme === "simple" ? highlightColor : undefined} uiTheme={uiTheme} />
           )}
         </ErrorBoundary>
       </div>
