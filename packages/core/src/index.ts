@@ -36,5 +36,9 @@ export type { ProgressionRequest, ProgressionResult, ProgressionExample, Progres
 // Audio
 export { generateMidiFile, downloadMidi } from "./audio/midi-export";
 
+// Logging
+export { logChordRequest, LOG_SCHEMA_VERSION } from "./logging";
+export type { ChordLogEntry, LogConfig } from "./logging";
+
 // Themes
 export { getTheme, resolveTheme } from "./themes";
