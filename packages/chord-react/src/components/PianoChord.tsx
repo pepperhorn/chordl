@@ -1,6 +1,7 @@
 import { Note } from "tonal";
-import type { ChordProps, KeyboardProps, HandBracket, WhiteNote } from "../types";
+import type { ChordProps, KeyboardProps, HandBracket, WhiteNote, DisplayMode } from "../types";
 import { PianoKeyboard } from "./PianoKeyboard";
+import { StaffNotation } from "./StaffNotation";
 import {
   parseChordDescription, resolveChord, calculateLayout, whiteIdxHasSharp,
   computeKeyboard, normalizeNote, autoFingering,
@@ -80,7 +81,7 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
     return <PianoKeyboard {...props} />;
   }
 
-  const { chord, format, theme, highlightColor, padding, scale, uiTheme, className, style } =
+  const { chord, format, theme, highlightColor, padding, scale, display = "keyboard", uiTheme, className, style } =
     props;
   const uiCtx = resolveUITheme(uiTheme);
 
@@ -193,6 +194,51 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
     }
   }
 
+  // Staff notation helper — accepts octave-qualified notes for exact pitch matching
+  const renderStaff = (
+    resolvedNotes: string[],
+    opts?: { bassNote?: string; octaveQualifiedNotes?: string[] },
+  ) => {
+    const staffNotes = opts?.bassNote ? [opts.bassNote, ...resolvedNotes] : resolvedNotes;
+    const lhPlaybackOctave = 3 + (parsed.bassOctaveShift ?? 0);
+    const rhPlaybackOctave = 4 + (parsed.chordOctaveShift ?? 0);
+    return (
+      <StaffNotation
+        notes={staffNotes}
+        lhNotes={opts?.bassNote ? [opts.bassNote] : undefined}
+        rhOctave={rhPlaybackOctave}
+        lhOctave={lhPlaybackOctave}
+        octaveQualifiedNotes={opts?.octaveQualifiedNotes}
+        chordLabel={parsed.chordName}
+        scale={scale}
+        showPlayback
+        className={className}
+        style={style}
+      />
+    );
+  };
+
+  // Helper: compute octave-qualified notes from pitch classes and a base octave
+  const computeOctaveQualified = (pitchClasses: string[], baseOctave: number): string[] => {
+    let octave = baseOctave;
+    const firstNorm = normalizeNote(pitchClasses[0]);
+    const firstWhiteIdx = WHITE_NOTE_ORDER.indexOf(
+      firstNorm.replace("#", "") as WhiteNote,
+    );
+    let prevWhiteIdx = firstWhiteIdx;
+
+    return pitchClasses.map((n, i) => {
+      const norm = normalizeNote(n);
+      const whiteKey = norm.replace("#", "") as WhiteNote;
+      const whiteIdx = WHITE_NOTE_ORDER.indexOf(whiteKey);
+      if (i > 0 && whiteIdx <= prevWhiteIdx) {
+        octave++;
+      }
+      prevWhiteIdx = whiteIdx;
+      return `${norm}:${octave}`;
+    });
+  };
+
   // Single continuous keyboard with LH + RH brackets
   if (lhBassNote) {
     const lhNorm = normalizeNote(lhBassNote);
@@ -250,6 +296,22 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
     });
     const allHighlights = [...lhHighlights, ...rhHighlights];
 
+    // Real-octave-qualified notes for staff notation
+    // Keyboard octaves are relative (0, 1, 2); staff needs real MIDI octaves
+    const realLhOctave = 3 + (parsed.bassOctaveShift ?? 0);
+    const realRhBaseOctave = realLhOctave + Math.max(octaveGap, 0);
+    const staffOctaveNotesBass = [
+      `${lhNorm}:${realLhOctave}`,
+      ...notes.map((n) => {
+        const norm = normalizeNote(n);
+        const whiteKey = norm.replace("#", "") as WhiteNote;
+        const whiteIdx = WHITE_NOTE_ORDER.indexOf(whiteKey);
+        const isAboveLhBeforeC = whiteIdx > lhWhiteIdx;
+        const noteOctave = isAboveLhBeforeC ? realRhBaseOctave : realRhBaseOctave + 1;
+        return `${norm}:${noteOctave}`;
+      }),
+    ];
+
     // Find key indices for bracket annotations
     const lhKeyIndices: number[] = [];
     const rhKeyIndices: number[] = [];
@@ -279,31 +341,54 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
     const lhPlaybackOctave = 2 + (parsed.bassOctaveShift ?? 0);
     const rhPlaybackOctave = 3 + (parsed.chordOctaveShift ?? 0);
 
+    const keyboard = (
+      <PianoKeyboard
+        format={resolvedFormat}
+        size={kbSize}
+        startFrom={startNote}
+        highlightKeys={allHighlights}
+        clipLeft={lhClipLeft}
+        clipRight={lhClipRight}
+        allNotes={[lhBassNote, ...notes]}
+        lhNotes={[lhBassNote]}
+        lhOctave={lhPlaybackOctave}
+        rhOctave={rhPlaybackOctave}
+        theme={theme}
+        highlightColor={highlightColor}
+        chordLabel={parsed.chordName}
+        handBrackets={handBrackets}
+        scale={scale}
+        showNoteNames={parsed.showNoteNames}
+        noteNameSize={parsed.noteNameSize}
+        fingering={resolvedFingering}
+        fingeringSize={parsed.fingeringSize}
+        className={className}
+        style={style}
+      />
+    );
+
+    if (display === "staff") {
+      return (
+        <UIThemeProvider value={uiCtx}>
+          {renderStaff(notes, { bassNote: lhBassNote, octaveQualifiedNotes: staffOctaveNotesBass })}
+        </UIThemeProvider>
+      );
+    }
+
+    if (display === "both") {
+      return (
+        <UIThemeProvider value={uiCtx}>
+          <div className="bc-display-both bc-display-both--stacked" style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "center" }}>
+            {keyboard}
+            {renderStaff(notes, { bassNote: lhBassNote, octaveQualifiedNotes: staffOctaveNotesBass })}
+          </div>
+        </UIThemeProvider>
+      );
+    }
+
     return (
       <UIThemeProvider value={uiCtx}>
-        <PianoKeyboard
-          format={resolvedFormat}
-          size={kbSize}
-          startFrom={startNote}
-          highlightKeys={allHighlights}
-          clipLeft={lhClipLeft}
-          clipRight={lhClipRight}
-          allNotes={[lhBassNote, ...notes]}
-          lhNotes={[lhBassNote]}
-          lhOctave={lhPlaybackOctave}
-          rhOctave={rhPlaybackOctave}
-          theme={theme}
-          highlightColor={highlightColor}
-          chordLabel={parsed.chordName}
-          handBrackets={handBrackets}
-          scale={scale}
-          showNoteNames={parsed.showNoteNames}
-          noteNameSize={parsed.noteNameSize}
-          fingering={resolvedFingering}
-          fingeringSize={parsed.fingeringSize}
-          className={className}
-          style={style}
-        />
+        {keyboard}
       </UIThemeProvider>
     );
   }
@@ -338,26 +423,52 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
     });
   }
 
+  const keyboard = (
+    <PianoKeyboard
+      format={resolvedFormat}
+      size={layout.size}
+      startFrom={layout.startFrom as WhiteNote}
+      highlightKeys={highlightKeys}
+      clipLeft={layout.clipLeft}
+      clipRight={layout.clipRight}
+      theme={theme}
+      highlightColor={highlightColor}
+      chordLabel={parsed.chordName}
+      scale={scale}
+      showNoteNames={parsed.showNoteNames}
+      noteNameSize={parsed.noteNameSize}
+      fingering={resolvedFingering}
+      fingeringSize={parsed.fingeringSize}
+      className={className}
+      style={style}
+    />
+  );
+
+  // Octave-qualified notes for staff notation (always compute for accuracy)
+  const staffOctaveNotes = computeOctaveQualified(notes, layout.chordOctave > 0 ? layout.chordOctave : 4);
+
+  if (display === "staff") {
+    return (
+      <UIThemeProvider value={uiCtx}>
+        {renderStaff(notes, { octaveQualifiedNotes: staffOctaveNotes })}
+      </UIThemeProvider>
+    );
+  }
+
+  if (display === "both") {
+    return (
+      <UIThemeProvider value={uiCtx}>
+        <div className="bc-display-both" style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
+          {renderStaff(notes, { octaveQualifiedNotes: staffOctaveNotes })}
+          {keyboard}
+        </div>
+      </UIThemeProvider>
+    );
+  }
+
   return (
     <UIThemeProvider value={uiCtx}>
-      <PianoKeyboard
-        format={resolvedFormat}
-        size={layout.size}
-        startFrom={layout.startFrom as WhiteNote}
-        highlightKeys={highlightKeys}
-        clipLeft={layout.clipLeft}
-        clipRight={layout.clipRight}
-        theme={theme}
-        highlightColor={highlightColor}
-        chordLabel={parsed.chordName}
-        scale={scale}
-        showNoteNames={parsed.showNoteNames}
-        noteNameSize={parsed.noteNameSize}
-        fingering={resolvedFingering}
-        fingeringSize={parsed.fingeringSize}
-        className={className}
-        style={style}
-      />
+      {keyboard}
     </UIThemeProvider>
   );
 }

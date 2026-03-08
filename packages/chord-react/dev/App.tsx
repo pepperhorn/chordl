@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { createRoot } from "react-dom/client";
-import { PianoKeyboard, PianoChord, ProgressionView, isProgressionRequest, parseProgressionRequest, resolveProgressionRequest } from "../src";
+import { PianoKeyboard, PianoChord, StaffNotation, ProgressionView, isProgressionRequest, parseProgressionRequest, resolveProgressionRequest, BRAVURA_GLYPHS, PETALUMA_GLYPHS } from "../src";
+import type { StaffGlyphSet } from "../src";
 import type { UIThemeMode } from "../src";
 
 const SCALE_OPTIONS = [
@@ -50,10 +51,59 @@ function PillGroup<T extends string | number>({
   );
 }
 
+type DisplayMode = "keyboard" | "both" | "staff";
+const DISPLAY_MODES: { value: DisplayMode; label: string }[] = [
+  { value: "keyboard", label: "Diagram" },
+  { value: "both", label: "Both" },
+  { value: "staff", label: "Notation" },
+];
+
+function DisplayToggle({ value, onChange }: { value: DisplayMode; onChange: (v: DisplayMode) => void }) {
+  const idx = DISPLAY_MODES.findIndex((m) => m.value === value);
+  const next = () => onChange(DISPLAY_MODES[(idx + 1) % DISPLAY_MODES.length].value);
+  const current = DISPLAY_MODES[idx];
+
+  return (
+    <div className="control-item">
+      <span className="control-label">Display</span>
+      <div className="control-content">
+        <button
+          onClick={next}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            fontFamily: "inherit",
+            fontSize: "0.8rem",
+            fontWeight: 500,
+            padding: "6px 14px",
+            border: "none",
+            borderRadius: 8,
+            background: "var(--pill-active-bg)",
+            color: "var(--pill-active-text)",
+            cursor: "pointer",
+            transition: "all 0.2s ease",
+            boxShadow: "0 1px 4px rgba(0,0,0,0.15)",
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            {/* Music note icon */}
+            <path d="M9 18V5l12-2v13" />
+            <circle cx="6" cy="18" r="3" fill="currentColor" stroke="none" />
+            <circle cx="18" cy="16" r="3" fill="currentColor" stroke="none" />
+          </svg>
+          {current.label}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function InteractiveInput({ uiTheme }: { uiTheme: UIThemeMode }) {
   const [input, setInput] = useState("Cmaj7#5 starting on G#");
   const [theme, setTheme] = useState<string>("simple");
   const [keyFormat, setKeyFormat] = useState<"compact" | "exact">("compact");
+  const [displayMode, setDisplayMode] = useState<DisplayMode>("keyboard");
   const [scale, setScale] = useState(0.7);
   const [highlightColor, setHighlightColor] = useState("#a0c6e8");
   const [error, setError] = useState<string | null>(null);
@@ -200,6 +250,7 @@ function InteractiveInput({ uiTheme }: { uiTheme: UIThemeMode }) {
             </div>
           </div>
         )}
+        <DisplayToggle value={displayMode} onChange={setDisplayMode} />
       </div>
 
       {/* Error */}
@@ -217,11 +268,11 @@ function InteractiveInput({ uiTheme }: { uiTheme: UIThemeMode }) {
 
       {/* Chord output */}
       <div className="chord-output" style={{ width: "100%" }}>
-        <ErrorBoundary key={input + theme + keyFormat + scale + highlightColor} onError={setError}>
+        <ErrorBoundary key={input + theme + keyFormat + scale + highlightColor + displayMode} onError={setError}>
           {isProg && progressionResult ? (
             <ProgressionView result={progressionResult} theme={theme} uiTheme={uiTheme} />
           ) : (
-            <PianoChord chord={input} theme={theme} format={keyFormat} scale={scale} highlightColor={theme === "simple" ? highlightColor : undefined} uiTheme={uiTheme} />
+            <PianoChord chord={input} theme={theme} format={keyFormat} scale={scale} display={displayMode} highlightColor={theme === "simple" ? highlightColor : undefined} uiTheme={uiTheme} />
           )}
         </ErrorBoundary>
       </div>
@@ -275,6 +326,55 @@ function Collapsible({ title, children }: { title: string; children: React.React
         {children}
       </div>
     </div>
+  );
+}
+
+const GLYPH_OPTIONS: { label: string; value: StaffGlyphSet }[] = [
+  { label: "Bravura", value: BRAVURA_GLYPHS },
+  { label: "Petaluma", value: PETALUMA_GLYPHS },
+];
+
+function StaffNotationDemo({ uiTheme }: { uiTheme: UIThemeMode }) {
+  const [glyphs, setGlyphs] = useState<StaffGlyphSet>(BRAVURA_GLYPHS);
+
+  return (
+    <>
+      <div style={{ marginBottom: "1rem", display: "flex", justifyContent: "center" }}>
+        <PillGroup
+          label="Font"
+          options={GLYPH_OPTIONS.map((o) => ({ label: o.label, value: o.label }))}
+          value={glyphs.name}
+          onChange={(name) => {
+            const found = GLYPH_OPTIONS.find((o) => o.label === name);
+            if (found) setGlyphs(found.value);
+          }}
+        />
+      </div>
+      <div className="row" style={{ marginBottom: "1rem" }}>
+        <div className="glass-card">
+          <span className="example-label">Staff: Cmaj7 ({glyphs.name})</span>
+          <StaffNotation notes={["C", "E", "G", "B"]} chordLabel="Cmaj7" scale={0.7} glyphs={glyphs} />
+        </div>
+        <div className="glass-card">
+          <span className="example-label">Staff: Dm7 ({glyphs.name})</span>
+          <StaffNotation notes={["D", "F", "A", "C"]} chordLabel="Dm7" scale={0.7} glyphs={glyphs} />
+        </div>
+        <div className="glass-card">
+          <span className="example-label">Staff: G7 ({glyphs.name})</span>
+          <StaffNotation notes={["G", "B", "D", "F"]} chordLabel="G7" scale={0.7} glyphs={glyphs} />
+        </div>
+      </div>
+      <div className="row" style={{ marginBottom: "1rem" }}>
+        <div className="glass-card">
+          <span className="example-label">Both: Cmaj7</span>
+          <PianoChord chord="Cmaj7" display="both" uiTheme={uiTheme} />
+        </div>
+        <div className="glass-card">
+          <span className="example-label">Grand staff — Cmaj7/G ({glyphs.name})</span>
+          <StaffNotation notes={["G", "C", "E", "G", "B"]} lhNotes={["G"]} lhOctave={2} rhOctave={4} chordLabel="Cmaj7/G" scale={0.7} glyphs={glyphs} />
+        </div>
+      </div>
+    </>
   );
 }
 
@@ -393,6 +493,10 @@ function App() {
               <PianoChord chord="Am" highlightColor="#ff6b6b" uiTheme={uiTheme} />
             </div>
           </div>
+        </Collapsible>
+
+        <Collapsible title="Staff Notation">
+          <StaffNotationDemo uiTheme={uiTheme} />
         </Collapsible>
 
         <Collapsible title="Progressions">

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { ProgressionResult } from "@better-chord/core";
-import type { Format, ColorTheme } from "../types";
+import type { Format, ColorTheme, DisplayMode } from "../types";
 import type { UIThemeMode } from "../config";
 import { ChordGroup } from "./ChordGroup";
 import { resolveUITheme, UIThemeProvider } from "../ui-theme";
@@ -40,6 +40,7 @@ export function ProgressionView({
   const ui = uiCtx.tokens;
   const [groupMode, setGroupMode] = useState<GroupMode>(defaultGroupMode);
   const [keyFormat, setKeyFormat] = useState<Format>("compact");
+  const [displayMode, setDisplayMode] = useState<DisplayMode>("keyboard");
   const [scale, setScale] = useState(0.5);
 
   const pillGroupStyle = {
@@ -112,6 +113,18 @@ export function ProgressionView({
               Full
             </button>
           </div>
+          <div className="bc-progression__display-toggle" style={pillGroupStyle}>
+            {(["keyboard", "staff", "both"] as DisplayMode[]).map((mode) => (
+              <button
+                key={mode}
+                className="bc-progression__btn"
+                style={pillBtnStyle(displayMode === mode)}
+                onClick={() => setDisplayMode(mode)}
+              >
+                {mode === "keyboard" ? "Keyboard" : mode === "staff" ? "Staff" : "Both"}
+              </button>
+            ))}
+          </div>
           <div className="bc-progression__scale-toggle" style={pillGroupStyle}>
             {SCALE_OPTIONS.map((opt) => (
               <button
@@ -139,11 +152,12 @@ export function ProgressionView({
             highlightColor={highlightColor}
             showPlayback={showPlayback}
             scale={scale}
+            display={displayMode}
           />
         ))
       ) : (
         // Group by chord position — all example 1 first chords, then all second chords, etc.
-        renderByChord(result, format ?? keyFormat, theme, highlightColor, showPlayback, scale)
+        renderByChord(result, format ?? keyFormat, theme, highlightColor, showPlayback, scale, displayMode)
       )}
     </div>
     </UIThemeProvider>
@@ -157,6 +171,7 @@ function renderByChord(
   highlightColor?: string,
   showPlayback?: boolean,
   scale?: number,
+  display?: DisplayMode,
 ) {
   if (result.examples.length === 0) return null;
 
@@ -182,6 +197,7 @@ function renderByChord(
       highlightColor={highlightColor}
       showPlayback={showPlayback}
       scale={scale}
+      display={display}
     />
   ));
 }

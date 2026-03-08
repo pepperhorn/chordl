@@ -7,6 +7,17 @@ export type {
 export { computeKeyboard, computeSvgDimensions } from "./engine/keyboard-layout";
 export { mapHighlights, normalizeNote } from "./engine/highlight-mapper";
 export { autoFingering } from "./engine/auto-fingering";
+export { computeStaffLayout } from "./engine/staff-layout";
+export type { StaffNote, StaffLayoutResult, StaffLayoutOptions } from "./engine/staff-layout";
+export { getDefaultGlyphs, setDefaultGlyphs, BRAVURA_GLYPHS, PETALUMA_GLYPHS } from "./engine/staff-glyphs";
+export type { StaffGlyphSet } from "./engine/staff-glyphs";
+export {
+  STAFF_LINE_SPACING, HALF_STAFF_SPACING, STAFF_WIDTH, CLEF_AREA_WIDTH,
+  NOTE_COLUMN_X, NOTE_HEAD_RX, NOTE_HEAD_RY, NOTE_HEAD_TILT,
+  NOTE_HEAD_STROKE_WIDTH, ACCIDENTAL_OFFSET, LEDGER_LINE_EXTEND,
+  LEDGER_LINE_STROKE, STAFF_GAP, STAFF_TOP_MARGIN, STAFF_BOTTOM_MARGIN,
+  STAFF_LINE_STROKE, BRACE_WIDTH, SECOND_OFFSET, ACCIDENTAL_COL_WIDTH,
+} from "./engine/staff-constants";
 export {
   WHITE_KEY_WIDTH, WHITE_KEY_WIDTH_EXACT, WHITE_KEY_HEIGHT_COMPACT, WHITE_KEY_HEIGHT_EXACT,
   WHITE_KEY_RY,

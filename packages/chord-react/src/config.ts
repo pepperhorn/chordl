@@ -30,6 +30,8 @@ export interface UIThemeTokens {
   playbackBg: string;
   /** Playback button active/playing state */
   playbackActive: string;
+  /** Playback button border */
+  playbackBtnBorder: string;
   /** Bracket annotation color (L.H./R.H.) */
   bracketColor: string;
 }
@@ -48,6 +50,7 @@ export const LIGHT_THEME: UIThemeTokens = {
   iconFill: "#fff",
   playbackBg: "#888",
   playbackActive: "#4a90d9",
+  playbackBtnBorder: "rgba(0,0,0,0.15)",
   bracketColor: "#888",
 };
 
@@ -65,8 +68,14 @@ export const DARK_THEME: UIThemeTokens = {
   iconFill: "#fff",
   playbackBg: "#333",
   playbackActive: "#4a90d9",
+  playbackBtnBorder: "rgba(255,255,255,0.1)",
   bracketColor: "#999",
 };
+
+/** Default arpeggio delay between notes (ms). */
+export function arpeggioDelayMs(): number {
+  return 100;
+}
 
 /** Default UI theme mode. Change this to switch the library default. */
 export const DEFAULT_UI_THEME: UIThemeMode = "light";
