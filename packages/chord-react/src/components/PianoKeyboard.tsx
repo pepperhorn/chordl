@@ -253,6 +253,13 @@ export function PianoKeyboard({
             strokeWidth={DEFAULT_STROKE_WIDTH}
           />
         ))}
+        {/* Border lines at clipped edges */}
+        {clipLeft && (
+          <line x1={vbX} y1={0} x2={vbX} y2={keyboardHeight} stroke={DEFAULT_STROKE} strokeWidth={DEFAULT_STROKE_WIDTH} />
+        )}
+        {clipRight && (
+          <line x1={vbX + vbW} y1={0} x2={vbX + vbW} y2={keyboardHeight} stroke={DEFAULT_STROKE} strokeWidth={DEFAULT_STROKE_WIDTH} />
+        )}
         {blackKeys.map(({ key, fill, index }) => (
           <rect
             key={`black-${index}`}
