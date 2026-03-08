@@ -38,6 +38,18 @@ export interface StaffLayoutOptions {
   lhNotes?: string[];
   rhOctave?: number;
   lhOctave?: number;
+  /** Pre-resolved octave-qualified notes (e.g. from keyboard layout).
+   *  Format: "C:4", "G#:5". Bypasses internal octave assignment. */
+  octaveQualifiedNotes?: string[];
+}
+
+function parseOctaveQualified(
+  notes: string[],
+): Array<{ pitchClass: string; octave: number }> {
+  return notes.map((n) => {
+    const [pc, oct] = n.split(":");
+    return { pitchClass: normalizePitchClass(pc), octave: parseInt(oct, 10) };
+  });
 }
 
 const DIATONIC_INDEX: Record<string, number> = {
@@ -195,16 +207,25 @@ export function computeStaffLayout(
   notes: string[],
   options: StaffLayoutOptions = {},
 ): StaffLayoutResult {
-  const { lhNotes, rhOctave = 4, lhOctave = 3 } = options;
+  const { lhNotes, rhOctave = 4, lhOctave = 3, octaveQualifiedNotes } = options;
 
-  const rhNotesList = lhNotes
-    ? notes.filter((n) => !lhNotes.includes(n))
-    : notes;
-  const lhNotesList = lhNotes ?? [];
+  let allWithOctaves: Array<{ pitchClass: string; octave: number }>;
+  let lhNotesList: string[];
 
-  const rhWithOctaves = assignOctaves(rhNotesList, rhOctave);
-  const lhWithOctaves = assignOctaves(lhNotesList, lhOctave);
-  const allWithOctaves = [...lhWithOctaves, ...rhWithOctaves];
+  if (octaveQualifiedNotes) {
+    // Use pre-resolved octaves — bypass internal assignment
+    allWithOctaves = parseOctaveQualified(octaveQualifiedNotes);
+    lhNotesList = lhNotes ?? [];
+  } else {
+    const rhNotesList = lhNotes
+      ? notes.filter((n) => !lhNotes.includes(n))
+      : notes;
+    lhNotesList = lhNotes ?? [];
+
+    const rhWithOctaves = assignOctaves(rhNotesList, rhOctave);
+    const lhWithOctaves = assignOctaves(lhNotesList, lhOctave);
+    allWithOctaves = [...lhWithOctaves, ...rhWithOctaves];
+  }
 
   const hasTreble = allWithOctaves.some(
     (n) => noteToMidi(n.pitchClass, n.octave) >= 60,

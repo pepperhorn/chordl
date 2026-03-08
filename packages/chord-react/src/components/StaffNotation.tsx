@@ -25,6 +25,9 @@ export interface StaffNotationProps {
   lhNotes?: string[];
   rhOctave?: number;
   lhOctave?: number;
+  /** Pre-resolved octave-qualified notes (e.g. "C:4", "G#:5").
+   *  When provided, bypasses internal octave assignment for exact matching. */
+  octaveQualifiedNotes?: string[];
   chordLabel?: string;
   scale?: number;
   showPlayback?: boolean;
@@ -38,6 +41,7 @@ export function StaffNotation({
   lhNotes,
   rhOctave,
   lhOctave,
+  octaveQualifiedNotes,
   chordLabel,
   scale = 0.5,
   showPlayback = true,
@@ -47,7 +51,7 @@ export function StaffNotation({
 }: StaffNotationProps) {
   const { tokens: ui } = useUITheme();
   const g = glyphs ?? getDefaultGlyphs();
-  const layoutOpts: StaffLayoutOptions = { lhNotes, rhOctave, lhOctave };
+  const layoutOpts: StaffLayoutOptions = { lhNotes, rhOctave, lhOctave, octaveQualifiedNotes };
   const layout = computeStaffLayout(notes, layoutOpts);
 
   const hasPlayback = showPlayback && notes.length > 0;

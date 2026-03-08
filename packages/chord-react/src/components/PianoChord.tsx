@@ -194,17 +194,21 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
     }
   }
 
-  // Staff notation helper
-  const renderStaff = (resolvedNotes: string[], bassNote?: string) => {
-    const staffNotes = bassNote ? [bassNote, ...resolvedNotes] : resolvedNotes;
+  // Staff notation helper — accepts octave-qualified notes for exact pitch matching
+  const renderStaff = (
+    resolvedNotes: string[],
+    opts?: { bassNote?: string; octaveQualifiedNotes?: string[] },
+  ) => {
+    const staffNotes = opts?.bassNote ? [opts.bassNote, ...resolvedNotes] : resolvedNotes;
     const lhPlaybackOctave = 3 + (parsed.bassOctaveShift ?? 0);
     const rhPlaybackOctave = 4 + (parsed.chordOctaveShift ?? 0);
     return (
       <StaffNotation
         notes={staffNotes}
-        lhNotes={bassNote ? [bassNote] : undefined}
+        lhNotes={opts?.bassNote ? [opts.bassNote] : undefined}
         rhOctave={rhPlaybackOctave}
         lhOctave={lhPlaybackOctave}
+        octaveQualifiedNotes={opts?.octaveQualifiedNotes}
         chordLabel={parsed.chordName}
         scale={scale}
         showPlayback
@@ -214,14 +218,26 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
     );
   };
 
-  // Staff-only mode
-  if (display === "staff") {
-    return (
-      <UIThemeProvider value={uiCtx}>
-        {renderStaff(notes, lhBassNote)}
-      </UIThemeProvider>
+  // Helper: compute octave-qualified notes from pitch classes and a base octave
+  const computeOctaveQualified = (pitchClasses: string[], baseOctave: number): string[] => {
+    let octave = baseOctave;
+    const firstNorm = normalizeNote(pitchClasses[0]);
+    const firstWhiteIdx = WHITE_NOTE_ORDER.indexOf(
+      firstNorm.replace("#", "") as WhiteNote,
     );
-  }
+    let prevWhiteIdx = firstWhiteIdx;
+
+    return pitchClasses.map((n, i) => {
+      const norm = normalizeNote(n);
+      const whiteKey = norm.replace("#", "") as WhiteNote;
+      const whiteIdx = WHITE_NOTE_ORDER.indexOf(whiteKey);
+      if (i > 0 && whiteIdx <= prevWhiteIdx) {
+        octave++;
+      }
+      prevWhiteIdx = whiteIdx;
+      return `${norm}:${octave}`;
+    });
+  };
 
   // Single continuous keyboard with LH + RH brackets
   if (lhBassNote) {
@@ -272,6 +288,22 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
       return `${norm}:${noteOctave}`;
     });
     const allHighlights = [...lhHighlights, ...rhHighlights];
+
+    // Real-octave-qualified notes for staff notation
+    // Keyboard octaves are relative (0, 1, 2); staff needs real MIDI octaves
+    const realLhOctave = 3 + (parsed.bassOctaveShift ?? 0);
+    const realRhBaseOctave = realLhOctave + Math.max(octaveGap, 0);
+    const staffOctaveNotesBass = [
+      `${lhNorm}:${realLhOctave}`,
+      ...notes.map((n) => {
+        const norm = normalizeNote(n);
+        const whiteKey = norm.replace("#", "") as WhiteNote;
+        const whiteIdx = WHITE_NOTE_ORDER.indexOf(whiteKey);
+        const isAboveLhBeforeC = whiteIdx > lhWhiteIdx;
+        const noteOctave = isAboveLhBeforeC ? realRhBaseOctave : realRhBaseOctave + 1;
+        return `${norm}:${noteOctave}`;
+      }),
+    ];
 
     // Find key indices for bracket annotations
     const lhKeyIndices: number[] = [];
@@ -326,12 +358,20 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
       />
     );
 
+    if (display === "staff") {
+      return (
+        <UIThemeProvider value={uiCtx}>
+          {renderStaff(notes, { bassNote: lhBassNote, octaveQualifiedNotes: staffOctaveNotesBass })}
+        </UIThemeProvider>
+      );
+    }
+
     if (display === "both") {
       return (
         <UIThemeProvider value={uiCtx}>
           <div className="bc-display-both bc-display-both--stacked" style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "center" }}>
             {keyboard}
-            {renderStaff(notes, lhBassNote)}
+            {renderStaff(notes, { bassNote: lhBassNote, octaveQualifiedNotes: staffOctaveNotesBass })}
           </div>
         </UIThemeProvider>
       );
@@ -393,11 +433,22 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
     />
   );
 
+  // Octave-qualified notes for staff notation (always compute for accuracy)
+  const staffOctaveNotes = computeOctaveQualified(notes, layout.chordOctave > 0 ? layout.chordOctave : 4);
+
+  if (display === "staff") {
+    return (
+      <UIThemeProvider value={uiCtx}>
+        {renderStaff(notes, { octaveQualifiedNotes: staffOctaveNotes })}
+      </UIThemeProvider>
+    );
+  }
+
   if (display === "both") {
     return (
       <UIThemeProvider value={uiCtx}>
         <div className="bc-display-both" style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
-          {renderStaff(notes)}
+          {renderStaff(notes, { octaveQualifiedNotes: staffOctaveNotes })}
           {keyboard}
         </div>
       </UIThemeProvider>
