@@ -60,9 +60,16 @@ export function calculateLayout(
 
   // Explicit starting note: anchor the keyboard there
   if (startingNote) {
-    const start = nearestWhiteKey(startingNote);
+    let start = nearestWhiteKey(startingNote);
+    let startIdx = WHITE_NOTE_ORDER.indexOf(start);
+    // Black-key context: extend left edge if the starting key has a sharp
+    let clipLeft = false;
+    if (whiteIdxHasSharp(startIdx)) {
+      startIdx = ((startIdx - 1) % 7 + 7) % 7;
+      start = WHITE_NOTE_ORDER[startIdx] as WhiteNote;
+      clipLeft = true;
+    }
     // Size the keyboard to fit all notes with padding on the right
-    const startIdx = WHITE_NOTE_ORDER.indexOf(start);
     if (notes.length > 0) {
       const whiteKeys = notes.map(nearestWhiteKey);
       const indices = whiteKeys.map((w) => {
@@ -75,9 +82,9 @@ export function calculateLayout(
       // Black-key context: extend right edge if it lands on a sharp key
       let clipRight = false;
       if (whiteIdxHasSharp(startIdx + span - 1)) { span += 1; clipRight = true; }
-      return { startFrom: start, size: Math.max(span, notes.length + 2), chordOctave: 0, clipRight };
+      return { startFrom: start, size: Math.max(span, notes.length + 2), chordOctave: 0, clipLeft, clipRight };
     }
-    return { startFrom: start, size: 8, chordOctave: 0 };
+    return { startFrom: start, size: 8, chordOctave: 0, clipLeft };
   }
 
   if (spanFrom && spanTo) {
