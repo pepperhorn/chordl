@@ -33,7 +33,7 @@ export { isProgressionRequest, parseProgressionRequest } from "./parser/progress
 export type { ParsedProgressionRequest } from "./parser/progression-parser";
 export { resolveChord } from "./resolver/chord-resolver";
 export type { ResolvedChord } from "./resolver/chord-resolver";
-export { calculateLayout } from "./resolver/auto-layout";
+export { calculateLayout, whiteIdxHasSharp } from "./resolver/auto-layout";
 export type { LayoutOptions, LayoutResult } from "./resolver/auto-layout";
 export { MAX_EXAMPLES, ENABLE_CHORD_LOGGING } from "./config";
 

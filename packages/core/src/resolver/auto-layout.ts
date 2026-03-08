@@ -11,6 +11,14 @@ const NOTE_TO_SEMITONE: Record<string, number> = {
   B: 11,
 };
 
+// White notes that have a sharp (black key to their right)
+const HAS_SHARP = new Set<string>(["C", "D", "F", "G", "A"]);
+
+/** Check if a white-key index (mod 7) has a sharp. */
+export function whiteIdxHasSharp(idx: number): boolean {
+  return HAS_SHARP.has(WHITE_NOTE_ORDER[((idx % 7) + 7) % 7]);
+}
+
 // Map a note to its nearest white key (the white key it sits on or just below)
 function nearestWhiteKey(note: string): WhiteNote {
   const normalized = FLAT_TO_SHARP[note] ?? note;
@@ -38,6 +46,10 @@ export interface LayoutResult {
   size: number;
   /** Relative octave where the lowest chord note sits (for octave-qualified highlights). */
   chordOctave: number;
+  /** True when the left edge was extended for black-key context (crop half a key). */
+  clipLeft?: boolean;
+  /** True when the right edge was extended for black-key context (crop half a key). */
+  clipRight?: boolean;
 }
 
 export function calculateLayout(
@@ -48,9 +60,13 @@ export function calculateLayout(
 
   // Explicit starting note: anchor the keyboard there
   if (startingNote) {
-    const start = nearestWhiteKey(startingNote);
+    const anchorKey = nearestWhiteKey(startingNote);
+    let startIdx = WHITE_NOTE_ORDER.indexOf(anchorKey) - padding;
+    // Black-key context: extend left edge if it has a sharp
+    let clipLeft = false;
+    if (whiteIdxHasSharp(startIdx)) { startIdx -= 1; clipLeft = true; }
+    const start = WHITE_NOTE_ORDER[((startIdx % 7) + 7) % 7] as WhiteNote;
     // Size the keyboard to fit all notes with padding on the right
-    const startIdx = WHITE_NOTE_ORDER.indexOf(start);
     if (notes.length > 0) {
       const whiteKeys = notes.map(nearestWhiteKey);
       const indices = whiteKeys.map((w) => {
@@ -59,10 +75,21 @@ export function calculateLayout(
         return idx;
       });
       const maxIdx = Math.max(...indices);
-      const span = maxIdx - startIdx + 1 + padding;
-      return { startFrom: start, size: Math.max(span, notes.length + 2), chordOctave: 0 };
+      let span = maxIdx - startIdx + 1 + padding;
+      // Black-key context: extend right edge if it lands on a sharp key
+      let clipRight = false;
+      if (whiteIdxHasSharp(startIdx + span - 1)) { span += 1; clipRight = true; }
+      // chordOctave: count C crossings from start to the anchor note
+      const anchorIdx = WHITE_NOTE_ORDER.indexOf(anchorKey);
+      const startNoteIdx = WHITE_NOTE_ORDER.indexOf(start);
+      const stepsToAnchor = ((anchorIdx - startNoteIdx) % 7 + 7) % 7 + (padding > 0 && anchorIdx <= startNoteIdx ? 7 : 0);
+      let chordOctave = 0;
+      for (let i = 1; i <= stepsToAnchor; i++) {
+        if (WHITE_NOTE_ORDER[(startNoteIdx + i) % 7] === "C") chordOctave++;
+      }
+      return { startFrom: start, size: Math.max(span, notes.length + 2), chordOctave, clipLeft, clipRight };
     }
-    return { startFrom: start, size: 8, chordOctave: 0 };
+    return { startFrom: start, size: 8, chordOctave: 0, clipLeft };
   }
 
   if (spanFrom && spanTo) {
@@ -97,16 +124,24 @@ export function calculateLayout(
   const maxAsc = ascending[ascending.length - 1];
 
   let startIdx = minAsc - padding;
-  const endIdx = maxAsc + padding;
+  let endIdx = maxAsc + padding;
+
+  // Black-key context padding: if an edge white key has a sharp, extend by 1
+  // so the neighboring black key is visible, giving orientation landmarks.
+  let clipLeft = false;
+  let clipRight = false;
+  if (whiteIdxHasSharp(startIdx)) { startIdx -= 1; clipLeft = true; }
+  if (whiteIdxHasSharp(endIdx)) { endIdx += 1; clipRight = true; }
 
   const startNote = WHITE_NOTE_ORDER[((startIdx % 7) + 7) % 7] as WhiteNote;
   const keyCount = endIdx - startIdx + 1;
 
   // Calculate which relative octave the chord notes live in.
   // Count how many times we cross C going from startNote to the first chord note.
+  const actualPadding = minAsc - startIdx;
   const startNoteIdx = WHITE_NOTE_ORDER.indexOf(startNote);
   let chordOctave = 0;
-  for (let i = 1; i <= padding; i++) {
+  for (let i = 1; i <= actualPadding; i++) {
     const noteIdx = (startNoteIdx + i) % 7;
     if (WHITE_NOTE_ORDER[noteIdx] === "C") chordOctave++;
   }
@@ -115,5 +150,7 @@ export function calculateLayout(
     startFrom: startNote,
     size: Math.max(keyCount, notes.length + 2),
     chordOctave,
+    clipLeft,
+    clipRight,
   };
 }

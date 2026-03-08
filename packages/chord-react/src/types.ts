@@ -33,13 +33,17 @@ export interface KeyboardProps {
   showNoteNames?: boolean;
   /** Text size for note name labels (default "base"). */
   noteNameSize?: TextSize;
-  /** Fingering numbers to display below keys (and below note names if present).
-   *  Array aligned with highlightKeys — one number per highlighted note. */
-  fingering?: number[];
+  /** Fingering values to display below keys (and below note names if present).
+   *  Array aligned with highlightKeys — numbers 1–5, extra symbols (0, -, x), or "?" for invalid. */
+  fingering?: (number | string)[];
   /** Text size for fingering numbers (default "base"). */
   fingeringSize?: TextSize;
   /** UI chrome theme: "light" (default) or "dark". */
   uiTheme?: UIThemeMode;
+  /** Crop half a white key on the left edge (black-key context padding). */
+  clipLeft?: boolean;
+  /** Crop half a white key on the right edge (black-key context padding). */
+  clipRight?: boolean;
   className?: string;
   style?: CSSProperties;
 }

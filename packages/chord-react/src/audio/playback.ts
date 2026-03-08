@@ -50,7 +50,7 @@ const PC_SEMITONES: Record<string, number> = {
  * Assign ascending octaves to pitch classes so they form a rising sequence.
  * Notes are assumed to be in voicing order (bottom to top).
  */
-function toAscendingNotes(notes: string[], baseOctave: number = 4): string[] {
+export function toAscendingNotes(notes: string[], baseOctave: number = 4): string[] {
   let octave = baseOctave;
   let prevSemitone = -1;
 

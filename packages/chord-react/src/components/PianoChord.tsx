@@ -3,7 +3,7 @@ import type { ChordProps, KeyboardProps, HandBracket, WhiteNote, DisplayMode } f
 import { PianoKeyboard } from "./PianoKeyboard";
 import { StaffNotation } from "./StaffNotation";
 import {
-  parseChordDescription, resolveChord, calculateLayout,
+  parseChordDescription, resolveChord, calculateLayout, whiteIdxHasSharp,
   computeKeyboard, normalizeNote, autoFingering,
   FLAT_TO_SHARP, WHITE_NOTE_ORDER,
 } from "@better-chord/core";
@@ -262,10 +262,17 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
     const maxRhOffset = Math.max(...rhOffsets);
 
     // Keyboard start: padding steps below LH note (positive-mod wrap to 0-6 range)
-    const startIdx = ((lhWhiteIdx - layoutPadding) % 7 + 7) % 7;
+    let startIdx = ((lhWhiteIdx - layoutPadding) % 7 + 7) % 7;
+    // Black-key context: extend left edge if it has a sharp (needs neighbor for orientation)
+    let lhClipLeft = false;
+    if (whiteIdxHasSharp(startIdx)) { startIdx = ((startIdx - 1) % 7 + 7) % 7; lhClipLeft = true; }
     const startNote = WHITE_NOTE_ORDER[startIdx] as WhiteNote;
     const lhPositionOnKb = ((lhWhiteIdx - startIdx) % 7 + 7) % 7;
-    const kbSize = Math.max(lhPositionOnKb + maxRhOffset + layoutPadding + 1, 10);
+    let kbSize = Math.max(lhPositionOnKb + maxRhOffset + layoutPadding + 1, 10);
+    // Black-key context: extend right edge if it has a sharp
+    let lhClipRight = false;
+    const endIdx = startIdx + kbSize - 1;
+    if (whiteIdxHasSharp(endIdx)) { kbSize += 1; lhClipRight = true; }
 
     // Compute the keyboard to get octave info for each key
     const tempKeys = computeKeyboard(startNote, kbSize, resolvedFormat);
@@ -330,9 +337,9 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
       { label: "R.H.", keyIndices: rhKeyIndices },
     ];
 
-    // Playback octaves: LH default 3, RH default 4, adjusted by shifts
-    const lhPlaybackOctave = 3 + (parsed.bassOctaveShift ?? 0);
-    const rhPlaybackOctave = 4 + (parsed.chordOctaveShift ?? 0);
+    // Playback octaves: LH default 2, RH default 3 (so root ≈ C4 middle C)
+    const lhPlaybackOctave = 2 + (parsed.bassOctaveShift ?? 0);
+    const rhPlaybackOctave = 3 + (parsed.chordOctaveShift ?? 0);
 
     const keyboard = (
       <PianoKeyboard
@@ -340,6 +347,8 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
         size={kbSize}
         startFrom={startNote}
         highlightKeys={allHighlights}
+        clipLeft={lhClipLeft}
+        clipRight={lhClipRight}
         allNotes={[lhBassNote, ...notes]}
         lhNotes={[lhBassNote]}
         lhOctave={lhPlaybackOctave}
@@ -420,6 +429,8 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
       size={layout.size}
       startFrom={layout.startFrom as WhiteNote}
       highlightKeys={highlightKeys}
+      clipLeft={layout.clipLeft}
+      clipRight={layout.clipRight}
       theme={theme}
       highlightColor={highlightColor}
       chordLabel={parsed.chordName}
