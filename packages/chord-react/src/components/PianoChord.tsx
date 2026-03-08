@@ -329,9 +329,9 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
     if (display === "both") {
       return (
         <UIThemeProvider value={uiCtx}>
-          <div className="bc-display-both" style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
-            {renderStaff(notes, lhBassNote)}
+          <div className="bc-display-both bc-display-both--stacked" style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "center" }}>
             {keyboard}
+            {renderStaff(notes, lhBassNote)}
           </div>
         </UIThemeProvider>
       );
