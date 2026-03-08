@@ -254,22 +254,24 @@ export function PianoKeyboard({
           />
         ))}
         {/* Rounded border at clipped edges (matches white key corner radius) */}
-        {clipLeft && (
-          <path
-            d={`M${vbX},${WHITE_KEY_RY} Q${vbX},0 ${vbX + WHITE_KEY_RY},0 L${vbX + WHITE_KEY_RY},0 M${vbX},${WHITE_KEY_RY} L${vbX},${keyboardHeight - WHITE_KEY_RY} Q${vbX},${keyboardHeight} ${vbX + WHITE_KEY_RY},${keyboardHeight}`}
-            stroke={DEFAULT_STROKE}
-            strokeWidth={DEFAULT_STROKE_WIDTH}
-            fill="none"
-          />
-        )}
-        {clipRight && (
-          <path
-            d={`M${vbX + vbW},${WHITE_KEY_RY} Q${vbX + vbW},0 ${vbX + vbW - WHITE_KEY_RY},0 L${vbX + vbW - WHITE_KEY_RY},0 M${vbX + vbW},${WHITE_KEY_RY} L${vbX + vbW},${keyboardHeight - WHITE_KEY_RY} Q${vbX + vbW},${keyboardHeight} ${vbX + vbW - WHITE_KEY_RY},${keyboardHeight}`}
-            stroke={DEFAULT_STROKE}
-            strokeWidth={DEFAULT_STROKE_WIDTH}
-            fill="none"
-          />
-        )}
+        {clipLeft && whiteKeys.length > 0 && (() => {
+          const kh = whiteKeys[0].key.height;
+          const r = WHITE_KEY_RY;
+          const x = vbX;
+          return <path
+            d={`M${x},${r} Q${x},0 ${x + r},0 M${x},${r} L${x},${kh - r} Q${x},${kh} ${x + r},${kh}`}
+            stroke={DEFAULT_STROKE} strokeWidth={DEFAULT_STROKE_WIDTH} fill="none"
+          />;
+        })()}
+        {clipRight && whiteKeys.length > 0 && (() => {
+          const kh = whiteKeys[0].key.height;
+          const r = WHITE_KEY_RY;
+          const x = vbX + vbW;
+          return <path
+            d={`M${x},${r} Q${x},0 ${x - r},0 M${x},${r} L${x},${kh - r} Q${x},${kh} ${x - r},${kh}`}
+            stroke={DEFAULT_STROKE} strokeWidth={DEFAULT_STROKE_WIDTH} fill="none"
+          />;
+        })()}
         {blackKeys.map(({ key, fill, index }) => (
           <rect
             key={`black-${index}`}
