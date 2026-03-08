@@ -60,15 +60,12 @@ export function calculateLayout(
 
   // Explicit starting note: anchor the keyboard there
   if (startingNote) {
-    let start = nearestWhiteKey(startingNote);
-    let startIdx = WHITE_NOTE_ORDER.indexOf(start);
-    // Black-key context: extend left edge if the starting key has a sharp
+    const anchorKey = nearestWhiteKey(startingNote);
+    let startIdx = WHITE_NOTE_ORDER.indexOf(anchorKey) - padding;
+    // Black-key context: extend left edge if it has a sharp
     let clipLeft = false;
-    if (whiteIdxHasSharp(startIdx)) {
-      startIdx = ((startIdx - 1) % 7 + 7) % 7;
-      start = WHITE_NOTE_ORDER[startIdx] as WhiteNote;
-      clipLeft = true;
-    }
+    if (whiteIdxHasSharp(startIdx)) { startIdx -= 1; clipLeft = true; }
+    const start = WHITE_NOTE_ORDER[((startIdx % 7) + 7) % 7] as WhiteNote;
     // Size the keyboard to fit all notes with padding on the right
     if (notes.length > 0) {
       const whiteKeys = notes.map(nearestWhiteKey);
@@ -82,7 +79,15 @@ export function calculateLayout(
       // Black-key context: extend right edge if it lands on a sharp key
       let clipRight = false;
       if (whiteIdxHasSharp(startIdx + span - 1)) { span += 1; clipRight = true; }
-      return { startFrom: start, size: Math.max(span, notes.length + 2), chordOctave: 0, clipLeft, clipRight };
+      // chordOctave: count C crossings from start to the anchor note
+      const anchorIdx = WHITE_NOTE_ORDER.indexOf(anchorKey);
+      const startNoteIdx = WHITE_NOTE_ORDER.indexOf(start);
+      const stepsToAnchor = ((anchorIdx - startNoteIdx) % 7 + 7) % 7 + (padding > 0 && anchorIdx <= startNoteIdx ? 7 : 0);
+      let chordOctave = 0;
+      for (let i = 1; i <= stepsToAnchor; i++) {
+        if (WHITE_NOTE_ORDER[(startNoteIdx + i) % 7] === "C") chordOctave++;
+      }
+      return { startFrom: start, size: Math.max(span, notes.length + 2), chordOctave, clipLeft, clipRight };
     }
     return { startFrom: start, size: 8, chordOctave: 0, clipLeft };
   }
