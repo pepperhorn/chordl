@@ -188,9 +188,12 @@ export function PianoKeyboard({
   const resolvedTheme = resolveTheme(theme, highlightColor);
   const fills = mapHighlights(keys, highlightKeys, resolvedTheme);
   const { width: fullWidth, height: keyboardHeight } = computeSvgDimensions(size, format);
-  const clipInset = WHITE_KEY_WIDTH / 2;
-  const vbX = clipLeft ? clipInset : 0;
-  const vbW = fullWidth - (clipLeft ? clipInset : 0) - (clipRight ? clipInset : 0);
+  const halfKey = WHITE_KEY_WIDTH / 2;
+  // Clip based on actual key positions (not fullWidth which has +1 stroke padding)
+  const vbX = clipLeft ? halfKey : 0;
+  const lastKeyEnd = size * WHITE_KEY_WIDTH;
+  const vbRight = clipRight ? lastKeyEnd - halfKey : fullWidth;
+  const vbW = vbRight - vbX;
   const width = fullWidth;
   const hasPlayback = showPlayback && highlightKeys.length > 0;
   const hasBrackets = handBrackets && handBrackets.length > 0;
