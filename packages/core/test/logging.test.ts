@@ -33,7 +33,7 @@ describe("logChordRequest", () => {
     expect(url).toBe("https://example.com/log");
     expect(opts.method).toBe("POST");
     const body = JSON.parse(opts.body);
-    expect(body.logSchema).toBe("1.0.0");
+    expect(body.logSchema).toBe("1.1.0");
     expect(body.input).toBe("Cmaj7");
   });
 
@@ -81,8 +81,37 @@ describe("logChordRequest", () => {
     expect(body.success).toBe(true);
   });
 
-  it("LOG_SCHEMA_VERSION is 1.0.0", () => {
-    expect(LOG_SCHEMA_VERSION).toBe("1.0.0");
+  it("LOG_SCHEMA_VERSION is 1.1.0", () => {
+    expect(LOG_SCHEMA_VERSION).toBe("1.1.0");
+  });
+
+  it("includes source context when provided", () => {
+    const entry = makeEntry();
+    entry.source = { type: "chord-sheet", sheetRef: "A3" };
+    logChordRequest(entry, {
+      enabled: true,
+      endpoint: "https://example.com/log",
+    });
+    const body = JSON.parse(fetchSpy.mock.calls[0][1].body);
+    expect(body.source.type).toBe("chord-sheet");
+    expect(body.source.sheetRef).toBe("A3");
+  });
+
+  it("includes extended parsed fields", () => {
+    const entry = makeEntry();
+    entry.pipeline.parsed.startingNote = "G#";
+    entry.pipeline.parsed.fingering = [1, 2, 3, 5];
+    entry.pipeline.parsed.autoFingering = false;
+    entry.pipeline.parsed.showNoteNames = true;
+    logChordRequest(entry, {
+      enabled: true,
+      endpoint: "https://example.com/log",
+    });
+    const body = JSON.parse(fetchSpy.mock.calls[0][1].body);
+    expect(body.pipeline.parsed.startingNote).toBe("G#");
+    expect(body.pipeline.parsed.fingering).toEqual([1, 2, 3, 5]);
+    expect(body.pipeline.parsed.autoFingering).toBe(false);
+    expect(body.pipeline.parsed.showNoteNames).toBe(true);
   });
 });
 
