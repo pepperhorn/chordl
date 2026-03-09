@@ -2,6 +2,7 @@
 export type {
   Format, TextSize, WhiteNote, NoteName, ColorTheme,
   ParsedChordRequest, KeyDescriptor, HandBracket,
+  DisplayMode, DisplayDefaults, ChordData, SectionData, ChordSheetData,
 } from "./types";
 
 export { computeKeyboard, computeSvgDimensions } from "./engine/keyboard-layout";
