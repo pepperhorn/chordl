@@ -60,9 +60,12 @@ const BASS_OCTAVE_RE =
 const NOTE_NAMES_RE =
   /(?:(?:with\s+)?(?:show\s+)?(?:(base|lg|xl|2xl)\s+)?note\s*names?(?:\s+(?:in\s+)?(base|lg|xl|2xl))?|name\s+the\s+notes(?:\s+(?:in\s+)?(base|lg|xl|2xl))?)/i;
 
-// "fingering 1 2 3 5" / "with fingering 1-3-5 in lg"
+// "fingering 1 2 3 5" / "with fingering 1-3-5 in lg" / "fingering 1 x 3 5"
 const FINGERING_RE =
-  /(?:with\s+)?finger(?:ing|s)?\s+(\d(?:[,\s\-]+\d)+)(?:\s+(?:in\s+)?(base|lg|xl|2xl))?/i;
+  /(?:with\s+)?finger(?:ing|s)?\s+([\dxX\-](?:[,\s\-]*[\dxX\-])+)(?:\s+(?:in\s+)?(base|lg|xl|2xl))?/i;
+
+/** Valid fingering values: digits 0–5 plus extra symbols. Anything else → "?" */
+const VALID_FINGERING = new Set(["0", "1", "2", "3", "4", "5", "-", "x"]);
 
 // "with fingerings" / "show fingering" / "with fingering in xl" (no explicit numbers → auto)
 const AUTO_FINGERING_RE =
@@ -171,10 +174,24 @@ export function parseChordDescription(input: string): ParsedChordRequest {
   // Extract explicit fingering ("fingering 1 2 3 5 in lg")
   const fingeringMatch = input.match(FINGERING_RE);
   if (fingeringMatch) {
-    result.fingering = fingeringMatch[1]
-      .split(/[\s,\-]+/)
-      .map((s) => parseInt(s, 10))
-      .filter((n) => !isNaN(n));
+    // Split tokens: "1-3-5" splits on dashes, but standalone "-" (space-separated) is a value
+    const tokens: string[] = [];
+    for (const part of fingeringMatch[1].split(/[\s,]+/)) {
+      if (part === "-" || part === "x" || part === "X") {
+        tokens.push(part);
+      } else if (part.includes("-")) {
+        // "1-3-5" → split on dashes as separators
+        tokens.push(...part.split("-").filter((s) => s.length > 0));
+      } else {
+        tokens.push(part);
+      }
+    }
+    result.fingering = tokens.map((s) => {
+      const lower = s.toLowerCase();
+      if (!VALID_FINGERING.has(lower)) return "?";
+      const num = parseInt(lower, 10);
+      return isNaN(num) ? lower : num;
+    });
     result.fingeringSize = toTextSize(fingeringMatch[2]);
   } else {
     // Auto fingering ("with fingerings" / "show fingering in xl")

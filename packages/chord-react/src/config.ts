@@ -1,6 +1,23 @@
 /** Default: show note names below highlighted keys. */
 export const SHOW_NOTE_NAMES = false;
 
+/** Additional valid fingering symbols beyond 1–5. */
+export const FINGERING_EXTRA_SYMBOLS = ["0", "-", "x"] as const;
+
+/** Show the rotating hint text above the input. */
+export const SHOW_HINTS = true;
+
+/** Hint slide-fade transition speed in seconds. */
+export const HINT_SPEED = 0.45;
+
+/** Arpeggiation tempo (quarter note = BPM). Each note triggers on a 16th-note grid. */
+export const ARPEGGIO_BPM = 120;
+
+/** Compute the ms delay between arpeggiated notes from BPM (16th-note subdivision). */
+export function arpeggioDelayMs(bpm: number = ARPEGGIO_BPM): number {
+  return 60000 / (bpm * 4);
+}
+
 export type UIThemeMode = "light" | "dark";
 
 export interface UIThemeTokens {
@@ -30,7 +47,11 @@ export interface UIThemeTokens {
   playbackBg: string;
   /** Playback button active/playing state */
   playbackActive: string;
-  /** Playback button border */
+  /** Glass tray behind playback buttons */
+  playbackTrayBg: string;
+  /** Glass tray border */
+  playbackTrayBorder: string;
+  /** Individual button border for glass edge */
   playbackBtnBorder: string;
   /** Bracket annotation color (L.H./R.H.) */
   bracketColor: string;
@@ -48,9 +69,11 @@ export const LIGHT_THEME: UIThemeTokens = {
   inputBg: "#fff",
   inputText: "#333",
   iconFill: "#fff",
-  playbackBg: "#888",
-  playbackActive: "#4a90d9",
-  playbackBtnBorder: "rgba(0,0,0,0.15)",
+  playbackBg: "rgba(100, 100, 115, 0.6)",
+  playbackActive: "rgba(74, 144, 217, 0.85)",
+  playbackTrayBg: "rgba(200, 210, 225, 0.5)",
+  playbackTrayBorder: "rgba(255, 255, 255, 0.7)",
+  playbackBtnBorder: "rgba(255, 255, 255, 0.45)",
   bracketColor: "#888",
 };
 
@@ -66,16 +89,13 @@ export const DARK_THEME: UIThemeTokens = {
   inputBg: "#1e1e2e",
   inputText: "#eee",
   iconFill: "#fff",
-  playbackBg: "#333",
-  playbackActive: "#4a90d9",
-  playbackBtnBorder: "rgba(255,255,255,0.1)",
+  playbackBg: "rgba(70, 70, 90, 0.7)",
+  playbackActive: "rgba(74, 144, 217, 0.85)",
+  playbackTrayBg: "rgba(50, 55, 75, 0.65)",
+  playbackTrayBorder: "rgba(255, 255, 255, 0.18)",
+  playbackBtnBorder: "rgba(255, 255, 255, 0.12)",
   bracketColor: "#999",
 };
-
-/** Default arpeggio delay between notes (ms). */
-export function arpeggioDelayMs(): number {
-  return 100;
-}
 
 /** Default UI theme mode. Change this to switch the library default. */
 export const DEFAULT_UI_THEME: UIThemeMode = "light";

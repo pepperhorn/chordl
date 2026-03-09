@@ -7,7 +7,7 @@ import { FLAT_TO_SHARP } from "./svg-constants";
  * hand position. Works for 2–5 note chords in RH and LH.
  *
  * Rules:
- * - Avoid thumb (1) on black keys when adjacent white key is available
+ * - Avoid thumb (1) on black keys — unless it's the bottom note of the chord
  * - Wider intervals skip middle fingers (use 1-2-5 instead of 1-2-3)
  * - LH mirrors RH (5=lowest, 1=highest)
  */
@@ -56,8 +56,9 @@ function scoreFingering(notes: string[], fingers: number[]): number {
   let penalty = 0;
 
   for (let i = 0; i < notes.length; i++) {
-    // Thumb on black key: penalize
-    if (fingers[i] === 1 && isBlack(notes[i])) {
+    // Thumb on black key: penalize — but allow it on the bottom note
+    // (index 0 = lowest note, where thumb naturally sits for RH)
+    if (fingers[i] === 1 && isBlack(notes[i]) && i !== 0) {
       penalty += 10;
     }
     // Pinky on black key: slight penalty (less natural)

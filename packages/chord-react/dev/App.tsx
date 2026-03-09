@@ -3,6 +3,8 @@ import { createRoot } from "react-dom/client";
 import { PianoKeyboard, PianoChord, StaffNotation, ProgressionView, isProgressionRequest, parseProgressionRequest, resolveProgressionRequest, BRAVURA_GLYPHS, PETALUMA_GLYPHS } from "../src";
 import type { StaffGlyphSet } from "../src";
 import type { UIThemeMode } from "../src";
+import { SHOW_HINTS, HINT_SPEED } from "../src/config";
+import { HINTS } from "./hints";
 
 const SCALE_OPTIONS = [
   { label: "50%", value: 0.5 },
@@ -99,6 +101,45 @@ function DisplayToggle({ value, onChange }: { value: DisplayMode; onChange: (v: 
   );
 }
 
+function HintRotator() {
+  const [active, setActive] = useState(0);
+  const [exit, setExit] = useState<number | null>(null);
+  const activeRef = useRef(0);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      const outgoing = activeRef.current;
+      const next = (outgoing + 1) % HINTS.length;
+      activeRef.current = next;
+      setExit(outgoing);
+      setActive(next);
+    }, 4000);
+    return () => clearInterval(id);
+  }, []);
+
+  // Clear exit class after transition completes
+  useEffect(() => {
+    if (exit === null) return;
+    const t = setTimeout(() => setExit(null), HINT_SPEED * 1000 + 50);
+    return () => clearTimeout(t);
+  }, [exit]);
+
+  return (
+    <div className="hint-rotator" style={{ "--hint-speed": `${HINT_SPEED}s` } as React.CSSProperties}>
+      {HINTS.map((hint, i) => (
+        <span
+          key={i}
+          className={`hint-rotator__text${
+            i === active ? " hint-rotator__text--active" : ""
+          }${i === exit ? " hint-rotator__text--exit" : ""}`}
+        >
+          {hint}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 function InteractiveInput({ uiTheme }: { uiTheme: UIThemeMode }) {
   const [input, setInput] = useState("Cmaj7#5 starting on G#");
   const [theme, setTheme] = useState<string>("simple");
@@ -127,6 +168,13 @@ function InteractiveInput({ uiTheme }: { uiTheme: UIThemeMode }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "1.25rem" }}>
+      {/* Animated hint */}
+      {SHOW_HINTS && (
+        <div style={{ width: "100%", maxWidth: 640, marginBottom: 8 }}>
+          <HintRotator />
+        </div>
+      )}
+
       {/* Hero input */}
       <div style={{ width: "100%", maxWidth: 640, position: "relative" }}>
         <input
@@ -526,6 +574,43 @@ function App() {
           </div>
         </Collapsible>
       </div>
+
+      {/* Footer */}
+      <footer className="fade-in fade-in-delay-3" style={{
+        marginTop: "3rem",
+        padding: "2rem 0 1rem",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: "0.75rem",
+        borderTop: "1px solid var(--glass-border)",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
+          <a href="https://creativeranges.org" target="_blank" rel="noopener noreferrer">
+            <img src="./crf-header.png" alt="Creative Ranges Foundation" style={{ height: 72, opacity: 0.85 }} />
+          </a>
+          <a href="https://pepperhorn.com" target="_blank" rel="noopener noreferrer">
+            <img src="./PH25.svg" alt="PepperHorn Music" style={{ height: 72, opacity: 0.85 }} />
+          </a>
+        </div>
+        <p style={{
+          fontSize: "0.78rem",
+          color: "var(--text-muted)",
+          textAlign: "center",
+          lineHeight: 1.6,
+          maxWidth: 420,
+          fontWeight: 300,
+        }}>
+          This element created by the not-for-profit charity{" "}
+          <a href="https://creativeranges.org" target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent)", textDecoration: "none", fontWeight: 500 }}>
+            Creative Ranges Foundation
+          </a>{" "}
+          and{" "}
+          <a href="https://pepperhorn.com" target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent)", textDecoration: "none", fontWeight: 500 }}>
+            PepperHorn Music
+          </a>.
+        </p>
+      </footer>
     </div>
   );
 }

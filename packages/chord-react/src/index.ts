@@ -14,7 +14,7 @@ export { downloadSvg, downloadPng } from "./audio/svg-export";
 
 // ─── UI theme (local — React context) ──────────────────────────────────────
 export { UIThemeProvider, useUITheme, resolveUITheme } from "./ui-theme";
-export { SHOW_NOTE_NAMES, LIGHT_THEME, DARK_THEME, DEFAULT_UI_THEME, getUIThemeTokens } from "./config";
+export { SHOW_NOTE_NAMES, ARPEGGIO_BPM, arpeggioDelayMs, LIGHT_THEME, DARK_THEME, DEFAULT_UI_THEME, getUIThemeTokens } from "./config";
 export type { UIThemeMode, UIThemeTokens } from "./config";
 
 // ─── React-specific types (local) ──────────────────────────────────────────

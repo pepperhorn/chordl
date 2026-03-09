@@ -32,8 +32,8 @@ export interface ParsedChordRequest {
   showNoteNames?: boolean;
   /** Text size for note name labels. */
   noteNameSize?: TextSize;
-  /** Fingering numbers (aligned with chord notes). */
-  fingering?: number[];
+  /** Fingering values (aligned with chord notes). Numbers 1–5 plus extra symbols (0, -, x). Invalid entries become "?". */
+  fingering?: (number | string)[];
   /** Auto-compute fingering when true (no explicit numbers given). */
   autoFingering?: boolean;
   /** Text size for fingering numbers. */
