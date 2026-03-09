@@ -92,7 +92,7 @@ function base64urlDecode(str: string): Uint8Array {
 async function compress(input: Uint8Array): Promise<Uint8Array> {
   const cs = new CompressionStream("deflate");
   const writer = cs.writable.getWriter();
-  writer.write(input);
+  writer.write(input as unknown as BufferSource);
   writer.close();
   const reader = cs.readable.getReader();
   const chunks: Uint8Array[] = [];
@@ -108,7 +108,7 @@ async function decompress(input: Uint8Array): Promise<Uint8Array> {
   const ds = new DecompressionStream("deflate");
   const writer = ds.writable.getWriter();
   // Write and close, but don't await — let errors surface on the readable side
-  const writePromise = writer.write(input).then(() => writer.close()).catch(() => {});
+  const writePromise = writer.write(input as unknown as BufferSource).then(() => writer.close()).catch(() => {});
   const reader = ds.readable.getReader();
   const chunks: Uint8Array[] = [];
   try {

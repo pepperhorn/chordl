@@ -4,6 +4,7 @@ export { PianoChord } from "./components/PianoChord";
 export { ChordGroup } from "./components/ChordGroup";
 export { ProgressionView } from "./components/ProgressionView";
 export { StaffNotation } from "./components/StaffNotation";
+export { ChordSheet } from "./components/ChordSheet";
 export type { StaffNotationProps } from "./components/StaffNotation";
 export type { ChordGroupProps } from "./components/ChordGroup";
 export type { ProgressionViewProps, GroupMode } from "./components/ProgressionView";
@@ -18,7 +19,7 @@ export { SHOW_NOTE_NAMES, ARPEGGIO_BPM, arpeggioDelayMs, LIGHT_THEME, DARK_THEME
 export type { UIThemeMode, UIThemeTokens } from "./config";
 
 // ─── React-specific types (local) ──────────────────────────────────────────
-export type { KeyboardProps, ChordProps, PianoChordProps, DisplayMode } from "./types";
+export type { KeyboardProps, ChordProps, PianoChordProps, DisplayMode, ChordSheetProps, DisplayDefaults, ChordData, SectionData, ChordSheetData } from "./types";
 
 // ─── Re-export everything from @better-chord/core for backwards compat ─────
 export {
@@ -55,6 +56,10 @@ export {
   logChordRequest, LOG_SCHEMA_VERSION,
   // Config
   ENABLE_CHORD_LOGGING, MAX_EXAMPLES,
+  // ChordSheet
+  resolveDefaults, chordRef, SYSTEM_DEFAULTS,
+  CHORD_SHEET_SCHEMA_VERSION, validateVersion,
+  encodeChordSheet, decodeChordSheet,
 } from "@better-chord/core";
 
 export type {

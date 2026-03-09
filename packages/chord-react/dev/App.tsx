@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { createRoot } from "react-dom/client";
-import { PianoKeyboard, PianoChord, StaffNotation, ProgressionView, isProgressionRequest, parseProgressionRequest, resolveProgressionRequest, BRAVURA_GLYPHS, PETALUMA_GLYPHS } from "../src";
-import type { StaffGlyphSet } from "../src";
+import { PianoKeyboard, PianoChord, StaffNotation, ChordSheet, ProgressionView, isProgressionRequest, parseProgressionRequest, resolveProgressionRequest, BRAVURA_GLYPHS, PETALUMA_GLYPHS, encodeChordSheet, decodeChordSheet } from "../src";
+import type { StaffGlyphSet, ChordSheetData } from "../src";
 import type { UIThemeMode } from "../src";
 import { SHOW_HINTS, HINT_SPEED } from "../src/config";
 import { HINTS } from "./hints";
@@ -426,6 +426,105 @@ function StaffNotationDemo({ uiTheme }: { uiTheme: UIThemeMode }) {
   );
 }
 
+const SAMPLE_SHEET: ChordSheetData = {
+  v: "1.0",
+  heading: "ii-V-I Worksheet",
+  subheading: "Shell voicings in common keys",
+  defaults: { scale: 0.5, format: "compact" },
+  sections: [
+    {
+      heading: "Key of C",
+      textAbove: "Play each chord with LH root, RH shell",
+      chords: [
+        { chord: "Dm7", chordHeading: "ii", annotationText: "shell" },
+        { chord: "G7", chordHeading: "V" },
+        { chord: "Cmaj7", chordHeading: "I" },
+      ],
+      textBelow: "Repeat in all 12 keys",
+    },
+    {
+      heading: "Key of F",
+      chords: [
+        { chord: "Gm7", chordHeading: "ii" },
+        { chord: "C7", chordHeading: "V" },
+        { chord: "Fmaj7", chordHeading: "I" },
+      ],
+    },
+  ],
+};
+
+function ChordSheetDemo({ uiTheme }: { uiTheme: UIThemeMode }) {
+  const [token, setToken] = useState("");
+  const [importToken, setImportToken] = useState("");
+  const [importedSheet, setImportedSheet] = useState<ChordSheetData | null>(null);
+  const [codecError, setCodecError] = useState<string | null>(null);
+
+  const handleExport = async () => {
+    try {
+      const t = await encodeChordSheet(SAMPLE_SHEET);
+      setToken(t);
+      setCodecError(null);
+    } catch (e: any) {
+      setCodecError(e?.message ?? String(e));
+    }
+  };
+
+  const handleImport = async () => {
+    try {
+      const data = await decodeChordSheet(importToken || token);
+      setImportedSheet(data);
+      setCodecError(null);
+    } catch (e: any) {
+      setCodecError(e?.message ?? String(e));
+    }
+  };
+
+  return (
+    <>
+      <div className="glass-card" style={{ marginBottom: "1rem" }}>
+        <span className="example-label">ChordSheet — structured worksheet</span>
+        <ChordSheet data={SAMPLE_SHEET} uiTheme={uiTheme} />
+      </div>
+
+      <div className="glass-card" style={{ marginBottom: "1rem" }}>
+        <span className="example-label">Snapshot Codec</span>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
+          <button onClick={handleExport} style={{ fontSize: "0.8rem", padding: "4px 12px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--btn-bg)", color: "var(--text)", cursor: "pointer" }}>
+            Export Token
+          </button>
+          <button onClick={handleImport} style={{ fontSize: "0.8rem", padding: "4px 12px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--btn-bg)", color: "var(--text)", cursor: "pointer" }}>
+            Import Token
+          </button>
+        </div>
+        {token && (
+          <div style={{ marginBottom: 8 }}>
+            <textarea
+              value={token}
+              readOnly
+              rows={3}
+              style={{ width: "100%", fontSize: "0.7rem", fontFamily: "monospace", padding: 8, borderRadius: 6, border: "1px solid var(--border)", background: "var(--input-bg, #fff)", color: "var(--text)" }}
+            />
+          </div>
+        )}
+        <input
+          type="text"
+          value={importToken}
+          onChange={(e) => setImportToken(e.target.value)}
+          placeholder="Paste a bcs1.* token to import..."
+          style={{ width: "100%", fontSize: "0.8rem", padding: "6px 10px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--input-bg, #fff)", color: "var(--text)" }}
+        />
+        {codecError && <p style={{ color: "var(--error)", fontSize: "0.8rem", margin: "4px 0 0" }}>{codecError}</p>}
+        {importedSheet && (
+          <div style={{ marginTop: 12 }}>
+            <span className="example-label">Imported Sheet</span>
+            <ChordSheet data={importedSheet} uiTheme={uiTheme} />
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
 function App() {
   const [uiTheme, setUiTheme] = useState<UIThemeMode>("light");
 
@@ -545,6 +644,10 @@ function App() {
 
         <Collapsible title="Staff Notation">
           <StaffNotationDemo uiTheme={uiTheme} />
+        </Collapsible>
+
+        <Collapsible title="ChordSheet">
+          <ChordSheetDemo uiTheme={uiTheme} />
         </Collapsible>
 
         <Collapsible title="Progressions">

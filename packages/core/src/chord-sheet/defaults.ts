@@ -26,19 +26,19 @@ export function resolveDefaults(
 ): Required<DisplayDefaults> {
   return {
     ...SYSTEM_DEFAULTS,
-    ...stripUndefined(sheet),
-    ...stripUndefined(section),
-    ...stripUndefined(chord),
+    ...(sheet ? stripUndefined(sheet) : {}),
+    ...(section ? stripUndefined(section) : {}),
+    ...(chord ? stripUndefined(chord) : {}),
   } as Required<DisplayDefaults>;
 }
 
 /** Remove keys whose value is undefined so they don't overwrite lower layers. */
-function stripUndefined<T extends Record<string, unknown>>(obj: T): T {
-  const out = { ...obj };
+function stripUndefined<T extends object>(obj: T): Partial<T> {
+  const out = { ...obj } as Record<string, unknown>;
   for (const key of Object.keys(out)) {
     if (out[key] === undefined) delete out[key];
   }
-  return out;
+  return out as Partial<T>;
 }
 
 /**
