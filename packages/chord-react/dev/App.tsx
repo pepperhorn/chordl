@@ -1,8 +1,10 @@
 import React, { useState, useRef, useEffect } from "react";
 import { createRoot } from "react-dom/client";
-import { PianoKeyboard, PianoChord, StaffNotation, ProgressionView, isProgressionRequest, parseProgressionRequest, resolveProgressionRequest, BRAVURA_GLYPHS, PETALUMA_GLYPHS } from "../src";
-import type { StaffGlyphSet } from "../src";
+import { PianoKeyboard, PianoChord, StaffNotation, ChordSheet, ProgressionView, isProgressionRequest, parseProgressionRequest, resolveProgressionRequest, BRAVURA_GLYPHS, PETALUMA_GLYPHS, encodeChordSheet, decodeChordSheet } from "../src";
+import type { StaffGlyphSet, ChordSheetData } from "../src";
 import type { UIThemeMode } from "../src";
+import { SHOW_HINTS, HINT_SPEED } from "../src/config";
+import { HINTS } from "./hints";
 
 const SCALE_OPTIONS = [
   { label: "50%", value: 0.5 },
@@ -99,6 +101,45 @@ function DisplayToggle({ value, onChange }: { value: DisplayMode; onChange: (v: 
   );
 }
 
+function HintRotator() {
+  const [active, setActive] = useState(0);
+  const [exit, setExit] = useState<number | null>(null);
+  const activeRef = useRef(0);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      const outgoing = activeRef.current;
+      const next = (outgoing + 1) % HINTS.length;
+      activeRef.current = next;
+      setExit(outgoing);
+      setActive(next);
+    }, 4000);
+    return () => clearInterval(id);
+  }, []);
+
+  // Clear exit class after transition completes
+  useEffect(() => {
+    if (exit === null) return;
+    const t = setTimeout(() => setExit(null), HINT_SPEED * 1000 + 50);
+    return () => clearTimeout(t);
+  }, [exit]);
+
+  return (
+    <div className="hint-rotator" style={{ "--hint-speed": `${HINT_SPEED}s` } as React.CSSProperties}>
+      {HINTS.map((hint, i) => (
+        <span
+          key={i}
+          className={`hint-rotator__text${
+            i === active ? " hint-rotator__text--active" : ""
+          }${i === exit ? " hint-rotator__text--exit" : ""}`}
+        >
+          {hint}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 function InteractiveInput({ uiTheme }: { uiTheme: UIThemeMode }) {
   const [input, setInput] = useState("Cmaj7#5 starting on G#");
   const [theme, setTheme] = useState<string>("simple");
@@ -127,6 +168,13 @@ function InteractiveInput({ uiTheme }: { uiTheme: UIThemeMode }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "1.25rem" }}>
+      {/* Animated hint */}
+      {SHOW_HINTS && (
+        <div style={{ width: "100%", maxWidth: 640, marginBottom: 8 }}>
+          <HintRotator />
+        </div>
+      )}
+
       {/* Hero input */}
       <div style={{ width: "100%", maxWidth: 640, position: "relative" }}>
         <input
@@ -378,6 +426,105 @@ function StaffNotationDemo({ uiTheme }: { uiTheme: UIThemeMode }) {
   );
 }
 
+const SAMPLE_SHEET: ChordSheetData = {
+  v: "1.0",
+  heading: "ii-V-I Worksheet",
+  subheading: "Shell voicings in common keys",
+  defaults: { scale: 0.5, format: "compact" },
+  sections: [
+    {
+      heading: "Key of C",
+      textAbove: "Play each chord with LH root, RH shell",
+      chords: [
+        { chord: "Dm7", chordHeading: "ii", annotationText: "shell" },
+        { chord: "G7", chordHeading: "V" },
+        { chord: "Cmaj7", chordHeading: "I" },
+      ],
+      textBelow: "Repeat in all 12 keys",
+    },
+    {
+      heading: "Key of F",
+      chords: [
+        { chord: "Gm7", chordHeading: "ii" },
+        { chord: "C7", chordHeading: "V" },
+        { chord: "Fmaj7", chordHeading: "I" },
+      ],
+    },
+  ],
+};
+
+function ChordSheetDemo({ uiTheme }: { uiTheme: UIThemeMode }) {
+  const [token, setToken] = useState("");
+  const [importToken, setImportToken] = useState("");
+  const [importedSheet, setImportedSheet] = useState<ChordSheetData | null>(null);
+  const [codecError, setCodecError] = useState<string | null>(null);
+
+  const handleExport = async () => {
+    try {
+      const t = await encodeChordSheet(SAMPLE_SHEET);
+      setToken(t);
+      setCodecError(null);
+    } catch (e: any) {
+      setCodecError(e?.message ?? String(e));
+    }
+  };
+
+  const handleImport = async () => {
+    try {
+      const data = await decodeChordSheet(importToken || token);
+      setImportedSheet(data);
+      setCodecError(null);
+    } catch (e: any) {
+      setCodecError(e?.message ?? String(e));
+    }
+  };
+
+  return (
+    <>
+      <div className="glass-card" style={{ marginBottom: "1rem" }}>
+        <span className="example-label">ChordSheet — structured worksheet</span>
+        <ChordSheet data={SAMPLE_SHEET} uiTheme={uiTheme} />
+      </div>
+
+      <div className="glass-card" style={{ marginBottom: "1rem" }}>
+        <span className="example-label">Snapshot Codec</span>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
+          <button onClick={handleExport} style={{ fontSize: "0.8rem", padding: "4px 12px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--btn-bg)", color: "var(--text)", cursor: "pointer" }}>
+            Export Token
+          </button>
+          <button onClick={handleImport} style={{ fontSize: "0.8rem", padding: "4px 12px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--btn-bg)", color: "var(--text)", cursor: "pointer" }}>
+            Import Token
+          </button>
+        </div>
+        {token && (
+          <div style={{ marginBottom: 8 }}>
+            <textarea
+              value={token}
+              readOnly
+              rows={3}
+              style={{ width: "100%", fontSize: "0.7rem", fontFamily: "monospace", padding: 8, borderRadius: 6, border: "1px solid var(--border)", background: "var(--input-bg, #fff)", color: "var(--text)" }}
+            />
+          </div>
+        )}
+        <input
+          type="text"
+          value={importToken}
+          onChange={(e) => setImportToken(e.target.value)}
+          placeholder="Paste a bcs1.* token to import..."
+          style={{ width: "100%", fontSize: "0.8rem", padding: "6px 10px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--input-bg, #fff)", color: "var(--text)" }}
+        />
+        {codecError && <p style={{ color: "var(--error)", fontSize: "0.8rem", margin: "4px 0 0" }}>{codecError}</p>}
+        {importedSheet && (
+          <div style={{ marginTop: 12 }}>
+            <span className="example-label">Imported Sheet</span>
+            <ChordSheet data={importedSheet} uiTheme={uiTheme} />
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
 function App() {
   const [uiTheme, setUiTheme] = useState<UIThemeMode>("light");
 
@@ -499,6 +646,10 @@ function App() {
           <StaffNotationDemo uiTheme={uiTheme} />
         </Collapsible>
 
+        <Collapsible title="ChordSheet">
+          <ChordSheetDemo uiTheme={uiTheme} />
+        </Collapsible>
+
         <Collapsible title="Progressions">
           <div className="glass-card" style={{ marginBottom: "1rem" }}>
             <span className="example-label">ii-V-I in G — 3 voicing styles</span>
@@ -526,6 +677,43 @@ function App() {
           </div>
         </Collapsible>
       </div>
+
+      {/* Footer */}
+      <footer className="fade-in fade-in-delay-3" style={{
+        marginTop: "3rem",
+        padding: "2rem 0 1rem",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: "0.75rem",
+        borderTop: "1px solid var(--glass-border)",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
+          <a href="https://creativeranges.org" target="_blank" rel="noopener noreferrer">
+            <img src="./crf-header.png" alt="Creative Ranges Foundation" style={{ height: 72, opacity: 0.85 }} />
+          </a>
+          <a href="https://pepperhorn.com" target="_blank" rel="noopener noreferrer">
+            <img src="./PH25.svg" alt="PepperHorn Music" style={{ height: 72, opacity: 0.85 }} />
+          </a>
+        </div>
+        <p style={{
+          fontSize: "0.78rem",
+          color: "var(--text-muted)",
+          textAlign: "center",
+          lineHeight: 1.6,
+          maxWidth: 420,
+          fontWeight: 300,
+        }}>
+          This element created by the not-for-profit charity{" "}
+          <a href="https://creativeranges.org" target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent)", textDecoration: "none", fontWeight: 500 }}>
+            Creative Ranges Foundation
+          </a>{" "}
+          and{" "}
+          <a href="https://pepperhorn.com" target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent)", textDecoration: "none", fontWeight: 500 }}>
+            PepperHorn Music
+          </a>.
+        </p>
+      </footer>
     </div>
   );
 }

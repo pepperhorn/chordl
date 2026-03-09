@@ -243,6 +243,41 @@
       .fade-in-delay-1 { animation-delay: 0.1s; }
       .fade-in-delay-2 { animation-delay: 0.2s; }
       .fade-in-delay-3 { animation-delay: 0.3s; }
+
+      /* Hint rotator — slide-fade */
+      .hint-rotator {
+        position: relative;
+        height: 1.4em;
+        overflow: hidden;
+        width: 100%;
+        text-align: center;
+      }
+
+      .hint-rotator__text {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 0.84rem;
+        font-weight: 400;
+        color: var(--text-muted);
+        letter-spacing: 0.005em;
+        white-space: nowrap;
+        opacity: 0;
+        transform: translateY(8px);
+        transition: opacity var(--hint-speed, 0.45s) ease, transform var(--hint-speed, 0.45s) ease;
+      }
+
+      .hint-rotator__text--active {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      .hint-rotator__text--exit {
+        opacity: 0;
+        transform: translateY(-8px);
+      }
     </style>
   </head>
   <body>

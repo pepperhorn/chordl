@@ -4,9 +4,10 @@ import type { UIThemeMode } from "./config";
 export type {
   Format, TextSize, WhiteNote, NoteName, ColorTheme,
   ParsedChordRequest, KeyDescriptor, HandBracket,
+  DisplayMode, DisplayDefaults, ChordData, SectionData, ChordSheetData,
 } from "@better-chord/core";
 // Import for use in local types
-import type { Format, ColorTheme, TextSize, WhiteNote, NoteName, HandBracket } from "@better-chord/core";
+import type { Format, ColorTheme, TextSize, WhiteNote, NoteName, HandBracket, DisplayMode, ChordSheetData } from "@better-chord/core";
 
 export interface KeyboardProps {
   format?: Format;
@@ -48,8 +49,6 @@ export interface KeyboardProps {
   style?: CSSProperties;
 }
 
-export type DisplayMode = "keyboard" | "staff" | "both";
-
 export interface ChordProps {
   chord: string;
   format?: Format;
@@ -67,3 +66,13 @@ export interface ChordProps {
 }
 
 export type PianoChordProps = ChordProps | KeyboardProps;
+
+export interface ChordSheetProps {
+  data: ChordSheetData;
+  /** Hide chord reference IDs (for print / PDF). */
+  printMode?: boolean;
+  /** UI chrome theme: "light" (default) or "dark". */
+  uiTheme?: UIThemeMode;
+  className?: string;
+  style?: CSSProperties;
+}

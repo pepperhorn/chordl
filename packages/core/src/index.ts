@@ -2,6 +2,7 @@
 export type {
   Format, TextSize, WhiteNote, NoteName, ColorTheme,
   ParsedChordRequest, KeyDescriptor, HandBracket,
+  DisplayMode, DisplayDefaults, ChordData, SectionData, ChordSheetData,
 } from "./types";
 
 export { computeKeyboard, computeSvgDimensions } from "./engine/keyboard-layout";
@@ -57,3 +58,8 @@ export { getTheme, resolveTheme } from "./themes";
 // Pipeline
 export { processChordRequest } from "./pipeline";
 export type { ChordRequest, ChordResult } from "./pipeline";
+
+// ChordSheet
+export { resolveDefaults, chordRef, SYSTEM_DEFAULTS } from "./chord-sheet/defaults";
+export { CHORD_SHEET_SCHEMA_VERSION, validateVersion } from "./chord-sheet/schema";
+export { encodeChordSheet, decodeChordSheet } from "./chord-sheet/codec";

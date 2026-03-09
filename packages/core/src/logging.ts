@@ -1,15 +1,33 @@
-export const LOG_SCHEMA_VERSION = "1.0.0";
+export const LOG_SCHEMA_VERSION = "1.1.0";
 
 export interface ChordLogEntry {
   input: string;
+  /** Optional: where this chord came from. */
+  source?: {
+    type: "chord-sheet" | "standalone";
+    /** Chord reference ID within a sheet (e.g. "A3", "B1"). */
+    sheetRef?: string;
+  };
   pipeline: {
     parser: "chord" | "progression";
     parsed: {
       chordName: string;
       inversion?: number;
+      allInversions?: boolean;
+      startingNote?: string;
+      startingDegree?: number;
+      bassNote?: string;
       bassDegree?: number;
+      spanFrom?: string;
+      spanTo?: string;
+      padding?: number;
+      chordOctaveShift?: number;
+      bassOctaveShift?: number;
       styleHint?: string;
       format?: string;
+      showNoteNames?: boolean;
+      fingering?: (number | string)[];
+      autoFingering?: boolean;
     };
     resolver: {
       method: "tonal" | "special-builder" | "fallback";
@@ -34,6 +52,7 @@ export interface ChordLogEntry {
       rhNotes?: string[];
       highlightKeys: string[];
       format?: string;
+      display?: string;
     };
   };
   success: boolean;
