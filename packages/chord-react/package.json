@@ -17,7 +17,7 @@
     "dist"
   ],
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --host 0.0.0.0",
     "build": "tsc && vite build",
     "lint": "tsc --noEmit",
     "test": "vitest",
@@ -28,8 +28,8 @@
     "react-dom": ">=18.0.0"
   },
   "dependencies": {
-    "@better-chord/core": "*",
-    "@better-chord/voicings": "*",
+    "@better-chord/core": "workspace:*",
+    "@better-chord/voicings": "workspace:*",
     "smplr": "^0.18.1",
     "tonal": "^6.3.0"
   },
@@ -44,7 +44,7 @@
     "typescript": "^5.7.0",
     "vite": "^6.0.0",
     "vite-plugin-dts": "^4.3.0",
-    "vitest": "^2.1.0"
+    "vitest": "^4.1.1"
   },
   "license": "MIT"
 }

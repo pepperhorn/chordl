@@ -1,17 +1,16 @@
 {
   "name": "better-chord-react-monorepo",
   "private": true,
-  "workspaces": ["packages/*"],
   "scripts": {
-    "dev": "npm run dev -w @better-chord/react",
-    "build": "npm run build -w @better-chord/voicings && npm run build -w @better-chord/core && npm run build -w @better-chord/react",
-    "test": "npm run test -w @better-chord/voicings && npm run test -w @better-chord/core && npm run test -w @better-chord/react",
-    "test:run": "npm run test:run -w @better-chord/voicings && npm run test:run -w @better-chord/core && npm run test:run -w @better-chord/react",
-    "lint": "npm run lint -w @better-chord/voicings && npm run lint -w @better-chord/core && npm run lint -w @better-chord/react"
+    "dev": "pnpm --filter @better-chord/react dev",
+    "build": "pnpm --filter @better-chord/voicings build && pnpm --filter @better-chord/core build && pnpm --filter @better-chord/react build",
+    "test": "pnpm --filter @better-chord/voicings test && pnpm --filter @better-chord/core test && pnpm --filter @better-chord/react test",
+    "test:run": "pnpm --filter @better-chord/voicings test:run && pnpm --filter @better-chord/core test:run && pnpm --filter @better-chord/react test:run",
+    "lint": "pnpm --filter @better-chord/voicings lint && pnpm --filter @better-chord/core lint && pnpm --filter @better-chord/react lint"
   },
   "devDependencies": {
     "typescript": "^5.7.0",
-    "vitest": "^2.1.0"
+    "vitest": "^4.1.1"
   },
   "license": "MIT"
 }
