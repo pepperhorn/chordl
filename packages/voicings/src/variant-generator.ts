@@ -1,20 +1,12 @@
 import type { VoicingVariant, VoicingQuality, VoicingEntry, Hand } from "./types";
 import { VOICING_LIBRARY } from "./library";
 import { voicingPitchClasses, findVoicing } from "./query";
-
-const FLAT_TO_SHARP: Record<string, string> = {
-  Db: "C#", Eb: "D#", Gb: "F#", Ab: "G#", Bb: "A#",
-};
-
-/** Normalize note to sharps for comparison. */
-function normalize(note: string): string {
-  return FLAT_TO_SHARP[note] ?? note;
-}
+import { normalizeToSharps } from "@better-chord/core";
 
 /** Check if the lowest note (first in array) is the root/tonic. */
 function isRootPosition(notes: string[], root: string): boolean {
   if (notes.length === 0) return false;
-  return normalize(notes[0]) === normalize(root);
+  return normalizeToSharps(notes[0]) === normalizeToSharps(root);
 }
 
 /**

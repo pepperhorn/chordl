@@ -1,13 +1,6 @@
 import { Chord, Note } from "tonal";
 import type { RealizedNote, Hand } from "./types";
-
-const FLAT_TO_SHARP: Record<string, string> = {
-  Db: "C#", Eb: "D#", Gb: "F#", Ab: "G#", Bb: "A#",
-};
-
-function normalizePC(pc: string): string {
-  return FLAT_TO_SHARP[pc] ?? pc;
-}
+import { normalizeToSharps } from "@better-chord/core";
 
 /**
  * George Shearing "Locked Hands" block chord voicing.
@@ -97,7 +90,7 @@ export function generateLockedHands(
     return {
       note: noteName,
       midi,
-      pitchClass: normalizePC(pc),
+      pitchClass: normalizeToSharps(pc),
       hand,
     };
   });

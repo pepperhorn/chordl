@@ -1,5 +1,6 @@
 import type { WhiteNote } from "../types";
-import { WHITE_NOTE_ORDER, FLAT_TO_SHARP } from "../engine/svg-constants";
+import { WHITE_NOTE_ORDER } from "../engine/svg-constants";
+import { normalizeToSharps } from "../engine/note-spelling";
 
 const NOTE_TO_SEMITONE: Record<string, number> = {
   C: 0, "C#": 1, Db: 1,
@@ -21,7 +22,7 @@ export function whiteIdxHasSharp(idx: number): boolean {
 
 // Map a note to its nearest white key (the white key it sits on or just below)
 function nearestWhiteKey(note: string): WhiteNote {
-  const normalized = FLAT_TO_SHARP[note] ?? note;
+  const normalized = normalizeToSharps(note);
   const base = normalized.replace("#", "") as WhiteNote;
   return base;
 }

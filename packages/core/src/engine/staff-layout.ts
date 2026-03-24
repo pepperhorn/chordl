@@ -1,4 +1,4 @@
-import { FLAT_TO_SHARP } from "./svg-constants";
+import { normalizeToSharps } from "./note-spelling";
 import {
   STAFF_LINE_SPACING,
   HALF_STAFF_SPACING,
@@ -60,7 +60,7 @@ const TREBLE_BOTTOM_LINE_POS = 30; // E4
 const BASS_BOTTOM_LINE_POS = 18;   // G2
 
 function normalizePitchClass(note: string): string {
-  return FLAT_TO_SHARP[note] ?? note;
+  return normalizeToSharps(note);
 }
 
 function letterFromPitchClass(pc: string): string {

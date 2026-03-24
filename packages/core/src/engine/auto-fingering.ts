@@ -1,4 +1,4 @@
-import { FLAT_TO_SHARP } from "./svg-constants";
+import { normalizeToSharps } from "./note-spelling";
 
 /**
  * Auto-fingering engine for piano chord voicings.
@@ -33,7 +33,7 @@ const NOTE_SEMITONE: Record<string, number> = {
 const BLACK_NOTES = new Set(["C#", "D#", "F#", "G#", "A#"]);
 
 function normalize(note: string): string {
-  return FLAT_TO_SHARP[note] ?? note;
+  return normalizeToSharps(note);
 }
 
 function isBlack(note: string): boolean {

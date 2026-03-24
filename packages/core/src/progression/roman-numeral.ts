@@ -1,4 +1,5 @@
 import { Note } from "tonal";
+import { spellWithPreference } from "../engine/note-spelling";
 
 const ROMAN_TO_SEMITONE: Record<string, number> = {
   i: 0, ii: 2, iii: 4, iv: 5, v: 7, vi: 9, vii: 11,
@@ -76,7 +77,7 @@ export function resolveProgression(
 
     const rootMidi = keyMidi + parsed.semitones;
     const rootNote = Note.pitchClass(Note.fromMidi(rootMidi));
-    const root = preferredEnharmonic(rootNote, key, parsed.hasFlat);
+    const root = spellWithPreference(rootNote, key, parsed.hasFlat);
     const symbol = root + parsed.quality;
 
     return { root, symbol, degree: parsed.semitones };
@@ -93,26 +94,4 @@ export function tokenizeProgression(input: string): string[] {
     .filter((t) => t.length > 0);
 }
 
-// Flat keys prefer flats, sharp keys prefer sharps
-const FLAT_KEYS = new Set(["F", "Bb", "Eb", "Ab", "Db", "Gb", "Cb"]);
-const SHARP_TO_FLAT: Record<string, string> = {
-  "C#": "Db", "D#": "Eb", "F#": "Gb", "G#": "Ab", "A#": "Bb",
-};
-const FLAT_TO_SHARP: Record<string, string> = {
-  "Db": "C#", "Eb": "D#", "Gb": "F#", "Ab": "G#", "Bb": "A#",
-};
-
-/**
- * Choose the right enharmonic spelling based on key context.
- * If the roman numeral has a flat accidental (bVII, bII), prefer flat spelling.
- */
-function preferredEnharmonic(note: string, key: string, preferFlat: boolean = false): string {
-  // If the numeral itself has a flat, always use flat spelling
-  if (preferFlat) {
-    return SHARP_TO_FLAT[note] ?? note;
-  }
-  if (FLAT_KEYS.has(key)) {
-    return SHARP_TO_FLAT[note] ?? note;
-  }
-  return FLAT_TO_SHARP[note] ?? note;
-}
+// preferredEnharmonic is now spellWithPreference from note-spelling.ts

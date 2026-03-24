@@ -7,6 +7,10 @@ export type {
 
 export { computeKeyboard, computeSvgDimensions } from "./engine/keyboard-layout";
 export { mapHighlights, normalizeNote } from "./engine/highlight-mapper";
+export {
+  FLAT_TO_SHARP, SHARP_TO_FLAT, FLAT_KEYS,
+  normalizeToSharps, spellForKey, spellWithPreference,
+} from "./engine/note-spelling";
 export { autoFingering, assignFingering } from "./engine/auto-fingering";
 export type { HandAssignment } from "./engine/auto-fingering";
 export { computeStaffLayout } from "./engine/staff-layout";
@@ -26,7 +30,7 @@ export {
   BLACK_KEY_WIDTH, BLACK_KEY_WIDTH_EXACT, BLACK_KEY_HEIGHT_COMPACT, BLACK_KEY_HEIGHT_EXACT,
   BLACK_KEY_RY,
   BLACK_KEY_OFFSETS, BLACK_KEY_OFFSETS_EXACT,
-  WHITE_NOTES_WITH_SHARPS, WHITE_NOTE_ORDER, FLAT_TO_SHARP,
+  WHITE_NOTES_WITH_SHARPS, WHITE_NOTE_ORDER,
   DEFAULT_WHITE_FILL, DEFAULT_BLACK_FILL, DEFAULT_STROKE, DEFAULT_STROKE_WIDTH,
 } from "./engine/svg-constants";
 
@@ -52,6 +56,10 @@ export { generateMidiFile, downloadMidi } from "./audio/midi-export";
 // Logging
 export { logChordRequest, LOG_SCHEMA_VERSION } from "./logging";
 export type { ChordLogEntry, LogConfig } from "./logging";
+
+// Theory
+export { classifyTones, parseInterval, minimalVoicing, dropOrder } from "./theory/chord-tones";
+export type { ChordTone, ChordToneRole, ChordToneAnalysis } from "./theory/chord-tones";
 
 // Themes
 export { getTheme, resolveTheme } from "./themes";

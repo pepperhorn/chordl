@@ -85,6 +85,8 @@ export interface ResolvedChord {
   notes: string[];
   root: string;
   type: string;
+  /** Tonal interval names when available (e.g. ["1P", "3M", "5P", "7M"]) */
+  intervals?: string[];
 }
 
 // Normalize chord symbols that Tonal doesn't recognize into equivalents
@@ -171,6 +173,7 @@ export function resolveChord(
   let notes: string[];
   let root: string;
   let type: string;
+  let intervals: string[] | undefined;
 
   // Try special chord builders first (omit3, m6/9, etc.)
   const special = buildSpecialChord(chordName);
@@ -182,6 +185,7 @@ export function resolveChord(
     notes = chord.notes.map(simplifyNote);
     root = simplifyNote(chord.tonic ?? notes[0]);
     type = chord.type;
+    intervals = chord.intervals;
   } else {
     // Fallback: strip trailing alterations and reapply as intervals
     const fallback = resolveWithFallback(chordName);
@@ -199,5 +203,5 @@ export function resolveChord(
     notes = [...notes.slice(rotation), ...notes.slice(0, rotation)];
   }
 
-  return { notes, root, type };
+  return { notes, root, type, intervals };
 }
