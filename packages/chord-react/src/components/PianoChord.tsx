@@ -347,6 +347,7 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
         size={kbSize}
         startFrom={startNote}
         highlightKeys={allHighlights}
+        displayNoteNames={[lhBassNote, ...notes]}
         clipLeft={lhClipLeft}
         clipRight={lhClipRight}
         allNotes={[lhBassNote, ...notes]}
@@ -393,34 +394,41 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
     );
   }
 
-  const layout = calculateLayout(notes, {
+  // normalizeNote converts flats→sharps for keyboard-internal matching;
+  // keep original note names for display (e.g. "Bb" not "A#").
+  const keyboardNotes = notes.map(normalizeNote);
+
+  const layout = calculateLayout(keyboardNotes, {
     padding: layoutPadding,
     startingNote,
     spanFrom: parsed.spanFrom,
     spanTo: parsed.spanTo,
   });
 
-  // When padding pushes notes into a higher octave region, use octave-qualified
-  // highlights to avoid greedy matching against duplicate notes in the padding zone.
-  let highlightKeys: string[] = notes;
-  if (layout.chordOctave > 0) {
-    let octave = layout.chordOctave;
-    const firstNorm = normalizeNote(notes[0]);
-    const firstWhiteIdx = WHITE_NOTE_ORDER.indexOf(
-      firstNorm.replace("#", "") as WhiteNote
-    );
-    let prevWhiteIdx = firstWhiteIdx;
-
-    highlightKeys = notes.map((n, i) => {
-      const norm = normalizeNote(n);
-      const whiteKey = norm.replace("#", "") as WhiteNote;
-      const whiteIdx = WHITE_NOTE_ORDER.indexOf(whiteKey);
-      if (i > 0 && whiteIdx <= prevWhiteIdx) {
-        octave++;
-      }
-      prevWhiteIdx = whiteIdx;
-      return `${norm}:${octave}`;
+  // Use octave-qualified highlights when notes span multiple octaves or when
+  // padding/clipping creates duplicate notes that would cause greedy mis-matching.
+  // Detect wrapping: any note whose white-key index is at or below the previous.
+  let highlightKeys: string[] = keyboardNotes;
+  {
+    const whiteIndices = keyboardNotes.map((n) => {
+      return WHITE_NOTE_ORDER.indexOf(n.replace("#", "") as WhiteNote);
     });
+    const needsOctaveQual = layout.chordOctave > 0 ||
+      whiteIndices.some((idx, i) => i > 0 && idx <= whiteIndices[i - 1]);
+
+    if (needsOctaveQual) {
+      let octave = layout.chordOctave;
+      let prevWhiteIdx = whiteIndices[0];
+
+      highlightKeys = keyboardNotes.map((n, i) => {
+        const whiteIdx = whiteIndices[i];
+        if (i > 0 && whiteIdx <= prevWhiteIdx) {
+          octave++;
+        }
+        prevWhiteIdx = whiteIdx;
+        return `${n}:${octave}`;
+      });
+    }
   }
 
   const keyboard = (
@@ -429,6 +437,7 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
       size={layout.size}
       startFrom={layout.startFrom as WhiteNote}
       highlightKeys={highlightKeys}
+      displayNoteNames={notes}
       clipLeft={layout.clipLeft}
       clipRight={layout.clipRight}
       theme={theme}

@@ -75,6 +75,7 @@ function annotationRowHeight(size: TextSize = "base"): number {
 function renderAnnotations(
   keys: { note: string; octave: number; isBlack: boolean; x: number; width: number }[],
   highlightKeys: string[],
+  displayNoteNames: string[] | undefined,
   fingering: (number | string)[] | undefined,
   hasNoteNames: boolean,
   hasFingering: boolean,
@@ -104,10 +105,11 @@ function renderAnnotations(
     });
     if (matchIdx !== -1) {
       remaining[matchIdx].matched = true;
+      const displayName = displayNoteNames?.[remaining[matchIdx].idx] ?? remaining[matchIdx].note;
       highlighted.push({
         x: key.x,
         width: key.isBlack ? BLACK_KEY_WIDTH : WHITE_KEY_WIDTH,
-        note: remaining[matchIdx].note,
+        note: displayName,
         index: remaining[matchIdx].idx,
       });
     }
@@ -172,6 +174,7 @@ export function PianoKeyboard({
   handBrackets,
   scale = 0.5,
   showNoteNames,
+  displayNoteNames,
   noteNameSize = "base",
   fingering,
   fingeringSize = "base",
@@ -308,7 +311,7 @@ export function PianoKeyboard({
         </g>
       )}
       {(hasNoteNames || hasFingering) && renderAnnotations(
-        keys, highlightKeys, fingering, hasNoteNames, !!hasFingering,
+        keys, highlightKeys, displayNoteNames, fingering, hasNoteNames, !!hasFingering,
         noteNameSize, fingeringSize, noteNamesRowH,
         keysOffsetY + keyboardHeight + bracketsHeight + 2,
         uiTokens,

@@ -32,6 +32,9 @@ export interface KeyboardProps {
   scale?: number;
   /** Show note names (capital letters) below highlighted keys. */
   showNoteNames?: boolean;
+  /** Display-friendly note names aligned with highlightKeys (e.g. "Bb" instead of "A#").
+   *  When omitted, names are derived from highlightKeys (sharp-normalized). */
+  displayNoteNames?: string[];
   /** Text size for note name labels (default "base"). */
   noteNameSize?: TextSize;
   /** Fingering values to display below keys (and below note names if present).
