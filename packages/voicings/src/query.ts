@@ -6,8 +6,30 @@ const FLAT_TO_SHARP: Record<string, string> = {
   Db: "C#", Eb: "D#", Gb: "F#", Ab: "G#", Bb: "A#",
 };
 
+/** Normalize to sharps — used only for keyboard-internal matching. */
 function normalizeNote(note: string): string {
   return FLAT_TO_SHARP[note] ?? note;
+}
+
+/**
+ * Keys whose notes should be spelled with flats.
+ * Includes both major and enharmonic-equivalent keys.
+ */
+const FLAT_ROOTS = new Set(["F", "Bb", "Eb", "Ab", "Db", "Gb"]);
+
+const SHARP_TO_FLAT: Record<string, string> = {
+  "C#": "Db", "D#": "Eb", "F#": "Gb", "G#": "Ab", "A#": "Bb",
+};
+
+/**
+ * Re-spell a pitch class to match the key context of the given root.
+ * Flat-key roots get flat spelling; sharp-key roots keep sharp spelling.
+ */
+function spellForRoot(pc: string, root: string): string {
+  if (FLAT_ROOTS.has(root)) {
+    return SHARP_TO_FLAT[pc] ?? pc;
+  }
+  return FLAT_TO_SHARP[pc] ?? pc;
 }
 
 /** Map artist names / keywords to voicing styles */
@@ -123,11 +145,12 @@ export function realizeVoicingFull(
     const midi = rootMidi + interval;
     const noteName = Note.fromMidi(midi);
     const pc = Note.pitchClass(noteName);
+    const spelled = spellForRoot(pc, root);
     const hand: Hand = voicing.hands?.[i] ?? "LH";
     return {
       note: noteName,
       midi,
-      pitchClass: normalizeNote(pc),
+      pitchClass: spelled,
       hand,
     };
   });

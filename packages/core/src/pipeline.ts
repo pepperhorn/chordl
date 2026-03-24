@@ -86,8 +86,8 @@ function buildSvgString(
 // ── Note-to-semitone map ──────────────────────────────────────────
 
 const NOTE_SEMITONES: Record<string, number> = {
-  C: 0, "C#": 1, D: 2, "D#": 3, E: 4, F: 5,
-  "F#": 6, G: 7, "G#": 8, A: 9, "A#": 10, B: 11,
+  C: 0, "C#": 1, Db: 1, D: 2, "D#": 3, Eb: 3, E: 4, F: 5,
+  "F#": 6, Gb: 6, G: 7, "G#": 8, Ab: 8, A: 9, "A#": 10, Bb: 10, B: 11,
 };
 
 // ── Main pipeline ─────────────────────────────────────────────────
@@ -125,11 +125,12 @@ export function processChordRequest(request: ChordRequest): ChordResult {
 
     // 2. Resolve
     const resolved = resolveChord(parsed.chordName, parsed.inversion);
-    const pitchClasses = resolved.notes.map(normalizeNote);
+    const pitchClasses = resolved.notes;                    // display names (Bb, Eb, etc.)
+    const keyboardPitchClasses = pitchClasses.map(normalizeNote); // sharps for keyboard internals
 
     // 3. Layout
     const layoutFormat: Format = parsed.format ?? "compact";
-    const layout = calculateLayout(pitchClasses, {
+    const layout = calculateLayout(keyboardPitchClasses, {
       padding: parsed.padding,
       startingNote: parsed.startingNote,
       spanFrom: parsed.spanFrom,
@@ -148,7 +149,9 @@ export function processChordRequest(request: ChordRequest): ChordResult {
     let prevSemitone = -1;
     let currentOctave = baseOctave + layout.chordOctave;
 
-    for (const pc of pitchClasses) {
+    for (let i = 0; i < pitchClasses.length; i++) {
+      const pc = pitchClasses[i];           // display name (Bb, Eb, etc.)
+      const kpc = keyboardPitchClasses[i];  // sharp name for keyboard (A#, D#, etc.)
       const semitone = NOTE_SEMITONES[pc];
       if (semitone === undefined) continue;
 
@@ -158,9 +161,9 @@ export function processChordRequest(request: ChordRequest): ChordResult {
       prevSemitone = semitone;
 
       midiNoteNames.push(`${pc}${currentOctave}`);
-      // Highlight key uses relative octave within the keyboard
+      // Highlight key uses sharp-normalized name for keyboard matching
       const relOctave = currentOctave - baseOctave;
-      highlightKeys.push(`${pc}:${relOctave}`);
+      highlightKeys.push(`${kpc}:${relOctave}`);
     }
 
     // 6. Map highlight fills

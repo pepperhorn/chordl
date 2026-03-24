@@ -2,12 +2,12 @@ import type { WhiteNote } from "../types";
 import { WHITE_NOTE_ORDER, FLAT_TO_SHARP } from "../engine/svg-constants";
 
 const NOTE_TO_SEMITONE: Record<string, number> = {
-  C: 0, "C#": 1,
-  D: 2, "D#": 3,
+  C: 0, "C#": 1, Db: 1,
+  D: 2, "D#": 3, Eb: 3,
   E: 4,
-  F: 5, "F#": 6,
-  G: 7, "G#": 8,
-  A: 9, "A#": 10,
+  F: 5, "F#": 6, Gb: 6,
+  G: 7, "G#": 8, Ab: 8,
+  A: 9, "A#": 10, Bb: 10,
   B: 11,
 };
 
@@ -69,11 +69,22 @@ export function calculateLayout(
     // Size the keyboard to fit all notes with padding on the right
     if (notes.length > 0) {
       const whiteKeys = notes.map(nearestWhiteKey);
-      const indices = whiteKeys.map((w) => {
+      // Treat notes as ascending from the anchor: each note at or below
+      // the previous wraps into the next octave (matches voicing rotation).
+      const anchorWhiteIdx = WHITE_NOTE_ORDER.indexOf(anchorKey);
+      const indices: number[] = [];
+      for (const w of whiteKeys) {
         let idx = WHITE_NOTE_ORDER.indexOf(w);
-        if (idx < startIdx) idx += 7;
-        return idx;
-      });
+        if (indices.length === 0) {
+          // First note: place relative to anchor (must be >= anchor)
+          while (idx < anchorWhiteIdx) idx += 7;
+        } else {
+          // Subsequent notes: must be above the previous
+          const lastIdx = indices[indices.length - 1];
+          while (idx <= lastIdx) idx += 7;
+        }
+        indices.push(idx);
+      }
       const maxIdx = Math.max(...indices);
       let span = maxIdx - startIdx + 1 + padding;
       // Black-key context: extend right edge if it lands on a sharp key

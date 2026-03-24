@@ -1,10 +1,12 @@
 import { Chord, Note, Interval } from "tonal";
-import { FLAT_TO_SHARP } from "../engine/svg-constants";
 
-function normalizeToSharp(note: string): string {
+/**
+ * Simplify a note name via Tonal without forcing sharp spelling.
+ * Tonal's simplify already respects musical context (e.g. Bb stays Bb).
+ */
+function simplifyNote(note: string): string {
   const simplified = Note.simplify(note);
-  if (!simplified) return note; // Tonal couldn't simplify — keep original
-  return FLAT_TO_SHARP[simplified] ?? simplified;
+  return simplified || note;
 }
 
 // Alteration tokens we can strip and re-apply as intervals
@@ -58,13 +60,13 @@ function resolveWithFallback(
 
     const chord = Chord.get(root + suffix);
     if (!chord.empty) {
-      let notes = chord.notes.map(normalizeToSharp);
+      let notes = chord.notes.map(simplifyNote);
 
       // Add extra notes from stripped alterations
       for (const ivl of extraIntervals) {
         const extra = Note.transpose(root, ivl);
         if (extra) {
-          const normalized = normalizeToSharp(extra);
+          const normalized = simplifyNote(extra);
           // Replace if same degree already exists, otherwise add
           if (!notes.includes(normalized)) {
             notes.push(normalized);
@@ -72,7 +74,7 @@ function resolveWithFallback(
         }
       }
 
-      return { notes, root: normalizeToSharp(root), type: chord.type + " (extended)" };
+      return { notes, root: simplifyNote(root), type: chord.type + " (extended)" };
     }
   }
 
@@ -121,8 +123,8 @@ function buildSpecialChord(name: string): { notes: string[]; root: string; type:
   // X7omit3 → root, 5th, b7 (no 3rd)
   if (/^7omit3$/i.test(suffix)) {
     return {
-      notes: [root, Note.transpose(root, "5P"), Note.transpose(root, "7m")].map(normalizeToSharp),
-      root: normalizeToSharp(root),
+      notes: [root, Note.transpose(root, "5P"), Note.transpose(root, "7m")].map(simplifyNote),
+      root: simplifyNote(root),
       type: "7omit3",
     };
   }
@@ -135,8 +137,8 @@ function buildSpecialChord(name: string): { notes: string[]; root: string; type:
         Note.transpose(root, "3m"),
         Note.transpose(root, "4P"),
         Note.transpose(root, "7m"),
-      ].map(normalizeToSharp),
-      root: normalizeToSharp(root),
+      ].map(simplifyNote),
+      root: simplifyNote(root),
       type: "m7sus4",
     };
   }
@@ -150,8 +152,8 @@ function buildSpecialChord(name: string): { notes: string[]; root: string; type:
         Note.transpose(root, "5P"),
         Note.transpose(root, "6M"),
         Note.transpose(root, "2M"),
-      ].map(normalizeToSharp),
-      root: normalizeToSharp(root),
+      ].map(simplifyNote),
+      root: simplifyNote(root),
       type: "m6/9",
     };
   }
@@ -177,8 +179,8 @@ export function resolveChord(
     root = special.root;
     type = special.type;
   } else if (!chord.empty) {
-    notes = chord.notes.map(normalizeToSharp);
-    root = normalizeToSharp(chord.tonic ?? notes[0]);
+    notes = chord.notes.map(simplifyNote);
+    root = simplifyNote(chord.tonic ?? notes[0]);
     type = chord.type;
   } else {
     // Fallback: strip trailing alterations and reapply as intervals
