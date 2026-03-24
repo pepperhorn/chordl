@@ -2,12 +2,12 @@ import type { CSSProperties } from "react";
 import type { UIThemeMode } from "./config";
 // Re-export shared types from core
 export type {
-  Format, TextSize, WhiteNote, NoteName, ColorTheme,
+  Format, TextSize, NoteNameMode, WhiteNote, NoteName, ColorTheme,
   ParsedChordRequest, KeyDescriptor, HandBracket,
   DisplayMode, DisplayDefaults, ChordData, SectionData, ChordSheetData,
 } from "@better-chord/core";
 // Import for use in local types
-import type { Format, ColorTheme, TextSize, WhiteNote, NoteName, HandBracket, DisplayMode, ChordSheetData } from "@better-chord/core";
+import type { Format, ColorTheme, TextSize, NoteNameMode, WhiteNote, NoteName, HandBracket, DisplayMode, ChordSheetData } from "@better-chord/core";
 
 export interface KeyboardProps {
   format?: Format;
@@ -37,6 +37,10 @@ export interface KeyboardProps {
   displayNoteNames?: string[];
   /** Text size for note name labels (default "base"). */
   noteNameSize?: TextSize;
+  /** Note name display mode: "pitch-class" (default, e.g. "C") or "midi" (e.g. "C4"). */
+  noteNameMode?: NoteNameMode;
+  /** Base MIDI octave for the keyboard's first octave (default 4). Used when noteNameMode="midi". */
+  midiBaseOctave?: number;
   /** Fingering values to display below keys (and below note names if present).
    *  Array aligned with highlightKeys — numbers 1–5, extra symbols (0, -, x), or "?" for invalid. */
   fingering?: (number | string)[];

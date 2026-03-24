@@ -1,13 +1,14 @@
 // @better-chord/core — pure TypeScript chord engine
 export type {
-  Format, TextSize, WhiteNote, NoteName, ColorTheme,
+  Format, TextSize, NoteNameMode, WhiteNote, NoteName, ColorTheme,
   ParsedChordRequest, KeyDescriptor, HandBracket,
   DisplayMode, DisplayDefaults, ChordData, SectionData, ChordSheetData,
 } from "./types";
 
 export { computeKeyboard, computeSvgDimensions } from "./engine/keyboard-layout";
 export { mapHighlights, normalizeNote } from "./engine/highlight-mapper";
-export { autoFingering } from "./engine/auto-fingering";
+export { autoFingering, assignFingering } from "./engine/auto-fingering";
+export type { HandAssignment } from "./engine/auto-fingering";
 export { computeStaffLayout } from "./engine/staff-layout";
 export type { StaffNote, StaffLayoutResult, StaffLayoutOptions } from "./engine/staff-layout";
 export { getDefaultGlyphs, setDefaultGlyphs, BRAVURA_GLYPHS, PETALUMA_GLYPHS } from "./engine/staff-glyphs";

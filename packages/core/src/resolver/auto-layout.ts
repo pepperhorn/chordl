@@ -52,6 +52,45 @@ export interface LayoutResult {
   clipRight?: boolean;
 }
 
+/**
+ * Ensure the visible keyboard range doesn't cut through the middle of a
+ * black-key group, making orientation difficult.
+ *
+ * Piano keys form repeating groups:
+ * - 2-group: C(0), D(1), E(2)       — black keys C#, D#
+ * - 3-group: F(3), G(4), A(5), B(6) — black keys F#, G#, A#
+ *
+ * Rule: if the keyboard starts or ends in the INTERIOR of a group
+ * (not at its boundary), extend outward to the nearest group boundary.
+ * Starting/ending at a group boundary (C, F, E, B) is fine — the edge
+ * itself provides enough orientation context.
+ */
+function ensureFullBlackKeyGroups(startIdx: number, endIdx: number): { startIdx: number; endIdx: number } {
+  // Determine which position within a group the start/end falls
+  // Group boundaries: C(0)=start of 2-group, F(3)=start of 3-group
+  // Interior: D(1), E(2) are interior of 2-group; G(4), A(5) are interior of 3-group
+  // B(6) is the end of the 3-group — a boundary, fine to start/end on
+
+  const startMod = ((startIdx % 7) + 7) % 7;
+  const endMod = ((endIdx % 7) + 7) % 7;
+
+  // Fix left edge: if we start in the interior of a group, extend left to group start.
+  // Group boundaries (OK to start on): C(0), F(3), E(2)→end of 2-group, B(6)→end of 3-group
+  // Interior (confusing): D(1), G(4), A(5)
+  if (startMod === 1) startIdx -= 1;  // D → extend to C
+  if (startMod === 4) startIdx -= 1;  // G → extend to F
+  if (startMod === 5) startIdx -= 2;  // A → extend to F
+
+  // Fix right edge: if we end in the interior of a group, extend right to group end.
+  // Group boundaries (OK to end on): E(2), B(6), C(0)→start of 2-group, F(3)→start of 3-group
+  // Interior (confusing): D(1), G(4), A(5)
+  if (endMod === 1) endIdx += 1;  // D → extend to E
+  if (endMod === 4) endIdx += 2;  // G → extend to B
+  if (endMod === 5) endIdx += 1;  // A → extend to B
+
+  return { startIdx, endIdx };
+}
+
 export function calculateLayout(
   notes: string[],
   options: LayoutOptions = {}
@@ -86,19 +125,25 @@ export function calculateLayout(
         indices.push(idx);
       }
       const maxIdx = Math.max(...indices);
-      let span = maxIdx - startIdx + 1 + padding;
+      let endIdx = maxIdx + padding;
       // Black-key context: extend right edge if it lands on a sharp key
       let clipRight = false;
-      if (whiteIdxHasSharp(startIdx + span - 1)) { span += 1; clipRight = true; }
+      if (whiteIdxHasSharp(endIdx)) { endIdx += 1; clipRight = true; }
+      // Ensure full black-key groups are visible
+      const expanded = ensureFullBlackKeyGroups(startIdx, endIdx);
+      startIdx = expanded.startIdx;
+      endIdx = expanded.endIdx;
+      const finalStart = WHITE_NOTE_ORDER[((startIdx % 7) + 7) % 7] as WhiteNote;
+      let span = endIdx - startIdx + 1;
       // chordOctave: count C crossings from start to the anchor note
       const anchorIdx = WHITE_NOTE_ORDER.indexOf(anchorKey);
-      const startNoteIdx = WHITE_NOTE_ORDER.indexOf(start);
+      const startNoteIdx = WHITE_NOTE_ORDER.indexOf(finalStart);
       const stepsToAnchor = ((anchorIdx - startNoteIdx) % 7 + 7) % 7 + (padding > 0 && anchorIdx <= startNoteIdx ? 7 : 0);
       let chordOctave = 0;
       for (let i = 1; i <= stepsToAnchor; i++) {
         if (WHITE_NOTE_ORDER[(startNoteIdx + i) % 7] === "C") chordOctave++;
       }
-      return { startFrom: start, size: Math.max(span, notes.length + 2), chordOctave, clipLeft, clipRight };
+      return { startFrom: finalStart, size: Math.max(span, notes.length + 2), chordOctave, clipLeft, clipRight };
     }
     return { startFrom: start, size: 8, chordOctave: 0, clipLeft };
   }
@@ -143,6 +188,12 @@ export function calculateLayout(
   let clipRight = false;
   if (whiteIdxHasSharp(startIdx)) { startIdx -= 1; clipLeft = true; }
   if (whiteIdxHasSharp(endIdx)) { endIdx += 1; clipRight = true; }
+
+  // Ensure full black-key groups are visible for keyboard orientation.
+  // If we can see part of the 3-group (F-B) or 2-group (C-E), show all of it.
+  const expanded = ensureFullBlackKeyGroups(startIdx, endIdx);
+  startIdx = expanded.startIdx;
+  endIdx = expanded.endIdx;
 
   const startNote = WHITE_NOTE_ORDER[((startIdx % 7) + 7) % 7] as WhiteNote;
   const keyCount = endIdx - startIdx + 1;

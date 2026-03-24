@@ -3,14 +3,14 @@
   "version": "0.1.0",
   "description": "React component library for SVG piano chord diagrams",
   "type": "module",
-  "main": "./dist/better-chord-react.cjs",
-  "module": "./dist/better-chord-react.js",
+  "main": "./dist/chordl.cjs",
+  "module": "./dist/chordl.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/better-chord-react.js",
-      "require": "./dist/better-chord-react.cjs"
+      "import": "./dist/chordl.js",
+      "require": "./dist/chordl.cjs"
     }
   },
   "files": [

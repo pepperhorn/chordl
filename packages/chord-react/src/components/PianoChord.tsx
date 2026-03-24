@@ -4,11 +4,12 @@ import { PianoKeyboard } from "./PianoKeyboard";
 import { StaffNotation } from "./StaffNotation";
 import {
   parseChordDescription, resolveChord, calculateLayout, whiteIdxHasSharp,
-  computeKeyboard, normalizeNote, autoFingering,
+  computeKeyboard, normalizeNote, autoFingering, assignFingering,
   FLAT_TO_SHARP, WHITE_NOTE_ORDER,
 } from "@better-chord/core";
 import type { ProgressionChord } from "@better-chord/core";
-import { findVoicing, voicingPitchClasses, mapToVoicingQuality } from "@better-chord/voicings";
+import { findVoicing, voicingPitchClasses, mapToVoicingQuality, realizeVoicingFull } from "@better-chord/voicings";
+import type { Hand as VoicingHand } from "@better-chord/voicings";
 import { ChordGroup } from "./ChordGroup";
 import { resolveUITheme, UIThemeProvider } from "../ui-theme";
 
@@ -121,6 +122,7 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
   }
 
   let { notes } = resolved;
+  let voicingHandHints: VoicingHand[] | undefined;
 
   // If a style hint is present, try the voicing library for richer voicings
   if (parsed.styleHint) {
@@ -131,6 +133,7 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
         const pitchClasses = voicingPitchClasses(resolved.root, voicing);
         if (pitchClasses.length > 0) {
           notes = pitchClasses;
+          voicingHandHints = voicing.hands;
         }
       }
     }
@@ -181,18 +184,8 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
   const layoutPadding = parsed.padding ?? padding ?? 1;
   const resolvedFormat = parsed.format ?? format;
 
-  // Resolve fingering: explicit numbers take priority, then auto if requested
-  let resolvedFingering = parsed.fingering;
-  if (!resolvedFingering && parsed.autoFingering) {
-    if (lhBassNote) {
-      // LH gets one finger, RH gets auto-fingered
-      const lhFinger = autoFingering([lhBassNote], "lh");
-      const rhFinger = autoFingering(notes, "rh");
-      resolvedFingering = [...lhFinger, ...rhFinger];
-    } else {
-      resolvedFingering = autoFingering(notes, "rh");
-    }
-  }
+  // Fingering and hand assignment are computed after layout/octave resolution
+  // so MIDI values are available for accurate hand splitting (see below).
 
   // Staff notation helper — accepts octave-qualified notes for exact pitch matching
   const renderStaff = (
@@ -201,7 +194,8 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
   ) => {
     const staffNotes = opts?.bassNote ? [opts.bassNote, ...resolvedNotes] : resolvedNotes;
     const lhPlaybackOctave = 3 + (parsed.bassOctaveShift ?? 0);
-    const rhPlaybackOctave = 4 + (parsed.chordOctaveShift ?? 0);
+    // When no bass note, default to octave 2 so chords sit within bass clef
+    const rhPlaybackOctave = (opts?.bassNote ? 4 : 2) + (parsed.chordOctaveShift ?? 0);
     return (
       <StaffNotation
         notes={staffNotes}
@@ -218,7 +212,11 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
     );
   };
 
-  // Helper: compute octave-qualified notes from pitch classes and a base octave
+  // Helper: compute octave-qualified notes from pitch classes and a base octave.
+  // After initial ascending assignment, folds notes down to keep the voicing
+  // within a playable hand span (max ~19 semitones = octave + fifth).
+  const MAX_SPAN_SEMITONES = 28;
+
   const computeOctaveQualified = (pitchClasses: string[], baseOctave: number): string[] => {
     let octave = baseOctave;
     const firstNorm = normalizeNote(pitchClasses[0]);
@@ -227,7 +225,8 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
     );
     let prevWhiteIdx = firstWhiteIdx;
 
-    return pitchClasses.map((n, i) => {
+    // Step 1: naive ascending octave assignment
+    const assigned = pitchClasses.map((n, i) => {
       const norm = normalizeNote(n);
       const whiteKey = norm.replace("#", "") as WhiteNote;
       const whiteIdx = WHITE_NOTE_ORDER.indexOf(whiteKey);
@@ -235,8 +234,21 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
         octave++;
       }
       prevWhiteIdx = whiteIdx;
-      return `${norm}:${octave}`;
+      return { norm, octave };
     });
+
+    // Step 2: compact — fold notes down an octave if span exceeds playable range
+    const baseMidi = Note.midi(`${assigned[0].norm}${assigned[0].octave}`);
+    if (baseMidi != null) {
+      for (let i = 1; i < assigned.length; i++) {
+        const midi = Note.midi(`${assigned[i].norm}${assigned[i].octave}`);
+        if (midi != null && midi - baseMidi > MAX_SPAN_SEMITONES && assigned[i].octave > assigned[0].octave) {
+          assigned[i].octave--;
+        }
+      }
+    }
+
+    return assigned.map((a) => `${a.norm}:${a.octave}`);
   };
 
   // Single continuous keyboard with LH + RH brackets
@@ -341,6 +353,13 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
     const lhPlaybackOctave = 2 + (parsed.bassOctaveShift ?? 0);
     const rhPlaybackOctave = 3 + (parsed.chordOctaveShift ?? 0);
 
+    // Fingering for bass-note path: LH gets bass, RH gets chord
+    const lhBassFinger = autoFingering([lhBassNote], "lh");
+    const rhBassResult = assignFingering(notes, voicingHandHints);
+    const bassResolvedFingering = parsed.fingering ?? (parsed.autoFingering
+      ? [...lhBassFinger, ...rhBassResult.fingering]
+      : undefined);
+
     const keyboard = (
       <PianoKeyboard
         format={resolvedFormat}
@@ -361,7 +380,9 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
         scale={scale}
         showNoteNames={parsed.showNoteNames}
         noteNameSize={parsed.noteNameSize}
-        fingering={resolvedFingering}
+        noteNameMode={parsed.noteNameMode}
+        midiBaseOctave={lhPlaybackOctave + 1}
+        fingering={bassResolvedFingering}
         fingeringSize={parsed.fingeringSize}
         className={className}
         style={style}
@@ -420,14 +441,93 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
       let octave = layout.chordOctave;
       let prevWhiteIdx = whiteIndices[0];
 
-      highlightKeys = keyboardNotes.map((n, i) => {
+      // Step 1: naive ascending octave assignment
+      const assigned = keyboardNotes.map((n, i) => {
         const whiteIdx = whiteIndices[i];
         if (i > 0 && whiteIdx <= prevWhiteIdx) {
           octave++;
         }
         prevWhiteIdx = whiteIdx;
-        return `${n}:${octave}`;
+        return { note: n, octave };
       });
+
+      // Step 2: compact — fold notes down if span exceeds playable range
+      const baseMidi = Note.midi(`${assigned[0].note}${assigned[0].octave + 4}`);
+      if (baseMidi != null) {
+        for (let i = 1; i < assigned.length; i++) {
+          const midi = Note.midi(`${assigned[i].note}${assigned[i].octave + 4}`);
+          if (midi != null && midi - baseMidi > MAX_SPAN_SEMITONES && assigned[i].octave > assigned[0].octave) {
+            assigned[i].octave--;
+          }
+        }
+      }
+
+      highlightKeys = assigned.map((a) => `${a.note}:${a.octave}`);
+    }
+  }
+
+  // ── Compute fingering with MIDI context ──────────────────────────
+  // Now that we have octave-qualified highlight keys, compute MIDI values
+  // so assignFingering can sort by actual pitch and avoid hand crossing.
+  const chordMidiValues: number[] = highlightKeys.map((hk) => {
+    if (hk.includes(":")) {
+      const [note, oct] = hk.split(":");
+      return Note.midi(`${note}${parseInt(oct, 10) + 4}`) ?? 60;
+    }
+    return Note.midi(`${hk}4`) ?? 60;
+  });
+
+  let handResult: import("@better-chord/core").HandAssignment;
+  if (lhBassNote) {
+    // Explicit bass note path already handled above — skip MIDI-based split
+    const lhFinger = autoFingering([lhBassNote], "lh");
+    const rhResult = assignFingering(notes, voicingHandHints);
+    handResult = {
+      fingering: [...lhFinger, ...rhResult.fingering],
+      hands: ["lh" as const, ...rhResult.hands],
+    };
+  } else {
+    handResult = assignFingering(notes, voicingHandHints, chordMidiValues);
+  }
+
+  const resolvedFingering = parsed.fingering ?? (parsed.autoFingering ? handResult.fingering : undefined);
+  const isTwoHanded = !lhBassNote && handResult.hands.some((h) => h === "lh");
+
+  // Build hand brackets when chord is split across two hands
+  let autoHandBrackets: HandBracket[] | undefined;
+  if (isTwoHanded) {
+    const tempKeys = computeKeyboard(layout.startFrom as WhiteNote, layout.size, resolvedFormat);
+    const lhKeyIndices: number[] = [];
+    const rhKeyIndices: number[] = [];
+    const matched = new Set<number>();
+
+    for (let ni = 0; ni < keyboardNotes.length; ni++) {
+      const hand = handResult.hands[ni];
+      const hKey = highlightKeys[ni];
+      const hasOctave = hKey.includes(":");
+      for (let ki = 0; ki < tempKeys.length; ki++) {
+        if (matched.has(ki)) continue;
+        const keyNote = normalizeNote(tempKeys[ki].note);
+        if (hasOctave) {
+          const [note, oct] = hKey.split(":");
+          if (keyNote === note && tempKeys[ki].octave === parseInt(oct, 10)) {
+            matched.add(ki);
+            (hand === "lh" ? lhKeyIndices : rhKeyIndices).push(ki);
+            break;
+          }
+        } else if (keyNote === hKey) {
+          matched.add(ki);
+          (hand === "lh" ? lhKeyIndices : rhKeyIndices).push(ki);
+          break;
+        }
+      }
+    }
+
+    if (lhKeyIndices.length > 0 && rhKeyIndices.length > 0) {
+      autoHandBrackets = [
+        { label: "L.H.", keyIndices: lhKeyIndices },
+        { label: "R.H.", keyIndices: rhKeyIndices },
+      ];
     }
   }
 
@@ -443,9 +543,12 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
       theme={theme}
       highlightColor={highlightColor}
       chordLabel={parsed.chordName}
+      handBrackets={autoHandBrackets}
       scale={scale}
       showNoteNames={parsed.showNoteNames}
       noteNameSize={parsed.noteNameSize}
+      noteNameMode={parsed.noteNameMode}
+      midiBaseOctave={4}
       fingering={resolvedFingering}
       fingeringSize={parsed.fingeringSize}
       className={className}
@@ -454,7 +557,8 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
   );
 
   // Octave-qualified notes for staff notation (always compute for accuracy)
-  const staffOctaveNotes = computeOctaveQualified(notes, layout.chordOctave > 0 ? layout.chordOctave : 4);
+  // Default base octave 2 so chords sit within the bass clef staff
+  const staffOctaveNotes = computeOctaveQualified(notes, layout.chordOctave > 0 ? layout.chordOctave : 2);
 
   if (display === "staff") {
     return (

@@ -1,6 +1,8 @@
 export type Format = "compact" | "exact";
 /** Tailwind-inspired text size scale for annotations. */
 export type TextSize = "base" | "lg" | "xl" | "2xl";
+/** Note name display mode: pitch-class ("C", "Eb") or midi ("C4", "Eb4"). */
+export type NoteNameMode = "pitch-class" | "midi";
 export type WhiteNote = "C" | "D" | "E" | "F" | "G" | "A" | "B";
 export type NoteName = string;
 
@@ -32,6 +34,8 @@ export interface ParsedChordRequest {
   showNoteNames?: boolean;
   /** Text size for note name labels. */
   noteNameSize?: TextSize;
+  /** Note name display mode: pitch-class (default) or midi (with octave numbers). */
+  noteNameMode?: NoteNameMode;
   /** Fingering values (aligned with chord notes). Numbers 1–5 plus extra symbols (0, -, x). Invalid entries become "?". */
   fingering?: (number | string)[];
   /** Auto-compute fingering when true (no explicit numbers given). */
@@ -71,6 +75,7 @@ export interface DisplayDefaults {
   glyphs?: "bravura" | "petaluma";
   showNoteNames?: boolean;
   noteNameSize?: TextSize;
+  noteNameMode?: NoteNameMode;
   showFingering?: boolean;
   fingeringSize?: TextSize;
 }

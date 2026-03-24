@@ -1,4 +1,4 @@
-# better-chord-react
+# chordl
 
 A React component library for rendering interactive SVG piano chord diagrams with audio playback, MIDI export, and a comprehensive jazz voicing engine.
 

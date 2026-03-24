@@ -1,5 +1,5 @@
 {
-  "name": "better-chord-react-monorepo",
+  "name": "chordl",
   "private": true,
   "scripts": {
     "dev": "pnpm --filter @better-chord/react dev",

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-better-chord-react — a React project (details to be filled in once the codebase is initialized).
+chordl — a React project (details to be filled in once the codebase is initialized).
 
 ## Commands
 

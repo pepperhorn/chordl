@@ -1,6 +1,7 @@
 // ─── React components (local) ───────────────────────────────────────────────
 export { PianoKeyboard } from "./components/PianoKeyboard";
 export { PianoChord } from "./components/PianoChord";
+export { VoicingVariantToggle } from "./components/VoicingVariantToggle";
 export { ChordGroup } from "./components/ChordGroup";
 export { ProgressionView } from "./components/ProgressionView";
 export { StaffNotation } from "./components/StaffNotation";

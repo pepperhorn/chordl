@@ -60,6 +60,10 @@ const BASS_OCTAVE_RE =
 const NOTE_NAMES_RE =
   /(?:(?:with\s+)?(?:show\s+)?(?:(base|lg|xl|2xl)\s+)?note\s*names?(?:\s+(?:in\s+)?(base|lg|xl|2xl))?|name\s+the\s+notes(?:\s+(?:in\s+)?(base|lg|xl|2xl))?)/i;
 
+// "midi note names" / "with midi names" / "show midi note names in xl"
+const MIDI_NAMES_RE =
+  /(?:(?:with\s+)?(?:show\s+)?midi\s+(?:(base|lg|xl|2xl)\s+)?(?:note\s*)?names?(?:\s+(?:in\s+)?(base|lg|xl|2xl))?)/i;
+
 // "fingering 1 2 3 5" / "with fingering 1-3-5 in lg" / "fingering 1 x 3 5"
 const FINGERING_RE =
   /(?:with\s+)?finger(?:ing|s)?\s+([\dxX\-](?:[,\s\-]*[\dxX\-])+)(?:\s+(?:in\s+)?(base|lg|xl|2xl))?/i;
@@ -163,12 +167,22 @@ export function parseChordDescription(input: string): ParsedChordRequest {
     result.bassOctaveShift = isDown ? -count : count;
   }
 
-  // Extract "with note names" / "note names in xl" / "xl note names"
-  const noteNamesMatch = input.match(NOTE_NAMES_RE);
-  if (noteNamesMatch) {
+  // Extract "midi note names" / "with midi names" (check before regular note names)
+  const midiNamesMatch = input.match(MIDI_NAMES_RE);
+  if (midiNamesMatch) {
     result.showNoteNames = true;
-    // Size can be in group 1 (before "note names"), 2 (after), or 3 ("name the notes in xl")
-    result.noteNameSize = toTextSize(noteNamesMatch[1]) ?? toTextSize(noteNamesMatch[2]) ?? toTextSize(noteNamesMatch[3]);
+    result.noteNameMode = "midi";
+    result.noteNameSize = toTextSize(midiNamesMatch[1]) ?? toTextSize(midiNamesMatch[2]);
+  }
+
+  // Extract "with note names" / "note names in xl" / "xl note names"
+  if (!midiNamesMatch) {
+    const noteNamesMatch = input.match(NOTE_NAMES_RE);
+    if (noteNamesMatch) {
+      result.showNoteNames = true;
+      // Size can be in group 1 (before "note names"), 2 (after), or 3 ("name the notes in xl")
+      result.noteNameSize = toTextSize(noteNamesMatch[1]) ?? toTextSize(noteNamesMatch[2]) ?? toTextSize(noteNamesMatch[3]);
+    }
   }
 
   // Extract explicit fingering ("fingering 1 2 3 5 in lg")

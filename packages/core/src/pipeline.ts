@@ -145,13 +145,18 @@ export function processChordRequest(request: ChordRequest): ChordResult {
     const highlightKeys: string[] = [];
     const midiNoteNames: string[] = [];
 
+    // Max playable hand span: octave + fifth (~19 semitones)
+    const MAX_SPAN = 28;
+
     // Build ascending semitone sequence for the chord notes
     let prevSemitone = -1;
     let currentOctave = baseOctave + layout.chordOctave;
 
+    // Step 1: naive ascending octave assignment
+    const assigned: { pc: string; kpc: string; semitone: number; octave: number }[] = [];
     for (let i = 0; i < pitchClasses.length; i++) {
-      const pc = pitchClasses[i];           // display name (Bb, Eb, etc.)
-      const kpc = keyboardPitchClasses[i];  // sharp name for keyboard (A#, D#, etc.)
+      const pc = pitchClasses[i];
+      const kpc = keyboardPitchClasses[i];
       const semitone = NOTE_SEMITONES[pc];
       if (semitone === undefined) continue;
 
@@ -159,11 +164,24 @@ export function processChordRequest(request: ChordRequest): ChordResult {
         currentOctave++;
       }
       prevSemitone = semitone;
+      assigned.push({ pc, kpc, semitone, octave: currentOctave });
+    }
 
-      midiNoteNames.push(`${pc}${currentOctave}`);
-      // Highlight key uses sharp-normalized name for keyboard matching
-      const relOctave = currentOctave - baseOctave;
-      highlightKeys.push(`${kpc}:${relOctave}`);
+    // Step 2: compact — fold notes down if span exceeds playable range
+    if (assigned.length > 1) {
+      const baseSemi = assigned[0].semitone + assigned[0].octave * 12;
+      for (let i = 1; i < assigned.length; i++) {
+        const noteSemi = assigned[i].semitone + assigned[i].octave * 12;
+        if (noteSemi - baseSemi > MAX_SPAN && assigned[i].octave > assigned[0].octave) {
+          assigned[i].octave--;
+        }
+      }
+    }
+
+    for (const a of assigned) {
+      midiNoteNames.push(`${a.pc}${a.octave}`);
+      const relOctave = a.octave - baseOctave;
+      highlightKeys.push(`${a.kpc}:${relOctave}`);
     }
 
     // 6. Map highlight fills

@@ -1,4 +1,4 @@
-import type { KeyboardProps, HandBracket, TextSize } from "../types";
+import type { KeyboardProps, HandBracket, TextSize, NoteNameMode } from "../types";
 import {
   computeKeyboard, computeSvgDimensions,
   mapHighlights, normalizeNote,
@@ -84,6 +84,8 @@ function renderAnnotations(
   noteNamesRowH: number,
   y: number,
   uiTokens: { text: string; textMuted: string },
+  noteNameMode: NoteNameMode = "pitch-class",
+  midiBaseOctave: number = 4,
 ) {
   const highlighted: Array<{ x: number; width: number; note: string; index: number }> = [];
   const remaining = highlightKeys.map((h, i) => {
@@ -105,7 +107,10 @@ function renderAnnotations(
     });
     if (matchIdx !== -1) {
       remaining[matchIdx].matched = true;
-      const displayName = displayNoteNames?.[remaining[matchIdx].idx] ?? remaining[matchIdx].note;
+      let displayName = displayNoteNames?.[remaining[matchIdx].idx] ?? remaining[matchIdx].note;
+      if (noteNameMode === "midi") {
+        displayName = `${displayName}${midiBaseOctave + key.octave}`;
+      }
       highlighted.push({
         x: key.x,
         width: key.isBlack ? BLACK_KEY_WIDTH : WHITE_KEY_WIDTH,
@@ -176,6 +181,8 @@ export function PianoKeyboard({
   showNoteNames,
   displayNoteNames,
   noteNameSize = "base",
+  noteNameMode = "pitch-class",
+  midiBaseOctave = 4,
   fingering,
   fingeringSize = "base",
   clipLeft = false,
@@ -314,7 +321,7 @@ export function PianoKeyboard({
         keys, highlightKeys, displayNoteNames, fingering, hasNoteNames, !!hasFingering,
         noteNameSize, fingeringSize, noteNamesRowH,
         keysOffsetY + keyboardHeight + bracketsHeight + 2,
-        uiTokens,
+        uiTokens, noteNameMode, midiBaseOctave,
       )}
     </svg>
   );

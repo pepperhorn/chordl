@@ -75,3 +75,12 @@ export interface VoicingQuery {
   style?: VoicingStyle;
   artist?: string;
 }
+
+/** A voicing variant for the A/B/C toggle UI */
+export interface VoicingVariant {
+  id: string;                    // "rootless-maj7-a", "inv-1", "algo-open"
+  label: string;                 // "Rootless A", "1st Inversion", "Open Voicing"
+  notes: string[];               // Pitch classes for keyboard highlighting
+  handHints?: Hand[];            // Per-note hand assignments from library
+  source: "library" | "inversion" | "algorithmic";
+}

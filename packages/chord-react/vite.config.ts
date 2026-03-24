@@ -11,7 +11,7 @@ export default defineConfig(({ command }) => ({
       entry: resolve(__dirname, "src/index.ts"),
       name: "BetterChordReact",
       formats: ["es", "cjs"],
-      fileName: "better-chord-react",
+      fileName: "chordl",
     },
     rollupOptions: {
       external: ["react", "react-dom", "react/jsx-runtime"],

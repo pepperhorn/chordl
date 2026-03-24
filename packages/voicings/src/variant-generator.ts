@@ -1,0 +1,161 @@
+import type { VoicingVariant, VoicingQuality, VoicingEntry, Hand } from "./types";
+import { VOICING_LIBRARY } from "./library";
+import { voicingPitchClasses, findVoicing } from "./query";
+
+const FLAT_TO_SHARP: Record<string, string> = {
+  Db: "C#", Eb: "D#", Gb: "F#", Ab: "G#", Bb: "A#",
+};
+
+/** Normalize note to sharps for comparison. */
+function normalize(note: string): string {
+  return FLAT_TO_SHARP[note] ?? note;
+}
+
+/** Check if the lowest note (first in array) is the root/tonic. */
+function isRootPosition(notes: string[], root: string): boolean {
+  if (notes.length === 0) return false;
+  return normalize(notes[0]) === normalize(root);
+}
+
+/**
+ * Generate voicing variants for the A/B/C toggle.
+ *
+ * Strategy: three tiers of sources mixed for variety.
+ * 1. Library voicings (grouped by style, one per style)
+ * 2. Inversions (note rotation)
+ * 3. Algorithmic (open voicing, close position)
+ *
+ * @param root - Root note (e.g. "C", "D#")
+ * @param quality - Voicing quality from mapToVoicingQuality (may be undefined for plain triads)
+ * @param resolvedNotes - Pitch classes from chord resolver in root position
+ * @param count - Number of variants to generate (3, 6, 9...)
+ * @param options - Style hint, excluded IDs
+ */
+export function generateVariants(
+  root: string,
+  quality: VoicingQuality | undefined,
+  resolvedNotes: string[],
+  count: number = 3,
+  options?: {
+    styleHint?: string;
+    excludeIds?: string[];
+  },
+): VoicingVariant[] {
+  const excludeIds = new Set(options?.excludeIds ?? []);
+  const candidates: VoicingVariant[] = [];
+  const seenHashes = new Set<string>();
+
+  // Helper: hash a variant by sorted pitch classes to deduplicate
+  const hash = (notes: string[]): string => [...notes].sort().join(",");
+
+  const addCandidate = (v: VoicingVariant): boolean => {
+    const h = hash(v.notes);
+    if (seenHashes.has(h) || excludeIds.has(v.id)) return false;
+    seenHashes.add(h);
+    candidates.push(v);
+    return true;
+  };
+
+  // ── Slot A: Default voicing ──────────────────────────────────────
+  // If style hint matches a library entry, use that. Otherwise root position.
+  let slotAEntry: VoicingEntry | undefined;
+  if (options?.styleHint && quality) {
+    slotAEntry = findVoicing(quality, options.styleHint);
+  }
+
+  if (slotAEntry) {
+    const notes = voicingPitchClasses(root, slotAEntry);
+    addCandidate({
+      id: slotAEntry.id,
+      label: slotAEntry.tags.style,
+      notes,
+      handHints: slotAEntry.hands,
+      source: "library",
+    });
+  } else {
+    const defaultNotes = [...resolvedNotes];
+    const isRoot = isRootPosition(defaultNotes, root);
+    addCandidate({
+      id: isRoot ? "root-position" : "default",
+      label: isRoot ? "Root position" : "Default",
+      notes: defaultNotes,
+      source: "inversion",
+    });
+  }
+
+  // ── Library voicings (one per style) ─────────────────────────────
+  if (quality) {
+    const byStyle = new Map<string, VoicingEntry>();
+    for (const entry of VOICING_LIBRARY) {
+      if (entry.quality !== quality) continue;
+      if (excludeIds.has(entry.id)) continue;
+      if (slotAEntry && entry.id === slotAEntry.id) continue;
+      // Keep first entry per style (library is ordered by preference)
+      if (!byStyle.has(entry.tags.style)) {
+        byStyle.set(entry.tags.style, entry);
+      }
+    }
+
+    for (const [style, entry] of byStyle) {
+      const notes = voicingPitchClasses(root, entry);
+      addCandidate({
+        id: entry.id,
+        label: style,
+        notes,
+        handHints: entry.hands,
+        source: "library",
+      });
+    }
+  }
+
+  // ── Inversions ───────────────────────────────────────────────────
+  const INVERSION_LABELS = ["1st inv", "2nd inv", "3rd inv", "4th inv", "5th inv"];
+  for (let inv = 1; inv < resolvedNotes.length && inv <= 5; inv++) {
+    const rotated = [...resolvedNotes.slice(inv), ...resolvedNotes.slice(0, inv)];
+    addCandidate({
+      id: `inv-${inv}`,
+      label: INVERSION_LABELS[inv - 1] ?? `${inv}th inv`,
+      notes: rotated,
+      source: "inversion",
+    });
+  }
+
+  // ── Algorithmic variants ─────────────────────────────────────────
+  if (resolvedNotes.length >= 3) {
+    // Open voicing: move 2nd note up an octave (widen the voicing)
+    // This changes the note order, giving a different sound
+    const open = [resolvedNotes[0], ...resolvedNotes.slice(2), resolvedNotes[1]];
+    addCandidate({
+      id: "algo-open",
+      label: "Open voicing",
+      notes: open,
+      source: "algorithmic",
+    });
+
+    // Drop 2 style: move 2nd-from-top note to the bottom
+    const drop2 = [...resolvedNotes];
+    const secondFromTop = drop2.splice(-2, 1)[0];
+    drop2.unshift(secondFromTop);
+    addCandidate({
+      id: "algo-drop2",
+      label: "Drop 2",
+      notes: drop2,
+      source: "algorithmic",
+    });
+  }
+
+  if (resolvedNotes.length >= 4) {
+    // Simplified: root + 3rd + 7th only (guide tones)
+    // Take 1st, 2nd, and last notes as an approximation
+    const simplified = [resolvedNotes[0], resolvedNotes[1], resolvedNotes[resolvedNotes.length - 1]];
+    addCandidate({
+      id: "algo-simplified",
+      label: "Simplified",
+      notes: simplified,
+      source: "algorithmic",
+    });
+  }
+
+  // Return up to `count` variants
+  return candidates.slice(0, count);
+}

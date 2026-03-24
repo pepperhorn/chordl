@@ -11,6 +11,7 @@ export const SYSTEM_DEFAULTS: Required<DisplayDefaults> = {
   glyphs: "bravura",
   showNoteNames: false,
   noteNameSize: "base",
+  noteNameMode: "pitch-class",
   showFingering: false,
   fingeringSize: "base",
 };

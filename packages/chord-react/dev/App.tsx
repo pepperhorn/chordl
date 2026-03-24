@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { createRoot } from "react-dom/client";
-import { PianoKeyboard, PianoChord, StaffNotation, ChordSheet, ProgressionView, isProgressionRequest, parseProgressionRequest, resolveProgressionRequest, BRAVURA_GLYPHS, PETALUMA_GLYPHS, encodeChordSheet, decodeChordSheet } from "../src";
+import { PianoKeyboard, PianoChord, VoicingVariantToggle, StaffNotation, ChordSheet, ProgressionView, isProgressionRequest, parseProgressionRequest, resolveProgressionRequest, BRAVURA_GLYPHS, PETALUMA_GLYPHS, encodeChordSheet, decodeChordSheet } from "../src";
 import type { StaffGlyphSet, ChordSheetData } from "../src";
 import type { UIThemeMode } from "../src";
 import { SHOW_HINTS, HINT_SPEED } from "../src/config";
@@ -88,12 +88,24 @@ function DisplayToggle({ value, onChange }: { value: DisplayMode; onChange: (v: 
             boxShadow: "0 1px 4px rgba(0,0,0,0.15)",
           }}
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            {/* Music note icon */}
-            <path d="M9 18V5l12-2v13" />
-            <circle cx="6" cy="18" r="3" fill="currentColor" stroke="none" />
-            <circle cx="18" cy="16" r="3" fill="currentColor" stroke="none" />
-          </svg>
+          {(value === "keyboard" || value === "both") && (
+            <svg width="16" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+              {/* Piano keyboard icon (3 white keys + 2 black keys) */}
+              <rect x="1" y="1" width="18" height="18" rx="1.5" />
+              <line x1="7" y1="1" x2="7" y2="19" />
+              <line x1="13" y1="1" x2="13" y2="19" />
+              <rect x="5" y="1" width="3.5" height="11" rx="0.5" fill="currentColor" stroke="none" />
+              <rect x="11.5" y="1" width="3.5" height="11" rx="0.5" fill="currentColor" stroke="none" />
+            </svg>
+          )}
+          {(value === "staff" || value === "both") && (
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              {/* Music note icon */}
+              <path d="M9 18V5l12-2v13" />
+              <circle cx="6" cy="18" r="3" fill="currentColor" stroke="none" />
+              <circle cx="18" cy="16" r="3" fill="currentColor" stroke="none" />
+            </svg>
+          )}
           {current.label}
         </button>
       </div>
@@ -140,7 +152,7 @@ function HintRotator() {
   );
 }
 
-function InteractiveInput({ uiTheme }: { uiTheme: UIThemeMode }) {
+function InteractiveInput({ uiTheme, showOptions, onToggleOptions }: { uiTheme: UIThemeMode; showOptions: boolean; onToggleOptions: () => void }) {
   const [input, setInput] = useState("Cmaj7#5 starting on G#");
   const [theme, setTheme] = useState<string>("simple");
   const [keyFormat, setKeyFormat] = useState<"compact" | "exact">("compact");
@@ -227,7 +239,7 @@ function InteractiveInput({ uiTheme }: { uiTheme: UIThemeMode }) {
       </div>
 
       {/* Controls row — muted, secondary */}
-      <div style={{
+      {showOptions && <div style={{
         display: "flex",
         gap: "0.75rem",
         alignItems: "stretch",
@@ -299,7 +311,7 @@ function InteractiveInput({ uiTheme }: { uiTheme: UIThemeMode }) {
           </div>
         )}
         <DisplayToggle value={displayMode} onChange={setDisplayMode} />
-      </div>
+      </div>}
 
       {/* Error */}
       {error && (
@@ -320,10 +332,40 @@ function InteractiveInput({ uiTheme }: { uiTheme: UIThemeMode }) {
           {isProg && progressionResult ? (
             <ProgressionView result={progressionResult} theme={theme} uiTheme={uiTheme} />
           ) : (
-            <PianoChord chord={input} theme={theme} format={keyFormat} scale={scale} display={displayMode} highlightColor={theme === "simple" ? highlightColor : undefined} uiTheme={uiTheme} />
+            <VoicingVariantToggle chord={input} theme={theme} format={keyFormat} scale={scale} display={displayMode} highlightColor={theme === "simple" ? highlightColor : undefined} uiTheme={uiTheme} />
           )}
         </ErrorBoundary>
       </div>
+
+      {/* Toggle for options & examples */}
+      <button
+        className="btn-toggle-options"
+        onClick={onToggleOptions}
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 6,
+          fontFamily: "inherit",
+          fontSize: "0.8rem",
+          fontWeight: 400,
+          padding: "6px 16px",
+          border: "1px solid var(--glass-border)",
+          borderRadius: 20,
+          background: "transparent",
+          color: "var(--text-muted)",
+          cursor: "pointer",
+          transition: "all 0.2s ease",
+          letterSpacing: "0.01em",
+        }}
+      >
+        <span style={{
+          display: "inline-block",
+          transform: showOptions ? "rotate(90deg)" : "rotate(0deg)",
+          transition: "transform 0.2s ease",
+          fontSize: "0.65rem",
+        }}>&#9654;</span>
+        {showOptions ? "Hide" : "Show"} options &amp; examples
+      </button>
     </div>
   );
 }
@@ -527,6 +569,7 @@ function ChordSheetDemo({ uiTheme }: { uiTheme: UIThemeMode }) {
 
 function App() {
   const [uiTheme, setUiTheme] = useState<UIThemeMode>("light");
+  const [showOptions, setShowOptions] = useState(false);
 
   return (
     <div
@@ -554,8 +597,8 @@ function App() {
             color: "var(--text)",
             lineHeight: 1.2,
           }}>
-            better-chord
-            <span style={{ color: "var(--accent)", fontWeight: 300 }}>.react</span>
+            chordl
+            <span style={{ color: "var(--accent)", fontWeight: 300 }}>.app</span>
           </h1>
           <p style={{
             fontSize: "0.82rem",
@@ -564,7 +607,7 @@ function App() {
             fontWeight: 300,
             letterSpacing: "0.01em",
           }}>
-            Interactive piano chord visualization
+            Interactive chord visualization
           </p>
         </div>
         <PillGroup
@@ -581,12 +624,12 @@ function App() {
       <div className="fade-in fade-in-delay-1" style={{
         padding: "1.5rem 0 2rem",
       }}>
-        <InteractiveInput uiTheme={uiTheme} />
+        <InteractiveInput uiTheme={uiTheme} showOptions={showOptions} onToggleOptions={() => setShowOptions((v) => !v)} />
       </div>
 
       {/* Example sections */}
-      <div className="fade-in fade-in-delay-2">
-        <Collapsible title="Explicit Props">
+      {showOptions && <div className="fade-in fade-in-delay-2">
+        <Collapsible title="Define Your Look & Feel">
           <div className="row" style={{ marginBottom: "1rem" }}>
             <div className="glass-card">
               <span className="example-label">highlightKeys=["C","E","G"]</span>
@@ -606,6 +649,48 @@ function App() {
               <PianoKeyboard startFrom="G" size={10} format="exact" uiTheme={uiTheme} />
             </div>
           </div>
+          <div className="row" style={{ marginBottom: "1rem" }}>
+            <div className="glass-card">
+              <span className="example-label">Boomwhacker · chord="C"</span>
+              <PianoChord chord="C" theme="boomwhacker" uiTheme={uiTheme} />
+            </div>
+            <div className="glass-card">
+              <span className="example-label">Simple · chord="C"</span>
+              <PianoChord chord="C" theme="simple" uiTheme={uiTheme} />
+            </div>
+            <div className="glass-card">
+              <span className="example-label">Custom · highlightColor="#ff6b6b"</span>
+              <PianoChord chord="Am" highlightColor="#ff6b6b" uiTheme={uiTheme} />
+            </div>
+          </div>
+          <div className="row" style={{ marginBottom: "1rem" }}>
+            <div className="glass-card">
+              <span className="example-label">Note Names · base</span>
+              <PianoChord chord="Cmaj7 with note names" uiTheme={uiTheme} />
+            </div>
+            <div className="glass-card">
+              <span className="example-label">Note Names · lg</span>
+              <PianoChord chord="Cmaj7 with note names in lg" uiTheme={uiTheme} />
+            </div>
+            <div className="glass-card">
+              <span className="example-label">Note Names · xl</span>
+              <PianoChord chord="Cmaj7 with note names in xl" uiTheme={uiTheme} />
+            </div>
+          </div>
+          <div className="row" style={{ marginBottom: "1rem" }}>
+            <div className="glass-card">
+              <span className="example-label">MIDI Names · base</span>
+              <PianoChord chord="Cmaj7 midi note names" uiTheme={uiTheme} />
+            </div>
+            <div className="glass-card">
+              <span className="example-label">MIDI Names · lg</span>
+              <PianoChord chord="Cmaj7 show midi names in lg" uiTheme={uiTheme} />
+            </div>
+            <div className="glass-card">
+              <span className="example-label">MIDI Names · xl</span>
+              <PianoChord chord="Cmaj7 show midi names in xl" uiTheme={uiTheme} />
+            </div>
+          </div>
         </Collapsible>
 
         <Collapsible title="Chord Strings">
@@ -621,23 +706,6 @@ function App() {
             <div className="glass-card">
               <span className="example-label">chord="D minor seventh 1st inversion"</span>
               <PianoChord chord="D minor seventh in first inversion" uiTheme={uiTheme} />
-            </div>
-          </div>
-        </Collapsible>
-
-        <Collapsible title="Themes">
-          <div className="row" style={{ marginBottom: "1rem" }}>
-            <div className="glass-card">
-              <span className="example-label">Boomwhacker · chord="C"</span>
-              <PianoChord chord="C" theme="boomwhacker" uiTheme={uiTheme} />
-            </div>
-            <div className="glass-card">
-              <span className="example-label">Simple · chord="C"</span>
-              <PianoChord chord="C" theme="simple" uiTheme={uiTheme} />
-            </div>
-            <div className="glass-card">
-              <span className="example-label">Custom · highlightColor="#ff6b6b"</span>
-              <PianoChord chord="Am" highlightColor="#ff6b6b" uiTheme={uiTheme} />
             </div>
           </div>
         </Collapsible>
@@ -676,7 +744,7 @@ function App() {
             />
           </div>
         </Collapsible>
-      </div>
+      </div>}
 
       {/* Footer */}
       <footer className="fade-in fade-in-delay-3" style={{
