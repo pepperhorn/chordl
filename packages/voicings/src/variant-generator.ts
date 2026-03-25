@@ -37,8 +37,9 @@ export function generateVariants(
   const candidates: VoicingVariant[] = [];
   const seenHashes = new Set<string>();
 
-  // Helper: hash a variant by sorted pitch classes to deduplicate
-  const hash = (notes: string[]): string => [...notes].sort().join(",");
+  // Helper: hash a variant by note order to deduplicate.
+  // Preserves order so inversions (same notes, different bottom note) are distinct.
+  const hash = (notes: string[]): string => notes.join(",");
 
   const addCandidate = (v: VoicingVariant): boolean => {
     const h = hash(v.notes);
@@ -67,9 +68,12 @@ export function generateVariants(
   } else {
     const defaultNotes = [...resolvedNotes];
     const isRoot = isRootPosition(defaultNotes, root);
+    const label = isRoot
+      ? "Root position"
+      : `From ${defaultNotes[0]}`;
     addCandidate({
       id: isRoot ? "root-position" : "default",
-      label: isRoot ? "Root position" : "Default",
+      label,
       notes: defaultNotes,
       source: "inversion",
     });

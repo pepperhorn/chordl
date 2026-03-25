@@ -3,7 +3,109 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>chordl — Dev Playground</title>
+    <title>chordl — Interactive Piano Chord Visualization</title>
+    <meta name="description" content="Visualize any piano chord instantly. Type a chord name like Cmaj7, Dm7, or G7#9 and see the keyboard diagram, staff notation, fingering, and voicing variants. Free tool by Creative Ranges Foundation." />
+    <meta name="keywords" content="piano chords, chord visualization, chord diagram, piano keyboard, music theory, jazz voicings, chord inversions, fingering, staff notation, MIDI" />
+    <meta name="author" content="PepperHorn Music / Creative Ranges Foundation" />
+    <link rel="canonical" href="https://chordl.app" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="chordl — Interactive Piano Chord Visualization" />
+    <meta property="og:description" content="Type any chord and see it on the piano. Keyboard diagrams, staff notation, fingering, voicing variants, and MIDI export. Free and open source." />
+    <meta property="og:url" content="https://chordl.app" />
+    <meta property="og:site_name" content="chordl" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="chordl — Interactive Piano Chord Visualization" />
+    <meta name="twitter:description" content="Type any chord and see it on the piano. Keyboard diagrams, staff notation, fingering, and voicing variants." />
+
+    <!-- AEO: structured data for answer engines -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "chordl",
+      "url": "https://chordl.app",
+      "description": "Interactive piano chord visualization tool. Type any chord name — from simple triads to complex jazz voicings like Cmaj7#5, Dm7b5, or G7#9 — and instantly see keyboard diagrams, staff notation, fingering, hand assignments, and multiple voicing variants.",
+      "applicationCategory": "MusicApplication",
+      "operatingSystem": "Any",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "featureList": [
+        "Piano keyboard chord diagrams",
+        "Staff notation (treble, bass, grand staff)",
+        "Auto-fingering with Levine-style hand splitting",
+        "Multiple voicing variants (A/B/C toggle)",
+        "Jazz voicing library (rootless, shell, quartal, drop 2, upper structure)",
+        "Chord inversions",
+        "MIDI note names",
+        "SVG and PNG export",
+        "MIDI file export",
+        "Chord progression visualization (ii-V-I, blues, etc.)",
+        "Dark mode",
+        "Natural language input"
+      ],
+      "creator": {
+        "@type": "Organization",
+        "name": "Creative Ranges Foundation",
+        "url": "https://creativeranges.org"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "PepperHorn Music",
+        "url": "https://pepperhorn.com"
+      },
+      "license": "https://opensource.org/licenses/MIT"
+    }
+    </script>
+
+    <!-- AEO: FAQ for answer engines -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "How do I visualize a piano chord?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Type any chord name into chordl — like Cmaj7, Dm7, G7#9, or Bbm7b5 — and it instantly shows a piano keyboard diagram with the notes highlighted. You can also add 'with fingering' to see finger numbers, or 'midi' for MIDI note names."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What chord formats does chordl support?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "chordl understands standard chord symbols (Cmaj7, Dm7, G7), slash chords (C/E), natural language (D minor seventh in first inversion), jazz voicing styles (Dm7 Bill Evans style), and progressions (ii-V-I in C). It supports triads, 7th chords, extended chords (9th, 11th, 13th), altered chords (#5, #9, b13), sus chords, and diminished chords."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I see different voicings for the same chord?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes — chordl generates multiple voicing variants for every chord. Use the A/B/C toggle below the keyboard to switch between root position, inversions, shell voicings, rootless voicings, and more. Press the + button to generate additional options."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does chordl show piano fingering?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Add 'with fingering' to any chord and chordl assigns finger numbers (1-5) for each note. For chords too wide for one hand, it automatically splits between left and right hands using jazz piano principles inspired by Mark Levine's Jazz Piano Book."
+          }
+        }
+      ]
+    }
+    </script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">

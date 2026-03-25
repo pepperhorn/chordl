@@ -185,6 +185,12 @@ export function parseChordDescription(input: string): ParsedChordRequest {
     }
   }
 
+  // Fallback: bare "midi" in the input implies MIDI note names
+  if (!result.showNoteNames && /\bmidi\b/i.test(input)) {
+    result.showNoteNames = true;
+    result.noteNameMode = "midi";
+  }
+
   // Extract explicit fingering ("fingering 1 2 3 5 in lg")
   const fingeringMatch = input.match(FINGERING_RE);
   if (fingeringMatch) {

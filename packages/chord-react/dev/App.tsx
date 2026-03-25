@@ -159,6 +159,7 @@ function InteractiveInput({ uiTheme, showOptions, onToggleOptions }: { uiTheme: 
   const [displayMode, setDisplayMode] = useState<DisplayMode>("keyboard");
   const [scale, setScale] = useState(0.7);
   const [highlightColor, setHighlightColor] = useState("#a0c6e8");
+  const [octaveShift, setOctaveShift] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
   const isProg = isProgressionRequest(input);
@@ -311,6 +312,58 @@ function InteractiveInput({ uiTheme, showOptions, onToggleOptions }: { uiTheme: 
           </div>
         )}
         <DisplayToggle value={displayMode} onChange={setDisplayMode} />
+        <div className="control-item">
+          <span className="control-label">Octave</span>
+          <div className="control-content">
+            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              <button
+                className="octave-down pill-btn"
+                onClick={() => setOctaveShift((v) => v - 1)}
+                style={{
+                  fontFamily: "inherit",
+                  fontSize: "0.85rem",
+                  fontWeight: 500,
+                  padding: "6px 10px",
+                  border: "none",
+                  borderRadius: 8,
+                  background: "var(--pill-bg)",
+                  color: "var(--pill-text)",
+                  cursor: "pointer",
+                  transition: "all 0.2s ease",
+                }}
+              >
+                ▼
+              </button>
+              <span style={{
+                fontSize: "0.8rem",
+                fontWeight: 600,
+                color: "var(--pill-active-text)",
+                minWidth: 24,
+                textAlign: "center",
+              }}>
+                {octaveShift === 0 ? "–" : (octaveShift > 0 ? `+${octaveShift}` : octaveShift)}
+              </span>
+              <button
+                className="octave-up pill-btn"
+                onClick={() => setOctaveShift((v) => v + 1)}
+                style={{
+                  fontFamily: "inherit",
+                  fontSize: "0.85rem",
+                  fontWeight: 500,
+                  padding: "6px 10px",
+                  border: "none",
+                  borderRadius: 8,
+                  background: "var(--pill-bg)",
+                  color: "var(--pill-text)",
+                  cursor: "pointer",
+                  transition: "all 0.2s ease",
+                }}
+              >
+                ▲
+              </button>
+            </div>
+          </div>
+        </div>
       </div>}
 
       {/* Error */}
@@ -328,11 +381,15 @@ function InteractiveInput({ uiTheme, showOptions, onToggleOptions }: { uiTheme: 
 
       {/* Chord output */}
       <div className="chord-output" style={{ width: "100%" }}>
-        <ErrorBoundary key={input + theme + keyFormat + scale + highlightColor + displayMode} onError={setError}>
+        <ErrorBoundary key={input + theme + keyFormat + scale + highlightColor + displayMode + octaveShift} onError={setError}>
           {isProg && progressionResult ? (
             <ProgressionView result={progressionResult} theme={theme} uiTheme={uiTheme} />
           ) : (
-            <VoicingVariantToggle chord={input} theme={theme} format={keyFormat} scale={scale} display={displayMode} highlightColor={theme === "simple" ? highlightColor : undefined} uiTheme={uiTheme} />
+            <VoicingVariantToggle
+              chord={octaveShift === 0 ? input : `${input} chord ${octaveShift > 0 ? "up" : "down"} ${Math.abs(octaveShift)} octave${Math.abs(octaveShift) > 1 ? "s" : ""}`}
+              theme={theme} format={keyFormat} scale={scale} display={displayMode}
+              highlightColor={theme === "simple" ? highlightColor : undefined} uiTheme={uiTheme}
+            />
           )}
         </ErrorBoundary>
       </div>

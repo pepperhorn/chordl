@@ -5,6 +5,7 @@ import { PianoChord } from "./PianoChord";
 import {
   parseChordDescription,
   resolveChord,
+  FLAT_TO_SHARP,
 } from "@better-chord/core";
 import {
   generateVariants,
@@ -36,14 +37,26 @@ export function VoicingVariantToggle({
   const [activeIndex, setActiveIndex] = useState(0);
   const [totalCount, setTotalCount] = useState(3);
 
-  // Parse and resolve chord to get root, quality, notes
+  // Parse and resolve chord to get root, quality, notes.
+  // Apply "starting on" / inversion rotation so variants match what PianoChord renders.
   const resolved = useMemo(() => {
     try {
       const parsed = parseChordDescription(chord);
       if (!parsed.chordName) return null;
-      const res = resolveChord(parsed.chordName);
-      const quality = mapToVoicingQuality(res.type, res.notes);
-      return { parsed, root: res.root, quality, notes: res.notes, type: res.type, styleHint: parsed.styleHint };
+      const res = resolveChord(parsed.chordName, parsed.inversion);
+      let notes = res.notes;
+
+      // Apply "starting on X" rotation (same logic as PianoChord)
+      if (parsed.startingNote) {
+        const norm = FLAT_TO_SHARP[parsed.startingNote] ?? parsed.startingNote;
+        const idx = notes.indexOf(norm);
+        if (idx > 0) {
+          notes = [...notes.slice(idx), ...notes.slice(0, idx)];
+        }
+      }
+
+      const quality = mapToVoicingQuality(res.type, notes);
+      return { parsed, root: res.root, quality, notes, type: res.type, styleHint: parsed.styleHint };
     } catch {
       return null;
     }
@@ -160,7 +173,7 @@ export function VoicingVariantToggle({
               flexDirection: "column",
               alignItems: "center",
               gap: 3,
-              padding: "10px 18px 8px",
+              padding: "12px 22px 10px",
               border: i === activeIndex ? "none" : "1px solid var(--glass-border, #e0e0e0)",
               borderRadius: 10,
               background: i === activeIndex ? "var(--pill-active-bg, #fff)" : "transparent",
@@ -168,15 +181,15 @@ export function VoicingVariantToggle({
               boxShadow: i === activeIndex ? "0 1px 6px var(--pill-active-shadow, rgba(0,0,0,0.08))" : "none",
               cursor: "pointer",
               fontFamily: "inherit",
-              fontSize: "1rem",
+              fontSize: "1.2rem",
               fontWeight: i === activeIndex ? 600 : 500,
               transition: "all 0.2s ease",
-              minWidth: 56,
+              minWidth: 64,
             }}
           >
             <span>{LABELS[i]}</span>
             <span style={{
-              fontSize: "0.65rem",
+              fontSize: "0.78rem",
               fontWeight: 400,
               color: "var(--text-dim, #8b95a5)",
               whiteSpace: "nowrap",
@@ -189,31 +202,31 @@ export function VoicingVariantToggle({
           </button>
         ))}
 
-        {/* + button */}
-        <button
+        {/* + button — hide when all variants exhausted */}
+        {variants.length >= totalCount && <button
           className="variant-pill-add"
           onClick={() => setTotalCount((c) => c + 3)}
           style={{
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            padding: "10px 14px",
+            padding: "12px 16px",
             border: "1px dashed var(--glass-border, #e0e0e0)",
             borderRadius: 10,
             background: "transparent",
             color: "var(--text-muted, #5a6374)",
             cursor: "pointer",
             fontFamily: "inherit",
-            fontSize: "1.1rem",
+            fontSize: "1.2rem",
             fontWeight: 400,
             transition: "all 0.2s ease",
-            minWidth: 48,
-            height: 48,
+            minWidth: 52,
+            height: 52,
           }}
           title="Generate more voicing options"
         >
           +
-        </button>
+        </button>}
       </div>
     </div>
   );
