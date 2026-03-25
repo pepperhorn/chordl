@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "dev": "pnpm --filter @better-chord/react dev",
-    "build": "pnpm --filter @better-chord/voicings build && pnpm --filter @better-chord/core build && pnpm --filter @better-chord/react build",
+    "build": "pnpm --filter @better-chord/core build && pnpm --filter @better-chord/voicings build && pnpm --filter @better-chord/react build",
     "test": "pnpm --filter @better-chord/voicings test && pnpm --filter @better-chord/core test && pnpm --filter @better-chord/react test",
     "test:run": "pnpm --filter @better-chord/voicings test:run && pnpm --filter @better-chord/core test:run && pnpm --filter @better-chord/react test:run",
     "lint": "pnpm --filter @better-chord/voicings lint && pnpm --filter @better-chord/core lint && pnpm --filter @better-chord/react lint"
