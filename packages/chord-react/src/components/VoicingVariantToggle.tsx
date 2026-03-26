@@ -74,10 +74,12 @@ export function VoicingVariantToggle({
     );
   }, [resolved, totalCount]);
 
-  // Reset active index when chord changes
-  const [prevChord, setPrevChord] = useState(chord);
-  if (chord !== prevChord) {
-    setPrevChord(chord);
+  // Reset active index only when the actual chord identity changes
+  // (root + notes), not when display modifiers (fingering, midi, etc.) change.
+  const chordIdentity = resolved ? `${resolved.root}:${resolved.notes.join(",")}` : chord;
+  const [prevIdentity, setPrevIdentity] = useState(chordIdentity);
+  if (chordIdentity !== prevIdentity) {
+    setPrevIdentity(chordIdentity);
     setActiveIndex(0);
     setTotalCount(3);
   }
