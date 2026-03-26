@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { ProgressionResult } from "@better-chord/core";
-import type { Format, ColorTheme, DisplayMode } from "../types";
+import type { Format, ColorTheme, DisplayMode, NoteNameMode } from "../types";
 import type { UIThemeMode } from "../config";
 import { ChordGroup } from "./ChordGroup";
 import { resolveUITheme, UIThemeProvider } from "../ui-theme";
@@ -42,6 +42,8 @@ export function ProgressionView({
   const [keyFormat, setKeyFormat] = useState<Format>("compact");
   const [displayMode, setDisplayMode] = useState<DisplayMode>("keyboard");
   const [scale, setScale] = useState(0.5);
+  const [noteNames, setNoteNames] = useState<"off" | "notes" | "midi">("off");
+  const [showFingering, setShowFingering] = useState(false);
 
   const pillGroupStyle = {
     display: "inline-flex" as const,
@@ -137,6 +139,45 @@ export function ProgressionView({
               </button>
             ))}
           </div>
+          <div className="bc-progression__names-toggle" style={pillGroupStyle}>
+            <button
+              className="bc-progression__btn"
+              style={pillBtnStyle(noteNames === "off")}
+              onClick={() => setNoteNames("off")}
+            >
+              Names Off
+            </button>
+            <button
+              className="bc-progression__btn"
+              style={pillBtnStyle(noteNames === "notes")}
+              onClick={() => setNoteNames("notes")}
+            >
+              Notes
+            </button>
+            <button
+              className="bc-progression__btn"
+              style={pillBtnStyle(noteNames === "midi")}
+              onClick={() => setNoteNames("midi")}
+            >
+              MIDI
+            </button>
+          </div>
+          <div className="bc-progression__fingering-toggle" style={pillGroupStyle}>
+            <button
+              className="bc-progression__btn"
+              style={pillBtnStyle(!showFingering)}
+              onClick={() => setShowFingering(false)}
+            >
+              No Fingering
+            </button>
+            <button
+              className="bc-progression__btn"
+              style={pillBtnStyle(showFingering)}
+              onClick={() => setShowFingering(true)}
+            >
+              Fingering
+            </button>
+          </div>
         </div>
       </div>
 
@@ -153,11 +194,14 @@ export function ProgressionView({
             showPlayback={showPlayback}
             scale={scale}
             display={displayMode}
+            showNoteNames={noteNames !== "off"}
+            noteNameMode={noteNames === "midi" ? "midi" : "pitch-class"}
+            showFingering={showFingering}
           />
         ))
       ) : (
         // Group by chord position — all example 1 first chords, then all second chords, etc.
-        renderByChord(result, format ?? keyFormat, theme, highlightColor, showPlayback, scale, displayMode)
+        renderByChord(result, format ?? keyFormat, theme, highlightColor, showPlayback, scale, displayMode, noteNames, showFingering)
       )}
     </div>
     </UIThemeProvider>
@@ -172,6 +216,8 @@ function renderByChord(
   showPlayback?: boolean,
   scale?: number,
   display?: DisplayMode,
+  noteNames?: "off" | "notes" | "midi",
+  showFingering?: boolean,
 ) {
   if (result.examples.length === 0) return null;
 
@@ -198,6 +244,9 @@ function renderByChord(
       showPlayback={showPlayback}
       scale={scale}
       display={display}
+      showNoteNames={noteNames !== "off"}
+      noteNameMode={noteNames === "midi" ? "midi" : "pitch-class"}
+      showFingering={showFingering}
     />
   ));
 }

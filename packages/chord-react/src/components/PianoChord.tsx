@@ -195,7 +195,7 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
     const staffNotes = opts?.bassNote ? [opts.bassNote, ...resolvedNotes] : resolvedNotes;
     const lhPlaybackOctave = 3 + (parsed.bassOctaveShift ?? 0);
     // When no bass note, default to octave 2 so chords sit within bass clef
-    const rhPlaybackOctave = (opts?.bassNote ? 4 : 2) + (parsed.chordOctaveShift ?? 0);
+    const rhPlaybackOctave = 4 + (parsed.chordOctaveShift ?? 0);
     return (
       <StaffNotation
         notes={staffNotes}
@@ -557,8 +557,7 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
   );
 
   // Octave-qualified notes for staff notation (always compute for accuracy)
-  // Default base octave 2 so chords sit within the bass clef staff
-  const staffOctaveNotes = computeOctaveQualified(notes, layout.chordOctave > 0 ? layout.chordOctave : 2);
+  const staffOctaveNotes = computeOctaveQualified(notes, layout.chordOctave > 0 ? layout.chordOctave : 4);
 
   if (display === "staff") {
     return (

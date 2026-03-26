@@ -227,15 +227,32 @@ export function computeStaffLayout(
     allWithOctaves = [...lhWithOctaves, ...rhWithOctaves];
   }
 
-  const hasTreble = allWithOctaves.some(
-    (n) => noteToMidi(n.pitchClass, n.octave) >= 60,
-  );
-  const hasBass = allWithOctaves.some(
-    (n) => noteToMidi(n.pitchClass, n.octave) < 60,
-  );
+  // Determine clef based on where the majority of notes sit.
+  // A3 = MIDI 57, C4 = MIDI 60.
+  // If explicitly split (LH/RH), use grand staff.
+  // Otherwise, use predominance: count notes above vs at-or-below the midpoint.
+  const hasExplicitSplit = lhNotes && lhNotes.length > 0;
+  const midpoint = 57; // A3 — notes above here lean treble, at/below lean bass
 
-  const staffMode: "treble" | "bass" | "grand" =
-    hasTreble && hasBass ? "grand" : hasTreble ? "treble" : "bass";
+  const trebleCount = allWithOctaves.filter(
+    (n) => noteToMidi(n.pitchClass, n.octave) > midpoint,
+  ).length;
+  const bassCount = allWithOctaves.filter(
+    (n) => noteToMidi(n.pitchClass, n.octave) <= midpoint,
+  ).length;
+
+  let staffMode: "treble" | "bass" | "grand";
+  if (hasExplicitSplit) {
+    // Explicit LH/RH split → grand staff
+    staffMode = "grand";
+  } else if (trebleCount > 0 && bassCount > 0) {
+    // Notes span both ranges — use predominance
+    staffMode = trebleCount >= bassCount ? "treble" : "bass";
+  } else if (trebleCount > 0) {
+    staffMode = "treble";
+  } else {
+    staffMode = "bass";
+  }
 
   const trebleBottomLineY = STAFF_TOP_MARGIN + STAFF_LINE_SPACING * 4;
   const bassTopLineY =

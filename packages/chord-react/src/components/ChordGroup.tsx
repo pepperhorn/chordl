@@ -1,7 +1,7 @@
-import type { Format, ColorTheme, WhiteNote, DisplayMode } from "../types";
+import type { Format, ColorTheme, WhiteNote, DisplayMode, TextSize, NoteNameMode } from "../types";
 import { PianoKeyboard } from "./PianoKeyboard";
 import { StaffNotation } from "./StaffNotation";
-import { calculateLayout, normalizeNote, WHITE_NOTE_ORDER } from "@better-chord/core";
+import { calculateLayout, normalizeNote, WHITE_NOTE_ORDER, autoFingering } from "@better-chord/core";
 import type { ProgressionChord } from "@better-chord/core";
 import { useUITheme } from "../ui-theme";
 
@@ -14,6 +14,11 @@ export interface ChordGroupProps {
   showPlayback?: boolean;
   scale?: number;
   display?: DisplayMode;
+  showNoteNames?: boolean;
+  noteNameMode?: NoteNameMode;
+  noteNameSize?: TextSize;
+  showFingering?: boolean;
+  fingeringSize?: TextSize;
 }
 
 /**
@@ -36,6 +41,11 @@ export function ChordGroup({
   showPlayback = true,
   scale,
   display = "keyboard",
+  showNoteNames,
+  noteNameMode,
+  noteNameSize,
+  showFingering,
+  fingeringSize,
 }: ChordGroupProps) {
   const { tokens: ui } = useUITheme();
   // Calculate all layouts, then use the max size for uniform keyboards
@@ -119,6 +129,12 @@ export function ChordGroup({
                   showPlayback={showPlayback}
                   chordLabel={chord.symbol}
                   scale={scale}
+                  showNoteNames={showNoteNames}
+                  noteNameMode={noteNameMode}
+                  noteNameSize={noteNameSize}
+                  displayNoteNames={chord.notes}
+                  fingering={showFingering ? autoFingering(chord.notes) : undefined}
+                  fingeringSize={fingeringSize}
                 />
               </div>
             ) : (
@@ -132,6 +148,12 @@ export function ChordGroup({
                 showPlayback={showPlayback}
                 chordLabel={chord.symbol}
                 scale={scale}
+                showNoteNames={showNoteNames}
+                noteNameMode={noteNameMode}
+                noteNameSize={noteNameSize}
+                displayNoteNames={chord.notes}
+                fingering={showFingering ? autoFingering(chord.notes) : undefined}
+                fingeringSize={fingeringSize}
               />
             )}
             {chord.voicingStyle && (

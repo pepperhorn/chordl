@@ -99,44 +99,45 @@ export function VoicingVariantToggle({
 
   const active = variants[Math.min(activeIndex, variants.length - 1)];
 
-  // Build the chord string for the active variant.
-  // For library/algorithmic variants, we pass the note list directly as a chord override.
-  // For the root position / default (index 0), pass the original chord string to preserve
-  // all parser features (note names, fingering, etc.).
-  const activeChord = activeIndex === 0
-    ? chord
-    : `${resolved.root} ${active.notes.slice(1).map(n => n).join(" ")}`;
+  // Extract display modifiers from the original prompt so all variants
+  // inherit them (midi note names, fingering, note name size, etc.).
+  const displayModifiers = useMemo(() => {
+    if (!resolved) return "";
+    const parts: string[] = [];
+    const p = resolved.parsed;
+    if (p.showNoteNames) {
+      if (p.noteNameMode === "midi") {
+        parts.push("midi note names");
+      } else {
+        parts.push("note names");
+      }
+      if (p.noteNameSize && p.noteNameSize !== "base") {
+        parts.push(`in ${p.noteNameSize}`);
+      }
+    }
+    if (p.autoFingering) {
+      parts.push("with fingering");
+    } else if (p.fingering) {
+      parts.push(`fingering ${p.fingering.join("-")}`);
+    }
+    if (p.fingeringSize && p.fingeringSize !== "base") {
+      parts.push(`fingering in ${p.fingeringSize}`);
+    }
+    return parts.length > 0 ? " " + parts.join(" ") : "";
+  }, [resolved]);
 
-  // For non-default variants, construct a chord input that PianoChord can render.
-  // We pass the original chord for variant A, and override notes for B/C/etc.
-  // The simplest approach: always pass the original chord and let PianoChord handle it,
-  // but override the note list. Since PianoChord doesn't support a notes override prop,
-  // we construct a synthetic chord string.
-  //
-  // Actually, the cleanest approach: for variant A use the original chord.
-  // For other variants, use PianoChord with the resolved chord name but rotated notes.
-  // Since PianoChord re-resolves internally, we need to pass a chord string that produces
-  // the right notes. For inversions we can use "Cmaj7 in Nth inversion". For library
-  // voicings, we pass the style hint.
-
-  // Simplified: always render PianoChord with original chord for variant A,
-  // and construct appropriate chord strings for other variants.
+  // Build the chord string for the active variant, preserving display modifiers.
   let chordString = chord;
   if (activeIndex > 0) {
+    const baseChord = resolved.parsed.chordName ?? chord;
     if (active.source === "inversion") {
       const invNum = parseInt(active.id.replace("inv-", ""), 10);
-      // Strip any existing inversion from the chord, add new one
-      const baseParsed = resolved.parsed;
-      const baseChord = baseParsed.chordName ?? chord;
       const ordinals = ["", "first", "second", "third", "fourth", "fifth"];
-      chordString = `${baseChord} in ${ordinals[invNum] ?? `${invNum}th`} inversion`;
+      chordString = `${baseChord} in ${ordinals[invNum] ?? `${invNum}th`} inversion${displayModifiers}`;
     } else if (active.source === "library") {
-      const baseParsed = resolved.parsed;
-      const baseChord = baseParsed.chordName ?? chord;
-      chordString = `${baseChord} ${active.label} style`;
+      chordString = `${baseChord} ${active.label} style${displayModifiers}`;
     } else {
-      // Algorithmic — use root position chord name
-      chordString = resolved.parsed.chordName ?? chord;
+      chordString = `${baseChord}${displayModifiers}`;
     }
   }
 
