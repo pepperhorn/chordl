@@ -406,9 +406,9 @@ function InteractiveInput({ uiTheme, showOptions, onToggleOptions }: { uiTheme: 
           fontSize: "0.8rem",
           fontWeight: 400,
           padding: "6px 16px",
-          border: "1px solid var(--glass-border)",
+          border: "1px solid var(--btn-border)",
           borderRadius: 20,
-          background: "transparent",
+          background: "var(--pill-bg)",
           color: "var(--text-muted)",
           cursor: "pointer",
           transition: "all 0.2s ease",
@@ -811,7 +811,7 @@ function App() {
         flexDirection: "column",
         alignItems: "center",
         gap: "0.75rem",
-        borderTop: "1px solid var(--glass-border)",
+        borderTop: "1px solid var(--btn-border)",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
           <a href="https://creativeranges.org" target="_blank" rel="noopener noreferrer">
