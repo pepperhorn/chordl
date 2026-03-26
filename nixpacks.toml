@@ -1,0 +1,8 @@
+[phases.build]
+cmds = [
+  "pnpm run build:site",
+  "cp -r packages/chord-react/site-dist dist"
+]
+
+[start]
+cmd = "npx serve dist -s -l 3000"

@@ -19,6 +19,7 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "tsc && vite build",
+    "build:site": "vite build --config vite.site.config.ts",
     "lint": "tsc --noEmit",
     "test": "vitest",
     "test:run": "vitest run"
