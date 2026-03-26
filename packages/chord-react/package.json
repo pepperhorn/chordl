@@ -31,6 +31,7 @@
   "dependencies": {
     "@better-chord/core": "workspace:*",
     "@better-chord/voicings": "workspace:*",
+    "jszip": "^3.10.1",
     "smplr": "^0.18.1",
     "tonal": "^6.3.0"
   },

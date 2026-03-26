@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useCallback } from "react";
 import type { DisplayMode } from "../types";
 import type { UIThemeMode } from "../config";
 import { PianoChord } from "./PianoChord";
@@ -12,6 +12,8 @@ import {
   mapToVoicingQuality,
 } from "@better-chord/voicings";
 import type { VoicingVariant } from "@better-chord/voicings";
+import { exportSingleZip, exportAllZip, downloadBlob } from "../audio/zip-export";
+import type { ZipVariant } from "../audio/zip-export";
 
 export interface VoicingVariantToggleProps {
   chord: string;
@@ -21,6 +23,8 @@ export interface VoicingVariantToggleProps {
   scale?: number;
   display?: DisplayMode;
   uiTheme?: UIThemeMode;
+  /** Called when zip export starts/finishes — drives the header animation */
+  onExportStatus?: (status: "idle" | "preparing") => void;
 }
 
 const LABELS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -33,9 +37,12 @@ export function VoicingVariantToggle({
   scale,
   display,
   uiTheme,
+  onExportStatus,
 }: VoicingVariantToggleProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [totalCount, setTotalCount] = useState(3);
+  const [zipMenu, setZipMenu] = useState(false);
+  const chordOutputRef = useRef<HTMLDivElement>(null);
 
   // Parse and resolve chord to get root, quality, notes.
   // Apply "starting on" / inversion rotation so variants match what PianoChord renders.
@@ -143,10 +150,42 @@ export function VoicingVariantToggle({
     }
   }
 
+  const getSvgElement = useCallback((): SVGSVGElement | null => {
+    return chordOutputRef.current?.querySelector("svg") ?? null;
+  }, []);
+
+  const handleZipExport = useCallback(async (mode: "this" | "all") => {
+    setZipMenu(false);
+    onExportStatus?.("preparing");
+    try {
+      const chordName = resolved?.parsed.chordName ?? "chord";
+      if (mode === "this") {
+        const svg = getSvgElement();
+        const zipVariant: ZipVariant = { label: active.label, notes: active.notes, svgElement: svg };
+        const blob = await exportSingleZip(chordName, zipVariant);
+        downloadBlob(blob, `${chordName.replace(/[^a-zA-Z0-9]/g, "_")}.zip`);
+      } else {
+        // Export all variants — render each one's SVG by temporarily switching
+        // For now, use the current SVG for the active variant and notes-only for others
+        const zipVariants: ZipVariant[] = variants.map((v, i) => ({
+          label: v.label,
+          notes: v.notes,
+          svgElement: i === activeIndex ? getSvgElement() : null,
+        }));
+        const blob = await exportAllZip(chordName, zipVariants);
+        downloadBlob(blob, `${chordName.replace(/[^a-zA-Z0-9]/g, "_")}_all.zip`);
+      }
+    } catch (e) {
+      console.error("ZIP export failed:", e);
+    } finally {
+      onExportStatus?.("idle");
+    }
+  }, [resolved, active, activeIndex, variants, getSvgElement, onExportStatus]);
+
   return (
     <div className="voicing-variant-toggle" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.75rem" }}>
       {/* Chord output — allow horizontal overflow so keyboard isn't squished */}
-      <div style={{ width: "100%", overflowX: "auto", display: "flex", justifyContent: "center" }}>
+      <div ref={chordOutputRef} style={{ width: "100%", overflowX: "auto", display: "flex", justifyContent: "center" }}>
         <PianoChord
           chord={chordString}
           format={format}
@@ -230,6 +269,97 @@ export function VoicingVariantToggle({
         >
           +
         </button>}
+
+        {/* ZIP export button with This/All popup */}
+        <div style={{ position: "relative" }}>
+          <button
+            className="variant-pill-zip"
+            onClick={() => setZipMenu((v) => !v)}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 4,
+              padding: "12px 16px",
+              border: "1px solid var(--btn-border)",
+              borderRadius: 10,
+              background: "var(--pill-bg)",
+              color: "var(--text-muted)",
+              cursor: "pointer",
+              fontFamily: "inherit",
+              fontSize: "0.78rem",
+              fontWeight: 500,
+              transition: "all 0.2s ease",
+              height: 52,
+              whiteSpace: "nowrap",
+            }}
+            title="Download .zip package"
+          >
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M3.5 0A1.5 1.5 0 002 1.5v13A1.5 1.5 0 003.5 16h9a1.5 1.5 0 001.5-1.5V4.707A1.5 1.5 0 0013.56 3.65L10.354.44A1.5 1.5 0 009.293 0H3.5zM7 3v1h2V3H7zm0 2v1h2V5H7zm0 2v1h2V7H7zm0 2h2v2H7V9z"/>
+            </svg>
+            .zip
+          </button>
+          {zipMenu && (
+            <div
+              className="zip-menu"
+              style={{
+                position: "absolute",
+                top: "100%",
+                left: "50%",
+                transform: "translateX(-50%)",
+                marginTop: 6,
+                display: "flex",
+                gap: 4,
+                padding: 4,
+                background: "var(--pill-active-bg)",
+                border: "1px solid var(--btn-border)",
+                borderRadius: 10,
+                boxShadow: "0 4px 16px var(--glass-shadow)",
+                zIndex: 10,
+              }}
+            >
+              <button
+                className="zip-menu-btn"
+                onClick={() => handleZipExport("this")}
+                style={{
+                  padding: "8px 16px",
+                  border: "none",
+                  borderRadius: 8,
+                  background: "transparent",
+                  color: "var(--text)",
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                  fontSize: "0.8rem",
+                  fontWeight: 500,
+                  whiteSpace: "nowrap",
+                  transition: "background 0.15s ease",
+                }}
+              >
+                This
+              </button>
+              <button
+                className="zip-menu-btn"
+                onClick={() => handleZipExport("all")}
+                style={{
+                  padding: "8px 16px",
+                  border: "none",
+                  borderRadius: 8,
+                  background: "transparent",
+                  color: "var(--text)",
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                  fontSize: "0.8rem",
+                  fontWeight: 500,
+                  whiteSpace: "nowrap",
+                  transition: "background 0.15s ease",
+                }}
+              >
+                All
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

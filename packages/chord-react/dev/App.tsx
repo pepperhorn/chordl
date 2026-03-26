@@ -152,7 +152,7 @@ function HintRotator() {
   );
 }
 
-function InteractiveInput({ uiTheme, showOptions, onToggleOptions }: { uiTheme: UIThemeMode; showOptions: boolean; onToggleOptions: () => void }) {
+function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExportStatus }: { uiTheme: UIThemeMode; showOptions: boolean; onToggleOptions: () => void; onExportStatus?: (status: "idle" | "preparing") => void }) {
   const [input, setInput] = useState("Cmaj7#5 starting on G#");
   const [theme, setTheme] = useState<string>("simple");
   const [keyFormat, setKeyFormat] = useState<"compact" | "exact">("compact");
@@ -389,6 +389,7 @@ function InteractiveInput({ uiTheme, showOptions, onToggleOptions }: { uiTheme: 
               chord={octaveShift === 0 ? input : `${input} chord ${octaveShift > 0 ? "up" : "down"} ${Math.abs(octaveShift)} octave${Math.abs(octaveShift) > 1 ? "s" : ""}`}
               theme={theme} format={keyFormat} scale={scale} display={displayMode}
               highlightColor={theme === "simple" ? highlightColor : undefined} uiTheme={uiTheme}
+              onExportStatus={onExportStatus}
             />
           )}
         </ErrorBoundary>
@@ -627,6 +628,7 @@ function ChordSheetDemo({ uiTheme }: { uiTheme: UIThemeMode }) {
 function App() {
   const [uiTheme, setUiTheme] = useState<UIThemeMode>("light");
   const [showOptions, setShowOptions] = useState(false);
+  const [exportStatus, setExportStatus] = useState<"idle" | "preparing">("idle");
 
   return (
     <div
@@ -667,21 +669,44 @@ function App() {
             Interactive chord visualization
           </p>
         </div>
-        <PillGroup
-          options={[
-            { label: "Light", value: "light" as UIThemeMode },
-            { label: "Dark", value: "dark" as UIThemeMode },
-          ]}
-          value={uiTheme}
-          onChange={setUiTheme}
-        />
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          {exportStatus === "preparing" && (
+            <span className="export-status" style={{
+              fontSize: "0.75rem",
+              color: "var(--accent)",
+              fontWeight: 500,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              animation: "fadeUp 0.3s ease both",
+            }}>
+              <span style={{
+                display: "inline-block",
+                width: 6,
+                height: 6,
+                borderRadius: "50%",
+                background: "var(--accent)",
+                animation: "pulse 1s ease-in-out infinite",
+              }} />
+              Preparing .zip...
+            </span>
+          )}
+          <PillGroup
+            options={[
+              { label: "Light", value: "light" as UIThemeMode },
+              { label: "Dark", value: "dark" as UIThemeMode },
+            ]}
+            value={uiTheme}
+            onChange={setUiTheme}
+          />
+        </div>
       </div>
 
       {/* Hero — no card, input floats directly */}
       <div className="fade-in fade-in-delay-1" style={{
         padding: "1.5rem 0 2rem",
       }}>
-        <InteractiveInput uiTheme={uiTheme} showOptions={showOptions} onToggleOptions={() => setShowOptions((v) => !v)} />
+        <InteractiveInput uiTheme={uiTheme} showOptions={showOptions} onToggleOptions={() => setShowOptions((v) => !v)} onExportStatus={setExportStatus} />
       </div>
 
       {/* Example sections */}
