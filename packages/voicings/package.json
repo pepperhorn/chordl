@@ -23,7 +23,6 @@
     "test:run": "vitest run"
   },
   "dependencies": {
-    "@better-chord/core": "workspace:*",
     "tonal": "^6.3.0"
   },
   "devDependencies": {

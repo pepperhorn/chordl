@@ -1,7 +1,7 @@
 import type { VoicingVariant, VoicingQuality, VoicingEntry, Hand } from "./types";
 import { VOICING_LIBRARY } from "./library";
 import { voicingPitchClasses, findVoicing } from "./query";
-import { normalizeToSharps } from "@better-chord/core";
+import { normalizeToSharps } from "./spelling";
 
 /** Check if the lowest note (first in array) is the root/tonic. */
 function isRootPosition(notes: string[], root: string): boolean {

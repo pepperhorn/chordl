@@ -1,6 +1,6 @@
 import { Chord, Note } from "tonal";
 import type { RealizedNote, Hand } from "./types";
-import { normalizeToSharps } from "@better-chord/core";
+import { normalizeToSharps } from "./spelling";
 
 /**
  * George Shearing "Locked Hands" block chord voicing.
