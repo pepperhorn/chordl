@@ -13,6 +13,7 @@ export {
   PC_SEMITONES, MIDI_A3, assignAscendingOctaves,
 } from "./engine/note-spelling";
 export { autoFingering, assignFingering } from "./engine/auto-fingering";
+export { scaleAutoFingering } from "./engine/scale-fingering";
 export type { HandAssignment } from "./engine/auto-fingering";
 export { computeStaffLayout } from "./engine/staff-layout";
 export type { StaffNote, StaffLayoutResult, StaffLayoutOptions } from "./engine/staff-layout";

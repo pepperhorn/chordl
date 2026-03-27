@@ -5,7 +5,7 @@ import { StaffNotation } from "./StaffNotation";
 import {
   parseChordDescription, resolveChord, resolveScale, calculateLayout, whiteIdxHasSharp,
   computeKeyboard, normalizeNote, autoFingering, assignFingering,
-  degreesForIntervals,
+  scaleAutoFingering, degreesForIntervals,
   FLAT_TO_SHARP, WHITE_NOTE_ORDER,
 } from "@better-chord/core";
 import type { ProgressionChord } from "@better-chord/core";
@@ -156,6 +156,11 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
       return singleOctaveDegrees[i % singleOctaveDegrees.length];
     });
 
+    // Scale fingering: auto-compute if "with fingering" is in the prompt
+    const scaleFingering = parsed.autoFingering
+      ? scaleAutoFingering(scaleRoot, scaleType, "rh", parsed.scaleOctaves ?? 1)
+      : undefined;
+
     return (
       <UIThemeProvider value={uiCtx}>
         <PianoKeyboard
@@ -173,6 +178,8 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
           noteNameMode={parsed.noteNameMode}
           midiBaseOctave={midiBase}
           degreeLabels={degreeLabels}
+          fingering={scaleFingering && scaleFingering.length > 0 ? scaleFingering : undefined}
+          fingeringSize={parsed.fingeringSize}
           className={className}
           style={style}
         />

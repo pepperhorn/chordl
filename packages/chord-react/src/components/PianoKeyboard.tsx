@@ -292,14 +292,24 @@ export function PianoKeyboard({
 
   const nameFontSize = resolveAnnotationFontSize(noteNameSize);
   const fingerFontSize = resolveAnnotationFontSize(fingeringSize);
-  // The SVG viewBox width = vbW; the rendered width matches 100% of the container.
-  // Each key's center as a percentage: (x + width/2 - vbX) / vbW * 100
+
+  // Stagger: if any note has an accidental (#/b), put accidentals on row 1
+  // and naturals on row 2 to avoid overlap on adjacent keys.
+  const isAccidental = (name: string) => /[#b]/.test(name.slice(1)); // skip first char (the letter)
+  const anyAccidentals = highlighted.some((h) => isAccidental(h.note));
+  const staggerHeight = anyAccidentals ? nameFontSize * 1.3 : 0;
 
   const content = (
     <div className="bc-keyboard-container" style={{ width: "100%", maxWidth: vbW * scale * 2 }}>
       {svg}
       {hasAnnotations && highlighted.length > 0 && (
-        <div className="bc-annotations" style={{ position: "relative", width: "100%", marginTop: 2 }}>
+        <div className="bc-annotations" style={{
+          position: "relative",
+          width: "100%",
+          marginTop: 2,
+          // Reserve space for both rows when staggering
+          minHeight: staggerHeight + nameFontSize * 1.3 + (hasFingering ? fingerFontSize * 1.3 : 0),
+        }}>
           {highlighted.map((h, i) => {
             const centerPct = ((h.x + h.width / 2 - vbX) / vbW) * 100;
             const showName = hasNoteNames || (isDegreeOnly && hasDegrees);
@@ -310,6 +320,9 @@ export function PianoKeyboard({
             const fingerDisplay = fingerRaw == null ? null
               : typeof fingerRaw === "number" && (fingerRaw < 0 || fingerRaw > 5) ? "?" : fingerRaw;
 
+            // Accidentals on row 1 (top=0), naturals on row 2 (top=staggerHeight)
+            const rowOffset = anyAccidentals && !isAccidental(h.note) ? staggerHeight : 0;
+
             return (
               <div
                 key={`ann-${i}`}
@@ -318,7 +331,7 @@ export function PianoKeyboard({
                   position: "absolute",
                   left: `${centerPct}%`,
                   transform: "translateX(-50%)",
-                  top: 0,
+                  top: rowOffset,
                   display: "flex",
                   flexDirection: "column",
                   alignItems: "center",
