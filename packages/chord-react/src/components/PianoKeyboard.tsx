@@ -126,13 +126,20 @@ function renderAnnotations(
   const nameFontSize = resolveAnnotationFontSize(noteNameSize);
   const fingerFontSize = resolveAnnotationFontSize(fingeringSize);
 
+  // For each label, check if it's wider than its key. If so, shift it up
+  // by the font height so it doesn't overlap its neighbor.
+  const labelYOffsets: number[] = highlighted.map((h) => {
+    const estWidth = h.note.length * nameFontSize * 0.6;
+    return estWidth > h.width ? -nameFontSize : 0;
+  });
+
   return (
     <g transform={`translate(0, ${y})`}>
       {hasNoteNames && highlighted.map((h, i) => (
         <text
           key={`name-${i}`}
           x={h.x + h.width / 2}
-          y={nameFontSize}
+          y={nameFontSize + labelYOffsets[i]}
           textAnchor="middle"
           fontSize={nameFontSize}
           fontWeight={600}
@@ -238,10 +245,17 @@ export function PianoKeyboard({
   const hasDegrees = resolvedShowNoteNames && highlightKeys.length > 0 && (isDegreeOnly || isDegreeCombo)
     && degreeLabels && degreeLabels.length > 0;
   const hasFingering = fingering && fingering.length > 0;
+  // Check if any label will need staggering (wider than a key)
+  const nameFont = hasNoteNames ? resolveAnnotationFontSize(noteNameSize) : 0;
+  const hasStaggeredLabels = hasNoteNames && displayNoteNames?.some((n) => {
+    const label = noteNameMode === "midi" ? `${n}4` : n; // estimate MIDI suffix
+    return label.length * nameFont * 0.6 > WHITE_KEY_WIDTH;
+  });
+  const staggerRowH = hasStaggeredLabels ? annotationRowHeight(noteNameSize) : 0;
   const noteNamesRowH = (hasNoteNames || (isDegreeOnly && hasDegrees)) ? annotationRowHeight(noteNameSize) : 0;
   const degreeRowH = (isDegreeCombo && hasDegrees) ? annotationRowHeight(noteNameSize) : 0;
   const fingeringRowH = hasFingering ? annotationRowHeight(fingeringSize) : 0;
-  const annotationsHeight = noteNamesRowH + degreeRowH + fingeringRowH;
+  const annotationsHeight = staggerRowH + noteNamesRowH + degreeRowH + fingeringRowH;
   const height = keyboardHeight + controlsHeight + bracketsHeight + annotationsHeight;
   const keysOffsetY = controlsHeight;
 
@@ -350,7 +364,7 @@ export function PianoKeyboard({
         fingering, degreeLabels,
         hasNoteNames || (isDegreeOnly && !!hasDegrees), !!hasFingering, !!(isDegreeCombo && hasDegrees),
         noteNameSize, fingeringSize, noteNamesRowH, degreeRowH,
-        keysOffsetY + keyboardHeight + bracketsHeight + 2,
+        keysOffsetY + keyboardHeight + bracketsHeight + staggerRowH + 2,
         uiTokens, isDegreeOnly ? "pitch-class" : noteNameMode, midiBaseOctave,
       )}
     </svg>

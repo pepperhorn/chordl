@@ -1,4 +1,4 @@
-import { normalizeToSharps } from "./note-spelling";
+import { normalizeToSharps, PC_SEMITONES as NOTE_SEMITONE } from "./note-spelling";
 
 /**
  * Auto-fingering engine for piano chord voicings.
@@ -24,11 +24,6 @@ const MAX_HAND_SPAN = 19;
 
 /** Max notes a single hand can play */
 const MAX_HAND_NOTES = 5;
-
-const NOTE_SEMITONE: Record<string, number> = {
-  C: 0, "C#": 1, D: 2, "D#": 3, E: 4, F: 5,
-  "F#": 6, G: 7, "G#": 8, A: 9, "A#": 10, B: 11,
-};
 
 const BLACK_NOTES = new Set(["C#", "D#", "F#", "G#", "A#"]);
 

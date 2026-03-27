@@ -85,7 +85,7 @@ function toTextSize(s: string | undefined): TextSize | undefined {
 // Scale types that are unambiguous (never collide with chord names)
 const UNAMBIGUOUS_SCALE_TYPES = [
   "dorian", "mixolydian", "phrygian", "lydian", "locrian",
-  "harmonic\\s+minor", "melodic\\s+minor", "natural\\s+minor",
+  "harmonic\\s+minor", "minor\\s+harmonic", "melodic\\s+minor", "minor\\s+melodic", "natural\\s+minor",
   "major\\s+pentatonic", "minor\\s+pentatonic", "pentatonic",
   "blues", "whole\\s+tone", "bebop", "diminished",
 ];
@@ -105,10 +105,10 @@ const DIRECTION_RE = /\b(ascending|descending)\b/i;
 // "in N octaves" / "N octaves" — works for both scales and arpeggios
 const OCTAVES_RE = /\b(?:in\s+)?(\d+)\s+octaves?\b/i;
 
-// "with degrees" / "with degree" / "with note names and degrees"
-const DEGREE_DISPLAY_RE = /\bwith\s+(?:note\s+names?\s+and\s+)?degrees?\b/i;
-const DEGREE_ONLY_RE = /\bwith\s+degrees?\b/i;
-const NAMES_AND_DEGREES_RE = /\bwith\s+note\s+names?\s+and\s+degrees?\b/i;
+// "with degrees" / "with degrees in xl" / "with note names and degrees in lg"
+const DEGREE_DISPLAY_RE = /\bwith\s+(?:note\s+names?\s+and\s+)?degrees?(?:\s+(?:in\s+)?(base|lg|xl|2xl))?\b/i;
+const DEGREE_ONLY_RE = /\bwith\s+degrees?(?:\s+(?:in\s+)?(base|lg|xl|2xl))?\b/i;
+const NAMES_AND_DEGREES_RE = /\bwith\s+note\s+names?\s+and\s+degrees?(?:\s+(?:in\s+)?(base|lg|xl|2xl))?\b/i;
 
 // Quality word mapping for descriptive chord names
 const QUALITY_WORDS: Record<string, string> = {
@@ -272,12 +272,18 @@ export function parseChordDescription(input: string): ParsedChordRequest {
   }
 
   // Extract degree display mode (before scale detection, since it applies to both)
-  if (NAMES_AND_DEGREES_RE.test(input)) {
+  const namesDegMatch = input.match(NAMES_AND_DEGREES_RE);
+  const degOnlyMatch = input.match(DEGREE_ONLY_RE);
+  if (namesDegMatch) {
     result.showNoteNames = true;
     result.noteNameMode = "pitch-class+degree";
-  } else if (DEGREE_ONLY_RE.test(input)) {
+    const sz = toTextSize(namesDegMatch[1]);
+    if (sz) result.noteNameSize = sz;
+  } else if (degOnlyMatch) {
     result.showNoteNames = true;
     result.noteNameMode = "degree";
+    const sz = toTextSize(degOnlyMatch[1]);
+    if (sz) result.noteNameSize = sz;
   }
 
   // Extract scale direction

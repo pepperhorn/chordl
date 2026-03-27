@@ -17,6 +17,8 @@ export interface ResolvedScale {
 /** Normalize common scale name variants for Tonal compatibility. */
 const SCALE_NAME_MAP: Record<string, string> = {
   "natural minor": "minor",
+  "minor harmonic": "harmonic minor",
+  "minor melodic": "melodic minor",
   "major pentatonic": "major pentatonic",
   "minor pentatonic": "minor pentatonic",
   "whole tone": "whole tone",

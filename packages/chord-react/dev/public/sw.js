@@ -1,4 +1,4 @@
-const CACHE_NAME = "chordl-v1";
+const CACHE_NAME = "chordl-v2";
 const PRECACHE = ["/", "/manifest.json"];
 
 self.addEventListener("install", (e) => {

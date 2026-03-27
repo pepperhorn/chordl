@@ -10,6 +10,7 @@ export { mapHighlights, normalizeNote } from "./engine/highlight-mapper";
 export {
   FLAT_TO_SHARP, SHARP_TO_FLAT, FLAT_KEYS,
   normalizeToSharps, spellForKey, spellWithPreference,
+  PC_SEMITONES, MIDI_A3, assignAscendingOctaves,
 } from "./engine/note-spelling";
 export { autoFingering, assignFingering } from "./engine/auto-fingering";
 export type { HandAssignment } from "./engine/auto-fingering";

@@ -49,6 +49,8 @@ export function VoicingVariantToggle({
   const resolved = useMemo(() => {
     try {
       const parsed = parseChordDescription(chord);
+      // Scales don't have variants — render PianoChord directly
+      if (parsed.isScale) return null;
       if (!parsed.chordName) return null;
       const res = resolveChord(parsed.chordName, parsed.inversion);
       let notes = res.notes;

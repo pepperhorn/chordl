@@ -97,7 +97,58 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
     const scaleKeyboardNotes = scaleResolved.notes.map(normalizeNote);
     const layoutPadding = parsed.padding ?? padding ?? 1;
     const resolvedFormat = parsed.format ?? format;
-    const scaleLayout = calculateLayout(scaleKeyboardNotes, { padding: layoutPadding });
+
+    // Compute real MIDI numbers using Tonal for each ascending scale note.
+    // Scale starts from root octave (default: lowest octave where root >= A3).
+    const rootMidiAt3 = Note.midi(`${scaleKeyboardNotes[0]}3`) ?? 48;
+    const startOctave = rootMidiAt3 >= 57 ? 3 : 4; // A3=57; start at 3 if root is A-B, else 4
+
+    let octave = startOctave;
+    let prevMidi = -1;
+    const scaleMidis = scaleKeyboardNotes.map((n) => {
+      const midi = Note.midi(`${n}${octave}`);
+      if (midi == null) return 60; // fallback
+      // If this note would be at or below the previous, bump octave
+      if (prevMidi >= 0 && midi <= prevMidi) {
+        octave++;
+        const higher = Note.midi(`${n}${octave}`) ?? midi + 12;
+        prevMidi = higher;
+        return higher;
+      }
+      prevMidi = midi;
+      return midi;
+    });
+
+    // Keyboard range: pad around the MIDI range
+    const minMidi = scaleMidis[0];
+    const maxMidi = scaleMidis[scaleMidis.length - 1];
+
+    // Convert MIDI to note name + octave using Tonal
+    const padSemitones = layoutPadding * 2;
+    const startNoteName = Note.fromMidi(minMidi - padSemitones);
+    const endNoteName = Note.fromMidi(maxMidi + padSemitones);
+    const startPc = Note.pitchClass(startNoteName).replace(/[#b]/, "") as WhiteNote;
+    const endPc = Note.pitchClass(endNoteName).replace(/[#b]/, "") as WhiteNote;
+    const startOctaveReal = Note.octave(startNoteName) ?? startOctave;
+    const endOctaveReal = Note.octave(endNoteName) ?? startOctave + 1;
+
+    // Count white keys
+    const startWhiteIdx = WHITE_NOTE_ORDER.indexOf(startPc);
+    const endWhiteIdx = WHITE_NOTE_ORDER.indexOf(endPc);
+    const octaveSpan = endOctaveReal - startOctaveReal;
+    const whiteKeyCount = octaveSpan * 7 + (endWhiteIdx - startWhiteIdx) + 1;
+    const kbSize = Math.max(whiteKeyCount, 8);
+
+    // Build highlight keys using keyboard-relative octaves.
+    // Keyboard starts at startOctaveReal and its relativeOctave 0 corresponds to that.
+    const scaleHighlightKeys = scaleMidis.map((midi, i) => {
+      const noteOctave = Note.octave(Note.fromMidi(midi)) ?? startOctave;
+      const relOctave = noteOctave - startOctaveReal;
+      return `${scaleKeyboardNotes[i]}:${relOctave}`;
+    });
+
+    // midiBaseOctave: keyboard's relative octave 0 = startOctaveReal
+    const midiBase = startOctaveReal;
 
     // Degree labels: repeat interval pattern across octaves
     const singleOctaveDegrees = degreesForIntervals(scaleResolved.intervals);
@@ -109,12 +160,10 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
       <UIThemeProvider value={uiCtx}>
         <PianoKeyboard
           format={resolvedFormat}
-          size={scaleLayout.size}
-          startFrom={scaleLayout.startFrom as WhiteNote}
-          highlightKeys={scaleKeyboardNotes}
+          size={kbSize}
+          startFrom={startPc}
+          highlightKeys={scaleHighlightKeys}
           displayNoteNames={scaleResolved.notes}
-          clipLeft={scaleLayout.clipLeft}
-          clipRight={scaleLayout.clipRight}
           theme={theme}
           highlightColor={highlightColor}
           chordLabel={parsed.scaleName}
@@ -122,6 +171,7 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
           showNoteNames={parsed.showNoteNames}
           noteNameSize={parsed.noteNameSize}
           noteNameMode={parsed.noteNameMode}
+          midiBaseOctave={midiBase}
           degreeLabels={degreeLabels}
           className={className}
           style={style}
