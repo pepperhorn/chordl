@@ -65,15 +65,17 @@ const MIDI_NAMES_RE =
   /(?:(?:with\s+)?(?:show\s+)?midi\s+(?:(base|lg|xl|2xl)\s+)?(?:note\s*)?names?(?:\s+(?:in\s+)?(base|lg|xl|2xl))?)/i;
 
 // "fingering 1 2 3 5" / "with fingering 1-3-5 in lg" / "fingering 1 x 3 5"
+// Negative lookahead prevents matching "2xl" as a finger number
 const FINGERING_RE =
-  /(?:with\s+)?finger(?:ing|s)?\s+([\dxX\-](?:[,\s\-]*[\dxX\-])+)(?:\s+(?:in\s+)?(base|lg|xl|2xl))?/i;
+  /(?:with\s+)?finger(?:ing|s)?\s+([\dxX\-](?:[,\s\-]*[\dxX\-])+)(?!\s*xl)(?:\s+(?:in\s+)?(base|lg|xl|2xl))?/i;
 
 /** Valid fingering values: digits 0–5 plus extra symbols. Anything else → "?" */
 const VALID_FINGERING = new Set(["0", "1", "2", "3", "4", "5", "-", "x"]);
 
-// "with fingerings" / "show fingering" / "with fingering in xl" (no explicit numbers → auto)
+// "with fingerings" / "show fingering" / "with fingering in xl" / "fingering 2xl" (no explicit numbers → auto)
+// Negative lookahead: don't match when followed by digits (explicit fingering like "1 2 3 5")
 const AUTO_FINGERING_RE =
-  /(?:with\s+)?(?:show\s+)?finger(?:ings?|s)?(?:\s+(?:in\s+)?(base|lg|xl|2xl))?(?:\s|$)/i;
+  /(?:with\s+)?(?:show\s+)?finger(?:ings?|s)?(?:\s+(?:in\s+)?(base|lg|xl|2xl)|\s+(base|lg|xl|2xl))?(?!\s+\d)(?:\s|$)/i;
 
 const VALID_TEXT_SIZES = new Set<string>(["base", "lg", "xl", "2xl"]);
 function toTextSize(s: string | undefined): TextSize | undefined {
@@ -109,6 +111,9 @@ const OCTAVES_RE = /\b(?:in\s+)?(\d+)\s+octaves?\b/i;
 const DEGREE_DISPLAY_RE = /\bwith\s+(?:note\s+names?\s+and\s+)?degrees?(?:\s+(?:in\s+)?(base|lg|xl|2xl))?\b/i;
 const DEGREE_ONLY_RE = /\bwith\s+degrees?(?:\s+(?:in\s+)?(base|lg|xl|2xl))?\b/i;
 const NAMES_AND_DEGREES_RE = /\bwith\s+note\s+names?\s+and\s+degrees?(?:\s+(?:in\s+)?(base|lg|xl|2xl))?\b/i;
+
+// "with heading" / "with a heading" / "show heading"
+const HEADING_RE = /\b(?:with\s+)?(?:a\s+)?(?:show\s+)?heading\b/i;
 
 // Quality word mapping for descriptive chord names
 const QUALITY_WORDS: Record<string, string> = {
@@ -219,34 +224,36 @@ export function parseChordDescription(input: string): ParsedChordRequest {
     result.noteNameMode = "midi";
   }
 
-  // Extract explicit fingering ("fingering 1 2 3 5 in lg")
-  const fingeringMatch = input.match(FINGERING_RE);
-  if (fingeringMatch) {
-    // Split tokens: "1-3-5" splits on dashes, but standalone "-" (space-separated) is a value
-    const tokens: string[] = [];
-    for (const part of fingeringMatch[1].split(/[\s,]+/)) {
-      if (part === "-" || part === "x" || part === "X") {
-        tokens.push(part);
-      } else if (part.includes("-")) {
-        // "1-3-5" → split on dashes as separators
-        tokens.push(...part.split("-").filter((s) => s.length > 0));
-      } else {
-        tokens.push(part);
+  // Check auto fingering FIRST ("with fingering", "fingering 2xl", "fingering in xl")
+  // so that size keywords like "2xl" aren't grabbed as explicit finger numbers.
+  const autoFingerMatch = input.match(AUTO_FINGERING_RE);
+  if (autoFingerMatch) {
+    result.autoFingering = true;
+    result.fingeringSize = toTextSize(autoFingerMatch[1]) ?? toTextSize(autoFingerMatch[2]);
+  }
+
+  // Then check for explicit fingering numbers ("fingering 1 2 3 5 in lg")
+  // only if auto-fingering didn't match
+  if (!result.autoFingering) {
+    const fingeringMatch = input.match(FINGERING_RE);
+    if (fingeringMatch) {
+      const tokens: string[] = [];
+      for (const part of fingeringMatch[1].split(/[\s,]+/)) {
+        if (part === "-" || part === "x" || part === "X") {
+          tokens.push(part);
+        } else if (part.includes("-")) {
+          tokens.push(...part.split("-").filter((s) => s.length > 0));
+        } else {
+          tokens.push(part);
+        }
       }
-    }
-    result.fingering = tokens.map((s) => {
-      const lower = s.toLowerCase();
-      if (!VALID_FINGERING.has(lower)) return "?";
-      const num = parseInt(lower, 10);
-      return isNaN(num) ? lower : num;
-    });
-    result.fingeringSize = toTextSize(fingeringMatch[2]);
-  } else {
-    // Auto fingering ("with fingerings" / "show fingering in xl")
-    const autoFingerMatch = input.match(AUTO_FINGERING_RE);
-    if (autoFingerMatch) {
-      result.autoFingering = true;
-      result.fingeringSize = toTextSize(autoFingerMatch[1]);
+      result.fingering = tokens.map((s) => {
+        const lower = s.toLowerCase();
+        if (!VALID_FINGERING.has(lower)) return "?";
+        const num = parseInt(lower, 10);
+        return isNaN(num) ? lower : num;
+      });
+      result.fingeringSize = toTextSize(fingeringMatch[2]);
     }
   }
 
@@ -269,6 +276,11 @@ export function parseChordDescription(input: string): ParsedChordRequest {
     result.styleHint = styleMatch[1].trim();
   } else if (styleKeywordMatch) {
     result.styleHint = styleKeywordMatch[1].trim();
+  }
+
+  // Extract heading flag
+  if (HEADING_RE.test(input)) {
+    result.showHeading = true;
   }
 
   // Extract degree display mode (before scale detection, since it applies to both)
@@ -349,6 +361,7 @@ export function parseChordDescription(input: string): ParsedChordRequest {
     .replace(SCALE_UNAMBIGUOUS_RE, "")
     .replace(SCALE_EXPLICIT_RE, "")
     .replace(/\bscale\b/gi, "")
+    .replace(HEADING_RE, "")
     .replace(/\band\b/gi, "")
     .replace(FILLER_WORDS, "")
     .replace(/,/g, "")

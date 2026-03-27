@@ -52,6 +52,8 @@ export interface ParsedChordRequest {
   scaleOctaves?: number;
   /** Number of octaves for arpeggio (chord repeated across octaves). */
   chordOctaves?: number;
+  /** Show chord/scale name as a heading above the keyboard. */
+  showHeading?: boolean;
 }
 
 export interface KeyDescriptor {

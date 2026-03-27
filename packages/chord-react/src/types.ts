@@ -26,6 +26,8 @@ export interface KeyboardProps {
   highlightColor?: string;
   showPlayback?: boolean;
   chordLabel?: string;
+  /** Show chord/scale name as a heading above the keyboard. */
+  showHeading?: boolean;
   /** Bracket annotations below the keyboard (e.g. L.H. / R.H.) */
   handBrackets?: HandBracket[];
   /** Display scale factor (0.5 = 50%, 1 = 100%). Controls maxWidth of the SVG. */

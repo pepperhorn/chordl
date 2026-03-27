@@ -131,6 +131,7 @@ export function PianoKeyboard({
   highlightColor,
   showPlayback = true,
   chordLabel,
+  showHeading,
   handBrackets,
   scale = 0.5,
   showNoteNames,
@@ -301,6 +302,18 @@ export function PianoKeyboard({
 
   const content = (
     <div className="bc-keyboard-container" style={{ width: "100%", maxWidth: vbW * scale * 2 }}>
+      {showHeading && chordLabel && (
+        <div className="bc-keyboard-heading" style={{
+          textAlign: "center",
+          fontSize: 14,
+          fontWeight: 600,
+          color: uiTokens.text,
+          fontFamily: "system-ui, sans-serif",
+          marginBottom: 4,
+        }}>
+          {chordLabel}
+        </div>
+      )}
       {svg}
       {hasAnnotations && highlighted.length > 0 && (
         <div className="bc-annotations" style={{

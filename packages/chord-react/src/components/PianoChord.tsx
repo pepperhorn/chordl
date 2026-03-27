@@ -172,6 +172,7 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
           theme={theme}
           highlightColor={highlightColor}
           chordLabel={parsed.scaleName}
+          showHeading={parsed.showHeading}
           scale={scale}
           showNoteNames={parsed.showNoteNames}
           noteNameSize={parsed.noteNameSize}
@@ -497,6 +498,7 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
         theme={theme}
         highlightColor={highlightColor}
         chordLabel={parsed.chordName}
+        showHeading={parsed.showHeading}
         handBrackets={handBrackets}
         scale={scale}
         showNoteNames={parsed.showNoteNames}
@@ -664,6 +666,7 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
       theme={theme}
       highlightColor={highlightColor}
       chordLabel={parsed.chordName}
+      showHeading={parsed.showHeading}
       handBrackets={autoHandBrackets}
       scale={scale}
       showNoteNames={parsed.showNoteNames}
