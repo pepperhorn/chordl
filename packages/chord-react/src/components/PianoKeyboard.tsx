@@ -77,11 +77,14 @@ function renderAnnotations(
   highlightKeys: string[],
   displayNoteNames: string[] | undefined,
   fingering: (number | string)[] | undefined,
+  degreeLabels: string[] | undefined,
   hasNoteNames: boolean,
   hasFingering: boolean,
+  hasDegrees: boolean,
   noteNameSize: TextSize,
   fingeringSize: TextSize,
   noteNamesRowH: number,
+  degreeRowH: number,
   y: number,
   uiTokens: { text: string; textMuted: string },
   noteNameMode: NoteNameMode = "pitch-class",
@@ -139,16 +142,33 @@ function renderAnnotations(
           {h.note}
         </text>
       ))}
+      {hasDegrees && highlighted.map((h, i) => {
+        const label = degreeLabels?.[h.index];
+        if (!label) return null;
+        return (
+          <text
+            key={`degree-${i}`}
+            x={h.x + h.width / 2}
+            y={noteNamesRowH + nameFontSize * 0.85}
+            textAnchor="middle"
+            fontSize={nameFontSize * 0.85}
+            fontWeight={500}
+            fill={uiTokens.textMuted}
+            fontFamily="system-ui, sans-serif"
+          >
+            {label}
+          </text>
+        );
+      })}
       {hasFingering && highlighted.map((h, i) => {
         const raw = fingering![h.index];
         if (raw == null) return null;
-        // Numbers beyond 1–5 display as "?" to prompt the user to fix
         const display = typeof raw === "number" && (raw < 0 || raw > 5) ? "?" : raw;
         return (
           <text
             key={`finger-${i}`}
             x={h.x + h.width / 2}
-            y={noteNamesRowH + fingerFontSize}
+            y={noteNamesRowH + degreeRowH + fingerFontSize}
             textAnchor="middle"
             fontSize={fingerFontSize}
             fontWeight={500}
@@ -185,6 +205,7 @@ export function PianoKeyboard({
   midiBaseOctave = 4,
   fingering,
   fingeringSize = "base",
+  degreeLabels,
   clipLeft = false,
   clipRight = false,
   uiTheme,
@@ -210,11 +231,17 @@ export function PianoKeyboard({
   const controlsHeight = hasPlayback ? 30 : 0;
   const bracketsHeight = hasBrackets ? 24 : 0;
   const resolvedShowNoteNames = showNoteNames ?? SHOW_NOTE_NAMES;
-  const hasNoteNames = resolvedShowNoteNames && highlightKeys.length > 0;
+  // Determine which annotation rows to show based on noteNameMode
+  const isDegreeOnly = noteNameMode === "degree";
+  const isDegreeCombo = noteNameMode === "pitch-class+degree";
+  const hasNoteNames = resolvedShowNoteNames && highlightKeys.length > 0 && !isDegreeOnly;
+  const hasDegrees = resolvedShowNoteNames && highlightKeys.length > 0 && (isDegreeOnly || isDegreeCombo)
+    && degreeLabels && degreeLabels.length > 0;
   const hasFingering = fingering && fingering.length > 0;
-  const noteNamesRowH = hasNoteNames ? annotationRowHeight(noteNameSize) : 0;
+  const noteNamesRowH = (hasNoteNames || (isDegreeOnly && hasDegrees)) ? annotationRowHeight(noteNameSize) : 0;
+  const degreeRowH = (isDegreeCombo && hasDegrees) ? annotationRowHeight(noteNameSize) : 0;
   const fingeringRowH = hasFingering ? annotationRowHeight(fingeringSize) : 0;
-  const annotationsHeight = noteNamesRowH + fingeringRowH;
+  const annotationsHeight = noteNamesRowH + degreeRowH + fingeringRowH;
   const height = keyboardHeight + controlsHeight + bracketsHeight + annotationsHeight;
   const keysOffsetY = controlsHeight;
 
@@ -317,11 +344,14 @@ export function PianoKeyboard({
           {handBrackets!.map((b) => renderBracket(keys, b, 0, uiTokens.bracketColor))}
         </g>
       )}
-      {(hasNoteNames || hasFingering) && renderAnnotations(
-        keys, highlightKeys, displayNoteNames, fingering, hasNoteNames, !!hasFingering,
-        noteNameSize, fingeringSize, noteNamesRowH,
+      {(hasNoteNames || hasFingering || hasDegrees) && renderAnnotations(
+        keys, highlightKeys,
+        isDegreeOnly ? degreeLabels : displayNoteNames,
+        fingering, degreeLabels,
+        hasNoteNames || (isDegreeOnly && !!hasDegrees), !!hasFingering, !!(isDegreeCombo && hasDegrees),
+        noteNameSize, fingeringSize, noteNamesRowH, degreeRowH,
         keysOffsetY + keyboardHeight + bracketsHeight + 2,
-        uiTokens, noteNameMode, midiBaseOctave,
+        uiTokens, isDegreeOnly ? "pitch-class" : noteNameMode, midiBaseOctave,
       )}
     </svg>
   );

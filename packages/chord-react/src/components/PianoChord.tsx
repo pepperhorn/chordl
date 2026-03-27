@@ -3,8 +3,9 @@ import type { ChordProps, KeyboardProps, HandBracket, WhiteNote, DisplayMode } f
 import { PianoKeyboard } from "./PianoKeyboard";
 import { StaffNotation } from "./StaffNotation";
 import {
-  parseChordDescription, resolveChord, calculateLayout, whiteIdxHasSharp,
+  parseChordDescription, resolveChord, resolveScale, calculateLayout, whiteIdxHasSharp,
   computeKeyboard, normalizeNote, autoFingering, assignFingering,
+  degreesForIntervals,
   FLAT_TO_SHARP, WHITE_NOTE_ORDER,
 } from "@better-chord/core";
 import type { ProgressionChord } from "@better-chord/core";
@@ -87,6 +88,48 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
   const uiCtx = resolveUITheme(uiTheme);
 
   const parsed = parseChordDescription(chord);
+
+  // ── Scale path ─────────────────────────────────────────────────
+  if (parsed.isScale && parsed.scaleName) {
+    const [scaleRoot, ...scaleTypeParts] = parsed.scaleName.split(" ");
+    const scaleType = scaleTypeParts.join(" ");
+    const scaleResolved = resolveScale(scaleRoot, scaleType, parsed.scaleDirection, parsed.scaleOctaves);
+    const scaleKeyboardNotes = scaleResolved.notes.map(normalizeNote);
+    const layoutPadding = parsed.padding ?? padding ?? 1;
+    const resolvedFormat = parsed.format ?? format;
+    const scaleLayout = calculateLayout(scaleKeyboardNotes, { padding: layoutPadding });
+
+    // Degree labels: repeat interval pattern across octaves
+    const singleOctaveDegrees = degreesForIntervals(scaleResolved.intervals);
+    const degreeLabels = scaleResolved.notes.map((_, i) => {
+      return singleOctaveDegrees[i % singleOctaveDegrees.length];
+    });
+
+    return (
+      <UIThemeProvider value={uiCtx}>
+        <PianoKeyboard
+          format={resolvedFormat}
+          size={scaleLayout.size}
+          startFrom={scaleLayout.startFrom as WhiteNote}
+          highlightKeys={scaleKeyboardNotes}
+          displayNoteNames={scaleResolved.notes}
+          clipLeft={scaleLayout.clipLeft}
+          clipRight={scaleLayout.clipRight}
+          theme={theme}
+          highlightColor={highlightColor}
+          chordLabel={parsed.scaleName}
+          scale={scale}
+          showNoteNames={parsed.showNoteNames}
+          noteNameSize={parsed.noteNameSize}
+          noteNameMode={parsed.noteNameMode}
+          degreeLabels={degreeLabels}
+          className={className}
+          style={style}
+        />
+      </UIThemeProvider>
+    );
+  }
+
   if (!parsed.chordName) {
     throw new Error(`Couldn't find a chord name in "${chord}"`);
   }
@@ -180,6 +223,27 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
       notes = [...notes.slice(idx), ...notes.slice(0, idx)];
     }
   }
+
+  // Multi-octave arpeggio: repeat chord tones across octaves
+  if (parsed.chordOctaves && parsed.chordOctaves > 1) {
+    const oneOctave = [...notes];
+    const expanded: string[] = [];
+    for (let oct = 0; oct < parsed.chordOctaves; oct++) {
+      expanded.push(...oneOctave);
+    }
+    expanded.push(oneOctave[0]); // final tonic
+    notes = expanded;
+  }
+
+  // Compute degree labels for chords (jazz roman numerals)
+  const chordDegreeLabels: string[] | undefined = (() => {
+    if (parsed.noteNameMode !== "degree" && parsed.noteNameMode !== "pitch-class+degree") return undefined;
+    const intervals = resolved.intervals;
+    if (!intervals || intervals.length === 0) return undefined;
+    const singleDegrees = degreesForIntervals(intervals);
+    // For arpeggios, repeat the degree pattern
+    return notes.map((_, i) => singleDegrees[i % singleDegrees.length]);
+  })();
 
   const layoutPadding = parsed.padding ?? padding ?? 1;
   const resolvedFormat = parsed.format ?? format;
@@ -551,6 +615,7 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
       midiBaseOctave={4}
       fingering={resolvedFingering}
       fingeringSize={parsed.fingeringSize}
+      degreeLabels={chordDegreeLabels}
       className={className}
       style={style}
     />

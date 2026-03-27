@@ -46,6 +46,8 @@ export interface KeyboardProps {
   fingering?: (number | string)[];
   /** Text size for fingering numbers (default "base"). */
   fingeringSize?: TextSize;
+  /** Jazz roman numeral degree labels aligned with highlightKeys (e.g. ["I","III","#V","bVII"]). */
+  degreeLabels?: string[];
   /** UI chrome theme: "light" (default) or "dark". */
   uiTheme?: UIThemeMode;
   /** Crop half a white key on the left edge (black-key context padding). */

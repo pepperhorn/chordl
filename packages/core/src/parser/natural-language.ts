@@ -82,6 +82,34 @@ function toTextSize(s: string | undefined): TextSize | undefined {
   return VALID_TEXT_SIZES.has(lower) ? (lower as TextSize) : undefined;
 }
 
+// Scale types that are unambiguous (never collide with chord names)
+const UNAMBIGUOUS_SCALE_TYPES = [
+  "dorian", "mixolydian", "phrygian", "lydian", "locrian",
+  "harmonic\\s+minor", "melodic\\s+minor", "natural\\s+minor",
+  "major\\s+pentatonic", "minor\\s+pentatonic", "pentatonic",
+  "blues", "whole\\s+tone", "bebop", "diminished",
+];
+
+// Scale patterns: "D major scale", "C blues", "A dorian", etc.
+// For "major"/"minor" alone, require the trailing word "scale" to avoid chord collision.
+const SCALE_UNAMBIGUOUS_RE = new RegExp(
+  `([A-Ga-g][#b]?)\\s+(${UNAMBIGUOUS_SCALE_TYPES.join("|")})(?:\\s+scale)?`,
+  "i",
+);
+const SCALE_EXPLICIT_RE =
+  /([A-Ga-g][#b]?)\s+(major|minor)\s+scale/i;
+
+// "ascending" / "descending" for melodic minor
+const DIRECTION_RE = /\b(ascending|descending)\b/i;
+
+// "in N octaves" / "N octaves" — works for both scales and arpeggios
+const OCTAVES_RE = /\b(?:in\s+)?(\d+)\s+octaves?\b/i;
+
+// "with degrees" / "with degree" / "with note names and degrees"
+const DEGREE_DISPLAY_RE = /\bwith\s+(?:note\s+names?\s+and\s+)?degrees?\b/i;
+const DEGREE_ONLY_RE = /\bwith\s+degrees?\b/i;
+const NAMES_AND_DEGREES_RE = /\bwith\s+note\s+names?\s+and\s+degrees?\b/i;
+
 // Quality word mapping for descriptive chord names
 const QUALITY_WORDS: Record<string, string> = {
   major: "",
@@ -243,6 +271,41 @@ export function parseChordDescription(input: string): ParsedChordRequest {
     result.styleHint = styleKeywordMatch[1].trim();
   }
 
+  // Extract degree display mode (before scale detection, since it applies to both)
+  if (NAMES_AND_DEGREES_RE.test(input)) {
+    result.showNoteNames = true;
+    result.noteNameMode = "pitch-class+degree";
+  } else if (DEGREE_ONLY_RE.test(input)) {
+    result.showNoteNames = true;
+    result.noteNameMode = "degree";
+  }
+
+  // Extract scale direction
+  const dirMatch = input.match(DIRECTION_RE);
+  if (dirMatch) {
+    result.scaleDirection = dirMatch[1].toLowerCase() as "ascending" | "descending";
+  }
+
+  // Extract octave count (used by both scales and arpeggios)
+  const octavesMatch = input.match(OCTAVES_RE);
+  const octaveCount = octavesMatch ? parseInt(octavesMatch[1], 10) : undefined;
+
+  // Detect scales — check BEFORE chord extraction
+  const scaleUnambig = input.match(SCALE_UNAMBIGUOUS_RE);
+  const scaleExplicit = input.match(SCALE_EXPLICIT_RE);
+  const scaleMatch = scaleUnambig || scaleExplicit;
+
+  if (scaleMatch) {
+    const scaleRoot = capitalizeNote(scaleMatch[1]);
+    const scaleType = scaleMatch[2].toLowerCase().replace(/\s+/g, " ").trim();
+    result.isScale = true;
+    result.scaleName = `${scaleRoot} ${scaleType}`;
+    result.scaleOctaves = octaveCount ?? 1;
+  } else if (octaveCount) {
+    // Not a scale but has "N octaves" → arpeggio mode for chord
+    result.chordOctaves = octaveCount;
+  }
+
   // Extract starting note or degree
   const startDegreeMatch = input.match(STARTING_DEGREE_RE);
   const startMatch = input.match(STARTING_NOTE_RE);
@@ -273,6 +336,14 @@ export function parseChordDescription(input: string): ParsedChordRequest {
     .replace(OVER_BASS_NOTE_RE, "")
     .replace(STARTING_DEGREE_RE, "")
     .replace(STARTING_NOTE_RE, "")
+    .replace(NAMES_AND_DEGREES_RE, "")
+    .replace(DEGREE_DISPLAY_RE, "")
+    .replace(DIRECTION_RE, "")
+    .replace(OCTAVES_RE, "")
+    .replace(SCALE_UNAMBIGUOUS_RE, "")
+    .replace(SCALE_EXPLICIT_RE, "")
+    .replace(/\bscale\b/gi, "")
+    .replace(/\band\b/gi, "")
     .replace(FILLER_WORDS, "")
     .replace(/,/g, "")
     .replace(/\blayout\b/gi, "")

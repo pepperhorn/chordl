@@ -1,8 +1,8 @@
 export type Format = "compact" | "exact";
 /** Tailwind-inspired text size scale for annotations. */
 export type TextSize = "base" | "lg" | "xl" | "2xl";
-/** Note name display mode: pitch-class ("C", "Eb") or midi ("C4", "Eb4"). */
-export type NoteNameMode = "pitch-class" | "midi";
+/** Note name display mode. */
+export type NoteNameMode = "pitch-class" | "midi" | "degree" | "pitch-class+degree";
 export type WhiteNote = "C" | "D" | "E" | "F" | "G" | "A" | "B";
 export type NoteName = string;
 
@@ -42,6 +42,16 @@ export interface ParsedChordRequest {
   autoFingering?: boolean;
   /** Text size for fingering numbers. */
   fingeringSize?: TextSize;
+  /** When true, input is a scale (not a chord). */
+  isScale?: boolean;
+  /** Full scale name for Tonal lookup, e.g. "D major", "C blues". */
+  scaleName?: string;
+  /** Melodic minor direction. */
+  scaleDirection?: "ascending" | "descending";
+  /** Number of octaves for scale display. */
+  scaleOctaves?: number;
+  /** Number of octaves for arpeggio (chord repeated across octaves). */
+  chordOctaves?: number;
 }
 
 export interface KeyDescriptor {

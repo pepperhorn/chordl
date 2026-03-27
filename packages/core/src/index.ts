@@ -60,6 +60,11 @@ export type { ChordLogEntry, LogConfig } from "./logging";
 // Theory
 export { classifyTones, parseInterval, minimalVoicing, dropOrder } from "./theory/chord-tones";
 export type { ChordTone, ChordToneRole, ChordToneAnalysis } from "./theory/chord-tones";
+export { intervalToDegreeLabel, degreesForIntervals } from "./theory/degree-labels";
+
+// Scale resolver
+export { resolveScale } from "./resolver/scale-resolver";
+export type { ResolvedScale } from "./resolver/scale-resolver";
 
 // Themes
 export { getTheme, resolveTheme } from "./themes";
