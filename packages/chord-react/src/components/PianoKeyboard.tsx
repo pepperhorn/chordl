@@ -300,8 +300,46 @@ export function PianoKeyboard({
   const anyAccidentals = highlighted.some((h) => isAccidental(h.note));
   const staggerHeight = anyAccidentals ? nameFontSize * 1.3 : 0;
 
+  // Attach annotation data to the SVG for export injection.
+  // This is read by svg-export.ts to inject <text> elements into the exported SVG.
+  const exportAnnotations = hasAnnotations && highlighted.length > 0 ? JSON.stringify({
+    heading: showHeading ? chordLabel : undefined,
+    items: highlighted.map((h) => ({
+      x: h.x + h.width / 2,
+      note: (hasNoteNames || (isDegreeOnly && hasDegrees)) ? h.note : undefined,
+      degree: (isDegreeCombo && hasDegrees) ? degreeLabels?.[h.index] : undefined,
+      finger: hasFingering ? (() => {
+        const raw = fingering?.[h.index];
+        if (raw == null) return undefined;
+        return typeof raw === "number" && (raw < 0 || raw > 5) ? "?" : String(raw);
+      })() : undefined,
+      isAccidental: isAccidental(h.note),
+    })),
+    fontSize: nameFontSize,
+    fingerFontSize,
+    hasStagger: anyAccidentals,
+    staggerHeight,
+    textColor: uiTokens.text,
+    mutedColor: uiTokens.textMuted,
+    keyboardHeight: height - controlsHeight,
+    controlsHeight,
+  }) : undefined;
+
+  // Attach annotation data to the SVG element via a callback ref
+  const containerRef = (el: HTMLDivElement | null) => {
+    if (!el) return;
+    const svgEl = el.querySelector("svg.bc-keyboard");
+    if (svgEl) {
+      if (exportAnnotations) {
+        svgEl.setAttribute("data-annotations", exportAnnotations);
+      } else {
+        svgEl.removeAttribute("data-annotations");
+      }
+    }
+  };
+
   const content = (
-    <div className="bc-keyboard-container" style={{ width: "100%", maxWidth: vbW * scale * 2 }}>
+    <div className="bc-keyboard-container" ref={containerRef} style={{ width: "100%", maxWidth: vbW * scale * 2 }}>
       {showHeading && chordLabel && (
         <div className="bc-keyboard-heading" style={{
           textAlign: "center",

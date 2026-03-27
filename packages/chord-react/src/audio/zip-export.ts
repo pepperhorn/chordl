@@ -4,6 +4,7 @@
 import JSZip from "jszip";
 import { generateMidiFile } from "@better-chord/core";
 import { generateWav } from "./wav-export";
+import { prepareExportClone } from "./svg-export";
 
 function sanitize(name: string): string {
   return name.replace(/[^a-zA-Z0-9\-_ ]/g, "_").slice(0, 80);
@@ -13,14 +14,7 @@ function sanitize(name: string): string {
  * Export an SVG element as SVG string bytes.
  */
 function svgToBytes(svgElement: SVGSVGElement): Uint8Array {
-  const clone = svgElement.cloneNode(true) as SVGSVGElement;
-  const controls = clone.querySelector("[data-controls]");
-  if (controls) {
-    const controlsH = 30;
-    controls.remove();
-    const vb = svgElement.viewBox.baseVal;
-    clone.setAttribute("viewBox", `0 ${controlsH} ${vb.width} ${vb.height - controlsH}`);
-  }
+  const { clone } = prepareExportClone(svgElement);
   const svgData = new XMLSerializer().serializeToString(clone);
   return new TextEncoder().encode(svgData);
 }
@@ -30,15 +24,10 @@ function svgToBytes(svgElement: SVGSVGElement): Uint8Array {
  */
 function svgToPng(svgElement: SVGSVGElement, pixelRatio = 2): Promise<Uint8Array> {
   return new Promise((resolve, reject) => {
-    const clone = svgElement.cloneNode(true) as SVGSVGElement;
-    const controls = clone.querySelector("[data-controls]");
-    let offsetY = 0;
-    if (controls) { offsetY = 30; controls.remove(); }
-
-    const vb = svgElement.viewBox.baseVal;
-    const w = vb.width;
-    const h = vb.height - offsetY;
-    clone.setAttribute("viewBox", `0 ${offsetY} ${w} ${h}`);
+    const { clone } = prepareExportClone(svgElement);
+    const finalVb = clone.viewBox.baseVal;
+    const w = finalVb.width;
+    const h = finalVb.height;
     clone.setAttribute("width", String(w));
     clone.setAttribute("height", String(h));
 
