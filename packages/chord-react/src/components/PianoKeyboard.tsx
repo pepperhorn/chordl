@@ -72,25 +72,17 @@ function annotationRowHeight(size: TextSize = "base"): number {
   return resolveAnnotationFontSize(size) + 3;
 }
 
-function renderAnnotations(
+/**
+ * Match highlighted keys to keyboard positions and compute display names.
+ * Returns an array of matched highlights with position and label data.
+ */
+function matchHighlightsToKeys(
   keys: { note: string; octave: number; isBlack: boolean; x: number; width: number }[],
   highlightKeys: string[],
   displayNoteNames: string[] | undefined,
-  fingering: (number | string)[] | undefined,
-  degreeLabels: string[] | undefined,
-  hasNoteNames: boolean,
-  hasFingering: boolean,
-  hasDegrees: boolean,
-  noteNameSize: TextSize,
-  fingeringSize: TextSize,
-  staggerRowH: number,
-  noteNamesRowH: number,
-  degreeRowH: number,
-  y: number,
-  uiTokens: { text: string; textMuted: string },
   noteNameMode: NoteNameMode = "pitch-class",
   midiBaseOctave: number = 4,
-) {
+): Array<{ x: number; width: number; note: string; index: number }> {
   const highlighted: Array<{ x: number; width: number; note: string; index: number }> = [];
   const remaining = highlightKeys.map((h, i) => {
     const colonIdx = h.indexOf(":");
@@ -123,75 +115,7 @@ function renderAnnotations(
       });
     }
   }
-
-  const nameFontSize = resolveAnnotationFontSize(noteNameSize);
-  const fingerFontSize = resolveAnnotationFontSize(fingeringSize);
-
-  // Stagger labels to avoid overlap: wide labels (sharps/flats like "F#4")
-  // stay in the top row; narrow labels (white keys like "D4") shift down
-  // to a second row, giving the wider labels room.
-  const anyWide = highlighted.some((h) => h.note.length * nameFontSize * 0.6 > h.width);
-  const labelYOffsets: number[] = highlighted.map((h) => {
-    const estWidth = h.note.length * nameFontSize * 0.6;
-    // Only stagger if there ARE wide labels; shift the narrow ones down
-    return anyWide && estWidth <= h.width ? nameFontSize : 0;
-  });
-
-  return (
-    <g transform={`translate(0, ${y})`}>
-      {hasNoteNames && highlighted.map((h, i) => (
-        <text
-          key={`name-${i}`}
-          x={h.x + h.width / 2}
-          y={nameFontSize + labelYOffsets[i]}
-          textAnchor="middle"
-          fontSize={nameFontSize}
-          fontWeight={600}
-          fill={uiTokens.text}
-          fontFamily="system-ui, sans-serif"
-        >
-          {h.note}
-        </text>
-      ))}
-      {hasDegrees && highlighted.map((h, i) => {
-        const label = degreeLabels?.[h.index];
-        if (!label) return null;
-        return (
-          <text
-            key={`degree-${i}`}
-            x={h.x + h.width / 2}
-            y={staggerRowH + noteNamesRowH + nameFontSize * 0.85}
-            textAnchor="middle"
-            fontSize={nameFontSize * 0.85}
-            fontWeight={500}
-            fill={uiTokens.textMuted}
-            fontFamily="system-ui, sans-serif"
-          >
-            {label}
-          </text>
-        );
-      })}
-      {hasFingering && highlighted.map((h, i) => {
-        const raw = fingering![h.index];
-        if (raw == null) return null;
-        const display = typeof raw === "number" && (raw < 0 || raw > 5) ? "?" : raw;
-        return (
-          <text
-            key={`finger-${i}`}
-            x={h.x + h.width / 2}
-            y={staggerRowH + noteNamesRowH + degreeRowH + fingerFontSize}
-            textAnchor="middle"
-            fontSize={fingerFontSize}
-            fontWeight={500}
-            fill={uiTokens.textMuted}
-            fontFamily="system-ui, sans-serif"
-          >
-            {display}
-          </text>
-        );
-      })}
-    </g>
-  );
+  return highlighted;
 }
 
 export function PianoKeyboard({
@@ -249,18 +173,9 @@ export function PianoKeyboard({
   const hasDegrees = resolvedShowNoteNames && highlightKeys.length > 0 && (isDegreeOnly || isDegreeCombo)
     && degreeLabels && degreeLabels.length > 0;
   const hasFingering = fingering && fingering.length > 0;
-  // Check if any label will need staggering (wider than a key)
-  const nameFont = hasNoteNames ? resolveAnnotationFontSize(noteNameSize) : 0;
-  const hasStaggeredLabels = hasNoteNames && displayNoteNames?.some((n) => {
-    const label = noteNameMode === "midi" ? `${n}4` : n; // estimate MIDI suffix
-    return label.length * nameFont * 0.6 > WHITE_KEY_WIDTH;
-  });
-  const staggerRowH = hasStaggeredLabels ? annotationRowHeight(noteNameSize) : 0;
-  const noteNamesRowH = (hasNoteNames || (isDegreeOnly && hasDegrees)) ? annotationRowHeight(noteNameSize) : 0;
-  const degreeRowH = (isDegreeCombo && hasDegrees) ? annotationRowHeight(noteNameSize) : 0;
-  const fingeringRowH = hasFingering ? annotationRowHeight(fingeringSize) : 0;
-  const annotationsHeight = staggerRowH + noteNamesRowH + degreeRowH + fingeringRowH;
-  const height = keyboardHeight + controlsHeight + bracketsHeight + annotationsHeight;
+  // Annotations are now rendered as HTML below the SVG — no SVG height needed
+  const hasAnnotations = hasNoteNames || hasFingering || hasDegrees;
+  const height = keyboardHeight + controlsHeight + bracketsHeight;
   const keysOffsetY = controlsHeight;
 
   const whiteKeys = keys
@@ -279,7 +194,7 @@ export function PianoKeyboard({
       viewBox={`${vbX} 0 ${vbW} ${height}`}
       xmlns="http://www.w3.org/2000/svg"
       className={`bc-keyboard ${className ?? ""}`.trim()}
-      style={{ width: "100%", maxWidth: vbW * scale * 2, ...style }}
+      style={{ width: "100%", display: "block", ...style }}
       role="img"
       aria-label="Piano keyboard"
     >
@@ -362,17 +277,93 @@ export function PianoKeyboard({
           {handBrackets!.map((b) => renderBracket(keys, b, 0, uiTokens.bracketColor))}
         </g>
       )}
-      {(hasNoteNames || hasFingering || hasDegrees) && renderAnnotations(
-        keys, highlightKeys,
-        isDegreeOnly ? degreeLabels : displayNoteNames,
-        fingering, degreeLabels,
-        hasNoteNames || (isDegreeOnly && !!hasDegrees), !!hasFingering, !!(isDegreeCombo && hasDegrees),
-        noteNameSize, fingeringSize, staggerRowH, noteNamesRowH, degreeRowH,
-        keysOffsetY + keyboardHeight + bracketsHeight + 2,
-        uiTokens, isDegreeOnly ? "pitch-class" : noteNameMode, midiBaseOctave,
-      )}
     </svg>
   );
 
-  return uiTheme ? <UIThemeProvider value={ctx}>{svg}</UIThemeProvider> : svg;
+  // Match highlights for HTML annotations
+  const highlighted = hasAnnotations
+    ? matchHighlightsToKeys(
+        keys, highlightKeys,
+        isDegreeOnly ? degreeLabels : displayNoteNames,
+        isDegreeOnly ? "pitch-class" : noteNameMode,
+        midiBaseOctave,
+      )
+    : [];
+
+  const nameFontSize = resolveAnnotationFontSize(noteNameSize);
+  const fingerFontSize = resolveAnnotationFontSize(fingeringSize);
+  // The SVG viewBox width = vbW; the rendered width matches 100% of the container.
+  // Each key's center as a percentage: (x + width/2 - vbX) / vbW * 100
+
+  const content = (
+    <div className="bc-keyboard-container" style={{ width: "100%", maxWidth: vbW * scale * 2 }}>
+      {svg}
+      {hasAnnotations && highlighted.length > 0 && (
+        <div className="bc-annotations" style={{ position: "relative", width: "100%", marginTop: 2 }}>
+          {highlighted.map((h, i) => {
+            const centerPct = ((h.x + h.width / 2 - vbX) / vbW) * 100;
+            const showName = hasNoteNames || (isDegreeOnly && hasDegrees);
+            const showDeg = isDegreeCombo && hasDegrees;
+            const showFinger = hasFingering;
+            const degree = degreeLabels?.[h.index];
+            const fingerRaw = fingering?.[h.index];
+            const fingerDisplay = fingerRaw == null ? null
+              : typeof fingerRaw === "number" && (fingerRaw < 0 || fingerRaw > 5) ? "?" : fingerRaw;
+
+            return (
+              <div
+                key={`ann-${i}`}
+                className="bc-annotation-cell"
+                style={{
+                  position: "absolute",
+                  left: `${centerPct}%`,
+                  transform: "translateX(-50%)",
+                  top: 0,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 0,
+                  whiteSpace: "nowrap",
+                  lineHeight: 1.2,
+                }}
+              >
+                {showName && (
+                  <span className="bc-note-name" style={{
+                    fontSize: nameFontSize,
+                    fontWeight: 600,
+                    color: uiTokens.text,
+                    fontFamily: "system-ui, sans-serif",
+                  }}>
+                    {h.note}
+                  </span>
+                )}
+                {showDeg && degree && (
+                  <span className="bc-degree-label" style={{
+                    fontSize: nameFontSize * 0.85,
+                    fontWeight: 500,
+                    color: uiTokens.textMuted,
+                    fontFamily: "system-ui, sans-serif",
+                  }}>
+                    {degree}
+                  </span>
+                )}
+                {showFinger && fingerDisplay != null && (
+                  <span className="bc-fingering" style={{
+                    fontSize: fingerFontSize,
+                    fontWeight: 500,
+                    color: uiTokens.textMuted,
+                    fontFamily: "system-ui, sans-serif",
+                  }}>
+                    {fingerDisplay}
+                  </span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+
+  return uiTheme ? <UIThemeProvider value={ctx}>{content}</UIThemeProvider> : content;
 }
