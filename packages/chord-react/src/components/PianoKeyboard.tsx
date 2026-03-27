@@ -83,6 +83,7 @@ function renderAnnotations(
   hasDegrees: boolean,
   noteNameSize: TextSize,
   fingeringSize: TextSize,
+  staggerRowH: number,
   noteNamesRowH: number,
   degreeRowH: number,
   y: number,
@@ -126,11 +127,14 @@ function renderAnnotations(
   const nameFontSize = resolveAnnotationFontSize(noteNameSize);
   const fingerFontSize = resolveAnnotationFontSize(fingeringSize);
 
-  // For each label, check if it's wider than its key. If so, shift it up
-  // by the font height so it doesn't overlap its neighbor.
+  // Stagger labels to avoid overlap: wide labels (sharps/flats like "F#4")
+  // stay in the top row; narrow labels (white keys like "D4") shift down
+  // to a second row, giving the wider labels room.
+  const anyWide = highlighted.some((h) => h.note.length * nameFontSize * 0.6 > h.width);
   const labelYOffsets: number[] = highlighted.map((h) => {
     const estWidth = h.note.length * nameFontSize * 0.6;
-    return estWidth > h.width ? -nameFontSize : 0;
+    // Only stagger if there ARE wide labels; shift the narrow ones down
+    return anyWide && estWidth <= h.width ? nameFontSize : 0;
   });
 
   return (
@@ -156,7 +160,7 @@ function renderAnnotations(
           <text
             key={`degree-${i}`}
             x={h.x + h.width / 2}
-            y={noteNamesRowH + nameFontSize * 0.85}
+            y={staggerRowH + noteNamesRowH + nameFontSize * 0.85}
             textAnchor="middle"
             fontSize={nameFontSize * 0.85}
             fontWeight={500}
@@ -175,7 +179,7 @@ function renderAnnotations(
           <text
             key={`finger-${i}`}
             x={h.x + h.width / 2}
-            y={noteNamesRowH + degreeRowH + fingerFontSize}
+            y={staggerRowH + noteNamesRowH + degreeRowH + fingerFontSize}
             textAnchor="middle"
             fontSize={fingerFontSize}
             fontWeight={500}
@@ -363,8 +367,8 @@ export function PianoKeyboard({
         isDegreeOnly ? degreeLabels : displayNoteNames,
         fingering, degreeLabels,
         hasNoteNames || (isDegreeOnly && !!hasDegrees), !!hasFingering, !!(isDegreeCombo && hasDegrees),
-        noteNameSize, fingeringSize, noteNamesRowH, degreeRowH,
-        keysOffsetY + keyboardHeight + bracketsHeight + staggerRowH + 2,
+        noteNameSize, fingeringSize, staggerRowH, noteNamesRowH, degreeRowH,
+        keysOffsetY + keyboardHeight + bracketsHeight + 2,
         uiTokens, isDegreeOnly ? "pitch-class" : noteNameMode, midiBaseOctave,
       )}
     </svg>

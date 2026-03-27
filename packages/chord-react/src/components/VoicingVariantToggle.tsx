@@ -187,7 +187,7 @@ export function VoicingVariantToggle({
   return (
     <div className="voicing-variant-toggle" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.75rem" }}>
       {/* Chord output — allow horizontal overflow so keyboard isn't squished */}
-      <div ref={chordOutputRef} style={{ width: "100%", overflowX: "auto", display: "flex", justifyContent: "center" }}>
+      <div className="voicing-output-wrapper" ref={chordOutputRef} style={{ width: "100%", overflowX: "auto", display: "flex", justifyContent: "center" }}>
         <PianoChord
           chord={chordString}
           format={format}
@@ -232,7 +232,7 @@ export function VoicingVariantToggle({
             }}
           >
             <span>{LABELS[i]}</span>
-            <span style={{
+            <span className="variant-pill-label" style={{
               fontSize: "0.78rem",
               fontWeight: 400,
               color: "var(--text-dim)",
@@ -273,7 +273,7 @@ export function VoicingVariantToggle({
         </button>}
 
         {/* ZIP export button with This/All popup */}
-        <div style={{ position: "relative" }}>
+        <div className="zip-export-container" style={{ position: "relative" }}>
           <button
             className="variant-pill-zip"
             onClick={() => setZipMenu((v) => !v)}

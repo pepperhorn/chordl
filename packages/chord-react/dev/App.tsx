@@ -220,7 +220,7 @@ function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExportStatu
           }}
         />
         {isProg && (
-          <span style={{
+          <span className="progression-indicator-tag" style={{
             position: "absolute",
             right: 14,
             top: "50%",
@@ -240,7 +240,7 @@ function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExportStatu
       </div>
 
       {/* Controls row — muted, secondary */}
-      {showOptions && <div style={{
+      {showOptions && <div className="interactive-controls-row" style={{
         display: "flex",
         gap: "0.75rem",
         alignItems: "stretch",
@@ -270,7 +270,7 @@ function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExportStatu
         <div className="control-item">
           <span className="control-label">Size</span>
           <div className="control-content">
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div className="size-slider-group" style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <input
                 type="range"
                 min={50}
@@ -315,7 +315,7 @@ function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExportStatu
         <div className="control-item">
           <span className="control-label">Octave</span>
           <div className="control-content">
-            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+            <div className="octave-button-group" style={{ display: "flex", alignItems: "center", gap: 4 }}>
               <button
                 className="octave-down pill-btn"
                 onClick={() => setOctaveShift((v) => v - 1)}
@@ -334,7 +334,7 @@ function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExportStatu
               >
                 ▼
               </button>
-              <span style={{
+              <span className="octave-shift-display" style={{
                 fontSize: "0.8rem",
                 fontWeight: 600,
                 color: "var(--pill-active-text)",
@@ -416,7 +416,7 @@ function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExportStatu
           letterSpacing: "0.01em",
         }}
       >
-        <span style={{
+        <span className="toggle-arrow" style={{
           display: "inline-block",
           transform: showOptions ? "rotate(90deg)" : "rotate(0deg)",
           transition: "transform 0.2s ease",
@@ -671,7 +671,7 @@ function App() {
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           {exportStatus === "preparing" && (
-            <span className="export-status" style={{
+            <span className="export-status-indicator" style={{
               fontSize: "0.75rem",
               color: "var(--accent)",
               fontWeight: 500,
@@ -680,7 +680,7 @@ function App() {
               gap: 6,
               animation: "fadeUp 0.3s ease both",
             }}>
-              <span style={{
+              <span className="export-pulse-dot" style={{
                 display: "inline-block",
                 width: 6,
                 height: 6,

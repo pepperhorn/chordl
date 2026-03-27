@@ -82,7 +82,7 @@ export function ProgressionView({
         <span className="bc-progression__title" style={{ fontWeight: 700, fontSize: 16 }}>
           {result.progressionName} in {result.key}
         </span>
-        <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", flexWrap: "wrap", justifyContent: "center" }}>
+        <div className="bc-progression__controls-row" style={{ display: "flex", gap: "0.75rem", alignItems: "center", flexWrap: "wrap", justifyContent: "center" }}>
           <div className="bc-progression__group-toggle" style={pillGroupStyle}>
             <button
               className="bc-progression__btn"
