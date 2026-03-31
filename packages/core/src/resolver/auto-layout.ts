@@ -129,7 +129,10 @@ export function calculateLayout(
       // chordOctave: count C crossings from start to the anchor note
       const anchorIdx = WHITE_NOTE_ORDER.indexOf(anchorKey);
       const startNoteIdx = WHITE_NOTE_ORDER.indexOf(finalStart);
-      const stepsToAnchor = ((anchorIdx - startNoteIdx) % 7 + 7) % 7 + (padding > 0 && anchorIdx <= startNoteIdx ? 7 : 0);
+      const rawSteps = ((anchorIdx - startNoteIdx) % 7 + 7) % 7;
+      // Only add a full octave if the modular distance is 0 (anchor == start)
+      // AND there is padding (meaning the anchor is actually one octave away)
+      const stepsToAnchor = rawSteps === 0 && padding > 0 ? 7 : rawSteps;
       let chordOctave = 0;
       for (let i = 1; i <= stepsToAnchor; i++) {
         if (WHITE_NOTE_ORDER[(startNoteIdx + i) % 7] === "C") chordOctave++;
