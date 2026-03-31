@@ -153,9 +153,9 @@ export function VoicingVariantToggle({
   if (activeIndex > 0) {
     const baseChord = resolved.parsed.chordName ?? chord;
     if (active.source === "inversion") {
-      const invNum = parseInt(active.id.replace("inv-", ""), 10);
-      const ordinals = ["", "first", "second", "third", "fourth", "fifth"];
-      chordString = `${baseChord} in ${ordinals[invNum] ?? `${invNum}th`} inversion${displayModifiers}`;
+      // Use "starting on X" instead of inversion number to avoid
+      // mismatch when the input already has a starting note rotation
+      chordString = `${baseChord} starting on ${active.notes[0]}${displayModifiers}`;
     } else if (active.source === "library") {
       chordString = `${baseChord} ${active.label} style${displayModifiers}`;
     } else {
