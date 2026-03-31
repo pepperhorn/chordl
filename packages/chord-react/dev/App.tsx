@@ -630,6 +630,11 @@ function App() {
   const [showOptions, setShowOptions] = useState(false);
   const [exportStatus, setExportStatus] = useState<"idle" | "preparing">("idle");
 
+  // Sync theme attribute to <html> so body/::before pick up CSS variables
+  React.useEffect(() => {
+    document.documentElement.setAttribute("data-bc-theme", uiTheme);
+  }, [uiTheme]);
+
   return (
     <div
       data-bc-theme={uiTheme}
