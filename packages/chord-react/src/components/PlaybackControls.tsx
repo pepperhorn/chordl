@@ -239,7 +239,19 @@ export function PlaybackControls({ notes, lhNotes, rhOctave, lhOctave, chordName
         handleDottlCopy,
         "Copy chord for dottl.app",
         { cursor: "pointer" },
-        <text x={BTN_SIZE / 2} y={BTN_SIZE / 2 + 3} textAnchor="middle" fontSize={5} fontWeight="bold" fill={ui.iconFill} fontFamily="system-ui, sans-serif">{dottlCopied ? "OK!" : "dottl"}</text>,
+        dottlCopied
+          ? <text x={BTN_SIZE / 2} y={BTN_SIZE / 2 + 3} textAnchor="middle" fontSize={6} fontWeight="bold" fill={ui.iconFill} fontFamily="system-ui, sans-serif">OK!</text>
+          : <g transform={`translate(${BTN_SIZE / 2 - 6}, ${BTN_SIZE / 2 - 6.5})`}>
+              {/* Bold "D" outline */}
+              <path d="M2,1 L2,12 L6.5,12 C10,12 12,9.5 12,6.5 C12,3.5 10,1 6.5,1 Z M4,3 L6,3 C8.5,3 10,4.5 10,6.5 C10,8.5 8.5,10 6,10 L4,10 Z" fill={ui.iconFill} />
+              {/* Colorful dots inside the D */}
+              <circle cx="6" cy="5" r="0.9" fill="#22c55e" />
+              <circle cx="8" cy="5" r="0.9" fill="#3b82f6" />
+              <circle cx="6" cy="7" r="0.9" fill="#f59e0b" />
+              <circle cx="8" cy="7" r="0.9" fill="#a855f7" />
+              <circle cx="6" cy="9" r="0.9" fill="#ef4444" />
+              <circle cx="8" cy="9" r="0.9" fill="#06b6d4" />
+            </g>,
       )}
     </g>
   );
