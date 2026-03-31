@@ -481,7 +481,7 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
     // Fingering for bass-note path: LH gets bass, RH gets chord
     const lhBassFinger = autoFingering([lhBassNote], "lh");
     const rhBassResult = assignFingering(notes, voicingHandHints);
-    const bassResolvedFingering = parsed.fingering ?? (parsed.autoFingering
+    const bassResolvedFingering = parsed.customFingering ?? parsed.fingering ?? (parsed.autoFingering
       ? [...lhBassFinger, ...rhBassResult.fingering]
       : undefined);
 
@@ -620,7 +620,7 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
     handResult = assignFingering(notes, voicingHandHints, chordMidiValues);
   }
 
-  const resolvedFingering = parsed.fingering ?? (parsed.autoFingering ? handResult.fingering : undefined);
+  const resolvedFingering = parsed.customFingering ?? parsed.fingering ?? (parsed.autoFingering ? handResult.fingering : undefined);
   const isTwoHanded = !lhBassNote && handResult.hands.some((h) => h === "lh");
 
   // Build hand brackets when chord is split across two hands

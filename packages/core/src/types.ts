@@ -40,6 +40,8 @@ export interface ParsedChordRequest {
   fingering?: (number | string)[];
   /** Auto-compute fingering when true (no explicit numbers given). */
   autoFingering?: boolean;
+  /** Custom fingering labels (free-form strings like "A0", "G3"). */
+  customFingering?: string[];
   /** Text size for fingering numbers. */
   fingeringSize?: TextSize;
   /** When true, input is a scale (not a chord). */

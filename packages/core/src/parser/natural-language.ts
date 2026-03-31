@@ -84,6 +84,10 @@ const FINGERING_RE =
 /** Valid fingering values: digits 0–5 plus extra symbols. Anything else → "?" */
 const VALID_FINGERING = new Set(["0", "1", "2", "3", "4", "5", "-", "x"]);
 
+// "custom fingering A0,A1,A2" / "custom fingering G3-G0-E1"
+const CUSTOM_FINGERING_RE =
+  /(?:with\s+)?custom\s+finger(?:ing|s)?\s+([\w#]+(?:[,\-\s]+[\w#]+)+)(?:\s+(?:in\s+)?(base|lg|xl|2xl))?/i;
+
 // "with fingerings" / "show fingering" / "with fingering in xl" / "fingering 2xl" (no explicit numbers → auto)
 // Negative lookahead: don't match when followed by digits (explicit fingering like "1 2 3 5")
 const AUTO_FINGERING_RE =
@@ -259,8 +263,16 @@ export function parseChordDescription(input: string): ParsedChordRequest {
     result.noteNameMode = "midi";
   }
 
-  // Check auto fingering FIRST ("with fingering", "fingering 2xl", "fingering in xl")
+  // Check custom fingering FIRST ("custom fingering A0,A1,A2")
+  const customFingerMatch = input.match(CUSTOM_FINGERING_RE);
+  if (customFingerMatch) {
+    result.customFingering = customFingerMatch[1].split(/[,\-\s]+/).filter(Boolean);
+    result.fingeringSize = toTextSize(customFingerMatch[2]);
+  }
+
+  // Check auto fingering ("with fingering", "fingering 2xl", "fingering in xl")
   // so that size keywords like "2xl" aren't grabbed as explicit finger numbers.
+  if (!result.customFingering) {
   const autoFingerMatch = input.match(AUTO_FINGERING_RE);
   if (autoFingerMatch) {
     result.autoFingering = true;
@@ -291,6 +303,7 @@ export function parseChordDescription(input: string): ParsedChordRequest {
       result.fingeringSize = toTextSize(fingeringMatch[2]);
     }
   }
+  } // end if (!result.customFingering)
 
   // Extract bass note or degree ("with the 5th in the bottom" / "over D")
   const bassDegreeMatch = input.match(BASS_DEGREE_RE);
@@ -389,6 +402,7 @@ export function parseChordDescription(input: string): ParsedChordRequest {
     .replace(CHORD_OCTAVE_RE, "")
     .replace(BASS_OCTAVE_RE, "")
     .replace(NOTE_NAMES_RE, "")
+    .replace(CUSTOM_FINGERING_RE, "")
     .replace(FINGERING_RE, "")
     .replace(AUTO_FINGERING_RE, "")
     .replace(STYLE_RE, "")
@@ -409,6 +423,7 @@ export function parseChordDescription(input: string): ParsedChordRequest {
     .replace(THEME_RE, "")
     .replace(/\btheme\b/gi, "")
     .replace(/\bcolou?rs?\b/gi, "")
+    .replace(/\bcustom\b/gi, "")
     .replace(/\band\b/gi, "")
     .replace(FILLER_WORDS, "")
     .replace(/,/g, "")
