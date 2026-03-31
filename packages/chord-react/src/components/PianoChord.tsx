@@ -549,6 +549,10 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
     spanTo: parsed.spanTo,
   });
 
+  // Apply octave shift: extend keyboard and offset chord highlights
+  const chordShift = parsed.chordOctaveShift ?? 0;
+  const kbSize = chordShift > 0 ? layout.size + chordShift * 7 : layout.size;
+
   // Use octave-qualified highlights when notes span multiple octaves or when
   // padding/clipping creates duplicate notes that would cause greedy mis-matching.
   // Detect wrapping: any note whose white-key index is at or below the previous.
@@ -557,11 +561,11 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
     const whiteIndices = keyboardNotes.map((n) => {
       return WHITE_NOTE_ORDER.indexOf(n.replace("#", "") as WhiteNote);
     });
-    const needsOctaveQual = layout.chordOctave > 0 ||
+    const needsOctaveQual = layout.chordOctave > 0 || chordShift !== 0 ||
       whiteIndices.some((idx, i) => i > 0 && idx <= whiteIndices[i - 1]);
 
     if (needsOctaveQual) {
-      let octave = layout.chordOctave;
+      let octave = Math.max(layout.chordOctave + chordShift, 0);
       let prevWhiteIdx = whiteIndices[0];
 
       // Step 1: naive ascending octave assignment
@@ -619,7 +623,7 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
   // Build hand brackets when chord is split across two hands
   let autoHandBrackets: HandBracket[] | undefined;
   if (isTwoHanded) {
-    const tempKeys = computeKeyboard(layout.startFrom as WhiteNote, layout.size, resolvedFormat);
+    const tempKeys = computeKeyboard(layout.startFrom as WhiteNote, kbSize, resolvedFormat);
     const lhKeyIndices: number[] = [];
     const rhKeyIndices: number[] = [];
     const matched = new Set<number>();
@@ -657,12 +661,13 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
   const keyboard = (
     <PianoKeyboard
       format={resolvedFormat}
-      size={layout.size}
+      size={kbSize}
       startFrom={layout.startFrom as WhiteNote}
       highlightKeys={highlightKeys}
       displayNoteNames={notes}
       clipLeft={layout.clipLeft}
       clipRight={layout.clipRight}
+      rhOctave={chordShift !== 0 ? 4 + chordShift : undefined}
       theme={theme}
       highlightColor={highlightColor}
       chordLabel={parsed.chordName}
@@ -681,8 +686,8 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
     />
   );
 
-  // Octave-qualified notes for staff notation (always compute for accuracy)
-  const staffOctaveNotes = computeOctaveQualified(notes, layout.chordOctave > 0 ? layout.chordOctave : 4);
+  // Octave-qualified notes for staff notation — use absolute octave (4), not keyboard-relative
+  const staffOctaveNotes = computeOctaveQualified(notes, 4 + chordShift);
 
   if (display === "staff") {
     return (

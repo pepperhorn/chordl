@@ -167,7 +167,7 @@ export function StaffNotation({
           <text
             className="bc-staff__label"
             x={NOTE_COLUMN_X}
-            y={STAFF_TOP_MARGIN - 8}
+            y={STAFF_TOP_MARGIN - 13}
             textAnchor="middle"
             fontSize={13}
             fontWeight={600}
