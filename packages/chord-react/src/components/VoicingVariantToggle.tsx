@@ -127,7 +127,7 @@ export function VoicingVariantToggle({
       }
     }
     if (p.customFingering) {
-      parts.push(`custom fingering ${p.customFingering.join(",")}`);
+      parts.push(`custom fingering "${p.customFingering.join(",")}"`);;
     } else if (p.autoFingering) {
       parts.push("with fingering");
     } else if (p.fingering) {
