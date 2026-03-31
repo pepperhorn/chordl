@@ -7,9 +7,6 @@ import {
   CLEF_AREA_WIDTH,
   NOTE_COLUMN_X,
   NOTE_HEAD_RX,
-  NOTE_HEAD_RY,
-  NOTE_HEAD_TILT,
-  NOTE_HEAD_STROKE_WIDTH,
   LEDGER_LINE_EXTEND,
   LEDGER_LINE_STROKE,
   STAFF_LINE_STROKE,
@@ -252,18 +249,21 @@ export function StaffNotation({
                   note.y,
                 )}
 
-                {/* Notehead (open whole note) */}
-                <ellipse
-                  className="bc-staff__notehead"
-                  cx={note.noteX}
-                  cy={note.y}
-                  rx={NOTE_HEAD_RX}
-                  ry={NOTE_HEAD_RY}
-                  fill="none"
-                  stroke={noteColor}
-                  strokeWidth={NOTE_HEAD_STROKE_WIDTH}
-                  transform={`rotate(${NOTE_HEAD_TILT}, ${note.noteX}, ${note.y})`}
-                />
+                {/* Notehead (whole note glyph) */}
+                {(() => {
+                  const glyph = g.wholeNote;
+                  const targetH = STAFF_LINE_SPACING;
+                  const s = targetH / glyph.height;
+                  const nx = note.noteX - (glyph.width * s) / 2;
+                  return (
+                    <g
+                      className="bc-staff__notehead"
+                      transform={`translate(${nx}, ${note.y}) scale(${s}, ${-s})`}
+                    >
+                      <path d={glyph.path} fill={noteColor} />
+                    </g>
+                  );
+                })()}
               </g>
               );
             })}

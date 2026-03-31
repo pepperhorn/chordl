@@ -4,10 +4,9 @@ export const HALF_STAFF_SPACING = 4; // one diatonic step
 export const STAFF_WIDTH = 120;
 export const CLEF_AREA_WIDTH = 30;
 export const NOTE_COLUMN_X = 75;
-export const NOTE_HEAD_RX = 5.5;
-export const NOTE_HEAD_RY = 4;
-export const NOTE_HEAD_TILT = -15; // degrees
-export const NOTE_HEAD_STROKE_WIDTH = 1.2;
+// Half-width of the notehead glyph (used for ledger line extent and second offsets).
+// Bravura wholeNote: 422 font units wide, scaled to STAFF_LINE_SPACING height (250→8px) = 13.5px → rx≈6.75
+export const NOTE_HEAD_RX = 6.75;
 export const ACCIDENTAL_OFFSET = 14;
 export const SECOND_OFFSET = NOTE_HEAD_RX * 2; // horizontal shift for seconds
 export const ACCIDENTAL_COL_WIDTH = 10; // width of one accidental column
