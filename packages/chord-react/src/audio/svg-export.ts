@@ -60,13 +60,13 @@ function injectAnnotations(clone: SVGSVGElement, vb: DOMRect): void {
 
   // Expand viewBox: shift content down for heading, add annotation space below
   const newHeight = vb.height + annotationTotalH + headingH;
-  clone.setAttribute("viewBox", `${vb.x} ${-headingH} ${vb.width} ${newHeight}`);
+  clone.setAttribute("viewBox", `${vb.x} ${vb.y - headingH} ${vb.width} ${newHeight}`);
 
   // Add heading
   if (data.heading) {
     const headingText = document.createElementNS(SVG_NS, "text");
     headingText.setAttribute("x", String(vb.x + vb.width / 2));
-    headingText.setAttribute("y", String(-4));
+    headingText.setAttribute("y", String(vb.y - 4));
     headingText.setAttribute("text-anchor", "middle");
     headingText.setAttribute("font-size", String(fontSize * 1.2));
     headingText.setAttribute("font-weight", "600");
@@ -76,8 +76,8 @@ function injectAnnotations(clone: SVGSVGElement, vb: DOMRect): void {
     clone.appendChild(headingText);
   }
 
-  // Base Y for annotations (below keyboard)
-  const baseY = vb.height + 2;
+  // Base Y for annotations (below keyboard, accounting for viewBox y-offset)
+  const baseY = vb.y + vb.height + 2;
 
   for (const item of items) {
     const x = item.x;
