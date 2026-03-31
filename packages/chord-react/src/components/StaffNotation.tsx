@@ -131,7 +131,7 @@ export function StaffNotation({
     );
   }
 
-  const controlsX = totalWidth - 144;
+  const controlsX = totalWidth - 170;
   const controlsY = 4;
   const staffOffsetY = controlsHeight;
 

@@ -194,7 +194,7 @@ export function PianoKeyboard({
     .filter(({ key }) => key.isBlack);
 
   // Position controls in top-right of visible area
-  const controlsX = vbX + vbW - 146;
+  const controlsX = vbX + vbW - 172;
   const controlsY = 4;
 
   const svg = (

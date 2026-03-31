@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { playBlock, playArpeggiated, toAscendingNotes } from "../audio/playback";
 import { downloadMidi } from "@better-chord/core";
 import { downloadSvg, downloadPng } from "../audio/svg-export";
+import { copyDottlClip } from "../audio/dottl-export";
 import { useUITheme } from "../ui-theme";
 import { arpeggioDelayMs } from "../config";
 
@@ -83,6 +84,16 @@ export function PlaybackControls({ notes, lhNotes, rhOctave, lhOctave, chordName
     if (svg) downloadPng(svg, chordName);
   }, [chordName, findParentSvg]);
 
+  const [dottlCopied, setDottlCopied] = useState(false);
+  const handleDottlCopy = useCallback(async () => {
+    const root = cleanNotes[0];
+    const ok = await copyDottlClip(playableNotes, root);
+    if (ok) {
+      setDottlCopied(true);
+      setTimeout(() => setDottlCopied(false), 1500);
+    }
+  }, [playableNotes, cleanNotes]);
+
   const btnStyle = {
     cursor: "pointer" as const,
     opacity: playing ? 0.5 : 1,
@@ -90,7 +101,7 @@ export function PlaybackControls({ notes, lhNotes, rhOctave, lhOctave, chordName
 
   // Button positions
   const audioGroupW = 2 * BTN_SIZE + GAP;
-  const downloadGroupW = 3 * BTN_SIZE + 2 * GAP;
+  const downloadGroupW = 4 * BTN_SIZE + 3 * GAP;
   const totalW = audioGroupW + SECTION_GAP + downloadGroupW;
 
   const renderBtn = (
@@ -219,6 +230,16 @@ export function PlaybackControls({ notes, lhNotes, rhOctave, lhOctave, chordName
         "Download PNG",
         { cursor: "pointer" },
         <text x={BTN_SIZE / 2} y={BTN_SIZE / 2 + 3} textAnchor="middle" fontSize={7} fontWeight="bold" fill={ui.iconFill} fontFamily="system-ui, sans-serif">PNG</text>,
+      )}
+
+      {/* Dottl clipboard copy button */}
+      {renderBtn(
+        x + audioGroupW + SECTION_GAP + 3 * (BTN_SIZE + GAP),
+        dottlCopied ? ui.playbackActive : ui.playbackBg,
+        handleDottlCopy,
+        "Copy chord for dottl.app",
+        { cursor: "pointer" },
+        <text x={BTN_SIZE / 2} y={BTN_SIZE / 2 + 3} textAnchor="middle" fontSize={5} fontWeight="bold" fill={ui.iconFill} fontFamily="system-ui, sans-serif">{dottlCopied ? "OK!" : "dottl"}</text>,
       )}
     </g>
   );
