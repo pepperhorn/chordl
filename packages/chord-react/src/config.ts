@@ -104,9 +104,9 @@ export const DARK_THEME: UIThemeTokens = {
   playbackTrayBorder: "rgba(255, 255, 255, 0.18)",
   playbackBtnBorder: "rgba(255, 255, 255, 0.12)",
   bracketColor: "#999",
-  whiteFill: "#2a2d35",
-  blackFill: "#111118",
-  keyStroke: "#555555",
+  whiteFill: "#fafafa",
+  blackFill: "#222222",
+  keyStroke: "#333333",
 };
 
 /** Default UI theme mode. Change this to switch the library default. */
