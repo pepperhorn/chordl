@@ -84,9 +84,10 @@ const FINGERING_RE =
 /** Valid fingering values: digits 0–5 plus extra symbols. Anything else → "?" */
 const VALID_FINGERING = new Set(["0", "1", "2", "3", "4", "5", "-", "x"]);
 
-// "custom fingering "A0,A1,A2"" / "custom fingering xl "G3-G0-E1"" / "custom fingering "G3-G0-E1" 2xl"
+// "custom fingering "A0,A1,A2"" / "fingering "G3-G0-E1"" / "fingering xl "1-2-3"" / "fingering "1-2-3" 2xl"
+// Quoted strings after "fingering" or "custom fingering" are treated as free-form labels.
 const CUSTOM_FINGERING_RE =
-  /(?:with\s+)?custom\s+finger(?:ing|s)?\s+(?:(?:in\s+)?(base|lg|xl|2xl)\s+)?[""]([^""]+)[""](?:\s+(?:in\s+)?(base|lg|xl|2xl))?/i;
+  /(?:with\s+)?(?:custom\s+)?finger(?:ing|s)?\s+(?:(?:in\s+)?(base|lg|xl|2xl)\s+)?[""]([^""]+)[""](?:\s+(?:in\s+)?(base|lg|xl|2xl))?/i;
 
 // "with fingerings" / "show fingering" / "with fingering in xl" / "fingering 2xl" (no explicit numbers → auto)
 // Negative lookahead: don't match when followed by digits (explicit fingering like "1 2 3 5")
