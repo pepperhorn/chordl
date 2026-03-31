@@ -4,7 +4,7 @@ import {
   mapHighlights, normalizeNote,
   WHITE_KEY_RY, BLACK_KEY_RY,
   WHITE_KEY_WIDTH, BLACK_KEY_WIDTH,
-  DEFAULT_STROKE, DEFAULT_STROKE_WIDTH,
+  DEFAULT_WHITE_FILL, DEFAULT_BLACK_FILL, DEFAULT_STROKE_WIDTH,
   resolveTheme,
 } from "@better-chord/core";
 import { SHOW_NOTE_NAMES } from "../config";
@@ -153,7 +153,14 @@ export function PianoKeyboard({
   const uiTokens = ctx.tokens;
   const keys = computeKeyboard(startFrom, size, format);
   const resolvedTheme = resolveTheme(theme, highlightColor);
-  const fills = mapHighlights(keys, highlightKeys, resolvedTheme);
+  const rawFills = mapHighlights(keys, highlightKeys, resolvedTheme);
+  // Remap hardcoded default fills to dark-mode-aware token values
+  const fills = rawFills.map((fill, i) =>
+    fill === DEFAULT_WHITE_FILL ? uiTokens.whiteFill
+    : fill === DEFAULT_BLACK_FILL ? (keys[i].isBlack ? uiTokens.blackFill : fill)
+    : fill
+  );
+  const keyStroke = uiTokens.keyStroke;
   const { width: fullWidth, height: keyboardHeight } = computeSvgDimensions(size, format);
   const halfKey = WHITE_KEY_WIDTH / 2;
   // Clip based on actual key positions (not fullWidth which has +1 stroke padding)
@@ -239,7 +246,7 @@ export function PianoKeyboard({
               rx={WHITE_KEY_RY}
               ry={WHITE_KEY_RY}
               fill={fill}
-              stroke={DEFAULT_STROKE}
+              stroke={keyStroke}
               strokeWidth={DEFAULT_STROKE_WIDTH}
             />
           ))}
@@ -253,7 +260,7 @@ export function PianoKeyboard({
               rx={BLACK_KEY_RY}
               ry={BLACK_KEY_RY}
               fill={fill}
-              stroke={DEFAULT_STROKE}
+              stroke={keyStroke}
               strokeWidth={DEFAULT_STROKE_WIDTH}
             />
           ))}
@@ -268,7 +275,7 @@ export function PianoKeyboard({
             rx={WHITE_KEY_RY}
             ry={WHITE_KEY_RY}
             fill="none"
-            stroke={DEFAULT_STROKE}
+            stroke={keyStroke}
             strokeWidth={DEFAULT_STROKE_WIDTH}
           />
         )}

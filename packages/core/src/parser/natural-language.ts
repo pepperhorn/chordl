@@ -115,6 +115,15 @@ const NAMES_AND_DEGREES_RE = /\bwith\s+note\s+names?\s+and\s+degrees?(?:\s+(?:in
 // "with heading" / "with a heading" / "show heading"
 const HEADING_RE = /\b(?:with\s+)?(?:a\s+)?(?:show\s+)?heading\b/i;
 
+// "boomwhacker" / "with boomwhacker theme" / "crf theme" / "rainbow"
+const THEME_RE = /\b(?:(?:with\s+)?(?:the\s+)?)?(?:(boomwhacker|boomwhackers|crf|rainbow)\s*(?:theme|colors?|colours?)?)\b/i;
+const THEME_MAP: Record<string, string> = {
+  boomwhacker: "boomwhacker",
+  boomwhackers: "boomwhacker",
+  crf: "crf",
+  rainbow: "crf",
+};
+
 // Quality word mapping for descriptive chord names
 const QUALITY_WORDS: Record<string, string> = {
   major: "",
@@ -283,6 +292,12 @@ export function parseChordDescription(input: string): ParsedChordRequest {
     result.showHeading = true;
   }
 
+  // Extract color theme
+  const themeMatch = input.match(THEME_RE);
+  if (themeMatch) {
+    result.colorTheme = THEME_MAP[themeMatch[1].toLowerCase()] ?? themeMatch[1].toLowerCase();
+  }
+
   // Extract degree display mode (before scale detection, since it applies to both)
   const namesDegMatch = input.match(NAMES_AND_DEGREES_RE);
   const degOnlyMatch = input.match(DEGREE_ONLY_RE);
@@ -362,6 +377,9 @@ export function parseChordDescription(input: string): ParsedChordRequest {
     .replace(SCALE_EXPLICIT_RE, "")
     .replace(/\bscale\b/gi, "")
     .replace(HEADING_RE, "")
+    .replace(THEME_RE, "")
+    .replace(/\btheme\b/gi, "")
+    .replace(/\bcolou?rs?\b/gi, "")
     .replace(/\band\b/gi, "")
     .replace(FILLER_WORDS, "")
     .replace(/,/g, "")

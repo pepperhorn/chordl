@@ -55,6 +55,12 @@ export interface UIThemeTokens {
   playbackBtnBorder: string;
   /** Bracket annotation color (L.H./R.H.) */
   bracketColor: string;
+  /** Unhighlighted white key fill */
+  whiteFill: string;
+  /** Unhighlighted black key fill */
+  blackFill: string;
+  /** Key outline stroke */
+  keyStroke: string;
 }
 
 export const LIGHT_THEME: UIThemeTokens = {
@@ -75,6 +81,9 @@ export const LIGHT_THEME: UIThemeTokens = {
   playbackTrayBorder: "rgba(255, 255, 255, 0.7)",
   playbackBtnBorder: "rgba(255, 255, 255, 0.45)",
   bracketColor: "#888",
+  whiteFill: "#fafafa",
+  blackFill: "#222222",
+  keyStroke: "#333333",
 };
 
 export const DARK_THEME: UIThemeTokens = {
@@ -95,6 +104,9 @@ export const DARK_THEME: UIThemeTokens = {
   playbackTrayBorder: "rgba(255, 255, 255, 0.18)",
   playbackBtnBorder: "rgba(255, 255, 255, 0.12)",
   bracketColor: "#999",
+  whiteFill: "#2a2d35",
+  blackFill: "#111118",
+  keyStroke: "#555555",
 };
 
 /** Default UI theme mode. Change this to switch the library default. */

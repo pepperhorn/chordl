@@ -54,6 +54,8 @@ export interface ParsedChordRequest {
   chordOctaves?: number;
   /** Show chord/scale name as a heading above the keyboard. */
   showHeading?: boolean;
+  /** Color theme name: "boomwhacker", "crf", "rainbow". */
+  colorTheme?: string;
 }
 
 export interface KeyDescriptor {
