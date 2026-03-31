@@ -56,6 +56,8 @@ export interface ParsedChordRequest {
   showHeading?: boolean;
   /** Color theme name: "boomwhacker", "crf", "rainbow". */
   colorTheme?: string;
+  /** Display scale (0–1+ range, e.g. 0.8 = 80%). */
+  scale?: number;
 }
 
 export interface KeyDescriptor {

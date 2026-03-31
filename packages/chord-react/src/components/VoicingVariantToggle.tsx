@@ -134,6 +134,15 @@ export function VoicingVariantToggle({
     if (p.fingeringSize && p.fingeringSize !== "base") {
       parts.push(`fingering in ${p.fingeringSize}`);
     }
+    if (p.colorTheme) {
+      parts.push(p.colorTheme);
+    }
+    if (p.scale != null) {
+      parts.push(`size ${Math.round(p.scale * 100)}`);
+    }
+    if (p.showHeading) {
+      parts.push("heading");
+    }
     return parts.length > 0 ? " " + parts.join(" ") : "";
   }, [resolved]);
 

@@ -83,13 +83,14 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
     return <PianoKeyboard {...props} />;
   }
 
-  const { chord, format, theme: themeProp, highlightColor, padding, scale, display = "keyboard", uiTheme, className, style } =
+  const { chord, format, theme: themeProp, highlightColor, padding, scale: scaleProp, display = "keyboard", uiTheme, className, style } =
     props;
   const uiCtx = resolveUITheme(uiTheme);
 
   const parsed = parseChordDescription(chord);
-  // Text-parsed colorTheme overrides the prop
+  // Text-parsed overrides for theme and scale
   const theme = parsed.colorTheme ?? themeProp;
+  const scale = parsed.scale ?? scaleProp;
 
   // ── Scale path ─────────────────────────────────────────────────
   if (parsed.isScale && parsed.scaleName) {

@@ -3,7 +3,19 @@ import type { Format, TextSize, ParsedChordRequest } from "../types";
 const FILLER_WORDS =
   /\b(show\s+me|draw|display|render|please|a|an|the|with|that|this|me|of)\b/gi;
 
-const FORMAT_RE = /\b(compact|exact)\b/i;
+const FORMAT_RE = /\b(compact|exact|full)\b/i;
+const FORMAT_FULL_RE = /\bfull\s+(?:layout|height|size|keys?)\b/i;
+
+// "size 80" / "size 80%" / "size 0.8" / "size xl" / "keys xl"
+const SIZE_NUM_RE = /\b(?:size|keys?)\s+([\d.]+)\s*%?\b/i;
+const SIZE_NAME_RE = /\b(?:size|keys?)\s+(sm|base|lg|xl|2xl)\b/i;
+const SIZE_SCALE: Record<string, number> = {
+  sm: 0.5,
+  base: 0.7,
+  lg: 0.85,
+  xl: 1.0,
+  "2xl": 1.2,
+};
 
 const INVERSION_WORD: Record<string, number> = {
   first: 1,
@@ -156,10 +168,24 @@ function capitalizeNote(note: string): string {
 export function parseChordDescription(input: string): ParsedChordRequest {
   const result: ParsedChordRequest = { chordName: "" };
 
-  // Extract format
+  // Extract format ("compact", "exact", "full", "full layout", "full height")
+  const formatFullMatch = input.match(FORMAT_FULL_RE);
   const formatMatch = input.match(FORMAT_RE);
-  if (formatMatch) {
-    result.format = formatMatch[1].toLowerCase() as Format;
+  if (formatFullMatch) {
+    result.format = "exact";
+  } else if (formatMatch) {
+    const f = formatMatch[1].toLowerCase();
+    result.format = (f === "full" ? "exact" : f) as Format;
+  }
+
+  // Extract display scale ("size 80", "size 80%", "size 0.8", "size xl", "keys lg")
+  const sizeNameMatch = input.match(SIZE_NAME_RE);
+  const sizeNumMatch = input.match(SIZE_NUM_RE);
+  if (sizeNameMatch) {
+    result.scale = SIZE_SCALE[sizeNameMatch[1].toLowerCase()];
+  } else if (sizeNumMatch) {
+    const v = parseFloat(sizeNumMatch[1]);
+    result.scale = v > 10 ? v / 100 : v; // "80" → 0.8, "0.8" → 0.8
   }
 
   // Extract inversion
@@ -350,7 +376,10 @@ export function parseChordDescription(input: string): ParsedChordRequest {
 
   // Strip extracted patterns and filler for chord name extraction
   let cleaned = input
+    .replace(FORMAT_FULL_RE, "")
     .replace(FORMAT_RE, "")
+    .replace(SIZE_NAME_RE, "")
+    .replace(SIZE_NUM_RE, "")
     .replace(ALL_INVERSIONS_RE, "")
     .replace(INVERSION_NUM_RE, "")
     .replace(INVERSION_WORD_RE, "")
@@ -384,6 +413,10 @@ export function parseChordDescription(input: string): ParsedChordRequest {
     .replace(FILLER_WORDS, "")
     .replace(/,/g, "")
     .replace(/\blayout\b/gi, "")
+    .replace(/\bfull\b/gi, "")
+    .replace(/\bheight\b/gi, "")
+    .replace(/\bsize\b/gi, "")
+    .replace(/\bkeys?\b/gi, "")
     .replace(/\bin\b/gi, "")
     .replace(/\s+/g, " ")
     .trim();
