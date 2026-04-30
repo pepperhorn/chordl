@@ -209,6 +209,40 @@ const voicing = generateLockedHands("G4", "Cmaj7");
 // Returns RealizedNote[] with LH/RH assignments
 ```
 
+## Staff Notation Fonts
+
+`<StaffNotation>` renders glyphs (clefs, accidentals, noteheads) using SMuFL-compliant music fonts. Consumers must load **Bravura** (default) and/or **Petaluma** themselves — the library does not bundle them.
+
+Download the official woff2 files (OFL licensed):
+
+- Bravura — https://github.com/steinbergmedia/bravura/raw/master/redist/woff/Bravura.woff2
+- Petaluma — https://github.com/steinbergmedia/petaluma/raw/master/redist/woff/Petaluma.woff2
+
+Host them and declare in your global CSS:
+
+```css
+@font-face {
+  font-family: 'Bravura';
+  src: url('/fonts/Bravura.woff2') format('woff2');
+  font-display: block;
+}
+@font-face {
+  font-family: 'Petaluma';
+  src: url('/fonts/Petaluma.woff2') format('woff2');
+  font-display: block;
+}
+```
+
+Switch font via the `glyphs` prop:
+
+```tsx
+import { StaffNotation, BRAVURA_GLYPHS, PETALUMA_GLYPHS } from "@better-chord/react";
+
+<StaffNotation notes={["C", "E", "G"]} glyphs={PETALUMA_GLYPHS} />
+```
+
+To use a different SMuFL font, pass any object matching `StaffGlyphSet` (`{ name, fontFamily, glyphs: { trebleClef, ... }, brace }`).
+
 ## Themes
 
 ```tsx

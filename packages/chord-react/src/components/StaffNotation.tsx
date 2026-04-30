@@ -4,7 +4,6 @@ import {
   getDefaultGlyphs,
   STAFF_LINE_SPACING,
   STAFF_WIDTH,
-  CLEF_AREA_WIDTH,
   NOTE_COLUMN_X,
   NOTE_HEAD_RX,
   LEDGER_LINE_EXTEND,
@@ -80,32 +79,30 @@ export function StaffNotation({
     return lines;
   }
 
-  // Font glyphs are Y-up; SVG is Y-down. Scale with negative Y to flip.
-  const upm = g.upm || 1000;
+  // SMuFL fonts are designed so that 1 em = 4 staff spaces.
+  // Setting font-size = 4 * STAFF_LINE_SPACING renders glyphs at correct staff size.
+  const glyphFontSize = STAFF_LINE_SPACING * 4;
 
   function renderClef(type: "treble" | "bass", staffTopY: number) {
-    const clef = type === "treble" ? g.trebleClef : g.bassClef;
     const clefX = BRACE_WIDTH + 4;
-    // Scale so the clef spans the right number of staff spaces
-    const targetHeight = type === "treble"
-      ? STAFF_LINE_SPACING * 4 * 1.8
-      : STAFF_LINE_SPACING * 3 * 1.5;
-    const s = targetHeight / clef.height;
-    // In font coords, y=0 is the baseline (reference line for the clef).
-    // After scale(s, -s), font y=0 maps to the translate Y.
-    // Treble clef: baseline = G4 line = 2nd line from bottom = staffTopY + 3*spacing
-    // Bass clef: baseline = F3 line = 2nd line from top = staffTopY + spacing
+    // SMuFL glyph y-origin sits on the clef's reference line:
+    //   gClef on G4 (2nd line from bottom), fClef on F3 (2nd line from top).
     const refLineY = type === "treble"
       ? staffTopY + STAFF_LINE_SPACING * 3
       : staffTopY + STAFF_LINE_SPACING;
+    const codepoint = type === "treble" ? g.glyphs.trebleClef : g.glyphs.bassClef;
 
     return (
-      <g
+      <text
         className={`bc-staff__clef--${type}`}
-        transform={`translate(${clefX}, ${refLineY}) scale(${s}, ${-s})`}
+        x={clefX}
+        y={refLineY}
+        fontFamily={g.fontFamily}
+        fontSize={glyphFontSize}
+        fill={staffColor}
       >
-        <path d={clef.path} fill={staffColor} />
-      </g>
+        {codepoint}
+      </text>
     );
   }
 
@@ -114,20 +111,19 @@ export function StaffNotation({
     x: number,
     y: number,
   ) {
-    const glyph = type === "sharp" ? g.sharp : g.flat;
-    // Scale accidental to ~2.2 staff spaces tall
-    const targetHeight = STAFF_LINE_SPACING * 2.2;
-    const s = targetHeight / glyph.height;
-    // Center horizontally at x, vertically at y
-    const accX = x - (glyph.width * s) / 2;
-
+    const codepoint = type === "sharp" ? g.glyphs.sharp : g.glyphs.flat;
     return (
-      <g
+      <text
         className="bc-staff__accidental"
-        transform={`translate(${accX}, ${y}) scale(${s}, ${-s})`}
+        x={x}
+        y={y}
+        fontFamily={g.fontFamily}
+        fontSize={glyphFontSize}
+        fill={noteColor}
+        textAnchor="middle"
       >
-        <path d={glyph.path} fill={noteColor} />
-      </g>
+        {codepoint}
+      </text>
     );
   }
 
@@ -250,20 +246,17 @@ export function StaffNotation({
                 )}
 
                 {/* Notehead (whole note glyph) */}
-                {(() => {
-                  const glyph = g.wholeNote;
-                  const targetH = STAFF_LINE_SPACING;
-                  const s = targetH / glyph.height;
-                  const nx = note.noteX - (glyph.width * s) / 2;
-                  return (
-                    <g
-                      className="bc-staff__notehead"
-                      transform={`translate(${nx}, ${note.y}) scale(${s}, ${-s})`}
-                    >
-                      <path d={glyph.path} fill={noteColor} />
-                    </g>
-                  );
-                })()}
+                <text
+                  className="bc-staff__notehead"
+                  x={note.noteX}
+                  y={note.y}
+                  fontFamily={g.fontFamily}
+                  fontSize={glyphFontSize}
+                  fill={noteColor}
+                  textAnchor="middle"
+                >
+                  {g.glyphs.wholeNote}
+                </text>
               </g>
               );
             })}
