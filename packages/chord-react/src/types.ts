@@ -96,6 +96,10 @@ export interface ChordSheetProps {
   uiTheme?: UIThemeMode;
   className?: string;
   style?: CSSProperties;
+  /** Called after each chord renders with a snapshot of the rendered variation. */
+  onVariation?: OnVariation;
+  /** Render extra UI as a sibling to each chord's SVG (e.g. rating buttons). */
+  renderVariationExtras?: RenderVariationExtras;
 }
 
 /**

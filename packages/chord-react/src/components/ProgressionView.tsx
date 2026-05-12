@@ -16,6 +16,8 @@ export interface ProgressionViewProps {
   defaultGroupMode?: GroupMode;
   /** UI chrome theme: "light" (default) or "dark". */
   uiTheme?: UIThemeMode;
+  onVariation?: import("../types").OnVariation;
+  renderVariationExtras?: import("../types").RenderVariationExtras;
 }
 
 const SCALE_OPTIONS = [
@@ -35,6 +37,8 @@ export function ProgressionView({
   showPlayback = true,
   defaultGroupMode = "by-progression",
   uiTheme,
+  onVariation,
+  renderVariationExtras,
 }: ProgressionViewProps) {
   const uiCtx = resolveUITheme(uiTheme);
   const ui = uiCtx.tokens;
@@ -197,11 +201,13 @@ export function ProgressionView({
             showNoteNames={noteNames !== "off"}
             noteNameMode={noteNames === "midi" ? "midi" : "pitch-class"}
             showFingering={showFingering}
+            onVariation={onVariation}
+            renderVariationExtras={renderVariationExtras}
           />
         ))
       ) : (
         // Group by chord position — all example 1 first chords, then all second chords, etc.
-        renderByChord(result, format ?? keyFormat, theme, highlightColor, showPlayback, scale, displayMode, noteNames, showFingering)
+        renderByChord(result, format ?? keyFormat, theme, highlightColor, showPlayback, scale, displayMode, noteNames, showFingering, onVariation, renderVariationExtras)
       )}
     </div>
     </UIThemeProvider>
@@ -218,6 +224,8 @@ function renderByChord(
   display?: DisplayMode,
   noteNames?: "off" | "notes" | "midi",
   showFingering?: boolean,
+  onVariation?: import("../types").OnVariation,
+  renderVariationExtras?: import("../types").RenderVariationExtras,
 ) {
   if (result.examples.length === 0) return null;
 
@@ -247,6 +255,8 @@ function renderByChord(
       showNoteNames={noteNames !== "off"}
       noteNameMode={noteNames === "midi" ? "midi" : "pitch-class"}
       showFingering={showFingering}
+      onVariation={onVariation}
+      renderVariationExtras={renderVariationExtras}
     />
   ));
 }

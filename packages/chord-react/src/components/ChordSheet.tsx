@@ -44,7 +44,7 @@ class ChordErrorBoundary extends React.Component<
   }
 }
 
-export function ChordSheet({ data, printMode, uiTheme, className, style }: ChordSheetProps) {
+export function ChordSheet({ data, printMode, uiTheme, className, style, onVariation, renderVariationExtras }: ChordSheetProps) {
   const sectionCount = data.sections.length;
 
   const content = (
@@ -80,6 +80,8 @@ export function ChordSheet({ data, printMode, uiTheme, className, style }: Chord
           sheetDefaults={data.defaults}
           printMode={printMode}
           uiTheme={uiTheme}
+          onVariation={onVariation}
+          renderVariationExtras={renderVariationExtras}
         />
       ))}
     </div>
@@ -97,6 +99,8 @@ function SectionRenderer({
   sheetDefaults,
   printMode,
   uiTheme,
+  onVariation,
+  renderVariationExtras,
 }: {
   section: SectionData;
   sectionIndex: number;
@@ -104,6 +108,8 @@ function SectionRenderer({
   sheetDefaults?: DisplayDefaults;
   printMode?: boolean;
   uiTheme?: string;
+  onVariation?: import("../types").OnVariation;
+  renderVariationExtras?: import("../types").RenderVariationExtras;
 }) {
   const perRow = chordsPerRow(section.chords.length);
 
@@ -181,7 +187,14 @@ function SectionRenderer({
                 </div>
               )}
               <ChordErrorBoundary chordRef={ref}>
-                <ChordRenderer chord={chord} resolved={resolved} uiTheme={uiTheme} />
+                <ChordRenderer
+                  chord={chord}
+                  resolved={resolved}
+                  uiTheme={uiTheme}
+                  chordIndex={ci}
+                  onVariation={onVariation}
+                  renderVariationExtras={renderVariationExtras}
+                />
               </ChordErrorBoundary>
               {chord.annotationText && (
                 <div className="bc-chord-sheet__annotation" style={{
@@ -215,10 +228,16 @@ function ChordRenderer({
   chord,
   resolved,
   uiTheme,
+  chordIndex,
+  onVariation,
+  renderVariationExtras,
 }: {
   chord: ChordData;
   resolved: Required<import("@better-chord/core").DisplayDefaults>;
   uiTheme?: string;
+  chordIndex: number;
+  onVariation?: import("../types").OnVariation;
+  renderVariationExtras?: import("../types").RenderVariationExtras;
 }) {
   return (
     <PianoChord
@@ -230,6 +249,10 @@ function ChordRenderer({
       scale={resolved.scale}
       display={resolved.display}
       uiTheme={uiTheme as any}
+      onVariation={onVariation}
+      renderVariationExtras={renderVariationExtras}
+      chordIndex={chordIndex}
+      voicingId="default"
     />
   );
 }

@@ -1,4 +1,5 @@
-import type { Format, ColorTheme, WhiteNote, DisplayMode, TextSize, NoteNameMode } from "../types";
+import { useEffect, useRef, type ReactNode } from "react";
+import type { Format, ColorTheme, WhiteNote, DisplayMode, TextSize, NoteNameMode, OnVariation, RenderVariationExtras, VariationContext } from "../types";
 import { PianoKeyboard } from "./PianoKeyboard";
 import { StaffNotation } from "./StaffNotation";
 import { calculateLayout, normalizeNote, WHITE_NOTE_ORDER, autoFingering } from "@better-chord/core";
@@ -19,6 +20,8 @@ export interface ChordGroupProps {
   noteNameSize?: TextSize;
   showFingering?: boolean;
   fingeringSize?: TextSize;
+  onVariation?: OnVariation;
+  renderVariationExtras?: RenderVariationExtras;
 }
 
 /**
@@ -46,6 +49,8 @@ export function ChordGroup({
   noteNameSize,
   showFingering,
   fingeringSize,
+  onVariation,
+  renderVariationExtras,
 }: ChordGroupProps) {
   const { tokens: ui } = useUITheme();
   // Calculate all layouts, then use the max size for uniform keyboards
@@ -92,14 +97,13 @@ export function ChordGroup({
           }
 
           return (
-          <div
-            className="bc-chord-group__item"
+          <ChordGroupCell
             key={i}
-            style={{
-              textAlign: "center",
-              flex: `0 1 calc(${100 / perRow}% - ${((perRow - 1) * 12) / perRow}px)`,
-              minWidth: 0,
-            }}
+            chord={chord}
+            index={i}
+            perRow={perRow}
+            onVariation={onVariation}
+            renderVariationExtras={renderVariationExtras}
           >
             <div className="bc-chord-group__symbol" style={{ fontSize: 12, fontWeight: 500, marginBottom: 4 }}>
               {chord.symbol}
@@ -161,10 +165,56 @@ export function ChordGroup({
                 {chord.voicingStyle}
               </div>
             )}
-          </div>
+          </ChordGroupCell>
           );
         })}
       </div>
+    </div>
+  );
+}
+
+interface ChordGroupCellProps {
+  chord: ProgressionChord;
+  index: number;
+  perRow: number;
+  onVariation?: OnVariation;
+  renderVariationExtras?: RenderVariationExtras;
+  children: ReactNode;
+}
+
+function ChordGroupCell({ chord, index, perRow, onVariation, renderVariationExtras, children }: ChordGroupCellProps) {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const lastFingerprintRef = useRef<string>("");
+
+  const buildSnapshot = (): VariationContext => ({
+    chordSymbol: chord.symbol,
+    chordIndex: index,
+    voicingId: "default",
+    notes: chord.notes,
+    svgString: ref.current?.querySelector("svg")?.outerHTML ?? "",
+  });
+
+  useEffect(() => {
+    if (!onVariation) return;
+    const snap = buildSnapshot();
+    const fp = `${snap.chordSymbol}|${snap.voicingId}|${snap.chordIndex}|${snap.notes.join(",")}|${snap.svgString.length}`;
+    if (fp === lastFingerprintRef.current) return;
+    lastFingerprintRef.current = fp;
+    onVariation(snap);
+  });
+
+  return (
+    <div
+      ref={ref}
+      className="bc-chord-group__item"
+      style={{
+        textAlign: "center",
+        flex: `0 1 calc(${100 / perRow}% - ${((perRow - 1) * 12) / perRow}px)`,
+        minWidth: 0,
+      }}
+    >
+      {children}
+      {renderVariationExtras?.(buildSnapshot())}
     </div>
   );
 }
