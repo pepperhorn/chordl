@@ -20,7 +20,7 @@ export { SHOW_NOTE_NAMES, ARPEGGIO_BPM, arpeggioDelayMs, LIGHT_THEME, DARK_THEME
 export type { UIThemeMode, UIThemeTokens } from "./config";
 
 // ─── React-specific types (local) ──────────────────────────────────────────
-export type { KeyboardProps, ChordProps, PianoChordProps, DisplayMode, ChordSheetProps, DisplayDefaults, ChordData, SectionData, ChordSheetData } from "./types";
+export type { KeyboardProps, ChordProps, PianoChordProps, DisplayMode, ChordSheetProps, DisplayDefaults, ChordData, SectionData, ChordSheetData, VariationContext, RenderVariationExtras, OnVariation } from "./types";
 
 // ─── Re-export everything from @better-chord/core for backwards compat ─────
 export {
