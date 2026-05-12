@@ -1,6 +1,6 @@
 {
   "name": "@pepperhorn/voicings",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Jazz piano voicing library with shell, rootless, quartal, upper structure, and drop 2 voicings",
   "type": "module",
   "main": "./dist/index.cjs",

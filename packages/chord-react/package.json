@@ -1,6 +1,6 @@
 {
   "name": "@pepperhorn/react",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "React component library for SVG piano chord diagrams",
   "type": "module",
   "main": "./dist/chordl.cjs",
