@@ -7,7 +7,8 @@
     "build:site": "pnpm run build && pnpm --filter @better-chord/react build:site",
     "test": "pnpm --filter @better-chord/voicings test && pnpm --filter @better-chord/core test && pnpm --filter @better-chord/react test",
     "test:run": "pnpm --filter @better-chord/voicings test:run && pnpm --filter @better-chord/core test:run && pnpm --filter @better-chord/react test:run",
-    "lint": "pnpm --filter @better-chord/voicings lint && pnpm --filter @better-chord/core lint && pnpm --filter @better-chord/react lint"
+    "lint": "pnpm --filter @better-chord/voicings lint && pnpm --filter @better-chord/core lint && pnpm --filter @better-chord/react lint",
+    "render": "pnpm --filter @better-chord/render-cli render"
   },
   "devDependencies": {
     "typescript": "^5.7.0",

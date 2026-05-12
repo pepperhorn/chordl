@@ -128,6 +128,67 @@ downloadPng(svgEl, "Cmaj7.png");        // 2x retina by default
 downloadPng(svgEl, "Cmaj7.png", 3);     // custom pixel ratio
 ```
 
+## Batch SVG Rendering
+
+For generating large libraries of chord cards (print sheets, app graphics, asset pipelines), use the `@better-chord/render-cli` package. It renders the same React components server-side via `renderToStaticMarkup`, so output is pixel-identical to the live UI.
+
+```bash
+# Build chord-react first (CLI imports the dist bundle)
+pnpm --filter @better-chord/react build
+
+# Render a manifest (paths are resolved relative to the render-cli package)
+pnpm --filter @better-chord/render-cli render manifests/example.json
+# or with explicit output dir
+pnpm --filter @better-chord/render-cli render manifests/example.json --out ./dist-svgs
+```
+
+### Manifest format
+
+```json
+{
+  "outDir": "./out",
+  "defaultPreset": "app-color",
+  "entries": [
+    { "chord": "Cmaj7" },
+    { "chord": "Dm7", "preset": "print-bw" },
+    { "chord": "G7", "highlightColor": "#e63946", "filename": "g7-red" }
+  ]
+}
+```
+
+Merge precedence (lowest → highest): `defaultPreset` → entry-level `preset` → inline overrides.
+
+### Visual presets
+
+Defined in `packages/render-cli/src/presets.ts`:
+
+| Preset | Theme | UI | Notes |
+|--------|-------|----|-----|
+| `app-color` | boomwhacker | light | Default app look |
+| `app-dark` | boomwhacker | dark | Dark UI variant |
+| `print-bw` | simple | light | Black highlight, print-friendly |
+| `crf-brand` | crf | light | CRF brand colors |
+| `chord-cards` | crf | light | CRF colors, full layout, 2 padding keys, 2XL note names — for chord-card prints |
+
+Presets can also include a `chordTemplate` field that wraps each entry's chord string with natural-language modifiers. Example: the `chord-cards` preset uses `"full {chord} with 2 notes either side with note names 2xl"`, so a manifest entry `{ "chord": "Cmaj7" }` is rendered as if the user had written the full phrase.
+
+Add new presets by editing the `PRESETS` map.
+
+### Bulk generation
+
+```ts
+import { expandCombinations } from "@better-chord/render-cli/manifest";
+
+const entries = expandCombinations({
+  roots: ["C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"],
+  qualities: ["maj7", "m7", "7", "dim7", "m7b5"],
+  presets: ["app-color", "print-bw"],
+});
+// 12 × 5 × 2 = 120 entries
+```
+
+Output is non-interactive — playback controls are suppressed via `showPlayback={false}`.
+
 ## Voicing Library
 
 46 voicings across 8 categories, stored as semitone intervals relative to the root (key-agnostic):
@@ -342,6 +403,7 @@ resolveChord("C7omit3");      // Special builder: [C, G, Bb]
 | `padding` | `number` | `1` | Extra white keys on each side |
 | `scale` | `number` | `1` | Display scale (0.5–1.0) |
 | `uiTheme` | `"light" \| "dark"` | `"light"` | UI chrome theme |
+| `showPlayback` | `boolean` | `true` | Show audio/MIDI/export controls (set `false` for static export) |
 | `className` | `string` | — | CSS class |
 | `style` | `CSSProperties` | — | Inline styles |
 
@@ -390,6 +452,13 @@ packages/
       locked-hands.ts   Locked hands block chord algorithm
       types.ts          VoicingEntry, RealizedNote, etc.
     test/               Vitest tests
+  render-cli/           @better-chord/render-cli (Node CLI, batch SVG export)
+    src/
+      cli.ts            Manifest loader + writer
+      render.tsx        SSR via renderToStaticMarkup
+      presets.ts        Named visual presets (app-color, print-bw, ...)
+      manifest.ts       Manifest types + expandCombinations() helper
+    manifests/          Example + project manifests
 ```
 
 ## Development

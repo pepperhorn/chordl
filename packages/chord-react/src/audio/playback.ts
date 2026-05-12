@@ -1,4 +1,4 @@
-import { Soundfont } from "smplr";
+import type { Soundfont } from "smplr";
 
 let ctx: AudioContext | null = null;
 let piano: Soundfont | null = null;
@@ -18,6 +18,7 @@ async function ensurePiano(): Promise<Soundfont> {
     return piano!;
   }
 
+  const { Soundfont } = await import("smplr");
   const context = getContext();
   const instance = new Soundfont(context, { instrument: "acoustic_grand_piano" });
   loading = instance.load.then(() => {});

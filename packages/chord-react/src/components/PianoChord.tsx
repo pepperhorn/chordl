@@ -83,7 +83,7 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
     return <PianoKeyboard {...props} />;
   }
 
-  const { chord, format, theme: themeProp, highlightColor, padding, scale: scaleProp, display = "keyboard", uiTheme, className, style } =
+  const { chord, format, theme: themeProp, highlightColor, padding, scale: scaleProp, display = "keyboard", uiTheme, showPlayback = true, className, style } =
     props;
   const uiCtx = resolveUITheme(uiTheme);
 
@@ -184,6 +184,7 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
           degreeLabels={degreeLabels}
           fingering={scaleFingering && scaleFingering.length > 0 ? scaleFingering : undefined}
           fingeringSize={parsed.fingeringSize}
+          showPlayback={showPlayback}
           className={className}
           style={style}
         />
@@ -218,7 +219,7 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
           format={resolvedFormat}
           theme={theme}
           highlightColor={highlightColor}
-          showPlayback
+          showPlayback={showPlayback}
           scale={scale}
         />
       </UIThemeProvider>
@@ -330,7 +331,7 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
         octaveQualifiedNotes={opts?.octaveQualifiedNotes}
         chordLabel={parsed.chordName}
         scale={scale}
-        showPlayback
+        showPlayback={showPlayback}
         className={className}
         style={style}
       />
@@ -510,6 +511,7 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
         midiBaseOctave={lhPlaybackOctave + 1}
         fingering={bassResolvedFingering}
         fingeringSize={parsed.fingeringSize}
+        showPlayback={showPlayback}
         className={className}
         style={style}
       />
@@ -684,6 +686,7 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
       fingering={resolvedFingering}
       fingeringSize={parsed.fingeringSize}
       degreeLabels={chordDegreeLabels}
+      showPlayback={showPlayback}
       className={className}
       style={style}
     />

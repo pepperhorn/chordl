@@ -69,6 +69,8 @@ export type { ResolvedScale } from "./resolver/scale-resolver";
 
 // Themes
 export { getTheme, resolveTheme } from "./themes";
+export { CRF_PITCH_PALETTE, formatCmyk } from "./themes/crf";
+export type { CrfPitchEntry } from "./themes/crf";
 
 // Pipeline
 export { processChordRequest } from "./pipeline";

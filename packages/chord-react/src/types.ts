@@ -72,6 +72,8 @@ export interface ChordProps {
   display?: DisplayMode;
   /** UI chrome theme: "light" (default) or "dark". */
   uiTheme?: UIThemeMode;
+  /** Show the inline play/copy/download controls. Default true. Set false for static export. */
+  showPlayback?: boolean;
   className?: string;
   style?: CSSProperties;
 }
