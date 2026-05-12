@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useCallback } from "react";
-import type { DisplayMode } from "../types";
+import type { DisplayMode, OnVariation, RenderVariationExtras } from "../types";
 import type { UIThemeMode } from "../config";
 import { PianoChord } from "./PianoChord";
 import {
@@ -25,6 +25,10 @@ export interface VoicingVariantToggleProps {
   uiTheme?: UIThemeMode;
   /** Called when zip export starts/finishes — drives the header animation */
   onExportStatus?: (status: "idle" | "preparing") => void;
+  onVariation?: OnVariation;
+  renderVariationExtras?: RenderVariationExtras;
+  /** Position in progression, forwarded to PianoChord. Default 0. */
+  chordIndex?: number;
 }
 
 const LABELS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -38,6 +42,9 @@ export function VoicingVariantToggle({
   display,
   uiTheme,
   onExportStatus,
+  onVariation,
+  renderVariationExtras,
+  chordIndex,
 }: VoicingVariantToggleProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [totalCount, setTotalCount] = useState(3);
@@ -104,6 +111,10 @@ export function VoicingVariantToggle({
         scale={scale}
         display={display}
         uiTheme={uiTheme}
+        onVariation={onVariation}
+        renderVariationExtras={renderVariationExtras}
+        voicingId="default"
+        chordIndex={chordIndex ?? 0}
       />
     );
   }
@@ -207,6 +218,10 @@ export function VoicingVariantToggle({
           scale={scale}
           display={display}
           uiTheme={uiTheme}
+          onVariation={onVariation}
+          renderVariationExtras={renderVariationExtras}
+          voicingId={variants[activeIndex]?.label ?? "default"}
+          chordIndex={chordIndex ?? 0}
         />
       </div>
 
