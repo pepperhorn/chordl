@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import type { UIThemeMode } from "./config";
 // Re-export shared types from core
 export type {
@@ -89,3 +89,24 @@ export interface ChordSheetProps {
   className?: string;
   style?: CSSProperties;
 }
+
+/**
+ * Description of a single rendered (chord, voicing) cell.
+ * Surfaced via `renderVariationExtras` and `onVariation` so consumers
+ * can attach per-variation overlays (rating UI, telemetry, etc.).
+ */
+export interface VariationContext {
+  /** Chord symbol as rendered, e.g. "Cmaj7#5" */
+  chordSymbol: string;
+  /** Position in a progression; 0 for a single-chord render */
+  chordIndex: number;
+  /** Voicing identifier, e.g. "closed" / "drop2" / "open" / "default" */
+  voicingId: string;
+  /** Notes used in this variation (note-name strings as rendered) */
+  notes: string[];
+  /** Inline SVG markup of the rendered variation */
+  svgString: string;
+}
+
+export type RenderVariationExtras = (ctx: VariationContext) => ReactNode;
+export type OnVariation = (ctx: VariationContext) => void;
