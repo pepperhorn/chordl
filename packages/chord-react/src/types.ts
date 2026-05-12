@@ -76,6 +76,14 @@ export interface ChordProps {
   showPlayback?: boolean;
   className?: string;
   style?: CSSProperties;
+  /** Called after each render with a snapshot of the rendered variation. */
+  onVariation?: OnVariation;
+  /** Render extra UI as a sibling to the SVG (e.g. rating buttons). */
+  renderVariationExtras?: RenderVariationExtras;
+  /** Voicing identifier reported in VariationContext; defaults to "default". */
+  voicingId?: string;
+  /** Position in a progression; defaults to 0. */
+  chordIndex?: number;
 }
 
 export type PianoChordProps = ChordProps | KeyboardProps;

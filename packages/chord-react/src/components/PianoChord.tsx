@@ -1,5 +1,7 @@
+import { useEffect, useRef } from "react";
 import { Note } from "tonal";
 import type { ChordProps, KeyboardProps, HandBracket, WhiteNote, DisplayMode } from "../types";
+import type { VariationContext } from "../types";
 import { PianoKeyboard } from "./PianoKeyboard";
 import { StaffNotation } from "./StaffNotation";
 import {
@@ -85,7 +87,30 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
 
   const { chord, format, theme: themeProp, highlightColor, padding, scale: scaleProp, display = "keyboard", uiTheme, showPlayback = true, className, style } =
     props;
+  const { onVariation, renderVariationExtras, voicingId = "default", chordIndex = 0 } = props;
   const uiCtx = resolveUITheme(uiTheme);
+
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const lastReportedRef = useRef<string>("");
+
+  // Notes that the active render branch uses — set per branch before return.
+  let currentNotes: string[] = [];
+  const buildContextSnapshot = (): VariationContext => ({
+    chordSymbol: typeof chord === "string" ? chord : String(chord),
+    chordIndex,
+    voicingId,
+    notes: currentNotes,
+    svgString: containerRef.current?.querySelector("svg")?.outerHTML ?? "",
+  });
+
+  useEffect(() => {
+    if (!onVariation) return;
+    const snapshot = buildContextSnapshot();
+    const fingerprint = `${snapshot.chordSymbol}|${snapshot.voicingId}|${snapshot.chordIndex}|${snapshot.notes.join(",")}|${snapshot.svgString.length}`;
+    if (fingerprint === lastReportedRef.current) return;
+    lastReportedRef.current = fingerprint;
+    onVariation(snapshot);
+  });
 
   const parsed = parseChordDescription(chord);
   // Text-parsed overrides for theme and scale
@@ -164,8 +189,11 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
       ? scaleAutoFingering(scaleRoot, scaleType, "rh", parsed.scaleOctaves ?? 1)
       : undefined;
 
+    currentNotes = scaleKeyboardNotes;
     return (
-      <UIThemeProvider value={uiCtx}>
+      <>
+        <div ref={containerRef} className="bc-pianochord-root">
+        <UIThemeProvider value={uiCtx}>
         <PianoKeyboard
           format={resolvedFormat}
           size={kbSize}
@@ -189,6 +217,9 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
           style={style}
         />
       </UIThemeProvider>
+        </div>
+        {renderVariationExtras?.(buildContextSnapshot())}
+      </>
     );
   }
 
@@ -211,18 +242,24 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
       });
     }
     const resolvedFormat = parsed.format ?? format;
+    currentNotes = resolved.notes;
     return (
-      <UIThemeProvider value={uiCtx}>
-        <ChordGroup
-          chords={chords}
-          label={parsed.chordName}
-          format={resolvedFormat}
-          theme={theme}
-          highlightColor={highlightColor}
-          showPlayback={showPlayback}
-          scale={scale}
-        />
-      </UIThemeProvider>
+      <>
+        <div ref={containerRef} className="bc-pianochord-root">
+          <UIThemeProvider value={uiCtx}>
+            <ChordGroup
+              chords={chords}
+              label={parsed.chordName}
+              format={resolvedFormat}
+              theme={theme}
+              highlightColor={highlightColor}
+              showPlayback={showPlayback}
+              scale={scale}
+            />
+          </UIThemeProvider>
+        </div>
+        {renderVariationExtras?.(buildContextSnapshot())}
+      </>
     );
   }
 
@@ -517,29 +554,45 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
       />
     );
 
+    currentNotes = [lhBassNote, ...notes];
     if (display === "staff") {
       return (
-        <UIThemeProvider value={uiCtx}>
-          {renderStaff(notes, { bassNote: lhBassNote, octaveQualifiedNotes: staffOctaveNotesBass })}
-        </UIThemeProvider>
+        <>
+          <div ref={containerRef} className="bc-pianochord-root">
+            <UIThemeProvider value={uiCtx}>
+              {renderStaff(notes, { bassNote: lhBassNote, octaveQualifiedNotes: staffOctaveNotesBass })}
+            </UIThemeProvider>
+          </div>
+          {renderVariationExtras?.(buildContextSnapshot())}
+        </>
       );
     }
 
     if (display === "both") {
       return (
-        <UIThemeProvider value={uiCtx}>
-          <div className="bc-display-both bc-display-both--stacked" style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "center" }}>
-            {keyboard}
-            {renderStaff(notes, { bassNote: lhBassNote, octaveQualifiedNotes: staffOctaveNotesBass })}
+        <>
+          <div ref={containerRef} className="bc-pianochord-root">
+            <UIThemeProvider value={uiCtx}>
+              <div className="bc-display-both bc-display-both--stacked" style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "center" }}>
+                {keyboard}
+                {renderStaff(notes, { bassNote: lhBassNote, octaveQualifiedNotes: staffOctaveNotesBass })}
+              </div>
+            </UIThemeProvider>
           </div>
-        </UIThemeProvider>
+          {renderVariationExtras?.(buildContextSnapshot())}
+        </>
       );
     }
 
     return (
-      <UIThemeProvider value={uiCtx}>
-        {keyboard}
-      </UIThemeProvider>
+      <>
+        <div ref={containerRef} className="bc-pianochord-root">
+          <UIThemeProvider value={uiCtx}>
+            {keyboard}
+          </UIThemeProvider>
+        </div>
+        {renderVariationExtras?.(buildContextSnapshot())}
+      </>
     );
   }
 
@@ -695,28 +748,44 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
   // Octave-qualified notes for staff notation — use absolute octave (4), not keyboard-relative
   const staffOctaveNotes = computeOctaveQualified(notes, 4 + chordShift);
 
+  currentNotes = notes;
   if (display === "staff") {
     return (
-      <UIThemeProvider value={uiCtx}>
-        {renderStaff(notes, { octaveQualifiedNotes: staffOctaveNotes })}
-      </UIThemeProvider>
+      <>
+        <div ref={containerRef} className="bc-pianochord-root">
+          <UIThemeProvider value={uiCtx}>
+            {renderStaff(notes, { octaveQualifiedNotes: staffOctaveNotes })}
+          </UIThemeProvider>
+        </div>
+        {renderVariationExtras?.(buildContextSnapshot())}
+      </>
     );
   }
 
   if (display === "both") {
     return (
-      <UIThemeProvider value={uiCtx}>
-        <div className="bc-display-both" style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
-          {renderStaff(notes, { octaveQualifiedNotes: staffOctaveNotes })}
-          {keyboard}
+      <>
+        <div ref={containerRef} className="bc-pianochord-root">
+          <UIThemeProvider value={uiCtx}>
+            <div className="bc-display-both" style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
+              {renderStaff(notes, { octaveQualifiedNotes: staffOctaveNotes })}
+              {keyboard}
+            </div>
+          </UIThemeProvider>
         </div>
-      </UIThemeProvider>
+        {renderVariationExtras?.(buildContextSnapshot())}
+      </>
     );
   }
 
   return (
-    <UIThemeProvider value={uiCtx}>
-      {keyboard}
-    </UIThemeProvider>
+    <>
+      <div ref={containerRef} className="bc-pianochord-root">
+        <UIThemeProvider value={uiCtx}>
+          {keyboard}
+        </UIThemeProvider>
+      </div>
+      {renderVariationExtras?.(buildContextSnapshot())}
+    </>
   );
 }
