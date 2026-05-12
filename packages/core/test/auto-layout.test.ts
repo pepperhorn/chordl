@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { calculateLayout } from "@better-chord/core";
+import { calculateLayout } from "@pepperhorn/core";
 
 describe("calculateLayout", () => {
   it("returns default for empty notes", () => {

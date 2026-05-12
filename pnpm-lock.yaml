@@ -17,10 +17,10 @@ importers:
 
   packages/chord-react:
     dependencies:
-      '@better-chord/core':
+      '@pepperhorn/core':
         specifier: workspace:*
         version: link:../core
-      '@better-chord/voicings':
+      '@pepperhorn/voicings':
         specifier: workspace:*
         version: link:../voicings
       jszip:
@@ -69,7 +69,7 @@ importers:
 
   packages/core:
     dependencies:
-      '@better-chord/voicings':
+      '@pepperhorn/voicings':
         specifier: workspace:*
         version: link:../voicings
       tonal:
@@ -85,13 +85,13 @@ importers:
 
   packages/render-cli:
     dependencies:
-      '@better-chord/core':
+      '@pepperhorn/core':
         specifier: workspace:*
         version: link:../core
-      '@better-chord/react':
+      '@pepperhorn/react':
         specifier: workspace:*
         version: link:../chord-react
-      '@better-chord/voicings':
+      '@pepperhorn/voicings':
         specifier: workspace:*
         version: link:../voicings
       react:

@@ -2,7 +2,7 @@
  * Bundle chord exports (SVG, PNG, MIDI, WAV) into a downloadable .zip.
  */
 import JSZip from "jszip";
-import { generateMidiFile } from "@better-chord/core";
+import { generateMidiFile } from "@pepperhorn/core";
 import { generateWav } from "./wav-export";
 import { prepareExportClone } from "./svg-export";
 

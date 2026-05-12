@@ -11,8 +11,8 @@ import {
   STAFF_LINE_STROKE,
   BRACE_WIDTH,
   STAFF_TOP_MARGIN,
-} from "@better-chord/core";
-import type { StaffGlyphSet, StaffLayoutOptions } from "@better-chord/core";
+} from "@pepperhorn/core";
+import type { StaffGlyphSet, StaffLayoutOptions } from "@pepperhorn/core";
 import { PlaybackControls } from "./PlaybackControls";
 import { useUITheme } from "../ui-theme";
 

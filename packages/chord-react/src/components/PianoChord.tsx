@@ -9,10 +9,10 @@ import {
   computeKeyboard, normalizeNote, autoFingering, assignFingering,
   scaleAutoFingering, degreesForIntervals,
   FLAT_TO_SHARP, WHITE_NOTE_ORDER,
-} from "@better-chord/core";
-import type { ProgressionChord } from "@better-chord/core";
-import { findVoicing, voicingPitchClasses, mapToVoicingQuality, realizeVoicingFull } from "@better-chord/voicings";
-import type { Hand as VoicingHand } from "@better-chord/voicings";
+} from "@pepperhorn/core";
+import type { ProgressionChord } from "@pepperhorn/core";
+import { findVoicing, voicingPitchClasses, mapToVoicingQuality, realizeVoicingFull } from "@pepperhorn/voicings";
+import type { Hand as VoicingHand } from "@pepperhorn/voicings";
 import { ChordGroup } from "./ChordGroup";
 import { resolveUITheme, UIThemeProvider } from "../ui-theme";
 
@@ -662,7 +662,7 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
     return Note.midi(`${hk}4`) ?? 60;
   });
 
-  let handResult: import("@better-chord/core").HandAssignment;
+  let handResult: import("@pepperhorn/core").HandAssignment;
   if (lhBassNote) {
     // Explicit bass note path already handled above — skip MIDI-based split
     const lhFinger = autoFingering([lhBassNote], "lh");

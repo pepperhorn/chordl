@@ -1,7 +1,7 @@
 {
-  "name": "@better-chord/render-cli",
+  "name": "@pepperhorn/render-cli",
   "version": "0.1.0",
-  "description": "Batch-render keyboard chord SVGs from manifests using @better-chord/react",
+  "description": "Batch-render keyboard chord SVGs from manifests using @pepperhorn/react",
   "private": true,
   "type": "module",
   "bin": {
@@ -13,9 +13,9 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
-    "@better-chord/core": "workspace:*",
-    "@better-chord/react": "workspace:*",
-    "@better-chord/voicings": "workspace:*",
+    "@pepperhorn/core": "workspace:*",
+    "@pepperhorn/react": "workspace:*",
+    "@pepperhorn/voicings": "workspace:*",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },

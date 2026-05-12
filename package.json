@@ -2,13 +2,13 @@
   "name": "chordl",
   "private": true,
   "scripts": {
-    "dev": "pnpm --filter @better-chord/react dev",
-    "build": "pnpm --filter @better-chord/voicings build && pnpm --filter @better-chord/core build && pnpm --filter @better-chord/react build",
-    "build:site": "pnpm run build && pnpm --filter @better-chord/react build:site",
-    "test": "pnpm --filter @better-chord/voicings test && pnpm --filter @better-chord/core test && pnpm --filter @better-chord/react test",
-    "test:run": "pnpm --filter @better-chord/voicings test:run && pnpm --filter @better-chord/core test:run && pnpm --filter @better-chord/react test:run",
-    "lint": "pnpm --filter @better-chord/voicings lint && pnpm --filter @better-chord/core lint && pnpm --filter @better-chord/react lint",
-    "render": "pnpm --filter @better-chord/render-cli render"
+    "dev": "pnpm --filter @pepperhorn/react dev",
+    "build": "pnpm --filter @pepperhorn/voicings build && pnpm --filter @pepperhorn/core build && pnpm --filter @pepperhorn/react build",
+    "build:site": "pnpm run build && pnpm --filter @pepperhorn/react build:site",
+    "test": "pnpm --filter @pepperhorn/voicings test && pnpm --filter @pepperhorn/core test && pnpm --filter @pepperhorn/react test",
+    "test:run": "pnpm --filter @pepperhorn/voicings test:run && pnpm --filter @pepperhorn/core test:run && pnpm --filter @pepperhorn/react test:run",
+    "lint": "pnpm --filter @pepperhorn/voicings lint && pnpm --filter @pepperhorn/core lint && pnpm --filter @pepperhorn/react lint",
+    "render": "pnpm --filter @pepperhorn/render-cli render"
   },
   "devDependencies": {
     "typescript": "^5.7.0",

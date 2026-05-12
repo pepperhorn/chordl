@@ -1,5 +1,5 @@
 {
-  "name": "@better-chord/core",
+  "name": "@pepperhorn/core",
   "version": "0.1.0",
   "description": "Pure TypeScript chord parsing, resolving, layout, and export engine",
   "type": "module",
@@ -23,12 +23,15 @@
     "test:run": "vitest run"
   },
   "dependencies": {
-    "@better-chord/voicings": "workspace:*",
+    "@pepperhorn/voicings": "workspace:*",
     "tonal": "^6.3.0"
   },
   "devDependencies": {
     "typescript": "^5.7.0",
     "vitest": "^4.1.1"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "license": "MIT"
 }

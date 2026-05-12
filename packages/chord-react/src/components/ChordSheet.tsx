@@ -1,7 +1,7 @@
 import React from "react";
 import type { ChordSheetProps } from "../types";
-import type { ChordData, SectionData, DisplayDefaults } from "@better-chord/core";
-import { resolveDefaults, chordRef } from "@better-chord/core";
+import type { ChordData, SectionData, DisplayDefaults } from "@pepperhorn/core";
+import { resolveDefaults, chordRef } from "@pepperhorn/core";
 import { PianoChord } from "./PianoChord";
 import { UIThemeProvider, resolveUITheme } from "../ui-theme";
 
@@ -233,7 +233,7 @@ function ChordRenderer({
   renderVariationExtras,
 }: {
   chord: ChordData;
-  resolved: Required<import("@better-chord/core").DisplayDefaults>;
+  resolved: Required<import("@pepperhorn/core").DisplayDefaults>;
   uiTheme?: string;
   chordIndex: number;
   onVariation?: import("../types").OnVariation;

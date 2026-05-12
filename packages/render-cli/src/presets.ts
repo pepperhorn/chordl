@@ -1,5 +1,5 @@
-import type { ColorTheme } from "@better-chord/core";
-import type { UIThemeMode } from "@better-chord/react";
+import type { ColorTheme } from "@pepperhorn/core";
+import type { UIThemeMode } from "@pepperhorn/react";
 
 /**
  * Visual presets — named bundles of theming options for batch renders.

@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { playBlock, playArpeggiated, toAscendingNotes } from "../audio/playback";
-import { downloadMidi } from "@better-chord/core";
+import { downloadMidi } from "@pepperhorn/core";
 import { downloadSvg, downloadPng } from "../audio/svg-export";
 import { copyDottlClip } from "../audio/dottl-export";
 import { useUITheme } from "../ui-theme";

@@ -4,7 +4,7 @@ import {
   findTemplate, FORM_TEMPLATES,
   resolveProgressionRequest,
   isProgressionRequest, parseProgressionRequest,
-} from "@better-chord/core";
+} from "@pepperhorn/core";
 
 describe("tokenizeProgression", () => {
   it("splits on hyphens", () => {

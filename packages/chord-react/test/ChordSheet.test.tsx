@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { render } from "@testing-library/react";
 import { ChordSheet } from "../src/components/ChordSheet";
-import type { ChordSheetData } from "@better-chord/core";
+import type { ChordSheetData } from "@pepperhorn/core";
 
 const SINGLE_SECTION: ChordSheetData = {
   v: "1.0",

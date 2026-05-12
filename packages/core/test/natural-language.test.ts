@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseChordDescription } from "@better-chord/core";
+import { parseChordDescription } from "@pepperhorn/core";
 
 describe("parseChordDescription", () => {
   it("parses 'Cmaj7#5 starting on G#'", () => {

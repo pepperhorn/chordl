@@ -22,7 +22,7 @@ export type { UIThemeMode, UIThemeTokens } from "./config";
 // ─── React-specific types (local) ──────────────────────────────────────────
 export type { KeyboardProps, ChordProps, PianoChordProps, DisplayMode, ChordSheetProps, DisplayDefaults, ChordData, SectionData, ChordSheetData, VariationContext, RenderVariationExtras, OnVariation } from "./types";
 
-// ─── Re-export everything from @better-chord/core for backwards compat ─────
+// ─── Re-export everything from @pepperhorn/core for backwards compat ─────
 export {
   // Engine
   computeKeyboard, computeSvgDimensions,
@@ -61,7 +61,7 @@ export {
   resolveDefaults, chordRef, SYSTEM_DEFAULTS,
   CHORD_SHEET_SCHEMA_VERSION, validateVersion,
   encodeChordSheet, decodeChordSheet,
-} from "@better-chord/core";
+} from "@pepperhorn/core";
 
 export type {
   // Shared types
@@ -82,7 +82,7 @@ export type {
   ChordRequest, ChordResult,
   // Logging types
   ChordLogEntry, LogConfig,
-} from "@better-chord/core";
+} from "@pepperhorn/core";
 
 // ─── Re-export voicings (pass-through) ─────────────────────────────────────
 export {
@@ -91,8 +91,8 @@ export {
   getAlternativeVoicings, inferStyle, mapToVoicingQuality,
   selectByRange, autoSelectVoicing,
   generateLockedHands, solvePolychord, solveSlashChord,
-} from "@better-chord/voicings";
+} from "@pepperhorn/voicings";
 export type {
   VoicingEntry, VoicingQuery, VoicingQuality, VoicingEra,
   VoicingStyle, Hand, RealizedNote, ChordDescriptor,
-} from "@better-chord/voicings";
+} from "@pepperhorn/voicings";

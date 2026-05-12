@@ -6,12 +6,12 @@ import {
   parseChordDescription,
   resolveChord,
   FLAT_TO_SHARP,
-} from "@better-chord/core";
+} from "@pepperhorn/core";
 import {
   generateVariants,
   mapToVoicingQuality,
-} from "@better-chord/voicings";
-import type { VoicingVariant } from "@better-chord/voicings";
+} from "@pepperhorn/voicings";
+import type { VoicingVariant } from "@pepperhorn/voicings";
 import { exportSingleZip, exportAllZip, downloadBlob } from "../audio/zip-export";
 import type { ZipVariant } from "../audio/zip-export";
 

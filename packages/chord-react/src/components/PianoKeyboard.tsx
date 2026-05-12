@@ -6,7 +6,7 @@ import {
   WHITE_KEY_WIDTH, BLACK_KEY_WIDTH,
   DEFAULT_WHITE_FILL, DEFAULT_BLACK_FILL, DEFAULT_STROKE_WIDTH,
   resolveTheme,
-} from "@better-chord/core";
+} from "@pepperhorn/core";
 import { SHOW_NOTE_NAMES } from "../config";
 import { PlaybackControls } from "./PlaybackControls";
 import { useUITheme, resolveUITheme, UIThemeProvider } from "../ui-theme";

@@ -1,5 +1,5 @@
 {
-  "name": "@better-chord/react",
+  "name": "@pepperhorn/react",
   "version": "0.1.0",
   "description": "React component library for SVG piano chord diagrams",
   "type": "module",
@@ -29,8 +29,8 @@
     "react-dom": ">=18.0.0"
   },
   "dependencies": {
-    "@better-chord/core": "workspace:*",
-    "@better-chord/voicings": "workspace:*",
+    "@pepperhorn/core": "workspace:*",
+    "@pepperhorn/voicings": "workspace:*",
     "jszip": "^3.10.1",
     "smplr": "^0.18.1",
     "tonal": "^6.3.0"
@@ -47,6 +47,9 @@
     "vite": "^6.0.0",
     "vite-plugin-dts": "^4.3.0",
     "vitest": "^4.1.1"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "license": "MIT"
 }

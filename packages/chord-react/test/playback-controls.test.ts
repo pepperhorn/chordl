@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { generateMidiFile } from "@better-chord/core";
+import { generateMidiFile } from "@pepperhorn/core";
 
 describe("generateMidiFile", () => {
   it("produces a valid MIDI file header", () => {

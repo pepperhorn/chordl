@@ -3,7 +3,7 @@ import {
   resolveProgression,
   resolveProgressionRequest,
   isProgressionRequest, parseProgressionRequest,
-} from "@better-chord/core";
+} from "@pepperhorn/core";
 
 describe("progression stress tests — full pipeline end-to-end", () => {
   // These simulate real user prompts parsed through the full pipeline

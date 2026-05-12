@@ -63,7 +63,7 @@ Which the chord parser interprets as:
 
 ```bash
 # Render the bundled chord-cards manifest
-pnpm --filter @better-chord/render-cli render manifests/chord-cards.json
+pnpm --filter @pepperhorn/render-cli render manifests/chord-cards.json
 
 # Or write your own manifest using the preset
 {
@@ -84,7 +84,7 @@ Override any field per-entry — e.g. swap to `print-bw` for one chord, or pin a
 For Directus uploaders, print pipelines, or design-tool exports, import the palette from core:
 
 ```ts
-import { CRF_PITCH_PALETTE, formatCmyk } from "@better-chord/core";
+import { CRF_PITCH_PALETTE, formatCmyk } from "@pepperhorn/core";
 
 CRF_PITCH_PALETTE.C;
 // → { hex: "#f86e6e", cmyk: [0, 56, 56, 3] }

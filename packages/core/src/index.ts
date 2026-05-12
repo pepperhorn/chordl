@@ -1,4 +1,4 @@
-// @better-chord/core — pure TypeScript chord engine
+// @pepperhorn/core — pure TypeScript chord engine
 export type {
   Format, TextSize, NoteNameMode, WhiteNote, NoteName, ColorTheme,
   ParsedChordRequest, KeyDescriptor, HandBracket,

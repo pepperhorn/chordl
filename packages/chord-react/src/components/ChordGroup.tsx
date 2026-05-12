@@ -2,8 +2,8 @@ import { useEffect, useRef, type ReactNode } from "react";
 import type { Format, ColorTheme, WhiteNote, DisplayMode, TextSize, NoteNameMode, OnVariation, RenderVariationExtras, VariationContext } from "../types";
 import { PianoKeyboard } from "./PianoKeyboard";
 import { StaffNotation } from "./StaffNotation";
-import { calculateLayout, normalizeNote, WHITE_NOTE_ORDER, autoFingering } from "@better-chord/core";
-import type { ProgressionChord } from "@better-chord/core";
+import { calculateLayout, normalizeNote, WHITE_NOTE_ORDER, autoFingering } from "@pepperhorn/core";
+import type { ProgressionChord } from "@pepperhorn/core";
 import { useUITheme } from "../ui-theme";
 
 export interface ChordGroupProps {

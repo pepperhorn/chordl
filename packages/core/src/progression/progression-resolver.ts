@@ -8,8 +8,8 @@ import {
   mapToVoicingQuality,
   queryVoicings,
   inferStyle,
-} from "@better-chord/voicings";
-import type { VoicingStyle, VoicingQuality } from "@better-chord/voicings";
+} from "@pepperhorn/voicings";
+import type { VoicingStyle, VoicingQuality } from "@pepperhorn/voicings";
 
 export interface ProgressionChord {
   symbol: string;

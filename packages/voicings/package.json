@@ -1,5 +1,5 @@
 {
-  "name": "@better-chord/voicings",
+  "name": "@pepperhorn/voicings",
   "version": "0.1.0",
   "description": "Jazz piano voicing library with shell, rootless, quartal, upper structure, and drop 2 voicings",
   "type": "module",
@@ -28,6 +28,9 @@
   "devDependencies": {
     "typescript": "^5.7.0",
     "vitest": "^4.1.1"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "license": "MIT"
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { resolveChord } from "@better-chord/core";
+import { resolveChord } from "@pepperhorn/core";
 
 describe("resolveChord", () => {
   it("resolves Cmaj7 to [C, E, G, B]", () => {

@@ -5,9 +5,9 @@ export type {
   Format, TextSize, NoteNameMode, WhiteNote, NoteName, ColorTheme,
   ParsedChordRequest, KeyDescriptor, HandBracket,
   DisplayMode, DisplayDefaults, ChordData, SectionData, ChordSheetData,
-} from "@better-chord/core";
+} from "@pepperhorn/core";
 // Import for use in local types
-import type { Format, ColorTheme, TextSize, NoteNameMode, WhiteNote, NoteName, HandBracket, DisplayMode, ChordSheetData } from "@better-chord/core";
+import type { Format, ColorTheme, TextSize, NoteNameMode, WhiteNote, NoteName, HandBracket, DisplayMode, ChordSheetData } from "@pepperhorn/core";
 
 export interface KeyboardProps {
   format?: Format;

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { ProgressionResult } from "@better-chord/core";
+import type { ProgressionResult } from "@pepperhorn/core";
 import type { Format, ColorTheme, DisplayMode, NoteNameMode } from "../types";
 import type { UIThemeMode } from "../config";
 import { ChordGroup } from "./ChordGroup";

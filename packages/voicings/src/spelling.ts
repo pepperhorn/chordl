@@ -1,7 +1,7 @@
 /**
  * Local enharmonic spelling helpers for the voicings package.
  *
- * These mirror the canonical implementations in @better-chord/core's
+ * These mirror the canonical implementations in @pepperhorn/core's
  * note-spelling.ts but are duplicated here to avoid a circular dependency
  * (core depends on voicings for progression-resolver, voicings cannot
  * depend on core).
