@@ -272,29 +272,9 @@ const voicing = generateLockedHands("G4", "Cmaj7");
 
 ## Staff Notation Fonts
 
-`<StaffNotation>` renders glyphs (clefs, accidentals, noteheads) using SMuFL-compliant music fonts. Consumers must load **Bravura** (default) and/or **Petaluma** themselves — the library does not bundle them.
+`<StaffNotation>` renders glyphs (clefs, accidentals, noteheads) using SMuFL-compliant music fonts. As of **0.3.1**, the library bundles 6-codepoint subsets of [Bravura](https://github.com/steinbergmedia/bravura) and [Petaluma](https://github.com/steinbergmedia/petaluma) (~7.5KB total) under the names `PHBravura` / `PHPetaluma`. The fonts are embedded as data URLs and `@font-face`-injected at module load. **No consumer setup required.**
 
-Download the official woff2 files (OFL licensed):
-
-- Bravura — https://github.com/steinbergmedia/bravura/raw/master/redist/woff/Bravura.woff2
-- Petaluma — https://github.com/steinbergmedia/petaluma/raw/master/redist/woff/Petaluma.woff2
-
-Host them and declare in your global CSS:
-
-```css
-@font-face {
-  font-family: 'Bravura';
-  src: url('/fonts/Bravura.woff2') format('woff2');
-  font-display: block;
-}
-@font-face {
-  font-family: 'Petaluma';
-  src: url('/fonts/Petaluma.woff2') format('woff2');
-  font-display: block;
-}
-```
-
-Switch font via the `glyphs` prop:
+Switch between Standard (Bravura) and Hand drawn (Petaluma) via the `glyphs` prop:
 
 ```tsx
 import { StaffNotation, BRAVURA_GLYPHS, PETALUMA_GLYPHS } from "@pepperhorn/chordl-react";
@@ -302,7 +282,11 @@ import { StaffNotation, BRAVURA_GLYPHS, PETALUMA_GLYPHS } from "@pepperhorn/chor
 <StaffNotation notes={["C", "E", "G"]} glyphs={PETALUMA_GLYPHS} />
 ```
 
-To use a different SMuFL font, pass any object matching `StaffGlyphSet` (`{ name, fontFamily, glyphs: { trebleClef, ... }, brace }`).
+Or set the app-wide default via `setDefaultGlyphs(PETALUMA_GLYPHS)`.
+
+To use a different SMuFL font, pass any object matching `StaffGlyphSet` (`{ name, fontFamily, glyphs: { trebleClef, ... }, brace }`). The bundled font family stacks fall back to the unsubsetted Bravura/Petaluma names, so consumers who already host the full fonts override the subset automatically.
+
+The bundled subsets are licensed under the SIL Open Font License 1.1 (see `node_modules/@pepperhorn/chordl-react/fonts/OFL.txt`). They are renamed per the OFL Reserved Font Name clause.
 
 ## Themes
 

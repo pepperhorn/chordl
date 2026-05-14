@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.1 — 2026-05-14
+
+### Added
+
+- **Bundled SMuFL fonts.** `@pepperhorn/chordl-react` now embeds 6-codepoint subsets of Bravura and Petaluma (~7.5KB total) and auto-injects `@font-face` rules at module load. Consumers no longer need to host woff2 files or declare `@font-face` themselves.
+- Font families renamed to `PHBravura` / `PHPetaluma` per the OFL Reserved Font Name clause; `fontFamily` stacks fall back to `Bravura` / `Petaluma` so consumers who provide the full fonts still override the bundled subset.
+- OFL.txt shipped alongside the package.
+
 ## 0.3.0 — 2026-05-14
 
 ### Breaking

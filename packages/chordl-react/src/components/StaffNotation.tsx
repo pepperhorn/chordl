@@ -15,6 +15,10 @@ import {
 import type { StaffGlyphSet, StaffLayoutOptions } from "@pepperhorn/chordl-core";
 import { PlaybackControls } from "./PlaybackControls";
 import { useUITheme } from "../ui-theme";
+import { ensureStaffFontsInjected } from "../staff-fonts";
+
+// Inject embedded SMuFL fonts at module load time. No-op during SSR.
+ensureStaffFontsInjected();
 
 export interface StaffNotationProps {
   notes: string[];

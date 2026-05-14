@@ -5,9 +5,11 @@
 // spaces, which means setting font-size = 4 * staffLineSpacing makes glyphs
 // render at the correct staff size with no per-glyph scaling.
 //
-// Required @font-face: consumers must load 'Bravura' / 'Petaluma' (or any
-// other SMuFL-compliant font) before rendering. The dev playground loads
-// woff2 files from /fonts/. See dev/index.html.
+// Font loading: @pepperhorn/chordl-react auto-injects subsetted versions
+// (PHBravura, PHPetaluma — see chordl-react/src/staff-fonts.ts) so consumers
+// don't need to host woff2 files. The fontFamily stack falls back to the
+// unsubsetted Bravura/Petaluma names so consumers who provide the full fonts
+// (e.g. for extended glyphs beyond the 6 subset codepoints) still work.
 
 export interface StaffGlyphSet {
   name: string;
@@ -42,7 +44,7 @@ function synthesizedBrace(curl: number) {
 
 export const BRAVURA_GLYPHS: StaffGlyphSet = {
   name: "Bravura",
-  fontFamily: "Bravura, serif",
+  fontFamily: "PHBravura, Bravura, serif",
   glyphs: {
     trebleClef: SMUFL.gClef,
     bassClef: SMUFL.fClef,
@@ -56,7 +58,7 @@ export const BRAVURA_GLYPHS: StaffGlyphSet = {
 
 export const PETALUMA_GLYPHS: StaffGlyphSet = {
   name: "Petaluma",
-  fontFamily: "Petaluma, serif",
+  fontFamily: "PHPetaluma, Petaluma, serif",
   glyphs: {
     trebleClef: SMUFL.gClef,
     bassClef: SMUFL.fClef,
