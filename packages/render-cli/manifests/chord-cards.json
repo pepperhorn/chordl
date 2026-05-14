@@ -1,0 +1,17 @@
+{
+  "outDir": "./out-chord-cards",
+  "defaultPreset": "chord-cards",
+  "entries": [
+    { "chord": "C" },
+    { "chord": "Dm" },
+    { "chord": "Em" },
+    { "chord": "F" },
+    { "chord": "G" },
+    { "chord": "Am" },
+    { "chord": "Bdim" },
+    { "chord": "Cmaj7" },
+    { "chord": "Dm7" },
+    { "chord": "G7" },
+    { "chord": "Am7" }
+  ]
+}

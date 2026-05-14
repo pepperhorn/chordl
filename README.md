@@ -22,7 +22,7 @@ A React component library for rendering interactive SVG piano chord diagrams wit
 ## Installation
 
 ```bash
-npm install @better-chord/react
+npm install @pepperhorn/chordl-react
 ```
 
 Peer dependencies: `react >= 18.0.0`, `react-dom >= 18.0.0`
@@ -30,7 +30,7 @@ Peer dependencies: `react >= 18.0.0`, `react-dom >= 18.0.0`
 ## Quick Start
 
 ```tsx
-import { PianoChord, PianoKeyboard } from "@better-chord/react";
+import { PianoChord, PianoKeyboard } from "@pepperhorn/chordl-react";
 
 // Natural language — auto-resolves chord, layout, voicing
 <PianoChord chord="Cmaj7" />
@@ -101,7 +101,7 @@ Controls appear automatically when notes are highlighted. Disable with `showPlay
 ### Programmatic API
 
 ```ts
-import { playBlock, playArpeggiated, downloadMidi, generateMidiFile } from "@better-chord/react";
+import { playBlock, playArpeggiated, downloadMidi, generateMidiFile } from "@pepperhorn/chordl-react";
 
 await playBlock(["C", "E", "G"]);
 await playArpeggiated(["C", "E", "G"], 4, 100); // octave 4, 100ms delay
@@ -119,7 +119,7 @@ const midiBytes = generateMidiFile({
 ### SVG/PNG Export
 
 ```ts
-import { downloadSvg, downloadPng } from "@better-chord/react";
+import { downloadSvg, downloadPng } from "@pepperhorn/chordl-react";
 
 // Pass the SVG element from the DOM
 const svgEl = document.querySelector("svg") as SVGSVGElement;
@@ -127,6 +127,67 @@ downloadSvg(svgEl, "Cmaj7.svg");
 downloadPng(svgEl, "Cmaj7.png");        // 2x retina by default
 downloadPng(svgEl, "Cmaj7.png", 3);     // custom pixel ratio
 ```
+
+## Batch SVG Rendering
+
+For generating large libraries of chord cards (print sheets, app graphics, asset pipelines), use the `@pepperhorn/render-cli` package. It renders the same React components server-side via `renderToStaticMarkup`, so output is pixel-identical to the live UI.
+
+```bash
+# Build chord-react first (CLI imports the dist bundle)
+pnpm --filter @pepperhorn/chordl-react build
+
+# Render a manifest (paths are resolved relative to the render-cli package)
+pnpm --filter @pepperhorn/render-cli render manifests/example.json
+# or with explicit output dir
+pnpm --filter @pepperhorn/render-cli render manifests/example.json --out ./dist-svgs
+```
+
+### Manifest format
+
+```json
+{
+  "outDir": "./out",
+  "defaultPreset": "app-color",
+  "entries": [
+    { "chord": "Cmaj7" },
+    { "chord": "Dm7", "preset": "print-bw" },
+    { "chord": "G7", "highlightColor": "#e63946", "filename": "g7-red" }
+  ]
+}
+```
+
+Merge precedence (lowest → highest): `defaultPreset` → entry-level `preset` → inline overrides.
+
+### Visual presets
+
+Defined in `packages/render-cli/src/presets.ts`:
+
+| Preset | Theme | UI | Notes |
+|--------|-------|----|-----|
+| `app-color` | boomwhacker | light | Default app look |
+| `app-dark` | boomwhacker | dark | Dark UI variant |
+| `print-bw` | simple | light | Black highlight, print-friendly |
+| `crf-brand` | crf | light | CRF brand colors |
+| `chord-cards` | crf | light | CRF colors, full layout, 2 padding keys, 2XL note names — for chord-card prints |
+
+Presets can also include a `chordTemplate` field that wraps each entry's chord string with natural-language modifiers. Example: the `chord-cards` preset uses `"full {chord} with 2 notes either side with note names 2xl"`, so a manifest entry `{ "chord": "Cmaj7" }` is rendered as if the user had written the full phrase.
+
+Add new presets by editing the `PRESETS` map.
+
+### Bulk generation
+
+```ts
+import { expandCombinations } from "@pepperhorn/render-cli/manifest";
+
+const entries = expandCombinations({
+  roots: ["C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"],
+  qualities: ["maj7", "m7", "7", "dim7", "m7b5"],
+  presets: ["app-color", "print-bw"],
+});
+// 12 × 5 × 2 = 120 entries
+```
+
+Output is non-interactive — playback controls are suppressed via `showPlayback={false}`.
 
 ## Voicing Library
 
@@ -167,7 +228,7 @@ import {
   findVoicing, realizeVoicing, realizeVoicingFull, voicingPitchClasses,
   queryVoicings, getAlternativeVoicings, autoSelectVoicing,
   mapToVoicingQuality, inferStyle,
-} from "@better-chord/react";
+} from "@pepperhorn/chordl-react";
 
 // Find best voicing for quality + style
 const voicing = findVoicing("dom7", "Bill Evans");
@@ -187,7 +248,7 @@ const auto = autoSelectVoicing("C", "dom7", 3, "rootless");
 ### Polychord Solver
 
 ```ts
-import { solvePolychord, solveSlashChord } from "@better-chord/react";
+import { solvePolychord, solveSlashChord } from "@pepperhorn/chordl-react";
 
 // D triad over C7 — LH gets tritone shell (E + Bb), RH gets D triad
 const poly = solvePolychord(
@@ -202,7 +263,7 @@ const slash = solveSlashChord(["C", "E", "G"], "E");
 ### Locked Hands (Block Chords)
 
 ```ts
-import { generateLockedHands } from "@better-chord/react";
+import { generateLockedHands } from "@pepperhorn/chordl-react";
 
 // G4 melody over Cmaj7 → 5-note voicing: G3, C4, E4, G4 (melody doubled)
 const voicing = generateLockedHands("G4", "Cmaj7");
@@ -211,37 +272,21 @@ const voicing = generateLockedHands("G4", "Cmaj7");
 
 ## Staff Notation Fonts
 
-`<StaffNotation>` renders glyphs (clefs, accidentals, noteheads) using SMuFL-compliant music fonts. Consumers must load **Bravura** (default) and/or **Petaluma** themselves — the library does not bundle them.
+`<StaffNotation>` renders glyphs (clefs, accidentals, noteheads) using SMuFL-compliant music fonts. As of **0.3.1**, the library bundles 6-codepoint subsets of [Bravura](https://github.com/steinbergmedia/bravura) and [Petaluma](https://github.com/steinbergmedia/petaluma) (~7.5KB total) under the names `PHBravura` / `PHPetaluma`. The fonts are embedded as data URLs and `@font-face`-injected at module load. **No consumer setup required.**
 
-Download the official woff2 files (OFL licensed):
-
-- Bravura — https://github.com/steinbergmedia/bravura/raw/master/redist/woff/Bravura.woff2
-- Petaluma — https://github.com/steinbergmedia/petaluma/raw/master/redist/woff/Petaluma.woff2
-
-Host them and declare in your global CSS:
-
-```css
-@font-face {
-  font-family: 'Bravura';
-  src: url('/fonts/Bravura.woff2') format('woff2');
-  font-display: block;
-}
-@font-face {
-  font-family: 'Petaluma';
-  src: url('/fonts/Petaluma.woff2') format('woff2');
-  font-display: block;
-}
-```
-
-Switch font via the `glyphs` prop:
+Switch between Standard (Bravura) and Hand drawn (Petaluma) via the `glyphs` prop:
 
 ```tsx
-import { StaffNotation, BRAVURA_GLYPHS, PETALUMA_GLYPHS } from "@better-chord/react";
+import { StaffNotation, BRAVURA_GLYPHS, PETALUMA_GLYPHS } from "@pepperhorn/chordl-react";
 
 <StaffNotation notes={["C", "E", "G"]} glyphs={PETALUMA_GLYPHS} />
 ```
 
-To use a different SMuFL font, pass any object matching `StaffGlyphSet` (`{ name, fontFamily, glyphs: { trebleClef, ... }, brace }`).
+Or set the app-wide default via `setDefaultGlyphs(PETALUMA_GLYPHS)`.
+
+To use a different SMuFL font, pass any object matching `StaffGlyphSet` (`{ name, fontFamily, glyphs: { trebleClef, ... }, brace }`). The bundled font family stacks fall back to the unsubsetted Bravura/Petaluma names, so consumers who already host the full fonts override the subset automatically.
+
+The bundled subsets are licensed under the SIL Open Font License 1.1 (see `node_modules/@pepperhorn/chordl-react/fonts/OFL.txt`). They are renamed per the OFL Reserved Font Name clause.
 
 ## Themes
 
@@ -255,8 +300,8 @@ To use a different SMuFL font, pass any object matching `StaffGlyphSet` (`{ name
 ### Custom Theme
 
 ```ts
-import { PianoKeyboard } from "@better-chord/react";
-import type { ColorTheme } from "@better-chord/react";
+import { PianoKeyboard } from "@pepperhorn/chordl-react";
+import type { ColorTheme } from "@pepperhorn/chordl-react";
 
 const myTheme: ColorTheme = {
   name: "custom",
@@ -309,7 +354,7 @@ The auto-fingering engine scores candidate patterns based on:
 Works for both hands — LH fingering mirrors RH (finger N → 6-N).
 
 ```ts
-import { autoFingering } from "@better-chord/react";
+import { autoFingering } from "@pepperhorn/chordl-react";
 
 autoFingering(["C", "E", "G", "B"], "rh"); // [1, 2, 3, 5]
 autoFingering(["C", "Eb", "G"], "lh");     // [5, 3, 1]
@@ -320,7 +365,7 @@ autoFingering(["C", "Eb", "G"], "lh");     // [5, 3, 1]
 Resolves chord symbols using Tonal.js with a fallback for compound jazz alterations:
 
 ```ts
-import { resolveChord } from "@better-chord/react";
+import { resolveChord } from "@pepperhorn/chordl-react";
 
 resolveChord("Cmaj7");        // { notes: ["C","E","G","B"], root: "C", type: "major seventh" }
 resolveChord("Dm7", 1);       // First inversion: { notes: ["F","A","C","D"], ... }
@@ -342,6 +387,7 @@ resolveChord("C7omit3");      // Special builder: [C, G, Bb]
 | `padding` | `number` | `1` | Extra white keys on each side |
 | `scale` | `number` | `1` | Display scale (0.5–1.0) |
 | `uiTheme` | `"light" \| "dark"` | `"light"` | UI chrome theme |
+| `showPlayback` | `boolean` | `true` | Show audio/MIDI/export controls (set `false` for static export) |
 | `className` | `string` | — | CSS class |
 | `style` | `CSSProperties` | — | Inline styles |
 
@@ -371,7 +417,7 @@ resolveChord("C7omit3");      // Special builder: [C, G, Bb]
 
 ```
 packages/
-  chord-react/          @better-chord/react (main package)
+  chord-react/          @pepperhorn/chordl-react (main package)
     src/
       components/       PianoKeyboard, PianoChord, ChordGroup, ProgressionView
       engine/           SVG layout, highlight mapping, auto-fingering, constants
@@ -381,7 +427,7 @@ packages/
       themes/           Boomwhacker, CRF, Simple
     test/               Vitest tests
     dev/                Vite dev playground
-  voicings/             @better-chord/voicings (standalone package)
+  voicings/             @pepperhorn/chordl-voicings (standalone package)
     src/
       library.ts        46 voicing entries
       query.ts          Query, realize, style inference
@@ -390,6 +436,13 @@ packages/
       locked-hands.ts   Locked hands block chord algorithm
       types.ts          VoicingEntry, RealizedNote, etc.
     test/               Vitest tests
+  render-cli/           @pepperhorn/render-cli (Node CLI, batch SVG export)
+    src/
+      cli.ts            Manifest loader + writer
+      render.tsx        SSR via renderToStaticMarkup
+      presets.ts        Named visual presets (app-color, print-bw, ...)
+      manifest.ts       Manifest types + expandCombinations() helper
+    manifests/          Example + project manifests
 ```
 
 ## Development
@@ -403,8 +456,8 @@ npm test             # Run all tests (watch mode)
 
 Run tests once (CI):
 ```bash
-npm run test -w @better-chord/voicings -- --run
-npm run test -w @better-chord/react -- --run
+npm run test -w @pepperhorn/chordl-voicings -- --run
+npm run test -w @pepperhorn/chordl-react -- --run
 ```
 
 ## Test Coverage

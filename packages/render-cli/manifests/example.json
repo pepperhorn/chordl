@@ -1,0 +1,11 @@
+{
+  "outDir": "./out",
+  "defaultPreset": "app-color",
+  "entries": [
+    { "chord": "Cmaj7" },
+    { "chord": "Dm7" },
+    { "chord": "G7" },
+    { "chord": "Cmaj7", "preset": "print-bw", "filename": "cmaj7-print" },
+    { "chord": "F#dim7", "highlightColor": "#e63946" }
+  ]
+}

@@ -3,3 +3,6 @@ dist
 site-dist
 *.tsbuildinfo
 .worktrees
+.env
+.env.local
+.env.*.local
