@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { createRoot } from "react-dom/client";
-import { PianoKeyboard, PianoChord, VoicingVariantToggle, StaffNotation, ChordSheet, ProgressionView, isProgressionRequest, parseProgressionRequest, resolveProgressionRequest, BRAVURA_GLYPHS, PETALUMA_GLYPHS, encodeChordSheet, decodeChordSheet } from "../src";
+import { PianoKeyboard, PianoChord, VoicingVariantToggle, StaffNotation, ChordSheet, ProgressionView, isProgressionRequest, parseProgressionRequest, resolveProgressionRequest, BRAVURA_GLYPHS, PETALUMA_GLYPHS, setDefaultGlyphs, encodeChordSheet, decodeChordSheet } from "../src";
 import type { StaffGlyphSet, ChordSheetData } from "../src";
 import type { UIThemeMode } from "../src";
 import { SHOW_HINTS, HINT_SPEED } from "../src/config";
@@ -160,6 +160,7 @@ function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExportStatu
   const [scale, setScale] = useState(0.7);
   const [highlightColor, setHighlightColor] = useState("#a0c6e8");
   const [octaveShift, setOctaveShift] = useState(0);
+  const [notationFont, setNotationFont] = useState<"bravura" | "petaluma">("bravura");
   const [error, setError] = useState<string | null>(null);
 
   const isProg = isProgressionRequest(input);
@@ -312,6 +313,22 @@ function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExportStatu
           </div>
         )}
         <DisplayToggle value={displayMode} onChange={setDisplayMode} />
+        {(displayMode === "staff" || displayMode === "both") && (
+          <PillGroup
+            label="Notation"
+            options={[
+              { label: "Standard", value: "bravura" as const },
+              { label: "Hand drawn", value: "petaluma" as const },
+            ]}
+            value={notationFont}
+            onChange={(v) => {
+              // Set the global default *before* triggering React's re-render so the
+              // remounted StaffNotation reads the new glyphs on its first render.
+              setDefaultGlyphs(v === "bravura" ? BRAVURA_GLYPHS : PETALUMA_GLYPHS);
+              setNotationFont(v);
+            }}
+          />
+        )}
         <div className="control-item">
           <span className="control-label">Octave</span>
           <div className="control-content">
@@ -381,7 +398,7 @@ function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExportStatu
 
       {/* Chord output */}
       <div className="chord-output" style={{ width: "100%" }}>
-        <ErrorBoundary key={input + theme + keyFormat + scale + highlightColor + displayMode + octaveShift} onError={setError}>
+        <ErrorBoundary key={input + theme + keyFormat + scale + highlightColor + displayMode + octaveShift + notationFont} onError={setError}>
           {isProg && progressionResult ? (
             <ProgressionView result={progressionResult} theme={theme} uiTheme={uiTheme} />
           ) : (
