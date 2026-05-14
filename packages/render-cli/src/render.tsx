@@ -1,6 +1,6 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { PianoChord, UIThemeProvider, resolveUITheme } from "@pepperhorn/react";
+import { PianoChord, UIThemeProvider, resolveUITheme } from "@pepperhorn/chordl-react";
 import type { ManifestEntry } from "./manifest.js";
 import { resolvePreset, type VisualPreset } from "./presets.js";
 

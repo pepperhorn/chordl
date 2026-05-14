@@ -1,5 +1,5 @@
-import type { ColorTheme } from "@pepperhorn/core";
-import type { UIThemeMode } from "@pepperhorn/react";
+import type { ColorTheme } from "@pepperhorn/chordl-core";
+import type { UIThemeMode } from "@pepperhorn/chordl-react";
 
 /**
  * Visual presets — named bundles of theming options for batch renders.

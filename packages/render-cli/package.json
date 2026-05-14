@@ -1,7 +1,7 @@
 {
   "name": "@pepperhorn/render-cli",
   "version": "0.1.0",
-  "description": "Batch-render keyboard chord SVGs from manifests using @pepperhorn/react",
+  "description": "Batch-render keyboard chord SVGs from manifests using @pepperhorn/chordl-react",
   "private": true,
   "type": "module",
   "bin": {
@@ -13,9 +13,9 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
-    "@pepperhorn/core": "workspace:*",
-    "@pepperhorn/react": "workspace:*",
-    "@pepperhorn/voicings": "workspace:*",
+    "@pepperhorn/chordl-core": "workspace:*",
+    "@pepperhorn/chordl-react": "workspace:*",
+    "@pepperhorn/chordl-voicings": "workspace:*",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },

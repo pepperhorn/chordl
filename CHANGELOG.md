@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.3.0 — 2026-05-14
+
+### Breaking
+
+- **Renamed packages** with a `chordl-` prefix to make room for other `@pepperhorn/*` product lines:
+  - `@pepperhorn/voicings` → `@pepperhorn/chordl-voicings`
+  - `@pepperhorn/core` → `@pepperhorn/chordl-core`
+  - `@pepperhorn/react` → `@pepperhorn/chordl-react`
+
+  The old packages are deprecated on npm and point to the new names. Update imports accordingly.
+
 ## 0.2.0 — 2026-05-12
 
 ### Breaking

@@ -22,7 +22,7 @@ A React component library for rendering interactive SVG piano chord diagrams wit
 ## Installation
 
 ```bash
-npm install @pepperhorn/react
+npm install @pepperhorn/chordl-react
 ```
 
 Peer dependencies: `react >= 18.0.0`, `react-dom >= 18.0.0`
@@ -30,7 +30,7 @@ Peer dependencies: `react >= 18.0.0`, `react-dom >= 18.0.0`
 ## Quick Start
 
 ```tsx
-import { PianoChord, PianoKeyboard } from "@pepperhorn/react";
+import { PianoChord, PianoKeyboard } from "@pepperhorn/chordl-react";
 
 // Natural language — auto-resolves chord, layout, voicing
 <PianoChord chord="Cmaj7" />
@@ -101,7 +101,7 @@ Controls appear automatically when notes are highlighted. Disable with `showPlay
 ### Programmatic API
 
 ```ts
-import { playBlock, playArpeggiated, downloadMidi, generateMidiFile } from "@pepperhorn/react";
+import { playBlock, playArpeggiated, downloadMidi, generateMidiFile } from "@pepperhorn/chordl-react";
 
 await playBlock(["C", "E", "G"]);
 await playArpeggiated(["C", "E", "G"], 4, 100); // octave 4, 100ms delay
@@ -119,7 +119,7 @@ const midiBytes = generateMidiFile({
 ### SVG/PNG Export
 
 ```ts
-import { downloadSvg, downloadPng } from "@pepperhorn/react";
+import { downloadSvg, downloadPng } from "@pepperhorn/chordl-react";
 
 // Pass the SVG element from the DOM
 const svgEl = document.querySelector("svg") as SVGSVGElement;
@@ -134,7 +134,7 @@ For generating large libraries of chord cards (print sheets, app graphics, asset
 
 ```bash
 # Build chord-react first (CLI imports the dist bundle)
-pnpm --filter @pepperhorn/react build
+pnpm --filter @pepperhorn/chordl-react build
 
 # Render a manifest (paths are resolved relative to the render-cli package)
 pnpm --filter @pepperhorn/render-cli render manifests/example.json
@@ -228,7 +228,7 @@ import {
   findVoicing, realizeVoicing, realizeVoicingFull, voicingPitchClasses,
   queryVoicings, getAlternativeVoicings, autoSelectVoicing,
   mapToVoicingQuality, inferStyle,
-} from "@pepperhorn/react";
+} from "@pepperhorn/chordl-react";
 
 // Find best voicing for quality + style
 const voicing = findVoicing("dom7", "Bill Evans");
@@ -248,7 +248,7 @@ const auto = autoSelectVoicing("C", "dom7", 3, "rootless");
 ### Polychord Solver
 
 ```ts
-import { solvePolychord, solveSlashChord } from "@pepperhorn/react";
+import { solvePolychord, solveSlashChord } from "@pepperhorn/chordl-react";
 
 // D triad over C7 — LH gets tritone shell (E + Bb), RH gets D triad
 const poly = solvePolychord(
@@ -263,7 +263,7 @@ const slash = solveSlashChord(["C", "E", "G"], "E");
 ### Locked Hands (Block Chords)
 
 ```ts
-import { generateLockedHands } from "@pepperhorn/react";
+import { generateLockedHands } from "@pepperhorn/chordl-react";
 
 // G4 melody over Cmaj7 → 5-note voicing: G3, C4, E4, G4 (melody doubled)
 const voicing = generateLockedHands("G4", "Cmaj7");
@@ -297,7 +297,7 @@ Host them and declare in your global CSS:
 Switch font via the `glyphs` prop:
 
 ```tsx
-import { StaffNotation, BRAVURA_GLYPHS, PETALUMA_GLYPHS } from "@pepperhorn/react";
+import { StaffNotation, BRAVURA_GLYPHS, PETALUMA_GLYPHS } from "@pepperhorn/chordl-react";
 
 <StaffNotation notes={["C", "E", "G"]} glyphs={PETALUMA_GLYPHS} />
 ```
@@ -316,8 +316,8 @@ To use a different SMuFL font, pass any object matching `StaffGlyphSet` (`{ name
 ### Custom Theme
 
 ```ts
-import { PianoKeyboard } from "@pepperhorn/react";
-import type { ColorTheme } from "@pepperhorn/react";
+import { PianoKeyboard } from "@pepperhorn/chordl-react";
+import type { ColorTheme } from "@pepperhorn/chordl-react";
 
 const myTheme: ColorTheme = {
   name: "custom",
@@ -370,7 +370,7 @@ The auto-fingering engine scores candidate patterns based on:
 Works for both hands — LH fingering mirrors RH (finger N → 6-N).
 
 ```ts
-import { autoFingering } from "@pepperhorn/react";
+import { autoFingering } from "@pepperhorn/chordl-react";
 
 autoFingering(["C", "E", "G", "B"], "rh"); // [1, 2, 3, 5]
 autoFingering(["C", "Eb", "G"], "lh");     // [5, 3, 1]
@@ -381,7 +381,7 @@ autoFingering(["C", "Eb", "G"], "lh");     // [5, 3, 1]
 Resolves chord symbols using Tonal.js with a fallback for compound jazz alterations:
 
 ```ts
-import { resolveChord } from "@pepperhorn/react";
+import { resolveChord } from "@pepperhorn/chordl-react";
 
 resolveChord("Cmaj7");        // { notes: ["C","E","G","B"], root: "C", type: "major seventh" }
 resolveChord("Dm7", 1);       // First inversion: { notes: ["F","A","C","D"], ... }
@@ -433,7 +433,7 @@ resolveChord("C7omit3");      // Special builder: [C, G, Bb]
 
 ```
 packages/
-  chord-react/          @pepperhorn/react (main package)
+  chord-react/          @pepperhorn/chordl-react (main package)
     src/
       components/       PianoKeyboard, PianoChord, ChordGroup, ProgressionView
       engine/           SVG layout, highlight mapping, auto-fingering, constants
@@ -443,7 +443,7 @@ packages/
       themes/           Boomwhacker, CRF, Simple
     test/               Vitest tests
     dev/                Vite dev playground
-  voicings/             @pepperhorn/voicings (standalone package)
+  voicings/             @pepperhorn/chordl-voicings (standalone package)
     src/
       library.ts        46 voicing entries
       query.ts          Query, realize, style inference
@@ -472,8 +472,8 @@ npm test             # Run all tests (watch mode)
 
 Run tests once (CI):
 ```bash
-npm run test -w @pepperhorn/voicings -- --run
-npm run test -w @pepperhorn/react -- --run
+npm run test -w @pepperhorn/chordl-voicings -- --run
+npm run test -w @pepperhorn/chordl-react -- --run
 ```
 
 ## Test Coverage

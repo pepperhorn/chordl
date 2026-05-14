@@ -6,12 +6,12 @@
 
 **Architecture:**
 - Public `chordl` (this repo) stays a pure React component lib. We add two optional props (`renderVariationExtras`, `onVariation`) to the components that render `(chord, voicing)` cells, rename packages from `@better-chord/*` to `@pepperhorn/*`, and publish to public npm.
-- Private `~/ph-chordl/` is an Astro v6 app with the Node SSR adapter. A React island wraps `@pepperhorn/react`, a Tailwind `<RatingButtons>` component mounts on each variation via the new render-prop, and three server endpoints (`/api/cache/[key]`, `/api/cache`, `/api/ratings`) talk to ph-apps. Directus token never leaves the server.
+- Private `~/ph-chordl/` is an Astro v6 app with the Node SSR adapter. A React island wraps `@pepperhorn/chordl-react`, a Tailwind `<RatingButtons>` component mounts on each variation via the new render-prop, and three server endpoints (`/api/cache/[key]`, `/api/cache`, `/api/ratings`) talk to ph-apps. Directus token never leaves the server.
 - v1 cache scope: only variations the user has *actually viewed* are cached and become ratable (lazy-cache). Pre-rendering every voicing without the user navigating to it is out of scope.
 
 **Tech Stack:**
 - Public lib: TypeScript, React 19, Vite, pnpm workspaces, Vitest, Testing Library.
-- Private app: Astro v6 (`@astrojs/node` SSR adapter, standalone), React 19 island, Tailwind, `@directus/sdk`, `@pepperhorn/react`.
+- Private app: Astro v6 (`@astrojs/node` SSR adapter, standalone), React 19 island, Tailwind, `@directus/sdk`, `@pepperhorn/chordl-react`.
 - Backend: Directus on `https://apps.pepperhorn.com` (ph-apps), accessed via the ph-apps MCP for schema setup.
 
 **Reference spec:** `docs/superpowers/specs/2026-05-12-ph-chordl-astro-cache-design.md`
@@ -401,12 +401,12 @@ Run: `grep -n "@better-chord" README.md` and replace any matches with `@pepperho
 
 ```bash
 pnpm install
-pnpm --filter @pepperhorn/voicings build
-pnpm --filter @pepperhorn/core build
-pnpm --filter @pepperhorn/react build
-pnpm --filter @pepperhorn/voicings test:run
-pnpm --filter @pepperhorn/core test:run
-pnpm --filter @pepperhorn/react test:run
+pnpm --filter @pepperhorn/chordl-voicings build
+pnpm --filter @pepperhorn/chordl-core build
+pnpm --filter @pepperhorn/chordl-react build
+pnpm --filter @pepperhorn/chordl-voicings test:run
+pnpm --filter @pepperhorn/chordl-core test:run
+pnpm --filter @pepperhorn/chordl-react test:run
 ```
 
 Expected: all PASS.
@@ -440,10 +440,10 @@ Create or prepend to `CHANGELOG.md`:
 ## 0.2.0 — 2026-05-12
 
 ### Breaking
-- Renamed packages: `@better-chord/voicings|core|react` → `@pepperhorn/voicings|core|react`. Update your imports.
+- Renamed packages: `@better-chord/voicings|core|react` → `@pepperhorn/chordl-voicings|core|react`. Update your imports.
 
 ### Added
-- `VariationContext`, `RenderVariationExtras`, `OnVariation` types exported from `@pepperhorn/react`.
+- `VariationContext`, `RenderVariationExtras`, `OnVariation` types exported from `@pepperhorn/chordl-react`.
 - New optional props on `PianoChord`, `VoicingVariantToggle`, `ChordGroup`, `ProgressionView`, `ChordSheet`:
   - `onVariation?: (ctx) => void` — fired post-render for each rendered (chord, voicing) cell.
   - `renderVariationExtras?: (ctx) => ReactNode` — render arbitrary children alongside each variation cell.
@@ -460,9 +460,9 @@ If not logged in, run `npm login` interactively. Confirm the `@pepperhorn` scope
 - [ ] **Step 4: Dry-run publish in dep order**
 
 ```bash
-pnpm --filter @pepperhorn/voicings publish --access public --dry-run
-pnpm --filter @pepperhorn/core publish --access public --dry-run
-pnpm --filter @pepperhorn/react publish --access public --dry-run
+pnpm --filter @pepperhorn/chordl-voicings publish --access public --dry-run
+pnpm --filter @pepperhorn/chordl-core publish --access public --dry-run
+pnpm --filter @pepperhorn/chordl-react publish --access public --dry-run
 ```
 
 Expected: all show the file list + version `0.2.0` with no errors.
@@ -470,12 +470,12 @@ Expected: all show the file list + version `0.2.0` with no errors.
 - [ ] **Step 5: Real publish**
 
 ```bash
-pnpm --filter @pepperhorn/voicings publish --access public --no-git-checks
-pnpm --filter @pepperhorn/core publish --access public --no-git-checks
-pnpm --filter @pepperhorn/react publish --access public --no-git-checks
+pnpm --filter @pepperhorn/chordl-voicings publish --access public --no-git-checks
+pnpm --filter @pepperhorn/chordl-core publish --access public --no-git-checks
+pnpm --filter @pepperhorn/chordl-react publish --access public --no-git-checks
 ```
 
-Verify each: `npm view @pepperhorn/react version` → `0.2.0`.
+Verify each: `npm view @pepperhorn/chordl-react version` → `0.2.0`.
 
 - [ ] **Step 6: Commit + tag**
 
@@ -620,7 +620,7 @@ If `output` is not set, edit `astro.config.mjs` to add `output: 'server'`.
 - [ ] **Step 3: Add chordl + Directus deps**
 
 ```bash
-pnpm add @pepperhorn/react @pepperhorn/core @pepperhorn/voicings @directus/sdk
+pnpm add @pepperhorn/chordl-react @pepperhorn/chordl-core @pepperhorn/chordl-voicings @directus/sdk
 ```
 
 Confirm versions are `0.2.0` for the @pepperhorn packages.
@@ -1316,8 +1316,8 @@ git commit -m "feat(ui): RatingButtons component"
 
 ```tsx
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
-import { ChordSheet, VoicingVariantToggle } from "@pepperhorn/react";
-import type { VariationContext } from "@pepperhorn/react";
+import { ChordSheet, VoicingVariantToggle } from "@pepperhorn/chordl-react";
+import type { VariationContext } from "@pepperhorn/chordl-react";
 import { computeCacheKey } from "../lib/cacheKey";
 import { RatingButtons } from "./RatingButtons";
 
@@ -1445,7 +1445,7 @@ export function ChordlIsland() {
 - [ ] **Step 2: Verify compiles**
 
 Run: `pnpm astro check`
-Expected: PASS. If `ChordSheet`'s prop is `chord` instead of `input`, adapt to whatever the published API surface uses (check `node_modules/@pepperhorn/react/dist/index.d.ts`).
+Expected: PASS. If `ChordSheet`'s prop is `chord` instead of `input`, adapt to whatever the published API surface uses (check `node_modules/@pepperhorn/chordl-react/dist/index.d.ts`).
 
 - [ ] **Step 3: Commit**
 
@@ -1521,7 +1521,7 @@ git commit -m "feat(ui): index.astro mounts ChordlIsland"
 ```markdown
 # ph-chordl
 
-Private Astro v6 wrapper around the public [`@pepperhorn/react`](https://www.npmjs.com/package/@pepperhorn/react) chord renderer.
+Private Astro v6 wrapper around the public [`@pepperhorn/chordl-react`](https://www.npmjs.com/package/@pepperhorn/chordl-react) chord renderer.
 Adds a Directus-backed cache and human-in-the-loop ratings on top of every rendered (chord, voicing) variation.
 
 ## Stack

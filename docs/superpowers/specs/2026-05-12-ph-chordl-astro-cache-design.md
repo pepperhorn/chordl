@@ -16,14 +16,14 @@ Wrap the public chordl React component in a private Astro v6 app that:
 
 ### `pepperhorn/chordl` (this repo, stays public)
 
-- Continues to host `@pepperhorn/voicings`, `@pepperhorn/core`, `@pepperhorn/react` (renamed from `@better-chord/*` as part of first publish).
+- Continues to host `@pepperhorn/chordl-voicings`, `@pepperhorn/chordl-core`, `@pepperhorn/chordl-react` (renamed from `@better-chord/*` as part of first publish).
 - Adds one minor public API extension to support per-variation extras (see §3).
 - Publishes to public npm under `@pepperhorn` scope.
 
 ### `pepperhorn/ph-chordl` (new private repo, on disk at `~/ph-chordl/`)
 
 - Astro v6 app with `@astrojs/node` SSR adapter (standalone mode).
-- Consumes `@pepperhorn/react` from public npm like any other dep.
+- Consumes `@pepperhorn/chordl-react` from public npm like any other dep.
 - Owns the Directus integration, cache lookup logic, and rating UI.
 - Deploys to Coolify as a Node container.
 
@@ -64,9 +64,9 @@ When both props are absent, behavior is unchanged. Fully backwards compatible.
 
 ### 1.3 Package rename + first publish
 
-- Rename `@better-chord/voicings` → `@pepperhorn/voicings`
-- Rename `@better-chord/core` → `@pepperhorn/core`
-- Rename `@better-chord/react` → `@pepperhorn/react`
+- Rename `@better-chord/voicings` → `@pepperhorn/chordl-voicings`
+- Rename `@better-chord/core` → `@pepperhorn/chordl-core`
+- Rename `@better-chord/react` → `@pepperhorn/chordl-react`
 - Update workspace references and root `package.json` scripts.
 - Set `"publishConfig": { "access": "public" }` on each package.
 - Bump to `0.2.0` (new prop is additive, but the rename is the headline change for first publish).
@@ -107,7 +107,7 @@ ph-chordl/
     │       │   └── index.ts     # POST write
     │       └── ratings.ts       # POST {variationId, rating, reason?}
     └── components/
-        ├── ChordlIsland.tsx     # React island wrapping @pepperhorn/react
+        ├── ChordlIsland.tsx     # React island wrapping @pepperhorn/chordl-react
         └── RatingButtons.tsx    # thumbs UI + collapsible reason input
 ```
 
@@ -238,7 +238,7 @@ A scoped Directus role (`chordl_service`) gets create + read + update on these t
 
 1. Public chordl: rename packages to `@pepperhorn/*`, add `renderVariationExtras` prop + types + tests, bump to `0.2.0`, publish to npm in dep order.
 2. ph-apps: create `chordl_cache` + `chordl_variations` collections + `chordl_service` role/token via MCP.
-3. New repo: scaffold `~/ph-chordl/` (Astro v6 + Node adapter + React + Tailwind), install `@pepperhorn/react`.
+3. New repo: scaffold `~/ph-chordl/` (Astro v6 + Node adapter + React + Tailwind), install `@pepperhorn/chordl-react`.
 4. Implement `lib/directus.ts`, `lib/cacheKey.ts`, `lib/cache.ts`, `lib/schema.ts`.
 5. Implement server endpoints (`/api/cache/[key].ts`, `/api/cache/index.ts`, `/api/ratings.ts`).
 6. Build `ChordlIsland.tsx` (port input UI from current `dev/App.tsx`) + `RatingButtons.tsx`.

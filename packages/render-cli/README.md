@@ -8,7 +8,7 @@ From repo root:
 
 ```bash
 pnpm install
-pnpm --filter @pepperhorn/react build
+pnpm --filter @pepperhorn/chordl-react build
 ```
 
 ## Use
