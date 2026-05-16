@@ -105,8 +105,9 @@ export function generateVariants(
   }
 
   // ── Inversions ───────────────────────────────────────────────────
+  // One inversion per non-root note: an N-note chord has N-1 inversions.
   const INVERSION_LABELS = ["1st inv", "2nd inv", "3rd inv", "4th inv", "5th inv"];
-  for (let inv = 1; inv < resolvedNotes.length && inv <= 5; inv++) {
+  for (let inv = 1; inv < resolvedNotes.length; inv++) {
     const rotated = [...resolvedNotes.slice(inv), ...resolvedNotes.slice(0, inv)];
     addCandidate({
       id: `inv-${inv}`,
@@ -152,6 +153,18 @@ export function generateVariants(
     });
   }
 
-  // Return up to `count` variants
-  return candidates.slice(0, count);
+  // Return up to `count` variants — but always include the full inversion
+  // set (root position + every inversion) so an N-note chord shows all N
+  // positions even when library/algorithmic voicings would crowd them out.
+  // Other sources stay in the mix in their original order.
+  const effectiveCount = Math.max(count, resolvedNotes.length);
+  const result = candidates.slice(0, effectiveCount);
+  for (const c of candidates) {
+    if (c.source === "inversion" && !result.includes(c)) {
+      result.push(c);
+    }
+  }
+  // Restore original insertion order so the mix is preserved.
+  result.sort((a, b) => candidates.indexOf(a) - candidates.indexOf(b));
+  return result;
 }
