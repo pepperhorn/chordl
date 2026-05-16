@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.3.2 — 2026-05-16
+
+### Added
+
+- **Full inversion set for N-note chords.** `@pepperhorn/chordl-voicings`
+  `generateVariants` no longer caps inversions at 5 / 3 variant slots; an
+  N-note chord now yields all N-1 inversions, and every inversion is
+  guaranteed in the result even when library/algorithmic voicings would
+  crowd them out (original mixed ordering preserved). 4-note chords (7ths,
+  6ths, dim7, add9) now expose `1st inv` / `2nd inv` / `3rd inv` by default.
+- `@pepperhorn/chordl-react` rebuilt to bundle the updated voicings logic.
+
+`@pepperhorn/chordl-core` is unchanged (remains 0.3.1).
+
 ## 0.3.1 — 2026-05-14
 
 ### Added
