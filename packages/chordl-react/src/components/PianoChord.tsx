@@ -8,7 +8,7 @@ import {
   parseChordDescription, resolveChord, resolveScale, calculateLayout, whiteIdxHasSharp,
   computeKeyboard, normalizeNote, autoFingering, assignFingering,
   scaleAutoFingering, degreesForIntervals,
-  FLAT_TO_SHARP, WHITE_NOTE_ORDER,
+  FLAT_TO_SHARP, WHITE_NOTE_ORDER, PC_SEMITONES,
 } from "@pepperhorn/chordl-core";
 import type { ProgressionChord } from "@pepperhorn/chordl-core";
 import { findVoicing, voicingPitchClasses, mapToVoicingQuality, realizeVoicingFull } from "@pepperhorn/chordl-voicings";
@@ -217,6 +217,122 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
           style={style}
         />
       </UIThemeProvider>
+        </div>
+        {renderVariationExtras?.(buildContextSnapshot())}
+      </>
+    );
+  }
+
+  // ── Notes list path ("with notes C E G" / "notes E4 G4 C5 in lh") ──
+  if (parsed.notesList && parsed.notesList.length > 0) {
+    // Parse each token: pitch class (display name) + optional explicit octave.
+    const parsedTokens = parsed.notesList.map((t) => {
+      const m = t.match(/^([A-Ga-g][#b]?)(\d)?$/);
+      if (!m) return { pc: t, octave: undefined as number | undefined };
+      return {
+        pc: m[1].charAt(0).toUpperCase() + m[1].slice(1),
+        octave: m[2] ? parseInt(m[2], 10) : undefined,
+      };
+    });
+
+    // Infer missing octaves: ascending from 4, bump when pitch class wraps.
+    const BASE_OCTAVE = 4;
+    let currentOctave = parsedTokens[0].octave ?? BASE_OCTAVE;
+    let prevSemi = -1;
+    const resolvedTokens = parsedTokens.map((t) => {
+      const norm = normalizeNote(t.pc);
+      const semi = PC_SEMITONES[norm];
+      let octave: number;
+      if (t.octave !== undefined) {
+        octave = t.octave;
+      } else {
+        if (prevSemi >= 0 && semi !== undefined && semi <= prevSemi) {
+          currentOctave++;
+        }
+        octave = currentOctave;
+      }
+      currentOctave = octave;
+      if (semi !== undefined) prevSemi = semi;
+      return { pc: t.pc, norm, octave };
+    });
+
+    // Keyboard range: pad around the lowest & highest notes
+    const minOctave = Math.min(...resolvedTokens.map((t) => t.octave));
+    const maxOctave = Math.max(...resolvedTokens.map((t) => t.octave));
+    const minIdx = WHITE_NOTE_ORDER.indexOf(
+      resolvedTokens.find((t) => t.octave === minOctave)!.norm.replace("#", "") as WhiteNote,
+    );
+    const maxIdx = WHITE_NOTE_ORDER.indexOf(
+      [...resolvedTokens].reverse().find((t) => t.octave === maxOctave)!.norm.replace("#", "") as WhiteNote,
+    );
+    const layoutPadding = parsed.padding ?? padding ?? 1;
+    const startIdx = Math.max(0, minIdx - layoutPadding);
+    const startNote = WHITE_NOTE_ORDER[startIdx] as WhiteNote;
+    const octaveSpan = maxOctave - minOctave;
+    const kbSize = Math.max(
+      octaveSpan * 7 + (maxIdx - startIdx) + 1 + layoutPadding,
+      8,
+    );
+
+    const baseRelOctave = minOctave - BASE_OCTAVE;
+    const highlightKeys = resolvedTokens.map((t) => {
+      const relOctave = t.octave - minOctave + baseRelOctave;
+      return `${t.norm}:${relOctave}`;
+    });
+    const displayNoteNames = resolvedTokens.map((t) => t.pc);
+
+    // Hand bracket: map highlight positions to key indices
+    let notesHandBrackets: HandBracket[] | undefined;
+    if (parsed.notesHand) {
+      const tempKeys = computeKeyboard(startNote, kbSize, parsed.format ?? format ?? "compact");
+      const keyIndices: number[] = [];
+      const matched = new Set<number>();
+      for (const hk of highlightKeys) {
+        const [n, oct] = hk.split(":");
+        for (let ki = 0; ki < tempKeys.length; ki++) {
+          if (matched.has(ki)) continue;
+          if (normalizeNote(tempKeys[ki].note) === n && tempKeys[ki].octave === parseInt(oct, 10)) {
+            matched.add(ki);
+            keyIndices.push(ki);
+            break;
+          }
+        }
+      }
+      notesHandBrackets = [
+        { label: parsed.notesHand === "lh" ? "L.H." : "R.H.", keyIndices },
+      ];
+    }
+
+    const chordLabel = parsed.chordName || resolvedTokens.map((t) => t.pc).join(" ");
+    const resolvedFormat = parsed.format ?? format;
+    currentNotes = resolvedTokens.map((t) => t.pc);
+
+    return (
+      <>
+        <div ref={containerRef} className="bc-pianochord-root">
+          <UIThemeProvider value={uiCtx}>
+            <PianoKeyboard
+              format={resolvedFormat}
+              size={kbSize}
+              startFrom={startNote}
+              highlightKeys={highlightKeys}
+              displayNoteNames={displayNoteNames}
+              theme={theme}
+              highlightColor={highlightColor}
+              chordLabel={chordLabel}
+              showHeading={parsed.showHeading}
+              handBrackets={notesHandBrackets}
+              scale={scale}
+              showNoteNames={parsed.showNoteNames}
+              noteNameSize={parsed.noteNameSize}
+              noteNameMode={parsed.noteNameMode}
+              midiBaseOctave={BASE_OCTAVE + baseRelOctave}
+              fingeringSize={parsed.fingeringSize}
+              showPlayback={showPlayback}
+              className={className}
+              style={style}
+            />
+          </UIThemeProvider>
         </div>
         {renderVariationExtras?.(buildContextSnapshot())}
       </>

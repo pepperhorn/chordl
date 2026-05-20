@@ -812,6 +812,20 @@ function App() {
               <PianoChord chord="D minor seventh in first inversion" uiTheme={uiTheme} />
             </div>
           </div>
+          <div className="row" style={{ marginBottom: "1rem" }}>
+            <div className="glass-card">
+              <span className="example-label">"with notes C E G B" — inferred octaves</span>
+              <PianoChord chord="with notes C E G B with note names" uiTheme={uiTheme} />
+            </div>
+            <div className="glass-card">
+              <span className="example-label">"with notes E4 G4 C5 E5" — explicit octaves</span>
+              <PianoChord chord="with notes E4 G4 C5 E5 with note names" uiTheme={uiTheme} />
+            </div>
+            <div className="glass-card">
+              <span className="example-label">"notes C E G in lh" / "notes G B D in top hand"</span>
+              <PianoChord chord="notes C E G in lh with note names" uiTheme={uiTheme} />
+            </div>
+          </div>
         </Collapsible>
 
         <Collapsible title="Staff Notation">

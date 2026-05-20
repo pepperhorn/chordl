@@ -60,6 +60,14 @@ export interface ParsedChordRequest {
   colorTheme?: string;
   /** Display scale (0–1+ range, e.g. 0.8 = 80%). */
   scale?: number;
+  /**
+   * Explicit notes list ("with notes ..."), low to high. Each token is a
+   * pitch class with optional octave (e.g. "C", "Eb", "E4", "Bb3"). Missing
+   * octaves are inferred ascending from octave 4 (each wrap-around bumps).
+   */
+  notesList?: string[];
+  /** Hand assignment for the notes list: "lh" or "rh". */
+  notesHand?: "lh" | "rh";
 }
 
 export interface KeyDescriptor {

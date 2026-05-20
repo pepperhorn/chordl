@@ -132,6 +132,18 @@ const NAMES_AND_DEGREES_RE = /\bwith\s+note\s+names?\s+and\s+degrees?(?:\s+(?:in
 // "with heading" / "with a heading" / "show heading"
 const HEADING_RE = /\b(?:with\s+)?(?:a\s+)?(?:show\s+)?heading\b/i;
 
+// "with notes C E G" / "notes E4 G4 C5" / "with notes Bb Eb Ab"
+// Each token: letter A–G, optional # or b accidental, optional single digit octave.
+// Word boundary (\b) prevents matching into words like "compact" (starts with "c").
+const NOTES_LIST_RE =
+  /(?:with\s+)?notes\s+([A-Ga-g][#b]?\d?\b(?:[\s,\-]+[A-Ga-g][#b]?\d?\b)*)/i;
+
+// "in lh" / "in rh" / "in left/right hand" / "in bottom/top hand" / "in l.h." / "in r.h."
+// "bottom hand" = LH (low notes), "top hand" = RH (high notes).
+// Used with the notes list to scope all notes to one hand.
+const NOTES_HAND_RE =
+  /\bin\s+(?:the\s+)?(left\s+hand|right\s+hand|bottom\s+hand|top\s+hand|l\.?h\.?|r\.?h\.?|lh|rh)\b/i;
+
 // "boomwhacker" / "with boomwhacker theme" / "crf theme" / "rainbow"
 const THEME_RE = /\b(?:(?:with\s+)?(?:the\s+)?)?(?:(boomwhacker|boomwhackers|crf|rainbow)\s*(?:theme|colors?|colours?)?)\b/i;
 const THEME_MAP: Record<string, string> = {
@@ -332,6 +344,29 @@ export function parseChordDescription(input: string): ParsedChordRequest {
     result.showHeading = true;
   }
 
+  // Extract explicit notes list ("with notes C E G", "notes E4 G4 C5", ...)
+  const notesListMatch = input.match(NOTES_LIST_RE);
+  if (notesListMatch) {
+    const tokens = notesListMatch[1]
+      .split(/[\s,\-]+/)
+      .filter(Boolean)
+      .map((t) => {
+        // Normalize: uppercase the note letter; keep accidental + octave as-is
+        const m = t.match(/^([A-Ga-g])([#b])?(\d)?$/);
+        if (!m) return t;
+        return m[1].toUpperCase() + (m[2] ?? "") + (m[3] ?? "");
+      });
+    if (tokens.length > 0) {
+      result.notesList = tokens;
+      const handMatch = input.match(NOTES_HAND_RE);
+      if (handMatch) {
+        const h = handMatch[1].toLowerCase().replace(/[\s.]/g, "");
+        if (h === "lefthand" || h === "bottomhand" || h === "lh") result.notesHand = "lh";
+        else if (h === "righthand" || h === "tophand" || h === "rh") result.notesHand = "rh";
+      }
+    }
+  }
+
   // Extract color theme
   const themeMatch = input.match(THEME_RE);
   if (themeMatch) {
@@ -421,6 +456,8 @@ export function parseChordDescription(input: string): ParsedChordRequest {
     .replace(SCALE_EXPLICIT_RE, "")
     .replace(/\bscale\b/gi, "")
     .replace(HEADING_RE, "")
+    .replace(NOTES_LIST_RE, "")
+    .replace(NOTES_HAND_RE, "")
     .replace(THEME_RE, "")
     .replace(/\btheme\b/gi, "")
     .replace(/\bcolou?rs?\b/gi, "")

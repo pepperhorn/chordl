@@ -144,4 +144,63 @@ describe("parseChordDescription", () => {
     expect(result.chordName).toBe("C7");
     expect(result.styleHint).toBe("ellington");
   });
+
+  // Explicit notes list
+  it("parses 'with notes C E G'", () => {
+    const result = parseChordDescription("with notes C E G");
+    expect(result.notesList).toEqual(["C", "E", "G"]);
+    expect(result.notesHand).toBeUndefined();
+  });
+
+  it("parses 'with notes E4 G4 C5' with explicit octaves", () => {
+    const result = parseChordDescription("with notes E4 G4 C5");
+    expect(result.notesList).toEqual(["E4", "G4", "C5"]);
+  });
+
+  it("parses 'notes C E G in lh'", () => {
+    const result = parseChordDescription("notes C E G in lh");
+    expect(result.notesList).toEqual(["C", "E", "G"]);
+    expect(result.notesHand).toBe("lh");
+  });
+
+  it("parses 'notes E G B in right hand'", () => {
+    const result = parseChordDescription("notes E G B in right hand");
+    expect(result.notesList).toEqual(["E", "G", "B"]);
+    expect(result.notesHand).toBe("rh");
+  });
+
+  it("parses 'notes C E G in bottom hand' (alias for lh)", () => {
+    const result = parseChordDescription("notes C E G in bottom hand");
+    expect(result.notesList).toEqual(["C", "E", "G"]);
+    expect(result.notesHand).toBe("lh");
+  });
+
+  it("parses 'notes E G B in top hand' (alias for rh)", () => {
+    const result = parseChordDescription("notes E G B in top hand");
+    expect(result.notesList).toEqual(["E", "G", "B"]);
+    expect(result.notesHand).toBe("rh");
+  });
+
+  it("parses 'with notes Bb Eb Ab' (flats)", () => {
+    const result = parseChordDescription("with notes Bb Eb Ab");
+    expect(result.notesList).toEqual(["Bb", "Eb", "Ab"]);
+  });
+
+  it("parses 'with notes C E G' alongside chord ('Cmaj7 with notes E G B C')", () => {
+    const result = parseChordDescription("Cmaj7 with notes E G B C");
+    expect(result.chordName).toBe("Cmaj7");
+    expect(result.notesList).toEqual(["E", "G", "B", "C"]);
+  });
+
+  it("doesn't confuse 'with note names' with notes list", () => {
+    const result = parseChordDescription("Cmaj7 with note names");
+    expect(result.showNoteNames).toBe(true);
+    expect(result.notesList).toBeUndefined();
+  });
+
+  it("parses 'notes C E G' followed by 'compact' (terminator)", () => {
+    const result = parseChordDescription("with notes C E G compact");
+    expect(result.notesList).toEqual(["C", "E", "G"]);
+    expect(result.format).toBe("compact");
+  });
 });

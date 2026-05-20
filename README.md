@@ -74,6 +74,10 @@ The parser extracts structured data from freeform text:
 | `"Cmaj7 chord down an octave"` | chord=Cmaj7, chordOctaveShift=-1 |
 | `"Cmaj7 bass up an octave"` | chord=Cmaj7, bassOctaveShift=+1 |
 | `"Cmaj7 all inversions"` | chord=Cmaj7, allInversions=true |
+| `"with notes C E G B"` | notesList=[C,E,G,B] (octaves inferred ascending from 4) |
+| `"with notes E4 G4 C5"` | notesList=[E4,G4,C5] (explicit octaves) |
+| `"notes C E G in lh"` | notesList=[C,E,G], notesHand=lh |
+| `"notes E G B in top hand"` | notesList=[E,G,B], notesHand=rh |
 
 ### Starting Note / Degree
 
@@ -85,6 +89,28 @@ The parser extracts structured data from freeform text:
 If the requested note or degree isn't in the chord, you get a helpful error:
 
 > `Cmaj7 doesn't have a 9th — try: root (C), 3rd (E), 5th (G), 7th (B)`
+
+### Explicit Notes (`with notes ...`)
+
+Skip chord resolution entirely and render an explicit list of notes, low to
+high. Octaves can be embedded in the token (`E4`, `Bb3`) or omitted — when
+omitted, octaves are inferred ascending from 4, bumping each time the pitch
+class wraps past the previous note.
+
+- `"with notes C E G B"` — Cmaj7 voicing (octave 4)
+- `"with notes E4 G4 C5 E5"` — Cmaj7/E with explicit octaves
+- `"with notes Bb Eb Ab Db"` — descending fourths, ascending octaves
+
+Append a hand assignment to draw an L.H. / R.H. bracket below the keyboard.
+Accepted aliases:
+
+- LH: `in lh`, `in left hand`, `in bottom hand`, `in l.h.`
+- RH: `in rh`, `in right hand`, `in top hand`, `in r.h.`
+
+```tsx
+<PianoChord chord="notes C E G in lh" />
+<PianoChord chord="with notes G B D F in top hand" />
+```
 
 ## Audio Playback & MIDI
 
