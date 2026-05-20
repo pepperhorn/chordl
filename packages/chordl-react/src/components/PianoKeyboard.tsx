@@ -145,6 +145,9 @@ export function PianoKeyboard({
   clipLeft = false,
   clipRight = false,
   uiTheme,
+  title,
+  subheading,
+  footerText,
   className,
   style,
 }: KeyboardProps) {
@@ -345,18 +348,33 @@ export function PianoKeyboard({
     }
   };
 
+  // Title: explicit `title` prop wins; falls back to chordLabel when showHeading is on.
+  const headingText = title ?? (showHeading ? chordLabel : undefined);
+
   const content = (
     <div className="bc-keyboard-container" ref={containerRef} style={{ width: "100%", maxWidth: vbW * scale * 2 }}>
-      {showHeading && chordLabel && (
+      {headingText && (
         <div className="bc-keyboard-heading" style={{
           textAlign: "center",
           fontSize: 14,
           fontWeight: 600,
           color: uiTokens.text,
           fontFamily: "system-ui, sans-serif",
+          marginBottom: subheading ? 0 : 4,
+        }}>
+          {headingText}
+        </div>
+      )}
+      {subheading && (
+        <div className="bc-keyboard-subheading" style={{
+          textAlign: "center",
+          fontSize: 11,
+          fontWeight: 400,
+          color: uiTokens.textMuted,
+          fontFamily: "system-ui, sans-serif",
           marginBottom: 4,
         }}>
-          {chordLabel}
+          {subheading}
         </div>
       )}
       {svg}
@@ -431,6 +449,19 @@ export function PianoKeyboard({
               </div>
             );
           })}
+        </div>
+      )}
+      {footerText && (
+        <div className="bc-keyboard-footer" style={{
+          textAlign: "center",
+          fontSize: 11,
+          fontWeight: 400,
+          color: uiTokens.textMuted,
+          fontFamily: "system-ui, sans-serif",
+          marginTop: 6,
+          whiteSpace: "pre-wrap",
+        }}>
+          {footerText}
         </div>
       )}
     </div>

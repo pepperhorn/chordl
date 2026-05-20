@@ -28,6 +28,12 @@ export interface KeyboardProps {
   chordLabel?: string;
   /** Show chord/scale name as a heading above the keyboard. */
   showHeading?: boolean;
+  /** Explicit title above the keyboard. When set, overrides chordLabel/showHeading. */
+  title?: string;
+  /** Subheading rendered directly below the title (smaller, muted). */
+  subheading?: string;
+  /** Footer text rendered below all annotations (note names, fingering, degrees). */
+  footerText?: string;
   /** Bracket annotations below the keyboard (e.g. L.H. / R.H.) */
   handBrackets?: HandBracket[];
   /** Display scale factor (0.5 = 50%, 1 = 100%). Controls maxWidth of the SVG. */
@@ -74,6 +80,12 @@ export interface ChordProps {
   uiTheme?: UIThemeMode;
   /** Show the inline play/copy/download controls. Default true. Set false for static export. */
   showPlayback?: boolean;
+  /** Title above the keyboard. Defaults to the resolved chord/scale name. */
+  title?: string;
+  /** Subheading directly below the title (smaller, muted). */
+  subheading?: string;
+  /** Footer text below all annotations (note names, fingering, degrees). */
+  footerText?: string;
   className?: string;
   style?: CSSProperties;
   /** Called after each render with a snapshot of the rendered variation. */

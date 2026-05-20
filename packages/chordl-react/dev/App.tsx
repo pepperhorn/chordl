@@ -828,6 +828,30 @@ function App() {
           </div>
           <div className="row" style={{ marginBottom: "1rem" }}>
             <div className="glass-card">
+              <span className="example-label">title + subheading + footer</span>
+              <PianoChord
+                chord="Cmaj7 with note names"
+                title="Verse 1"
+                subheading="warm voicing"
+                footerText="pp legato"
+                uiTheme={uiTheme}
+              />
+            </div>
+            <div className="glass-card">
+              <span className="example-label">title only (overrides default)</span>
+              <PianoChord chord="Dm7" title="ii of C" uiTheme={uiTheme} />
+            </div>
+            <div className="glass-card">
+              <span className="example-label">footer below note names + fingering</span>
+              <PianoChord
+                chord="G7 with note names with fingerings"
+                footerText="walk down to Cmaj7"
+                uiTheme={uiTheme}
+              />
+            </div>
+          </div>
+          <div className="row" style={{ marginBottom: "1rem" }}>
+            <div className="glass-card">
               <span className="example-label">"notes C E G in the bass clef"</span>
               <PianoChord chord="notes C E G in the bass clef with note names" uiTheme={uiTheme} />
             </div>

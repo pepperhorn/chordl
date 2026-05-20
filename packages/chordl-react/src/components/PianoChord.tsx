@@ -85,7 +85,7 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
     return <PianoKeyboard {...props} />;
   }
 
-  const { chord, format, theme: themeProp, highlightColor, padding, scale: scaleProp, display = "keyboard", uiTheme, showPlayback = true, className, style } =
+  const { chord, format, theme: themeProp, highlightColor, padding, scale: scaleProp, display = "keyboard", uiTheme, showPlayback = true, title, subheading, footerText, className, style } =
     props;
   const { onVariation, renderVariationExtras, voicingId = "default", chordIndex = 0 } = props;
   const uiCtx = resolveUITheme(uiTheme);
@@ -213,6 +213,9 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
           fingering={scaleFingering && scaleFingering.length > 0 ? scaleFingering : undefined}
           fingeringSize={parsed.fingeringSize}
           showPlayback={showPlayback}
+          title={title}
+          subheading={subheading}
+          footerText={footerText}
           className={className}
           style={style}
         />
@@ -346,6 +349,9 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
               midiBaseOctave={minOctave}
               fingeringSize={parsed.fingeringSize}
               showPlayback={showPlayback}
+              title={title}
+              subheading={subheading}
+              footerText={footerText}
               className={className}
               style={style}
             />
@@ -682,6 +688,9 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
         fingering={bassResolvedFingering}
         fingeringSize={parsed.fingeringSize}
         showPlayback={showPlayback}
+        title={title}
+        subheading={subheading}
+        footerText={footerText}
         className={className}
         style={style}
       />
@@ -873,6 +882,9 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
       fingeringSize={parsed.fingeringSize}
       degreeLabels={chordDegreeLabels}
       showPlayback={showPlayback}
+      title={title}
+      subheading={subheading}
+      footerText={footerText}
       className={className}
       style={style}
     />
