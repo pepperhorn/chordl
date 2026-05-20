@@ -148,59 +148,91 @@ describe("parseChordDescription", () => {
   // Explicit notes list
   it("parses 'with notes C E G'", () => {
     const result = parseChordDescription("with notes C E G");
-    expect(result.notesList).toEqual(["C", "E", "G"]);
-    expect(result.notesHand).toBeUndefined();
+    expect(result.notesGroups).toEqual([{ notes: ["C", "E", "G"] }]);
   });
 
   it("parses 'with notes E4 G4 C5' with explicit octaves", () => {
     const result = parseChordDescription("with notes E4 G4 C5");
-    expect(result.notesList).toEqual(["E4", "G4", "C5"]);
+    expect(result.notesGroups?.[0].notes).toEqual(["E4", "G4", "C5"]);
   });
 
   it("parses 'notes C E G in lh'", () => {
     const result = parseChordDescription("notes C E G in lh");
-    expect(result.notesList).toEqual(["C", "E", "G"]);
-    expect(result.notesHand).toBe("lh");
+    expect(result.notesGroups).toEqual([
+      { notes: ["C", "E", "G"], hand: "lh" },
+    ]);
   });
 
   it("parses 'notes E G B in right hand'", () => {
     const result = parseChordDescription("notes E G B in right hand");
-    expect(result.notesList).toEqual(["E", "G", "B"]);
-    expect(result.notesHand).toBe("rh");
+    expect(result.notesGroups?.[0].hand).toBe("rh");
   });
 
   it("parses 'notes C E G in bottom hand' (alias for lh)", () => {
     const result = parseChordDescription("notes C E G in bottom hand");
-    expect(result.notesList).toEqual(["C", "E", "G"]);
-    expect(result.notesHand).toBe("lh");
+    expect(result.notesGroups?.[0].hand).toBe("lh");
   });
 
   it("parses 'notes E G B in top hand' (alias for rh)", () => {
     const result = parseChordDescription("notes E G B in top hand");
-    expect(result.notesList).toEqual(["E", "G", "B"]);
-    expect(result.notesHand).toBe("rh");
+    expect(result.notesGroups?.[0].hand).toBe("rh");
   });
 
   it("parses 'with notes Bb Eb Ab' (flats)", () => {
     const result = parseChordDescription("with notes Bb Eb Ab");
-    expect(result.notesList).toEqual(["Bb", "Eb", "Ab"]);
+    expect(result.notesGroups?.[0].notes).toEqual(["Bb", "Eb", "Ab"]);
   });
 
   it("parses 'with notes C E G' alongside chord ('Cmaj7 with notes E G B C')", () => {
     const result = parseChordDescription("Cmaj7 with notes E G B C");
     expect(result.chordName).toBe("Cmaj7");
-    expect(result.notesList).toEqual(["E", "G", "B", "C"]);
+    expect(result.notesGroups?.[0].notes).toEqual(["E", "G", "B", "C"]);
   });
 
   it("doesn't confuse 'with note names' with notes list", () => {
     const result = parseChordDescription("Cmaj7 with note names");
     expect(result.showNoteNames).toBe(true);
-    expect(result.notesList).toBeUndefined();
+    expect(result.notesGroups).toBeUndefined();
   });
 
   it("parses 'notes C E G' followed by 'compact' (terminator)", () => {
     const result = parseChordDescription("with notes C E G compact");
-    expect(result.notesList).toEqual(["C", "E", "G"]);
+    expect(result.notesGroups?.[0].notes).toEqual(["C", "E", "G"]);
     expect(result.format).toBe("compact");
+  });
+
+  // Clefs
+  it("parses 'with notes C E G in the bass clef' (LH + bass octave hint)", () => {
+    const result = parseChordDescription("with notes C E G in the bass clef");
+    expect(result.notesGroups).toEqual([
+      { notes: ["C", "E", "G"], hand: "lh", clef: "bass" },
+    ]);
+  });
+
+  it("parses 'notes E G B in the treble clef' (RH + treble octave hint)", () => {
+    const result = parseChordDescription("notes E G B in the treble clef");
+    expect(result.notesGroups).toEqual([
+      { notes: ["E", "G", "B"], hand: "rh", clef: "treble" },
+    ]);
+  });
+
+  // Paired clefs — two groups
+  it("parses paired clefs: 'notes C E G in the bass clef and notes B D F in the treble clef'", () => {
+    const result = parseChordDescription(
+      "notes C E G in the bass clef and notes B D F in the treble clef",
+    );
+    expect(result.notesGroups).toEqual([
+      { notes: ["C", "E", "G"], hand: "lh", clef: "bass" },
+      { notes: ["B", "D", "F"], hand: "rh", clef: "treble" },
+    ]);
+  });
+
+  it("parses paired without 'and': 'with notes C E G in bass clef with notes B D F in treble clef'", () => {
+    const result = parseChordDescription(
+      "with notes C E G in bass clef with notes B D F in treble clef",
+    );
+    expect(result.notesGroups?.length).toBe(2);
+    expect(result.notesGroups?.[0].clef).toBe("bass");
+    expect(result.notesGroups?.[1].clef).toBe("treble");
   });
 });

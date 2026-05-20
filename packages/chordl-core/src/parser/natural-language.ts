@@ -1,4 +1,4 @@
-import type { Format, TextSize, ParsedChordRequest } from "../types";
+import type { Format, TextSize, ParsedChordRequest, NotesGroup } from "../types";
 
 const FILLER_WORDS =
   /\b(show\s+me|draw|display|render|please|a|an|the|with|that|this|me|of)\b/gi;
@@ -132,17 +132,24 @@ const NAMES_AND_DEGREES_RE = /\bwith\s+note\s+names?\s+and\s+degrees?(?:\s+(?:in
 // "with heading" / "with a heading" / "show heading"
 const HEADING_RE = /\b(?:with\s+)?(?:a\s+)?(?:show\s+)?heading\b/i;
 
-// "with notes C E G" / "notes E4 G4 C5" / "with notes Bb Eb Ab"
-// Each token: letter A–G, optional # or b accidental, optional single digit octave.
+// "with notes C E G" / "notes E4 G4 C5" with optional trailing
+// "in <hand>" or "in (the) <bass|treble> clef" suffix.
+// Each note token: letter A–G, optional # or b accidental, optional single digit octave.
 // Word boundary (\b) prevents matching into words like "compact" (starts with "c").
-const NOTES_LIST_RE =
-  /(?:with\s+)?notes\s+([A-Ga-g][#b]?\d?\b(?:[\s,\-]+[A-Ga-g][#b]?\d?\b)*)/i;
+// Global flag enables matchAll for paired groups ("... in bass clef and ... in treble clef").
+const NOTES_GROUP_RE =
+  /(?:with\s+|and\s+)?notes\s+([A-Ga-g][#b]?\d?\b(?:[\s,\-]+[A-Ga-g][#b]?\d?\b)*)(?:\s+in\s+(?:the\s+)?(left\s+hand|right\s+hand|bottom\s+hand|top\s+hand|l\.?h\.?|r\.?h\.?|lh|rh|bass\s+clef|treble\s+clef))?/gi;
 
-// "in lh" / "in rh" / "in left/right hand" / "in bottom/top hand" / "in l.h." / "in r.h."
-// "bottom hand" = LH (low notes), "top hand" = RH (high notes).
-// Used with the notes list to scope all notes to one hand.
-const NOTES_HAND_RE =
-  /\bin\s+(?:the\s+)?(left\s+hand|right\s+hand|bottom\s+hand|top\s+hand|l\.?h\.?|r\.?h\.?|lh|rh)\b/i;
+/** Normalize a captured hand/clef phrase to (hand, clef) tuple. */
+function parseHandOrClef(raw: string | undefined): { hand?: "lh" | "rh"; clef?: "bass" | "treble" } {
+  if (!raw) return {};
+  const h = raw.toLowerCase().replace(/[\s.]/g, "");
+  if (h === "bassclef") return { clef: "bass", hand: "lh" };
+  if (h === "trebleclef") return { clef: "treble", hand: "rh" };
+  if (h === "lefthand" || h === "bottomhand" || h === "lh") return { hand: "lh" };
+  if (h === "righthand" || h === "tophand" || h === "rh") return { hand: "rh" };
+  return {};
+}
 
 // "boomwhacker" / "with boomwhacker theme" / "crf theme" / "rainbow"
 const THEME_RE = /\b(?:(?:with\s+)?(?:the\s+)?)?(?:(boomwhacker|boomwhackers|crf|rainbow)\s*(?:theme|colors?|colours?)?)\b/i;
@@ -344,27 +351,26 @@ export function parseChordDescription(input: string): ParsedChordRequest {
     result.showHeading = true;
   }
 
-  // Extract explicit notes list ("with notes C E G", "notes E4 G4 C5", ...)
-  const notesListMatch = input.match(NOTES_LIST_RE);
-  if (notesListMatch) {
-    const tokens = notesListMatch[1]
+  // Extract explicit notes group(s) — supports one or more "with notes ... [in <hand/clef>]"
+  // segments separated by "and" / "with". Paired example:
+  //   "notes C E G in bass clef and notes B D F in treble clef"
+  const groups: NotesGroup[] = [];
+  NOTES_GROUP_RE.lastIndex = 0; // global regex carries state
+  for (const m of input.matchAll(NOTES_GROUP_RE)) {
+    const tokens = m[1]
       .split(/[\s,\-]+/)
       .filter(Boolean)
       .map((t) => {
-        // Normalize: uppercase the note letter; keep accidental + octave as-is
-        const m = t.match(/^([A-Ga-g])([#b])?(\d)?$/);
-        if (!m) return t;
-        return m[1].toUpperCase() + (m[2] ?? "") + (m[3] ?? "");
+        const nm = t.match(/^([A-Ga-g])([#b])?(\d)?$/);
+        if (!nm) return t;
+        return nm[1].toUpperCase() + (nm[2] ?? "") + (nm[3] ?? "");
       });
-    if (tokens.length > 0) {
-      result.notesList = tokens;
-      const handMatch = input.match(NOTES_HAND_RE);
-      if (handMatch) {
-        const h = handMatch[1].toLowerCase().replace(/[\s.]/g, "");
-        if (h === "lefthand" || h === "bottomhand" || h === "lh") result.notesHand = "lh";
-        else if (h === "righthand" || h === "tophand" || h === "rh") result.notesHand = "rh";
-      }
-    }
+    if (tokens.length === 0) continue;
+    const { hand, clef } = parseHandOrClef(m[2]);
+    groups.push({ notes: tokens, hand, clef });
+  }
+  if (groups.length > 0) {
+    result.notesGroups = groups;
   }
 
   // Extract color theme
@@ -456,8 +462,7 @@ export function parseChordDescription(input: string): ParsedChordRequest {
     .replace(SCALE_EXPLICIT_RE, "")
     .replace(/\bscale\b/gi, "")
     .replace(HEADING_RE, "")
-    .replace(NOTES_LIST_RE, "")
-    .replace(NOTES_HAND_RE, "")
+    .replace(NOTES_GROUP_RE, "")
     .replace(THEME_RE, "")
     .replace(/\btheme\b/gi, "")
     .replace(/\bcolou?rs?\b/gi, "")

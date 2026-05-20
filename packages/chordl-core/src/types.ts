@@ -61,13 +61,23 @@ export interface ParsedChordRequest {
   /** Display scale (0–1+ range, e.g. 0.8 = 80%). */
   scale?: number;
   /**
-   * Explicit notes list ("with notes ..."), low to high. Each token is a
-   * pitch class with optional octave (e.g. "C", "Eb", "E4", "Bb3"). Missing
-   * octaves are inferred ascending from octave 4 (each wrap-around bumps).
+   * Explicit notes groups ("with notes ..."), each low to high. Multiple groups
+   * (e.g. "C E G in bass clef and B D F in treble clef") render on one keyboard.
    */
-  notesList?: string[];
-  /** Hand assignment for the notes list: "lh" or "rh". */
-  notesHand?: "lh" | "rh";
+  notesGroups?: NotesGroup[];
+}
+
+/**
+ * One group of explicitly-specified notes. Tokens are pitch classes with
+ * optional octave (e.g. "C", "Eb", "E4", "Bb3"). Missing octaves are inferred
+ * ascending from a base octave (treble clef = 4, bass clef = 3, default = 4).
+ */
+export interface NotesGroup {
+  notes: string[];
+  /** Hand assignment for this group: "lh" or "rh". Derived from clef if absent. */
+  hand?: "lh" | "rh";
+  /** Clef context: affects inferred base octave and implies a hand. */
+  clef?: "bass" | "treble";
 }
 
 export interface KeyDescriptor {

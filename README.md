@@ -74,10 +74,12 @@ The parser extracts structured data from freeform text:
 | `"Cmaj7 chord down an octave"` | chord=Cmaj7, chordOctaveShift=-1 |
 | `"Cmaj7 bass up an octave"` | chord=Cmaj7, bassOctaveShift=+1 |
 | `"Cmaj7 all inversions"` | chord=Cmaj7, allInversions=true |
-| `"with notes C E G B"` | notesList=[C,E,G,B] (octaves inferred ascending from 4) |
-| `"with notes E4 G4 C5"` | notesList=[E4,G4,C5] (explicit octaves) |
-| `"notes C E G in lh"` | notesList=[C,E,G], notesHand=lh |
-| `"notes E G B in top hand"` | notesList=[E,G,B], notesHand=rh |
+| `"with notes C E G B"` | notesGroups=[{notes:[C,E,G,B]}] (octaves inferred from 4) |
+| `"with notes E4 G4 C5"` | notesGroups=[{notes:[E4,G4,C5]}] (explicit) |
+| `"notes C E G in lh"` | notesGroups=[{notes:[C,E,G], hand:lh}] |
+| `"notes E G B in top hand"` | notesGroups=[{notes:[E,G,B], hand:rh}] |
+| `"notes C E G in the bass clef"` | notesGroups=[{notes:[C,E,G], hand:lh, clef:bass}] |
+| `"notes E G B in the treble clef"` | notesGroups=[{notes:[E,G,B], hand:rh, clef:treble}] |
 
 ### Starting Note / Degree
 
@@ -101,15 +103,25 @@ class wraps past the previous note.
 - `"with notes E4 G4 C5 E5"` — Cmaj7/E with explicit octaves
 - `"with notes Bb Eb Ab Db"` — descending fourths, ascending octaves
 
-Append a hand assignment to draw an L.H. / R.H. bracket below the keyboard.
-Accepted aliases:
+Append a hand or clef assignment to draw an L.H. / R.H. bracket below the
+keyboard. Clefs also seed the inferred base octave (bass = 3, treble = 4).
 
 - LH: `in lh`, `in left hand`, `in bottom hand`, `in l.h.`
 - RH: `in rh`, `in right hand`, `in top hand`, `in r.h.`
+- Bass clef → LH + low octave: `in (the) bass clef`
+- Treble clef → RH + high octave: `in (the) treble clef`
 
 ```tsx
 <PianoChord chord="notes C E G in lh" />
 <PianoChord chord="with notes G B D F in top hand" />
+<PianoChord chord="notes C E G in the bass clef" />
+```
+
+Pair bass + treble clef in one input to render both hands on a single
+keyboard with separate L.H. / R.H. brackets:
+
+```tsx
+<PianoChord chord="notes C E G in the bass clef and notes B D F in the treble clef" />
 ```
 
 ## Audio Playback & MIDI

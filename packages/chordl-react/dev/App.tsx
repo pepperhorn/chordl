@@ -822,8 +822,25 @@ function App() {
               <PianoChord chord="with notes E4 G4 C5 E5 with note names" uiTheme={uiTheme} />
             </div>
             <div className="glass-card">
-              <span className="example-label">"notes C E G in lh" / "notes G B D in top hand"</span>
+              <span className="example-label">"notes C E G in lh"</span>
               <PianoChord chord="notes C E G in lh with note names" uiTheme={uiTheme} />
+            </div>
+          </div>
+          <div className="row" style={{ marginBottom: "1rem" }}>
+            <div className="glass-card">
+              <span className="example-label">"notes C E G in the bass clef"</span>
+              <PianoChord chord="notes C E G in the bass clef with note names" uiTheme={uiTheme} />
+            </div>
+            <div className="glass-card">
+              <span className="example-label">"notes E G B in the treble clef"</span>
+              <PianoChord chord="notes E G B in the treble clef with note names" uiTheme={uiTheme} />
+            </div>
+            <div className="glass-card">
+              <span className="example-label">Paired: bass clef + treble clef</span>
+              <PianoChord
+                chord="notes C E G in the bass clef and notes B D F in the treble clef with note names"
+                uiTheme={uiTheme}
+              />
             </div>
           </div>
         </Collapsible>

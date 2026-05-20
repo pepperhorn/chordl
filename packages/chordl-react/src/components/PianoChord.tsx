@@ -223,48 +223,55 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
     );
   }
 
-  // ── Notes list path ("with notes C E G" / "notes E4 G4 C5 in lh") ──
-  if (parsed.notesList && parsed.notesList.length > 0) {
-    // Parse each token: pitch class (display name) + optional explicit octave.
-    const parsedTokens = parsed.notesList.map((t) => {
-      const m = t.match(/^([A-Ga-g][#b]?)(\d)?$/);
-      if (!m) return { pc: t, octave: undefined as number | undefined };
-      return {
-        pc: m[1].charAt(0).toUpperCase() + m[1].slice(1),
-        octave: m[2] ? parseInt(m[2], 10) : undefined,
-      };
-    });
+  // ── Notes group(s) path ("with notes C E G" / "notes E4 G4 C5 in lh" /
+  //    paired: "notes C E G in bass clef and notes B D F in treble clef") ──
+  if (parsed.notesGroups && parsed.notesGroups.length > 0) {
+    // Resolve every token in every group to an absolute octave-qualified note.
+    type Resolved = { pc: string; norm: string; octave: number; groupIdx: number };
+    const allResolved: Resolved[] = [];
+    parsed.notesGroups.forEach((group, gIdx) => {
+      // Clef-aware base octave: bass = 3, treble = 4, default = 4
+      const baseOctave = group.clef === "bass" ? 3 : 4;
+      const tokens = group.notes.map((t) => {
+        const m = t.match(/^([A-Ga-g][#b]?)(\d)?$/);
+        if (!m) return { pc: t, octave: undefined as number | undefined };
+        return {
+          pc: m[1].charAt(0).toUpperCase() + m[1].slice(1),
+          octave: m[2] ? parseInt(m[2], 10) : undefined,
+        };
+      });
 
-    // Infer missing octaves: ascending from 4, bump when pitch class wraps.
-    const BASE_OCTAVE = 4;
-    let currentOctave = parsedTokens[0].octave ?? BASE_OCTAVE;
-    let prevSemi = -1;
-    const resolvedTokens = parsedTokens.map((t) => {
-      const norm = normalizeNote(t.pc);
-      const semi = PC_SEMITONES[norm];
-      let octave: number;
-      if (t.octave !== undefined) {
-        octave = t.octave;
-      } else {
-        if (prevSemi >= 0 && semi !== undefined && semi <= prevSemi) {
-          currentOctave++;
+      let currentOctave = tokens[0]?.octave ?? baseOctave;
+      let prevSemi = -1;
+      tokens.forEach((t) => {
+        const norm = normalizeNote(t.pc);
+        const semi = PC_SEMITONES[norm];
+        let octave: number;
+        if (t.octave !== undefined) {
+          octave = t.octave;
+        } else {
+          if (prevSemi >= 0 && semi !== undefined && semi <= prevSemi) {
+            currentOctave++;
+          }
+          octave = currentOctave;
         }
-        octave = currentOctave;
-      }
-      currentOctave = octave;
-      if (semi !== undefined) prevSemi = semi;
-      return { pc: t.pc, norm, octave };
+        currentOctave = octave;
+        if (semi !== undefined) prevSemi = semi;
+        allResolved.push({ pc: t.pc, norm, octave, groupIdx: gIdx });
+      });
     });
 
-    // Keyboard range: pad around the lowest & highest notes
-    const minOctave = Math.min(...resolvedTokens.map((t) => t.octave));
-    const maxOctave = Math.max(...resolvedTokens.map((t) => t.octave));
-    const minIdx = WHITE_NOTE_ORDER.indexOf(
-      resolvedTokens.find((t) => t.octave === minOctave)!.norm.replace("#", "") as WhiteNote,
+    // Keyboard range: from lowest note (minus padding) to highest note (plus padding).
+    const minOctave = Math.min(...allResolved.map((t) => t.octave));
+    const maxOctave = Math.max(...allResolved.map((t) => t.octave));
+    const lowest = allResolved.reduce((a, b) =>
+      a.octave * 12 + (PC_SEMITONES[a.norm] ?? 0) < b.octave * 12 + (PC_SEMITONES[b.norm] ?? 0) ? a : b,
     );
-    const maxIdx = WHITE_NOTE_ORDER.indexOf(
-      [...resolvedTokens].reverse().find((t) => t.octave === maxOctave)!.norm.replace("#", "") as WhiteNote,
+    const highest = allResolved.reduce((a, b) =>
+      a.octave * 12 + (PC_SEMITONES[a.norm] ?? 0) > b.octave * 12 + (PC_SEMITONES[b.norm] ?? 0) ? a : b,
     );
+    const minIdx = WHITE_NOTE_ORDER.indexOf(lowest.norm.replace("#", "") as WhiteNote);
+    const maxIdx = WHITE_NOTE_ORDER.indexOf(highest.norm.replace("#", "") as WhiteNote);
     const layoutPadding = parsed.padding ?? padding ?? 1;
     const startIdx = Math.max(0, minIdx - layoutPadding);
     const startNote = WHITE_NOTE_ORDER[startIdx] as WhiteNote;
@@ -274,38 +281,48 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
       8,
     );
 
-    const baseRelOctave = minOctave - BASE_OCTAVE;
-    const highlightKeys = resolvedTokens.map((t) => {
-      const relOctave = t.octave - minOctave + baseRelOctave;
+    // Keyboard's relative octave 0 corresponds to the lowest absolute octave (minOctave).
+    // midiBaseOctave is set so MIDI labels render with the correct octave number.
+    const highlightKeys = allResolved.map((t) => {
+      const relOctave = t.octave - minOctave;
       return `${t.norm}:${relOctave}`;
     });
-    const displayNoteNames = resolvedTokens.map((t) => t.pc);
+    const displayNoteNames = allResolved.map((t) => t.pc);
 
-    // Hand bracket: map highlight positions to key indices
-    let notesHandBrackets: HandBracket[] | undefined;
-    if (parsed.notesHand) {
-      const tempKeys = computeKeyboard(startNote, kbSize, parsed.format ?? format ?? "compact");
-      const keyIndices: number[] = [];
+    // Hand brackets: build one per group that has an explicit/derived hand.
+    const resolvedFormat = parsed.format ?? format;
+    const tempKeys = computeKeyboard(startNote, kbSize, resolvedFormat ?? "compact");
+    const groupKeyIndices: Array<{ hand: "lh" | "rh"; keys: number[] }> = [];
+
+    parsed.notesGroups.forEach((group, gIdx) => {
+      const hand = group.hand ?? (group.clef === "bass" ? "lh" : group.clef === "treble" ? "rh" : undefined);
+      if (!hand) return;
+      const indicesForGroup: number[] = [];
       const matched = new Set<number>();
-      for (const hk of highlightKeys) {
-        const [n, oct] = hk.split(":");
+      for (let hkIdx = 0; hkIdx < highlightKeys.length; hkIdx++) {
+        if (allResolved[hkIdx].groupIdx !== gIdx) continue;
+        const [n, oct] = highlightKeys[hkIdx].split(":");
         for (let ki = 0; ki < tempKeys.length; ki++) {
           if (matched.has(ki)) continue;
           if (normalizeNote(tempKeys[ki].note) === n && tempKeys[ki].octave === parseInt(oct, 10)) {
             matched.add(ki);
-            keyIndices.push(ki);
+            indicesForGroup.push(ki);
             break;
           }
         }
       }
-      notesHandBrackets = [
-        { label: parsed.notesHand === "lh" ? "L.H." : "R.H.", keyIndices },
-      ];
-    }
+      groupKeyIndices.push({ hand, keys: indicesForGroup });
+    });
 
-    const chordLabel = parsed.chordName || resolvedTokens.map((t) => t.pc).join(" ");
-    const resolvedFormat = parsed.format ?? format;
-    currentNotes = resolvedTokens.map((t) => t.pc);
+    // Merge same-hand groups into a single bracket (e.g. two RH groups).
+    const lhKeys = groupKeyIndices.filter((g) => g.hand === "lh").flatMap((g) => g.keys);
+    const rhKeys = groupKeyIndices.filter((g) => g.hand === "rh").flatMap((g) => g.keys);
+    const notesHandBrackets: HandBracket[] = [];
+    if (lhKeys.length > 0) notesHandBrackets.push({ label: "L.H.", keyIndices: lhKeys });
+    if (rhKeys.length > 0) notesHandBrackets.push({ label: "R.H.", keyIndices: rhKeys });
+
+    const chordLabel = parsed.chordName || allResolved.map((t) => t.pc).join(" ");
+    currentNotes = allResolved.map((t) => t.pc);
 
     return (
       <>
@@ -321,12 +338,12 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
               highlightColor={highlightColor}
               chordLabel={chordLabel}
               showHeading={parsed.showHeading}
-              handBrackets={notesHandBrackets}
+              handBrackets={notesHandBrackets.length > 0 ? notesHandBrackets : undefined}
               scale={scale}
               showNoteNames={parsed.showNoteNames}
               noteNameSize={parsed.noteNameSize}
               noteNameMode={parsed.noteNameMode}
-              midiBaseOctave={BASE_OCTAVE + baseRelOctave}
+              midiBaseOctave={minOctave}
               fingeringSize={parsed.fingeringSize}
               showPlayback={showPlayback}
               className={className}
