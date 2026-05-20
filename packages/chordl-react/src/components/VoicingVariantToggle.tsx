@@ -29,6 +29,10 @@ export interface VoicingVariantToggleProps {
   renderVariationExtras?: RenderVariationExtras;
   /** Position in progression, forwarded to PianoChord. Default 0. */
   chordIndex?: number;
+  /** Chord-card metadata — forwarded to every variant. */
+  title?: string;
+  subheading?: string;
+  footerText?: string;
 }
 
 const LABELS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -45,6 +49,9 @@ export function VoicingVariantToggle({
   onVariation,
   renderVariationExtras,
   chordIndex,
+  title,
+  subheading,
+  footerText,
 }: VoicingVariantToggleProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [totalCount, setTotalCount] = useState(3);
@@ -111,6 +118,9 @@ export function VoicingVariantToggle({
         scale={scale}
         display={display}
         uiTheme={uiTheme}
+        title={title}
+        subheading={subheading}
+        footerText={footerText}
         onVariation={onVariation}
         renderVariationExtras={renderVariationExtras}
         voicingId="default"
@@ -218,6 +228,9 @@ export function VoicingVariantToggle({
           scale={scale}
           display={display}
           uiTheme={uiTheme}
+          title={title}
+          subheading={subheading}
+          footerText={footerText}
           onVariation={onVariation}
           renderVariationExtras={renderVariationExtras}
           voicingId={variants[activeIndex]?.label ?? "default"}

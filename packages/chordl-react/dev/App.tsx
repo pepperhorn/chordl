@@ -1,6 +1,8 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { createRoot } from "react-dom/client";
 import { PianoKeyboard, PianoChord, VoicingVariantToggle, StaffNotation, ChordSheet, ProgressionView, isProgressionRequest, parseProgressionRequest, resolveProgressionRequest, BRAVURA_GLYPHS, PETALUMA_GLYPHS, setDefaultGlyphs, encodeChordSheet, decodeChordSheet } from "../src";
+import { parseChordDescription, resolveChord } from "@pepperhorn/chordl-core";
+import type { TextSize, NoteNameMode } from "@pepperhorn/chordl-core";
 import type { StaffGlyphSet, ChordSheetData } from "../src";
 import type { UIThemeMode } from "../src";
 import { SHOW_HINTS, HINT_SPEED } from "../src/config";
@@ -152,6 +154,184 @@ function HintRotator() {
   );
 }
 
+const SIZE_OPTIONS: { label: string; value: TextSize }[] = [
+  { label: "base", value: "base" },
+  { label: "lg", value: "lg" },
+  { label: "xl", value: "xl" },
+  { label: "2xl", value: "2xl" },
+];
+
+interface ChordDetailsPanelProps {
+  title: string; onTitleChange: (v: string) => void;
+  subheading: string; onSubheadingChange: (v: string) => void;
+  footerText: string; onFooterTextChange: (v: string) => void;
+  showNoteNames: boolean; onShowNoteNamesChange: (v: boolean) => void;
+  noteNameMode: NoteNameMode; onNoteNameModeChange: (v: NoteNameMode) => void;
+  noteNameSize: TextSize; onNoteNameSizeChange: (v: TextSize) => void;
+  showDegrees: boolean; onShowDegreesChange: (v: boolean) => void;
+  degreeSize: TextSize; onDegreeSizeChange: (v: TextSize) => void;
+  fingeringMode: "none" | "auto" | "custom"; onFingeringModeChange: (v: "none" | "auto" | "custom") => void;
+  fingeringValues: string[]; onFingeringValuesChange: (v: string[]) => void;
+  fingeringSize: TextSize; onFingeringSizeChange: (v: TextSize) => void;
+  noteCount: number;
+}
+
+function ChordDetailsPanel(p: ChordDetailsPanelProps) {
+  const setCount = [
+    p.title, p.subheading, p.footerText,
+    p.showNoteNames ? "x" : "",
+    p.showDegrees ? "x" : "",
+    p.fingeringMode !== "none" ? "x" : "",
+  ].filter((v) => v).length;
+
+  const rowStyle: React.CSSProperties = {
+    display: "flex", alignItems: "center", gap: 12,
+    padding: "8px 0", flexWrap: "wrap",
+  };
+  const labelStyle: React.CSSProperties = {
+    fontSize: "0.85rem", fontWeight: 500, minWidth: 86, color: "var(--text-muted)",
+  };
+  const inputStyle: React.CSSProperties = {
+    flex: "1 1 200px", padding: "6px 10px", fontSize: "0.9rem",
+    fontFamily: "inherit", border: "1px solid var(--btn-border)", borderRadius: 8,
+    background: "var(--pill-bg)", color: "var(--text)", outline: "none",
+  };
+  const sizeSelect = (value: TextSize, onChange: (v: TextSize) => void) => (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value as TextSize)}
+      style={{
+        padding: "5px 8px", fontSize: "0.8rem", fontFamily: "inherit",
+        border: "1px solid var(--btn-border)", borderRadius: 6,
+        background: "var(--pill-bg)", color: "var(--text)", cursor: "pointer",
+      }}
+    >
+      {SIZE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+    </select>
+  );
+
+  return (
+    <details className="chord-details-panel" style={{
+      width: "100%", maxWidth: 640,
+      border: "1px solid var(--btn-border)", borderRadius: 12,
+      background: "var(--pill-bg)",
+    }}>
+      <summary style={{
+        cursor: "pointer", padding: "10px 16px",
+        fontSize: "0.85rem", fontWeight: 500, color: "var(--text-muted)",
+        display: "flex", alignItems: "center", gap: 8,
+      }}>
+        Chord details
+        {setCount > 0 && (
+          <span style={{
+            fontSize: "0.7rem", padding: "1px 7px", borderRadius: 10,
+            background: "var(--tag-bg)", color: "var(--tag-text)", fontWeight: 600,
+          }}>
+            {setCount}
+          </span>
+        )}
+      </summary>
+      <div style={{ padding: "4px 16px 16px" }}>
+        <div style={rowStyle}>
+          <span style={labelStyle}>Title</span>
+          <input value={p.title} onChange={(e) => p.onTitleChange(e.target.value)}
+            placeholder="Verse 1" style={inputStyle} />
+        </div>
+        <div style={rowStyle}>
+          <span style={labelStyle}>Subheading</span>
+          <input value={p.subheading} onChange={(e) => p.onSubheadingChange(e.target.value)}
+            placeholder="warm voicing" style={inputStyle} />
+        </div>
+        <div style={rowStyle}>
+          <span style={labelStyle}>Footer</span>
+          <input value={p.footerText} onChange={(e) => p.onFooterTextChange(e.target.value)}
+            placeholder="pp legato" style={inputStyle} />
+        </div>
+
+        <hr style={{ border: "none", borderTop: "1px solid var(--btn-border)", margin: "10px 0" }} />
+
+        <div style={rowStyle}>
+          <label style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 110, fontSize: "0.85rem", cursor: "pointer" }}>
+            <input type="checkbox" checked={p.showNoteNames}
+              onChange={(e) => p.onShowNoteNamesChange(e.target.checked)} />
+            Note names
+          </label>
+          {p.showNoteNames && (
+            <>
+              <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: "0.82rem" }}>
+                <input type="radio" name="nnmode" checked={p.noteNameMode === "pitch-class"}
+                  onChange={() => p.onNoteNameModeChange("pitch-class")} />
+                Pitch class
+              </label>
+              <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: "0.82rem" }}>
+                <input type="radio" name="nnmode" checked={p.noteNameMode === "midi"}
+                  onChange={() => p.onNoteNameModeChange("midi")} />
+                MIDI
+              </label>
+              {sizeSelect(p.noteNameSize, p.onNoteNameSizeChange)}
+            </>
+          )}
+        </div>
+
+        <div style={rowStyle}>
+          <label style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 110, fontSize: "0.85rem", cursor: "pointer" }}>
+            <input type="checkbox" checked={p.showDegrees}
+              onChange={(e) => p.onShowDegreesChange(e.target.checked)} />
+            Degrees
+          </label>
+          {p.showDegrees && sizeSelect(p.degreeSize, p.onDegreeSizeChange)}
+        </div>
+
+        <div style={rowStyle}>
+          <label style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 110, fontSize: "0.85rem", cursor: "pointer" }}>
+            <input type="checkbox" checked={p.fingeringMode !== "none"}
+              onChange={(e) => p.onFingeringModeChange(e.target.checked ? "auto" : "none")} />
+            Fingering
+          </label>
+          {p.fingeringMode !== "none" && (
+            <>
+              <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: "0.82rem" }}>
+                <input type="radio" name="fmode" checked={p.fingeringMode === "auto"}
+                  onChange={() => p.onFingeringModeChange("auto")} />
+                Auto
+              </label>
+              <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: "0.82rem" }}>
+                <input type="radio" name="fmode" checked={p.fingeringMode === "custom"}
+                  onChange={() => p.onFingeringModeChange("custom")} />
+                Custom
+              </label>
+              {p.fingeringMode === "custom" && p.noteCount > 0 && (
+                <div style={{ display: "flex", gap: 4 }}>
+                  {Array.from({ length: p.noteCount }).map((_, i) => (
+                    <input
+                      key={i}
+                      value={p.fingeringValues[i] ?? ""}
+                      onChange={(e) => {
+                        const next = [...p.fingeringValues];
+                        while (next.length < p.noteCount) next.push("");
+                        next[i] = e.target.value.slice(-1).toLowerCase();
+                        p.onFingeringValuesChange(next);
+                      }}
+                      maxLength={1}
+                      style={{
+                        width: 28, height: 28, textAlign: "center",
+                        padding: 0, fontSize: "0.9rem", fontFamily: "inherit",
+                        border: "1px solid var(--btn-border)", borderRadius: 6,
+                        background: "var(--input-floating-bg)", color: "var(--text)", outline: "none",
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
+              {sizeSelect(p.fingeringSize, p.onFingeringSizeChange)}
+            </>
+          )}
+        </div>
+      </div>
+    </details>
+  );
+}
+
 function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExportStatus }: { uiTheme: UIThemeMode; showOptions: boolean; onToggleOptions: () => void; onExportStatus?: (status: "idle" | "preparing") => void }) {
   const [input, setInput] = useState("Cmaj7#5 starting on G#");
   const [theme, setTheme] = useState<string>("simple");
@@ -163,7 +343,65 @@ function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExportStatu
   const [notationFont, setNotationFont] = useState<"bravura" | "petaluma">("bravura");
   const [error, setError] = useState<string | null>(null);
 
+  // Chord Details form state (separate from NL input). Title/sub/footer are
+  // pure props. Annotation toggles get serialized into the chord string passed
+  // downstream so existing NL paths keep working.
+  const [title, setTitle] = useState("");
+  const [subheading, setSubheading] = useState("");
+  const [footerText, setFooterText] = useState("");
+  const [showNoteNames, setShowNoteNames] = useState(false);
+  const [noteNameMode, setNoteNameMode] = useState<NoteNameMode>("pitch-class");
+  const [noteNameSize, setNoteNameSize] = useState<TextSize>("lg");
+  const [showDegrees, setShowDegrees] = useState(false);
+  const [degreeSize, setDegreeSize] = useState<TextSize>("lg");
+  const [fingeringMode, setFingeringMode] = useState<"none" | "auto" | "custom">("none");
+  const [fingeringValues, setFingeringValues] = useState<string[]>([]);
+  const [fingeringSize, setFingeringSize] = useState<TextSize>("lg");
+
   const isProg = isProgressionRequest(input);
+
+  // Resolve note count for dynamic fingering cells.
+  const noteCount = useMemo(() => {
+    if (isProg) return 0;
+    try {
+      const parsed = parseChordDescription(input);
+      if (!parsed.chordName) return parsed.notesGroups?.[0]?.notes.length ?? 0;
+      const r = resolveChord(parsed.chordName, parsed.inversion);
+      return r.notes.length;
+    } catch { return 0; }
+  }, [input, isProg]);
+
+  // Resize fingering array when note count changes.
+  useEffect(() => {
+    if (fingeringMode !== "custom") return;
+    setFingeringValues((prev) => {
+      const next = [...prev];
+      while (next.length < noteCount) next.push("");
+      next.length = noteCount;
+      return next;
+    });
+  }, [noteCount, fingeringMode]);
+
+  // Serialize form annotation state to NL modifiers appended to the chord string.
+  const detailsModifiers = useMemo(() => {
+    const parts: string[] = [];
+    if (showNoteNames) {
+      const kw = noteNameMode === "midi" ? "midi note names" : "note names";
+      parts.push(`${kw} in ${noteNameSize}`);
+    }
+    if (showDegrees) {
+      parts.push(`with degrees in ${degreeSize}`);
+    }
+    if (fingeringMode === "auto") {
+      parts.push(`with fingering in ${fingeringSize}`);
+    } else if (fingeringMode === "custom") {
+      const cleaned = fingeringValues.map((v) => v.trim() || "-");
+      if (cleaned.some((v) => v !== "-")) {
+        parts.push(`fingering ${cleaned.join("-")} in ${fingeringSize}`);
+      }
+    }
+    return parts.length ? " " + parts.join(" ") : "";
+  }, [showNoteNames, noteNameMode, noteNameSize, showDegrees, degreeSize, fingeringMode, fingeringValues, fingeringSize]);
 
   let progressionResult = null;
   if (isProg) {
@@ -239,6 +477,24 @@ function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExportStatu
           </span>
         )}
       </div>
+
+      {/* Chord Details — collapsible form for title/sub/footer + annotations */}
+      {!isProg && (
+        <ChordDetailsPanel
+          title={title} onTitleChange={setTitle}
+          subheading={subheading} onSubheadingChange={setSubheading}
+          footerText={footerText} onFooterTextChange={setFooterText}
+          showNoteNames={showNoteNames} onShowNoteNamesChange={setShowNoteNames}
+          noteNameMode={noteNameMode} onNoteNameModeChange={setNoteNameMode}
+          noteNameSize={noteNameSize} onNoteNameSizeChange={setNoteNameSize}
+          showDegrees={showDegrees} onShowDegreesChange={setShowDegrees}
+          degreeSize={degreeSize} onDegreeSizeChange={setDegreeSize}
+          fingeringMode={fingeringMode} onFingeringModeChange={setFingeringMode}
+          fingeringValues={fingeringValues} onFingeringValuesChange={setFingeringValues}
+          fingeringSize={fingeringSize} onFingeringSizeChange={setFingeringSize}
+          noteCount={noteCount}
+        />
+      )}
 
       {/* Controls row — muted, secondary */}
       {showOptions && <div className="interactive-controls-row" style={{
@@ -403,9 +659,12 @@ function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExportStatu
             <ProgressionView result={progressionResult} theme={theme} uiTheme={uiTheme} />
           ) : (
             <VoicingVariantToggle
-              chord={octaveShift === 0 ? input : `${input} chord ${octaveShift > 0 ? "up" : "down"} ${Math.abs(octaveShift)} octave${Math.abs(octaveShift) > 1 ? "s" : ""}`}
+              chord={(octaveShift === 0 ? input : `${input} chord ${octaveShift > 0 ? "up" : "down"} ${Math.abs(octaveShift)} octave${Math.abs(octaveShift) > 1 ? "s" : ""}`) + detailsModifiers}
               theme={theme} format={keyFormat} scale={scale} display={displayMode}
               highlightColor={theme === "simple" ? highlightColor : undefined} uiTheme={uiTheme}
+              title={title || undefined}
+              subheading={subheading || undefined}
+              footerText={footerText || undefined}
               onExportStatus={onExportStatus}
             />
           )}
