@@ -3,6 +3,8 @@ import { createRoot } from "react-dom/client";
 import { PianoKeyboard, PianoChord, VoicingVariantToggle, StaffNotation, ChordSheet, ProgressionView, isProgressionRequest, parseProgressionRequest, resolveProgressionRequest, BRAVURA_GLYPHS, PETALUMA_GLYPHS, setDefaultGlyphs, encodeChordSheet, decodeChordSheet } from "../src";
 import { parseChordDescription, resolveChord } from "@pepperhorn/chordl-core";
 import type { TextSize, NoteNameMode } from "@pepperhorn/chordl-core";
+import { ChordBoard, useChordBoard } from "@pepperhorn/chordl-board";
+import type { BoardItem } from "@pepperhorn/chordl-board";
 import type { StaffGlyphSet, ChordSheetData } from "../src";
 import type { UIThemeMode } from "../src";
 import { SHOW_HINTS, HINT_SPEED } from "../src/config";
@@ -382,6 +384,9 @@ function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExportStatu
     });
   }, [noteCount, fingeringMode]);
 
+  // Board state — items, clipboard, mutators, storage. Default localStorage.
+  const board = useChordBoard();
+
   // Serialize form annotation state to NL modifiers appended to the chord string.
   const detailsModifiers = useMemo(() => {
     const parts: string[] = [];
@@ -402,6 +407,30 @@ function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExportStatu
     }
     return parts.length ? " " + parts.join(" ") : "";
   }, [showNoteNames, noteNameMode, noteNameSize, showDegrees, degreeSize, fingeringMode, fingeringValues, fingeringSize]);
+
+  const handleAddToBoard = () => {
+    if (isProg) return;
+    const withOctave = octaveShift === 0
+      ? input
+      : `${input} chord ${octaveShift > 0 ? "up" : "down"} ${Math.abs(octaveShift)} octave${Math.abs(octaveShift) > 1 ? "s" : ""}`;
+    board.addItem({
+      nl: withOctave + detailsModifiers,
+      title: title || undefined,
+      subheading: subheading || undefined,
+      footerText: footerText || undefined,
+    });
+  };
+
+  const handleEditBoardItem = (item: BoardItem) => {
+    setInput(item.nl);
+    setTitle(item.title ?? "");
+    setSubheading(item.subheading ?? "");
+    setFooterText(item.footerText ?? "");
+    setShowNoteNames(false);
+    setShowDegrees(false);
+    setFingeringMode("none");
+    setOctaveShift(0);
+  };
 
   let progressionResult = null;
   if (isProg) {
@@ -670,6 +699,42 @@ function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExportStatu
           )}
         </ErrorBoundary>
       </div>
+
+      {/* Add to board + board itself */}
+      {!isProg && (
+        <div style={{ width: "100%", maxWidth: 1100, display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+          <button
+            onClick={handleAddToBoard}
+            style={{
+              padding: "8px 18px",
+              fontSize: "0.85rem",
+              fontWeight: 500,
+              fontFamily: "inherit",
+              border: "1px solid var(--btn-border)",
+              borderRadius: 20,
+              background: "var(--pill-active-bg)",
+              color: "var(--pill-active-text)",
+              cursor: "pointer",
+            }}
+            title="Add the current chord to the board"
+          >
+            + Add to board
+          </button>
+          <ChordBoard
+            items={board.items}
+            clipboard={board.clipboard}
+            onEdit={handleEditBoardItem}
+            onCopy={board.copyItem}
+            onCut={board.cutItem}
+            onDelete={board.removeItem}
+            onPaste={board.pasteItem}
+            onClearClipboard={board.clearClipboard}
+            onReorder={board.reorder}
+            uiTheme={uiTheme}
+            scale={0.5}
+          />
+        </div>
+      )}
 
       {/* Toggle for options & examples */}
       <button

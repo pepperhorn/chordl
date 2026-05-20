@@ -352,6 +352,10 @@ const myTheme: ColorTheme = {
 
 ## Note Names & Fingering
 
+The dev playground's **Chord Details** panel (collapsible below the NL input) is the preferred way to toggle these display options — title/subheading/footer text are pure component props, and the annotation toggles (note names, MIDI mode, degrees, fingering, sizes) wire directly to `<PianoChord>` via state.
+
+The NL phrases below remain supported for backwards compatibility and for use cases where you want to share a single chord string that carries display options with it.
+
 Display note names and fingering numbers below highlighted keys:
 
 ```tsx
@@ -481,7 +485,48 @@ packages/
       presets.ts        Named visual presets (app-color, print-bw, ...)
       manifest.ts       Manifest types + expandCombinations() helper
     manifests/          Example + project manifests
+  chordl-board/         @pepperhorn/chordl-board (stateful chord-card list)
+    src/
+      ChordBoard.tsx    Reorderable cards + clipboard + edit/copy/cut/delete
+      storage.ts        localStorage + memory adapters
+      types.ts          BoardItem, StorageAdapter
 ```
+
+### Chord Board
+
+`<ChordBoard>` renders a reorderable list of chord cards backed by a
+pluggable storage adapter. Pair it with `useChordBoard()` for ready-made
+add/remove/reorder/clipboard mutators.
+
+```tsx
+import { ChordBoard, useChordBoard, localStorageAdapter } from "@pepperhorn/chordl-board";
+
+function MyBoard() {
+  const board = useChordBoard({ storage: localStorageAdapter("my-board") });
+  return (
+    <>
+      <button onClick={() => board.addItem({ nl: "Cmaj7", title: "Intro" })}>
+        + Add chord
+      </button>
+      <ChordBoard
+        items={board.items}
+        clipboard={board.clipboard}
+        onEdit={(item) => /* hydrate your editor with item.nl */}
+        onCopy={board.copyItem}
+        onCut={board.cutItem}
+        onDelete={board.removeItem}
+        onPaste={board.pasteItem}
+        onClearClipboard={board.clearClipboard}
+        onReorder={board.reorder}
+      />
+    </>
+  );
+}
+```
+
+Swap the default `localStorageAdapter` for any `StorageAdapter`
+(`{ load(): Items | Promise<Items>; save(items): void | Promise<void> }`)
+to back the board with a remote API or IndexedDB.
 
 ## Development
 
