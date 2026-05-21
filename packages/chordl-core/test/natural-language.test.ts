@@ -178,6 +178,30 @@ describe("parseChordDescription", () => {
     expect(result.notesGroups?.[0].hand).toBe("rh");
   });
 
+  it("parses prefix form 'notes in lh Eb Gb Bb'", () => {
+    const result = parseChordDescription("notes in lh Eb Gb Bb");
+    expect(result.notesGroups).toEqual([
+      { notes: ["Eb", "Gb", "Bb"], hand: "lh" },
+    ]);
+  });
+
+  it("parses paired prefix form 'notes in lh ... notes in rh ...'", () => {
+    const result = parseChordDescription(
+      "notes in lh eb gb bb notes in rh db eb f gb",
+    );
+    expect(result.notesGroups).toEqual([
+      { notes: ["Eb", "Gb", "Bb"], hand: "lh" },
+      { notes: ["Db", "Eb", "F", "Gb"], hand: "rh" },
+    ]);
+  });
+
+  it("parses prefix form with bass clef 'notes in bass clef C E G'", () => {
+    const result = parseChordDescription("notes in bass clef C E G");
+    expect(result.notesGroups).toEqual([
+      { notes: ["C", "E", "G"], hand: "lh", clef: "bass" },
+    ]);
+  });
+
   it("parses 'with notes Bb Eb Ab' (flats)", () => {
     const result = parseChordDescription("with notes Bb Eb Ab");
     expect(result.notesGroups?.[0].notes).toEqual(["Bb", "Eb", "Ab"]);
