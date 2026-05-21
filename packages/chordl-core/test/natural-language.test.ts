@@ -195,6 +195,29 @@ describe("parseChordDescription", () => {
     ]);
   });
 
+  it("parses bare form 'Eb Gb Bb in lh and Db Eb F and Gb in rh'", () => {
+    const result = parseChordDescription(
+      "eb gb bb in lh and db eb f and gb in rh",
+    );
+    expect(result.notesGroups).toEqual([
+      { notes: ["Eb", "Gb", "Bb"], hand: "lh" },
+      { notes: ["Db", "Eb", "F", "Gb"], hand: "rh" },
+    ]);
+  });
+
+  it("parses bare form 'C E G in bass clef' (no 'notes' keyword)", () => {
+    const result = parseChordDescription("C E G in bass clef");
+    expect(result.notesGroups).toEqual([
+      { notes: ["C", "E", "G"], hand: "lh", clef: "bass" },
+    ]);
+  });
+
+  it("doesn't treat 'G7 in lh' as a notes list (single token)", () => {
+    const result = parseChordDescription("G7 in lh");
+    expect(result.chordName).toBe("G7");
+    expect(result.notesGroups).toBeUndefined();
+  });
+
   it("parses prefix form with bass clef 'notes in bass clef C E G'", () => {
     const result = parseChordDescription("notes in bass clef C E G");
     expect(result.notesGroups).toEqual([
@@ -258,5 +281,82 @@ describe("parseChordDescription", () => {
     expect(result.notesGroups?.length).toBe(2);
     expect(result.notesGroups?.[0].clef).toBe("bass");
     expect(result.notesGroups?.[1].clef).toBe("treble");
+  });
+
+  // Hand-prefix bare (no "notes" keyword)
+  it("parses 'lh: Eb Gb Bb rh: Db Eb F Gb' (colon-prefixed hands)", () => {
+    const result = parseChordDescription("lh: Eb Gb Bb rh: Db Eb F Gb");
+    expect(result.notesGroups).toEqual([
+      { notes: ["Eb", "Gb", "Bb"], hand: "lh" },
+      { notes: ["Db", "Eb", "F", "Gb"], hand: "rh" },
+    ]);
+  });
+
+  it("parses 'lh Eb Gb Bb rh Db Eb F Gb' (no colons)", () => {
+    const result = parseChordDescription("lh Eb Gb Bb rh Db Eb F Gb");
+    expect(result.notesGroups).toEqual([
+      { notes: ["Eb", "Gb", "Bb"], hand: "lh" },
+      { notes: ["Db", "Eb", "F", "Gb"], hand: "rh" },
+    ]);
+  });
+
+  it("parses 'left Eb Gb Bb right Db Eb F Gb' (long-form hand words)", () => {
+    const result = parseChordDescription("left Eb Gb Bb right Db Eb F Gb");
+    expect(result.notesGroups).toEqual([
+      { notes: ["Eb", "Gb", "Bb"], hand: "lh" },
+      { notes: ["Db", "Eb", "F", "Gb"], hand: "rh" },
+    ]);
+  });
+
+  it("parses 'bottom Eb Gb Bb top Db Eb F Gb'", () => {
+    const result = parseChordDescription("bottom Eb Gb Bb top Db Eb F Gb");
+    expect(result.notesGroups).toEqual([
+      { notes: ["Eb", "Gb", "Bb"], hand: "lh" },
+      { notes: ["Db", "Eb", "F", "Gb"], hand: "rh" },
+    ]);
+  });
+
+  it("parses 'bass C E G treble B D F' (clef words)", () => {
+    const result = parseChordDescription("bass C E G treble B D F");
+    expect(result.notesGroups).toEqual([
+      { notes: ["C", "E", "G"], hand: "lh", clef: "bass" },
+      { notes: ["B", "D", "F"], hand: "rh", clef: "treble" },
+    ]);
+  });
+
+  // Polychord-style "//"
+  it("parses 'Eb Gb Bb // Db Eb F Gb' as polychord (rh over lh)", () => {
+    const result = parseChordDescription("Eb Gb Bb // Db Eb F Gb");
+    expect(result.notesGroups).toEqual([
+      { notes: ["Eb", "Gb", "Bb"], hand: "rh" },
+      { notes: ["Db", "Eb", "F", "Gb"], hand: "lh" },
+    ]);
+  });
+
+  // Semicolon separator
+  it("parses 'Eb Gb Bb; Db Eb F Gb' as lh then rh (reading order)", () => {
+    const result = parseChordDescription("Eb Gb Bb; Db Eb F Gb");
+    expect(result.notesGroups).toEqual([
+      { notes: ["Eb", "Gb", "Bb"], hand: "lh" },
+      { notes: ["Db", "Eb", "F", "Gb"], hand: "rh" },
+    ]);
+  });
+
+  // Parens + hand suffix
+  it("parses '(Eb Gb Bb) lh (Db Eb F Gb) rh' (parenthesized + hand suffix)", () => {
+    const result = parseChordDescription("(Eb Gb Bb) lh (Db Eb F Gb) rh");
+    expect(result.notesGroups).toEqual([
+      { notes: ["Eb", "Gb", "Bb"], hand: "lh" },
+      { notes: ["Db", "Eb", "F", "Gb"], hand: "rh" },
+    ]);
+  });
+
+  // Hand suffix without "in"
+  it("parses 'Eb Gb Bb lh, Db Eb F Gb rh' (no 'in')", () => {
+    const result = parseChordDescription("Eb Gb Bb lh, Db Eb F Gb rh");
+    expect(result.notesGroups).toEqual([
+      { notes: ["Eb", "Gb", "Bb"], hand: "lh" },
+      { notes: ["Db", "Eb", "F", "Gb"], hand: "rh" },
+    ]);
   });
 });

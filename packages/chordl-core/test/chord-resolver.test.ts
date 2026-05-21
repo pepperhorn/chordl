@@ -12,9 +12,9 @@ describe("resolveChord", () => {
     expect(result.notes).toEqual(["C", "E", "G"]);
   });
 
-  it("resolves Cm first inversion to [D#, G, C]", () => {
+  it("resolves Cm first inversion to [Eb, G, C]", () => {
     const result = resolveChord("Cm", 1);
-    expect(result.notes).toEqual(["D#", "G", "C"]);
+    expect(result.notes).toEqual(["Eb", "G", "C"]);
   });
 
   it("resolves Cmaj7#5 to [C, E, G#, B]", () => {
@@ -27,10 +27,9 @@ describe("resolveChord", () => {
     expect(result.notes).toEqual(["D", "F", "A", "C"]);
   });
 
-  it("normalizes flats to sharps", () => {
+  it("preserves natural flat spelling for flat-root chords", () => {
     const result = resolveChord("Bbmaj7");
-    expect(result.notes).toContain("A#");
-    expect(result.notes).not.toContain("Bb");
+    expect(result.notes).toEqual(["Bb", "D", "F", "A"]);
   });
 
   it("throws for unknown chords", () => {
