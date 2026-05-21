@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.2 — 2026-05-21
+
+### Added
+
+- **Parser: `notes in <hand> <notes>` prefix form.** `parseChordDescription` now accepts inputs like `notes in lh Eb Gb Bb notes in rh Db Eb F Gb` and emits the expected `notesGroups` with correct hand assignments. The existing suffix form (`notes C E G in lh`) is unchanged.
+
+### Changed
+
+- **Dev playground:** Chord Details panel restyled — white background at 40% opacity with a light-blue glow shadow — and the summary now reads "Choose more chord details".
+
 ## 0.3.1 — 2026-05-14
 
 ### Added
