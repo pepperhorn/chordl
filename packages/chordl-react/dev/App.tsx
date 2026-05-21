@@ -216,14 +216,15 @@ function ChordDetailsPanel(p: ChordDetailsPanelProps) {
     <details className="chord-details-panel" style={{
       width: "100%", maxWidth: 640,
       border: "1px solid var(--btn-border)", borderRadius: 12,
-      background: "var(--pill-bg)",
+      background: "rgba(255, 255, 255, 0.4)",
+      boxShadow: "0 0 0 1px rgba(125, 211, 252, 0.35), 0 0 18px 2px rgba(125, 211, 252, 0.45)",
     }}>
       <summary style={{
         cursor: "pointer", padding: "10px 16px",
         fontSize: "0.85rem", fontWeight: 500, color: "var(--text-muted)",
         display: "flex", alignItems: "center", gap: 8,
       }}>
-        Chord details
+        Choose more chord details
         {setCount > 0 && (
           <span style={{
             fontSize: "0.7rem", padding: "1px 7px", borderRadius: 10,

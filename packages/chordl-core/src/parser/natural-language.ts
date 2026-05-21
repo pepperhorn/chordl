@@ -140,6 +140,11 @@ const HEADING_RE = /\b(?:with\s+)?(?:a\s+)?(?:show\s+)?heading\b/i;
 const NOTES_GROUP_RE =
   /(?:with\s+|and\s+)?notes\s+([A-Ga-g][#b]?\d?\b(?:[\s,\-]+[A-Ga-g][#b]?\d?\b)*)(?:\s+in\s+(?:the\s+)?(left\s+hand|right\s+hand|bottom\s+hand|top\s+hand|l\.?h\.?|r\.?h\.?|lh|rh|bass\s+clef|treble\s+clef))?/gi;
 
+// Prefix form: "notes in lh Eb Gb Bb" / "notes in the right hand D F A"
+// Group 1: hand/clef phrase. Group 2: note list.
+const NOTES_GROUP_PREFIX_RE =
+  /(?:with\s+|and\s+)?notes\s+in\s+(?:the\s+)?(left\s+hand|right\s+hand|bottom\s+hand|top\s+hand|l\.?h\.?|r\.?h\.?|lh|rh|bass\s+clef|treble\s+clef)\s+([A-Ga-g][#b]?\d?\b(?:[\s,\-]+[A-Ga-g][#b]?\d?\b)*)/gi;
+
 /** Normalize a captured hand/clef phrase to (hand, clef) tuple. */
 function parseHandOrClef(raw: string | undefined): { hand?: "lh" | "rh"; clef?: "bass" | "treble" } {
   if (!raw) return {};
@@ -355,9 +360,8 @@ export function parseChordDescription(input: string): ParsedChordRequest {
   // segments separated by "and" / "with". Paired example:
   //   "notes C E G in bass clef and notes B D F in treble clef"
   const groups: NotesGroup[] = [];
-  NOTES_GROUP_RE.lastIndex = 0; // global regex carries state
-  for (const m of input.matchAll(NOTES_GROUP_RE)) {
-    const tokens = m[1]
+  const normalizeTokens = (raw: string): string[] =>
+    raw
       .split(/[\s,\-]+/)
       .filter(Boolean)
       .map((t) => {
@@ -365,6 +369,22 @@ export function parseChordDescription(input: string): ParsedChordRequest {
         if (!nm) return t;
         return nm[1].toUpperCase() + (nm[2] ?? "") + (nm[3] ?? "");
       });
+
+  // Prefix form first ("notes in lh Eb Gb Bb") — strip matched spans so the
+  // suffix-form regex below doesn't re-consume the same notes.
+  NOTES_GROUP_PREFIX_RE.lastIndex = 0;
+  let prefixStripped = input;
+  for (const m of input.matchAll(NOTES_GROUP_PREFIX_RE)) {
+    const tokens = normalizeTokens(m[2]);
+    if (tokens.length === 0) continue;
+    const { hand, clef } = parseHandOrClef(m[1]);
+    groups.push({ notes: tokens, hand, clef });
+    prefixStripped = prefixStripped.replace(m[0], " ");
+  }
+
+  NOTES_GROUP_RE.lastIndex = 0; // global regex carries state
+  for (const m of prefixStripped.matchAll(NOTES_GROUP_RE)) {
+    const tokens = normalizeTokens(m[1]);
     if (tokens.length === 0) continue;
     const { hand, clef } = parseHandOrClef(m[2]);
     groups.push({ notes: tokens, hand, clef });
@@ -462,6 +482,7 @@ export function parseChordDescription(input: string): ParsedChordRequest {
     .replace(SCALE_EXPLICIT_RE, "")
     .replace(/\bscale\b/gi, "")
     .replace(HEADING_RE, "")
+    .replace(NOTES_GROUP_PREFIX_RE, "")
     .replace(NOTES_GROUP_RE, "")
     .replace(THEME_RE, "")
     .replace(/\btheme\b/gi, "")
