@@ -132,27 +132,63 @@ const NAMES_AND_DEGREES_RE = /\bwith\s+note\s+names?\s+and\s+degrees?(?:\s+(?:in
 // "with heading" / "with a heading" / "show heading"
 const HEADING_RE = /\b(?:with\s+)?(?:a\s+)?(?:show\s+)?heading\b/i;
 
-// "with notes C E G" / "notes E4 G4 C5" with optional trailing
-// "in <hand>" or "in (the) <bass|treble> clef" suffix.
-// Each note token: letter A–G, optional # or b accidental, optional single digit octave.
-// Word boundary (\b) prevents matching into words like "compact" (starts with "c").
-// Global flag enables matchAll for paired groups ("... in bass clef and ... in treble clef").
-const NOTES_GROUP_RE =
-  /(?:with\s+|and\s+)?notes\s+([A-Ga-g][#b]?\d?\b(?:[\s,\-]+[A-Ga-g][#b]?\d?\b)*)(?:\s+in\s+(?:the\s+)?(left\s+hand|right\s+hand|bottom\s+hand|top\s+hand|l\.?h\.?|r\.?h\.?|lh|rh|bass\s+clef|treble\s+clef))?/gi;
+// All recognized hand/clef phrases — long forms before shorthand to ensure
+// the longest alternative is matched first under JS regex alternation.
+const HAND_CLEF_PATTERN =
+  "left\\s+hand|right\\s+hand|bottom\\s+hand|top\\s+hand|bass\\s+clef|treble\\s+clef|l\\.?h\\.?|r\\.?h\\.?|lh|rh|left|right|bottom|top|bass|treble";
 
-// Prefix form: "notes in lh Eb Gb Bb" / "notes in the right hand D F A"
-// Group 1: hand/clef phrase. Group 2: note list.
-const NOTES_GROUP_PREFIX_RE =
-  /(?:with\s+|and\s+)?notes\s+in\s+(?:the\s+)?(left\s+hand|right\s+hand|bottom\s+hand|top\s+hand|l\.?h\.?|r\.?h\.?|lh|rh|bass\s+clef|treble\s+clef)\s+([A-Ga-g][#b]?\d?\b(?:[\s,\-]+[A-Ga-g][#b]?\d?\b)*)/gi;
+// 2+ note tokens separated by spaces/commas/dashes; "and" allowed between tokens.
+// Single-letter notes (A-G) plus optional accidental (#/b) and optional single-digit octave.
+const NOTE_LIST_PATTERN =
+  "[A-Ga-g][#b]?\\d?(?:[\\s,\\-]+(?:and\\s+)?[A-Ga-g][#b]?\\d?)+";
+
+// "with notes C E G" / "notes E4 G4 C5" — optional trailing "in <hand|clef>".
+const NOTES_GROUP_RE = new RegExp(
+  `(?:with\\s+|and\\s+)?notes\\s+([A-Ga-g][#b]?\\d?\\b(?:[\\s,\\-]+[A-Ga-g][#b]?\\d?\\b)*)(?:\\s+in\\s+(?:the\\s+)?(${HAND_CLEF_PATTERN}))?`,
+  "gi",
+);
+
+// "notes in lh Eb Gb Bb" / "notes in the right hand D F A" — prefix form.
+const NOTES_GROUP_PREFIX_RE = new RegExp(
+  `(?:with\\s+|and\\s+)?notes\\s+in\\s+(?:the\\s+)?(${HAND_CLEF_PATTERN})\\s+([A-Ga-g][#b]?\\d?\\b(?:[\\s,\\-]+[A-Ga-g][#b]?\\d?\\b)*)`,
+  "gi",
+);
+
+// "lh Eb Gb Bb" / "lh: Eb Gb Bb" / "left Eb Gb Bb" / "bass clef C E G"
+// Hand keyword first, no "notes" word. Optional colon between hand and notes.
+const HAND_PREFIX_BARE_RE = new RegExp(
+  `\\b(${HAND_CLEF_PATTERN})\\s*(?::\\s*|\\s+)(${NOTE_LIST_PATTERN})`,
+  "gi",
+);
+
+// "Eb Gb Bb in lh" / "Eb Gb Bb lh" / "(Eb Gb Bb) lh" — notes first, hand after.
+// "in" is optional. Surrounding parens optional. Requires 2+ notes to avoid
+// swallowing chord symbols like "G7 in lh".
+const NOTES_BARE_HAND_RE = new RegExp(
+  `\\(?\\b(${NOTE_LIST_PATTERN})\\b\\)?\\s*(?:in\\s+(?:the\\s+)?)?(${HAND_CLEF_PATTERN})\\b`,
+  "gi",
+);
+
+// "Eb Gb Bb // Db Eb F Gb" — polychord-style "top over bottom" (rh then lh).
+const POLYCHORD_SLASH_RE = new RegExp(
+  `(${NOTE_LIST_PATTERN})\\s*\\/\\/\\s*(${NOTE_LIST_PATTERN})`,
+  "gi",
+);
+
+// "Eb Gb Bb; Db Eb F Gb" — semicolon separator; reading order (lh then rh).
+const SEMI_SEP_RE = new RegExp(
+  `(${NOTE_LIST_PATTERN})\\s*;\\s*(${NOTE_LIST_PATTERN})`,
+  "gi",
+);
 
 /** Normalize a captured hand/clef phrase to (hand, clef) tuple. */
 function parseHandOrClef(raw: string | undefined): { hand?: "lh" | "rh"; clef?: "bass" | "treble" } {
   if (!raw) return {};
-  const h = raw.toLowerCase().replace(/[\s.]/g, "");
-  if (h === "bassclef") return { clef: "bass", hand: "lh" };
-  if (h === "trebleclef") return { clef: "treble", hand: "rh" };
-  if (h === "lefthand" || h === "bottomhand" || h === "lh") return { hand: "lh" };
-  if (h === "righthand" || h === "tophand" || h === "rh") return { hand: "rh" };
+  const h = raw.toLowerCase().replace(/[\s.:]/g, "");
+  if (h === "bassclef" || h === "bass") return { clef: "bass", hand: "lh" };
+  if (h === "trebleclef" || h === "treble") return { clef: "treble", hand: "rh" };
+  if (h === "lefthand" || h === "bottomhand" || h === "lh" || h === "left" || h === "bottom") return { hand: "lh" };
+  if (h === "righthand" || h === "tophand" || h === "rh" || h === "right" || h === "top") return { hand: "rh" };
   return {};
 }
 
@@ -370,24 +406,82 @@ export function parseChordDescription(input: string): ParsedChordRequest {
         return nm[1].toUpperCase() + (nm[2] ?? "") + (nm[3] ?? "");
       });
 
-  // Prefix form first ("notes in lh Eb Gb Bb") — strip matched spans so the
-  // suffix-form regex below doesn't re-consume the same notes.
+  // Note-group extraction runs in priority order. Each pass strips its matches
+  // from `residual` so later (looser) passes can't re-consume the same notes.
+  let residual = input;
+  const stripFromResidual = (match: string) => {
+    residual = residual.replace(match, " ");
+  };
+  const pushGroup = (tokens: string[], hand?: "lh" | "rh", clef?: "bass" | "treble") => {
+    const g: NotesGroup = { notes: tokens };
+    if (hand) g.hand = hand;
+    if (clef) g.clef = clef;
+    groups.push(g);
+  };
+
+  // 1. "notes in <hand> <notes>" (prefix with explicit "notes" keyword)
   NOTES_GROUP_PREFIX_RE.lastIndex = 0;
-  let prefixStripped = input;
-  for (const m of input.matchAll(NOTES_GROUP_PREFIX_RE)) {
+  for (const m of [...residual.matchAll(NOTES_GROUP_PREFIX_RE)]) {
     const tokens = normalizeTokens(m[2]);
     if (tokens.length === 0) continue;
     const { hand, clef } = parseHandOrClef(m[1]);
-    groups.push({ notes: tokens, hand, clef });
-    prefixStripped = prefixStripped.replace(m[0], " ");
+    pushGroup(tokens, hand, clef);
+    stripFromResidual(m[0]);
   }
 
-  NOTES_GROUP_RE.lastIndex = 0; // global regex carries state
-  for (const m of prefixStripped.matchAll(NOTES_GROUP_RE)) {
+  // 2. "notes <notes> [in <hand>]" (suffix with explicit "notes" keyword)
+  NOTES_GROUP_RE.lastIndex = 0;
+  for (const m of [...residual.matchAll(NOTES_GROUP_RE)]) {
     const tokens = normalizeTokens(m[1]);
     if (tokens.length === 0) continue;
     const { hand, clef } = parseHandOrClef(m[2]);
-    groups.push({ notes: tokens, hand, clef });
+    pushGroup(tokens, hand, clef);
+    stripFromResidual(m[0]);
+  }
+
+  // 3. "lh Eb Gb Bb" / "lh: Eb Gb Bb" / "left Eb Gb Bb" / "bass clef C E G"
+  //    Hand keyword first, no "notes" word required.
+  HAND_PREFIX_BARE_RE.lastIndex = 0;
+  for (const m of [...residual.matchAll(HAND_PREFIX_BARE_RE)]) {
+    const tokens = normalizeTokens(m[2].replace(/\band\b/gi, " "));
+    if (tokens.length < 2) continue;
+    const { hand, clef } = parseHandOrClef(m[1]);
+    if (!hand && !clef) continue;
+    pushGroup(tokens, hand, clef);
+    stripFromResidual(m[0]);
+  }
+
+  // 4. "Eb Gb Bb in lh" / "Eb Gb Bb lh" / "(Eb Gb Bb) lh" — bare notes + hand.
+  NOTES_BARE_HAND_RE.lastIndex = 0;
+  for (const m of [...residual.matchAll(NOTES_BARE_HAND_RE)]) {
+    const tokens = normalizeTokens(m[1].replace(/\band\b/gi, " "));
+    if (tokens.length < 2) continue;
+    const { hand, clef } = parseHandOrClef(m[2]);
+    if (!hand && !clef) continue;
+    pushGroup(tokens, hand, clef);
+    stripFromResidual(m[0]);
+  }
+
+  // 5. "Eb Gb Bb // Db Eb F Gb" — polychord-style "top over bottom" (rh, lh).
+  POLYCHORD_SLASH_RE.lastIndex = 0;
+  for (const m of [...residual.matchAll(POLYCHORD_SLASH_RE)]) {
+    const top = normalizeTokens(m[1].replace(/\band\b/gi, " "));
+    const bottom = normalizeTokens(m[2].replace(/\band\b/gi, " "));
+    if (top.length < 2 || bottom.length < 2) continue;
+    pushGroup(top, "rh");
+    pushGroup(bottom, "lh");
+    stripFromResidual(m[0]);
+  }
+
+  // 6. "Eb Gb Bb; Db Eb F Gb" — semicolon separator; reading order (lh, rh).
+  SEMI_SEP_RE.lastIndex = 0;
+  for (const m of [...residual.matchAll(SEMI_SEP_RE)]) {
+    const first = normalizeTokens(m[1].replace(/\band\b/gi, " "));
+    const second = normalizeTokens(m[2].replace(/\band\b/gi, " "));
+    if (first.length < 2 || second.length < 2) continue;
+    pushGroup(first, "lh");
+    pushGroup(second, "rh");
+    stripFromResidual(m[0]);
   }
   if (groups.length > 0) {
     result.notesGroups = groups;
@@ -484,6 +578,10 @@ export function parseChordDescription(input: string): ParsedChordRequest {
     .replace(HEADING_RE, "")
     .replace(NOTES_GROUP_PREFIX_RE, "")
     .replace(NOTES_GROUP_RE, "")
+    .replace(HAND_PREFIX_BARE_RE, "")
+    .replace(NOTES_BARE_HAND_RE, "")
+    .replace(POLYCHORD_SLASH_RE, "")
+    .replace(SEMI_SEP_RE, "")
     .replace(THEME_RE, "")
     .replace(/\btheme\b/gi, "")
     .replace(/\bcolou?rs?\b/gi, "")

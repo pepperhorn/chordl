@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.3.3 — 2026-05-21
+
+### Added
+
+- **Parser: many more ways to define two-hand note strings.** `parseChordDescription` now accepts:
+  - Hand-prefix without "notes": `lh: Eb Gb Bb rh: Db Eb F Gb` (colon optional)
+  - Long-form hand words: `left ... right ...`, `bottom ... top ...`, `bass ... treble ...`
+  - Polychord `//` separator (top over bottom = rh over lh): `Eb Gb Bb // Db Eb F Gb`
+  - Semicolon separator (reading order = lh then rh): `Eb Gb Bb; Db Eb F Gb`
+  - Parens + hand suffix: `(Eb Gb Bb) lh (Db Eb F Gb) rh`
+  - Bare suffix without "in": `Eb Gb Bb lh, Db Eb F Gb rh`
+
+### Fixed
+
+- **chord-resolver tests** updated to reflect the resolver's actual (and intentional) flat-spelling behavior — `Cm` first inversion is `[Eb, G, C]` and `Bbmaj7` resolves to `[Bb, D, F, A]`. Forcing flats→sharps would mangle display, so the tests were wrong, not the code.
+
 ## 0.3.2 — 2026-05-21
 
 ### Added
