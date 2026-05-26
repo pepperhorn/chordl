@@ -387,6 +387,9 @@ function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExportStatu
 
   // Board state — items, clipboard, mutators, storage. Default localStorage.
   const board = useChordBoard();
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [editPulseKey, setEditPulseKey] = useState(0);
+  const [inputPulsing, setInputPulsing] = useState(false);
 
   // Serialize form annotation state to NL modifiers appended to the chord string.
   const detailsModifiers = useMemo(() => {
@@ -431,6 +434,11 @@ function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExportStatu
     setShowDegrees(false);
     setFingeringMode("none");
     setOctaveShift(0);
+    setEditingItemId(item.id);
+    setEditPulseKey((k) => k + 1);
+    setInputPulsing(false);
+    requestAnimationFrame(() => setInputPulsing(true));
+    window.setTimeout(() => setInputPulsing(false), 1150);
   };
 
   let progressionResult = null;
@@ -464,6 +472,7 @@ function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExportStatu
           value={input}
           onChange={(e) => { setInput(e.target.value); setError(null); }}
           placeholder='Tell me what chord(s) you&apos;d like to visualize..'
+          className={inputPulsing ? "chordl-input--edit-pulse" : undefined}
           style={{
             width: "100%",
             padding: "1rem 1.25rem",
@@ -723,6 +732,8 @@ function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExportStatu
           </button>
           <ChordBoard
             items={board.items}
+            meta={board.meta}
+            onMetaChange={board.setMeta}
             clipboard={board.clipboard}
             onEdit={handleEditBoardItem}
             onCopy={board.copyItem}
@@ -733,6 +744,8 @@ function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExportStatu
             onReorder={board.reorder}
             uiTheme={uiTheme}
             scale={0.5}
+            editingId={editingItemId}
+            editPulseKey={editPulseKey}
           />
         </div>
       )}
