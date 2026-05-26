@@ -742,6 +742,11 @@ function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExportStatu
             onPaste={board.pasteItem}
             onClearClipboard={board.clearClipboard}
             onReorder={board.reorder}
+            onDuplicate={board.duplicateItem}
+            selectedId={board.selectedId}
+            onSelect={board.selectItem}
+            onClearSelection={board.clearSelection}
+            onImport={board.replaceState}
             uiTheme={uiTheme}
             scale={0.5}
             editingId={editingItemId}
