@@ -4,12 +4,14 @@ import { PianoChord } from "@pepperhorn/chordl-react";
 import type { UIThemeMode } from "@pepperhorn/chordl-react";
 import type { BoardItem, BoardMeta, BoardState, StorageAdapter } from "./types";
 import { localStorageAdapter } from "./storage";
+import { exportBoardJson, importBoardJson } from "./io";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 
 const DRAG_GLOW = "rgba(56, 189, 248, 0.55)";
 const DRAG_GLOW_SOFT = "rgba(56, 189, 248, 0.35)";
 const EDIT_BORDER = "rgba(56, 189, 248, 0.7)";
+const SELECT_BORDER = "rgba(56, 189, 248, 0.85)";
 
 const BOARD_STYLES = `
 @keyframes chordl-board-edit-pulse {
@@ -20,9 +22,17 @@ const BOARD_STYLES = `
 .chordl-board-card { transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease; }
 .chordl-board-card--dragging { box-shadow: 0 0 0 2px ${DRAG_GLOW_SOFT}, 0 0 24px 4px ${DRAG_GLOW} !important; }
 .chordl-board-card--editing { border-color: ${EDIT_BORDER} !important; box-shadow: 0 0 0 1px ${DRAG_GLOW_SOFT}, 0 0 14px 2px ${DRAG_GLOW_SOFT}; }
+.chordl-board-card--selected { border-color: ${SELECT_BORDER} !important; box-shadow: 0 0 0 2px ${DRAG_GLOW_SOFT}; }
 .chordl-board-card--pulse { animation: chordl-board-edit-pulse 1.1s ease-out; }
-.chordl-board-handle { color: rgba(0,0,0,0.35); transition: color 0.15s ease, transform 0.15s ease; }
+.chordl-board-handle { color: rgba(0,0,0,0.35); transition: color 0.15s ease, transform 0.15s ease, opacity 0.15s ease; opacity: 0; }
 .chordl-board-handle:hover { color: rgba(56, 189, 248, 0.85); transform: scale(1.08); }
+.chordl-board-actions { transition: opacity 0.15s ease; opacity: 0; }
+.chordl-board-card:hover .chordl-board-handle,
+.chordl-board-card:hover .chordl-board-actions,
+.chordl-board-card[data-selected="true"] .chordl-board-handle,
+.chordl-board-card[data-selected="true"] .chordl-board-actions { opacity: 1; }
+.chordl-board-title { margin: 0; font-size: 1.75rem; font-weight: 600; color: #111; font-family: Poppins, system-ui, sans-serif; line-height: 1.2; }
+.chordl-board-subtitle { margin: 4px 0 0 0; font-size: 1.05rem; font-weight: 400; color: #555; font-family: Poppins, system-ui, sans-serif; }
 `;
 
 function HandIcon(props: SVGProps<SVGSVGElement>) {
@@ -42,7 +52,7 @@ export function newId(): string {
 }
 
 /**
- * Stateful hook that owns the board items list + storage I/O + clipboard.
+ * Stateful hook that owns the board items list + storage I/O + clipboard + selection.
  * Returned mutators are stable across renders.
  *
  * Pair with `<ChordBoard items={items} {...handlers} />` to render.
@@ -60,6 +70,7 @@ export function useChordBoard(opts?: {
   const [items, setItems] = useState<BoardItem[]>(() => initialItems ?? []);
   const [meta, setMetaState] = useState<BoardMeta>(() => initialMeta ?? {});
   const [clipboard, setClipboard] = useState<BoardItem | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const hydratedRef = useRef(false);
 
   // Hydrate from storage once on mount.
@@ -102,6 +113,7 @@ export function useChordBoard(opts?: {
 
   const removeItem = useCallback((id: string) => {
     setItems((prev) => prev.filter((it) => it.id !== id));
+    setSelectedId((sel) => (sel === id ? null : sel));
   }, []);
 
   const copyItem = useCallback((id: string) => {
@@ -118,12 +130,24 @@ export function useChordBoard(opts?: {
       if (it) setClipboard({ ...it });
       return prev.filter((x) => x.id !== id);
     });
+    setSelectedId((sel) => (sel === id ? null : sel));
   }, []);
 
   const pasteItem = useCallback(() => {
     setClipboard((cb) => {
       if (cb) setItems((prev) => [...prev, { ...cb, id: newId() }]);
       return cb;
+    });
+  }, []);
+
+  const duplicateItem = useCallback((id: string) => {
+    setItems((prev) => {
+      const idx = prev.findIndex((x) => x.id === id);
+      if (idx < 0) return prev;
+      const clone: BoardItem = { ...prev[idx], id: newId() };
+      const next = [...prev];
+      next.splice(idx + 1, 0, clone);
+      return next;
     });
   }, []);
 
@@ -140,15 +164,27 @@ export function useChordBoard(opts?: {
     });
   }, []);
 
-  const clear = useCallback(() => setItems([]), []);
+  const selectItem = useCallback((id: string | null) => setSelectedId(id), []);
+  const clearSelection = useCallback(() => setSelectedId(null), []);
+
+  const replaceState = useCallback((state: BoardState) => {
+    setItems(state.items ?? []);
+    setMetaState(state.meta ?? {});
+    setSelectedId(null);
+  }, []);
+
+  const clear = useCallback(() => { setItems([]); setSelectedId(null); }, []);
   const clearClipboard = useCallback(() => setClipboard(null), []);
 
   return {
-    items, meta, clipboard,
+    items, meta, clipboard, selectedId,
     setMeta,
     addItem, updateItem, removeItem,
     copyItem, cutItem, pasteItem, clearClipboard,
+    duplicateItem,
     reorder, clear,
+    selectItem, clearSelection,
+    replaceState,
   };
 }
 
@@ -164,9 +200,16 @@ export interface ChordBoardProps {
   onCopy?: (id: string) => void;
   onCut?: (id: string) => void;
   onDelete?: (id: string) => void;
+  onDuplicate?: (id: string) => void;
   onPaste?: () => void;
   onClearClipboard?: () => void;
   onReorder?: (fromId: string, toId: string) => void;
+  /** Currently selected card — gets a sticky ring and visible chrome. */
+  selectedId?: string | null;
+  onSelect?: (id: string) => void;
+  onClearSelection?: () => void;
+  /** Called with the parsed BoardState when a user imports JSON. */
+  onImport?: (state: BoardState) => void;
   uiTheme?: UIThemeMode;
   /** Render scale forwarded to each card's PianoChord. */
   scale?: number;
@@ -187,9 +230,14 @@ export function ChordBoard({
   onCopy,
   onCut,
   onDelete,
+  onDuplicate,
   onPaste,
   onClearClipboard,
   onReorder,
+  selectedId,
+  onSelect,
+  onClearSelection,
+  onImport,
   uiTheme,
   scale = 0.6,
   editingId,
@@ -202,6 +250,8 @@ export function ChordBoard({
   const [exporting, setExporting] = useState<"png" | "pdf" | null>(null);
   const lastPulseRef = useRef<number | undefined>(undefined);
   const exportRef = useRef<HTMLDivElement | null>(null);
+  const dragArmedRef = useRef(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const safeMeta: BoardMeta = meta ?? {};
   const patchMeta = (patch: Partial<BoardMeta>) => onMetaChange?.(patch);
@@ -214,6 +264,8 @@ export function ChordBoard({
   const captureBoard = async (): Promise<HTMLCanvasElement | null> => {
     const node = exportRef.current;
     if (!node) return null;
+    // Wait one frame so the exporting=true render commits before capture.
+    await new Promise<void>((r) => requestAnimationFrame(() => r()));
     return await html2canvas(node, {
       backgroundColor: "#ffffff",
       scale: 2,
@@ -262,6 +314,35 @@ export function ChordBoard({
     }
   };
 
+  const handleExportJson = async () => {
+    const text = await exportBoardJson({ items, meta: safeMeta });
+    const blob = new Blob([text], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${slugFilename()}.json`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
+  const handleImportClick = () => fileInputRef.current?.click();
+
+  const handleImportFile: React.ChangeEventHandler<HTMLInputElement> = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const state = importBoardJson(text);
+      if (items.length > 0 && !window.confirm(`Replace current board with ${state.items.length} chord(s) from ${file.name}?`)) {
+        return;
+      }
+      onImport?.(state);
+    } catch (err) {
+      window.alert(`Could not import board: ${(err as Error).message}`);
+    }
+  };
+
   useEffect(() => {
     if (editPulseKey === undefined) return;
     if (editPulseKey === lastPulseRef.current) return;
@@ -271,6 +352,8 @@ export function ChordBoard({
     const t = setTimeout(() => setPulseId(null), 1100);
     return () => clearTimeout(t);
   }, [editPulseKey, editingId]);
+
+  const isExporting = exporting !== null;
 
   const cardStyle: CSSProperties = {
     position: "relative",
@@ -282,7 +365,7 @@ export function ChordBoard({
     display: "flex",
     flexDirection: "column",
     gap: 6,
-    cursor: "grab",
+    cursor: "default",
     userSelect: "none",
   };
 
@@ -381,23 +464,36 @@ export function ChordBoard({
           <button type="button" style={actionBtnStyle} onClick={handleDownloadPdf} disabled={!!exporting} title="Download as PDF">
             {exporting === "pdf" ? "…" : "PDF"}
           </button>
+          <button type="button" style={actionBtnStyle} onClick={handleExportJson} disabled={!!exporting} title="Export board as JSON">
+            JSON
+          </button>
+          <button type="button" style={actionBtnStyle} onClick={handleImportClick} disabled={!!exporting} title="Import board from JSON">
+            Import
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/json,.json"
+            style={{ display: "none" }}
+            onChange={handleImportFile}
+          />
         </div>
       </div>
 
       {/* Exportable region: title + grid + footer */}
-      <div ref={exportRef} style={{ background: "#fff", padding: 16, borderRadius: 12 }}>
+      <div
+        ref={exportRef}
+        style={{ background: "#fff", padding: 16, borderRadius: 12 }}
+        onClick={(e) => {
+          // Clicks that don't land inside a card clear the selection.
+          if ((e.target as HTMLElement).closest("[data-board-id]")) return;
+          onClearSelection?.();
+        }}
+      >
         {(safeMeta.title || safeMeta.subtitle) && (
           <div style={{ textAlign: "center", marginBottom: 16 }}>
-            {safeMeta.title && (
-              <div style={{ fontSize: "1.5rem", fontWeight: 600, color: "#111", fontFamily: "Poppins, system-ui, sans-serif", lineHeight: 1.2 }}>
-                {safeMeta.title}
-              </div>
-            )}
-            {safeMeta.subtitle && (
-              <div style={{ fontSize: "1rem", fontWeight: 400, color: "#555", fontFamily: "Poppins, system-ui, sans-serif", marginTop: 4 }}>
-                {safeMeta.subtitle}
-              </div>
-            )}
+            {safeMeta.title && <h1 className="chordl-board-title">{safeMeta.title}</h1>}
+            {safeMeta.subtitle && <h3 className="chordl-board-subtitle">{safeMeta.subtitle}</h3>}
           </div>
         )}
 
@@ -415,50 +511,63 @@ export function ChordBoard({
         {items.map((item) => {
           const isDragging = dragId === item.id;
           const isEditing = editingId === item.id;
+          const isSelected = selectedId === item.id;
           const isPulsing = pulseId === item.id;
           const cardClass = [
             "chordl-board-card",
             isDragging && "chordl-board-card--dragging",
             isEditing && "chordl-board-card--editing",
+            isSelected && "chordl-board-card--selected",
             isPulsing && "chordl-board-card--pulse",
           ].filter(Boolean).join(" ");
           return (
             <div
               key={item.id}
               data-board-id={item.id}
+              data-selected={isSelected ? "true" : "false"}
               className={cardClass}
               style={{ ...cardStyle, opacity: isDragging ? 0.7 : 1 }}
-              draggable
+              draggable={dragArmedRef.current}
+              onClick={() => onSelect?.(item.id)}
               onDragStart={(e) => {
+                if (!dragArmedRef.current) {
+                  e.preventDefault();
+                  return;
+                }
                 setDragId(item.id);
                 e.dataTransfer.effectAllowed = "move";
                 e.dataTransfer.setData("text/plain", item.id);
               }}
-              onDragEnd={() => setDragId(null)}
+              onDragEnd={() => { setDragId(null); dragArmedRef.current = false; }}
               onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }}
               onDrop={(e) => {
                 e.preventDefault();
                 const fromId = e.dataTransfer.getData("text/plain");
                 if (fromId && onReorder) onReorder(fromId, item.id);
                 setDragId(null);
+                dragArmedRef.current = false;
               }}
             >
-              <div
-                className="chordl-board-handle"
-                title="Drag to reorder"
-                aria-label="Drag handle"
-                style={{
-                  position: "absolute",
-                  top: 8,
-                  left: 10,
-                  display: "flex",
-                  alignItems: "center",
-                  cursor: "grab",
-                  zIndex: 1,
-                }}
-              >
-                <HandIcon />
-              </div>
+              {!isExporting && (
+                <div
+                  className="chordl-board-handle"
+                  title="Drag to reorder"
+                  aria-label="Drag handle"
+                  onMouseDown={() => { dragArmedRef.current = true; }}
+                  onMouseUp={() => { dragArmedRef.current = false; }}
+                  style={{
+                    position: "absolute",
+                    top: 8,
+                    left: 10,
+                    display: "flex",
+                    alignItems: "center",
+                    cursor: "grab",
+                    zIndex: 1,
+                  }}
+                >
+                  <HandIcon />
+                </div>
+              )}
               <PianoChord
                 chord={item.nl}
                 title={item.title}
@@ -468,19 +577,26 @@ export function ChordBoard({
                 uiTheme={uiTheme}
                 showPlayback={false}
               />
-              <div style={{
-                display: "flex",
-                gap: 4,
-                justifyContent: "flex-end",
-                marginTop: 2,
-                borderTop: "1px solid var(--btn-border, #eee)",
-                paddingTop: 6,
-              }}>
-                <button style={iconBtnStyle} onClick={() => onEdit?.(item)} title="Edit">edit</button>
-                <button style={iconBtnStyle} onClick={() => onCopy?.(item.id)} title="Copy">copy</button>
-                <button style={iconBtnStyle} onClick={() => onCut?.(item.id)} title="Cut">cut</button>
-                <button style={iconBtnStyle} onClick={() => onDelete?.(item.id)} title="Delete">delete</button>
-              </div>
+              {!isExporting && (
+                <div
+                  className="chordl-board-actions"
+                  style={{
+                    display: "flex",
+                    gap: 4,
+                    justifyContent: "flex-end",
+                    marginTop: 2,
+                    borderTop: "1px solid var(--btn-border, #eee)",
+                    paddingTop: 6,
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button style={iconBtnStyle} onClick={() => onEdit?.(item)} title="Edit">edit</button>
+                  <button style={iconBtnStyle} onClick={() => onCopy?.(item.id)} title="Copy">copy</button>
+                  <button style={iconBtnStyle} onClick={() => onCut?.(item.id)} title="Cut">cut</button>
+                  <button style={iconBtnStyle} onClick={() => onDuplicate?.(item.id)} title="Repeat (duplicate)">repeat</button>
+                  <button style={iconBtnStyle} onClick={() => onDelete?.(item.id)} title="Delete">delete</button>
+                </div>
+              )}
             </div>
           );
         })}
