@@ -408,6 +408,15 @@
         opacity: 0;
         transform: translateY(-8px);
       }
+
+      @keyframes chordl-input-edit-pulse {
+        0%   { box-shadow: var(--input-floating-shadow); border-color: var(--input-floating-border); }
+        35%  { box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.35), 0 0 28px 6px rgba(56, 189, 248, 0.55); border-color: rgba(56, 189, 248, 0.6); }
+        100% { box-shadow: var(--input-floating-shadow); border-color: var(--input-floating-border); }
+      }
+      .chordl-input--edit-pulse {
+        animation: chordl-input-edit-pulse 1.1s ease-out;
+      }
     </style>
   </head>
   <body>
