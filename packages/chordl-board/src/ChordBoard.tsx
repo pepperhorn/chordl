@@ -24,24 +24,26 @@ const BOARD_STYLES = `
 .chordl-board-card--editing { border-color: ${EDIT_BORDER} !important; box-shadow: 0 0 0 1px ${DRAG_GLOW_SOFT}, 0 0 14px 2px ${DRAG_GLOW_SOFT}; }
 .chordl-board-card--selected { border-color: ${SELECT_BORDER} !important; box-shadow: 0 0 0 2px ${DRAG_GLOW_SOFT}; }
 .chordl-board-card--pulse { animation: chordl-board-edit-pulse 1.1s ease-out; }
-.chordl-board-handle { color: rgba(0,0,0,0.35); transition: color 0.15s ease, transform 0.15s ease, opacity 0.15s ease; opacity: 0; }
-.chordl-board-handle:hover { color: rgba(56, 189, 248, 0.85); transform: scale(1.08); }
+.chordl-board-handle { color: rgba(0,0,0,0.4); transition: color 0.15s ease, transform 0.15s ease; cursor: grab; }
+.chordl-board-handle:hover { color: rgba(56, 189, 248, 0.95); transform: scale(1.15); }
+.chordl-board-handle:active { cursor: grabbing; }
 .chordl-board-actions { transition: opacity 0.15s ease; opacity: 0; }
-.chordl-board-card:hover .chordl-board-handle,
 .chordl-board-card:hover .chordl-board-actions,
-.chordl-board-card[data-selected="true"] .chordl-board-handle,
 .chordl-board-card[data-selected="true"] .chordl-board-actions { opacity: 1; }
 .chordl-board-title { margin: 0; font-size: 1.75rem; font-weight: 600; color: #111; font-family: Poppins, system-ui, sans-serif; line-height: 1.2; }
 .chordl-board-subtitle { margin: 4px 0 0 0; font-size: 1.05rem; font-weight: 400; color: #555; font-family: Poppins, system-ui, sans-serif; }
 `;
 
-function HandIcon(props: SVGProps<SVGSVGElement>) {
+function DragHandleIcon(props: SVGProps<SVGSVGElement>) {
+  // 3-row x 2-col dot grid — the universal drag-to-reorder affordance.
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}>
-      <path d="M18 11V6a2 2 0 1 0-4 0v5" />
-      <path d="M14 10V4a2 2 0 1 0-4 0v6" />
-      <path d="M10 10.5V6a2 2 0 1 0-4 0v8" />
-      <path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15" />
+    <svg width="14" height="20" viewBox="0 0 8 14" fill="currentColor" aria-hidden="true" {...props}>
+      <circle cx="2" cy="2"  r="1.2" />
+      <circle cx="6" cy="2"  r="1.2" />
+      <circle cx="2" cy="7"  r="1.2" />
+      <circle cx="6" cy="7"  r="1.2" />
+      <circle cx="2" cy="12" r="1.2" />
+      <circle cx="6" cy="12" r="1.2" />
     </svg>
   );
 }
@@ -250,7 +252,9 @@ export function ChordBoard({
   const [exporting, setExporting] = useState<"png" | "pdf" | null>(null);
   const lastPulseRef = useRef<number | undefined>(undefined);
   const exportRef = useRef<HTMLDivElement | null>(null);
-  const dragArmedRef = useRef(false);
+  // Drag is armed when the user mousedowns on a card's handle. State (not ref)
+  // so React re-renders with `draggable={true}` and the HTML5 drag actually fires.
+  const [armedDragId, setArmedDragId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const safeMeta: BoardMeta = meta ?? {};
@@ -527,10 +531,10 @@ export function ChordBoard({
               data-selected={isSelected ? "true" : "false"}
               className={cardClass}
               style={{ ...cardStyle, opacity: isDragging ? 0.7 : 1 }}
-              draggable={dragArmedRef.current}
+              draggable={armedDragId === item.id}
               onClick={() => onSelect?.(item.id)}
               onDragStart={(e) => {
-                if (!dragArmedRef.current) {
+                if (armedDragId !== item.id) {
                   e.preventDefault();
                   return;
                 }
@@ -538,14 +542,14 @@ export function ChordBoard({
                 e.dataTransfer.effectAllowed = "move";
                 e.dataTransfer.setData("text/plain", item.id);
               }}
-              onDragEnd={() => { setDragId(null); dragArmedRef.current = false; }}
+              onDragEnd={() => { setDragId(null); setArmedDragId(null); }}
               onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }}
               onDrop={(e) => {
                 e.preventDefault();
                 const fromId = e.dataTransfer.getData("text/plain");
                 if (fromId && onReorder) onReorder(fromId, item.id);
                 setDragId(null);
-                dragArmedRef.current = false;
+                setArmedDragId(null);
               }}
             >
               {!isExporting && (
@@ -553,19 +557,22 @@ export function ChordBoard({
                   className="chordl-board-handle"
                   title="Drag to reorder"
                   aria-label="Drag handle"
-                  onMouseDown={() => { dragArmedRef.current = true; }}
-                  onMouseUp={() => { dragArmedRef.current = false; }}
+                  onMouseDown={() => setArmedDragId(item.id)}
+                  onMouseUp={() => {
+                    // Only clear if a drag never actually started (e.g. plain click).
+                    // onDragEnd handles the post-drag cleanup.
+                    if (dragId === null) setArmedDragId(null);
+                  }}
                   style={{
                     position: "absolute",
                     top: 8,
-                    left: 10,
+                    left: 8,
                     display: "flex",
                     alignItems: "center",
-                    cursor: "grab",
                     zIndex: 1,
                   }}
                 >
-                  <HandIcon />
+                  <DragHandleIcon />
                 </div>
               )}
               <PianoChord

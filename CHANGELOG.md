@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.3.5 — 2026-05-26
+
+### Fixed
+
+- **Parser: single-note hand assignments.** Inputs like `Bb in lh, D F Bb in rh`, `lh: Bb rh: D F Bb`, and `left Bb right D F Bb` now parse correctly with both hand groups intact. Previously the single-note hand group was dropped and the orphaned note was misread as the chord name (worst case: `left Bb right D F Bb` resolved chordName `E`). Chord symbols like `G7 in lh` / `Bb7 in lh` still parse as chord symbols, not notes.
+- **Board: editing a card now updates the board live.** While a card is in edit mode, changes to the input, title, subtitle, footer, and annotation toggles propagate back to the card on the board as you type.
+- **Board: drag-and-drop sorting now actually sorts.** The card's `draggable` flag was tied to a ref, so React never re-rendered with `draggable={true}` and HTML5 drag never fired. Swapped to state.
+
+### Changed
+
+- **Board drag handle** is now the conventional 3×2 dot grid icon, always visible to advertise drag-to-reorder. Still hidden in PNG/PDF exports.
+
 ## 0.3.4 — 2026-05-26
 
 ### Added

@@ -218,6 +218,39 @@ describe("parseChordDescription", () => {
     expect(result.notesGroups).toBeUndefined();
   });
 
+  it("parses single-note hand assignments — 'bb in lh, d f bb in rh'", () => {
+    const result = parseChordDescription("bb in lh, d f bb in rh");
+    expect(result.notesGroups).toEqual([
+      { notes: ["D", "F", "Bb"], hand: "rh" },
+      { notes: ["Bb"], hand: "lh" },
+    ]);
+    expect(result.chordName).toBe("");
+  });
+
+  it("parses 'lh: Bb rh: D F Bb' (hand-prefix single + multi)", () => {
+    const result = parseChordDescription("lh: Bb rh: D F Bb");
+    expect(result.notesGroups).toEqual([
+      { notes: ["D", "F", "Bb"], hand: "rh" },
+      { notes: ["Bb"], hand: "lh" },
+    ]);
+    expect(result.chordName).toBe("");
+  });
+
+  it("parses 'left Bb right D F Bb' (long-form hands, mixed)", () => {
+    const result = parseChordDescription("left Bb right D F Bb");
+    expect(result.notesGroups).toEqual([
+      { notes: ["D", "F", "Bb"], hand: "rh" },
+      { notes: ["Bb"], hand: "lh" },
+    ]);
+    expect(result.chordName).toBe("");
+  });
+
+  it("still treats 'Bb7 in lh' as a chord symbol, not a single note", () => {
+    const result = parseChordDescription("Bb7 in lh");
+    expect(result.chordName).toBe("Bb7");
+    expect(result.notesGroups).toBeUndefined();
+  });
+
   it("parses prefix form with bass clef 'notes in bass clef C E G'", () => {
     const result = parseChordDescription("notes in bass clef C E G");
     expect(result.notesGroups).toEqual([

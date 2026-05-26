@@ -169,6 +169,25 @@ const NOTES_BARE_HAND_RE = new RegExp(
   "gi",
 );
 
+// Single bare note + hand variants. Restricted to [A-G][#b]? with no octave
+// digit and no chord-quality suffix — that way "G7 in lh" / "Bb7 in lh" stay
+// chord symbols (no \b between letter and digit), but "Bb in lh" works.
+const SINGLE_NOTE_PATTERN = "[A-Ga-g][#b]?";
+
+// "lh Bb" / "lh: Bb" / "left Bb" / "bass clef C" — hand keyword + single note.
+// Lookahead requires the note to be followed by whitespace, comma, semicolon,
+// or end-of-string so "lh G7" doesn't absorb G as a note.
+const HAND_PREFIX_SINGLE_RE = new RegExp(
+  `\\b(${HAND_CLEF_PATTERN})\\s*(?::\\s*|\\s+)(${SINGLE_NOTE_PATTERN})(?=[\\s,;]|$)`,
+  "gi",
+);
+
+// "Bb in lh" / "Bb lh" / "(Bb) lh" — single bare note + hand.
+const NOTE_BARE_HAND_SINGLE_RE = new RegExp(
+  `\\(?\\b(${SINGLE_NOTE_PATTERN})\\b\\)?\\s*(?:in\\s+(?:the\\s+)?)?(${HAND_CLEF_PATTERN})\\b`,
+  "gi",
+);
+
 // "Eb Gb Bb // Db Eb F Gb" — polychord-style "top over bottom" (rh then lh).
 const POLYCHORD_SLASH_RE = new RegExp(
   `(${NOTE_LIST_PATTERN})\\s*\\/\\/\\s*(${NOTE_LIST_PATTERN})`,
@@ -462,6 +481,30 @@ export function parseChordDescription(input: string): ParsedChordRequest {
     stripFromResidual(m[0]);
   }
 
+  // 4b. "lh Bb" / "lh: Bb" / "left Bb" — single bare note after hand keyword.
+  // Runs AFTER the multi-note passes so a 3-note group is preferred where
+  // both could match. Anything left here is a genuine single-note assignment.
+  HAND_PREFIX_SINGLE_RE.lastIndex = 0;
+  for (const m of [...residual.matchAll(HAND_PREFIX_SINGLE_RE)]) {
+    const tokens = normalizeTokens(m[2]);
+    if (tokens.length === 0) continue;
+    const { hand, clef } = parseHandOrClef(m[1]);
+    if (!hand && !clef) continue;
+    pushGroup(tokens, hand, clef);
+    stripFromResidual(m[0]);
+  }
+
+  // 4c. "Bb in lh" / "Bb lh" / "(Bb) lh" — single bare note before hand keyword.
+  NOTE_BARE_HAND_SINGLE_RE.lastIndex = 0;
+  for (const m of [...residual.matchAll(NOTE_BARE_HAND_SINGLE_RE)]) {
+    const tokens = normalizeTokens(m[1]);
+    if (tokens.length === 0) continue;
+    const { hand, clef } = parseHandOrClef(m[2]);
+    if (!hand && !clef) continue;
+    pushGroup(tokens, hand, clef);
+    stripFromResidual(m[0]);
+  }
+
   // 5. "Eb Gb Bb // Db Eb F Gb" — polychord-style "top over bottom" (rh, lh).
   POLYCHORD_SLASH_RE.lastIndex = 0;
   for (const m of [...residual.matchAll(POLYCHORD_SLASH_RE)]) {
@@ -579,6 +622,8 @@ export function parseChordDescription(input: string): ParsedChordRequest {
     .replace(NOTES_GROUP_RE, "")
     .replace(HAND_PREFIX_BARE_RE, "")
     .replace(NOTES_BARE_HAND_RE, "")
+    .replace(HAND_PREFIX_SINGLE_RE, "")
+    .replace(NOTE_BARE_HAND_SINGLE_RE, "")
     .replace(POLYCHORD_SLASH_RE, "")
     .replace(SEMI_SEP_RE, "")
     .replace(THEME_RE, "")
