@@ -124,10 +124,10 @@ const DIRECTION_RE = /\b(ascending|descending)\b/i;
 // "in N octaves" / "N octaves" — works for both scales and arpeggios
 const OCTAVES_RE = /\b(?:in\s+)?(\d+)\s+octaves?\b/i;
 
-// "with degrees" / "with degrees in xl" / "with note names and degrees in lg"
-const DEGREE_DISPLAY_RE = /\bwith\s+(?:note\s+names?\s+and\s+)?degrees?(?:\s+(?:in\s+)?(base|lg|xl|2xl))?\b/i;
-const DEGREE_ONLY_RE = /\bwith\s+degrees?(?:\s+(?:in\s+)?(base|lg|xl|2xl))?\b/i;
-const NAMES_AND_DEGREES_RE = /\bwith\s+note\s+names?\s+and\s+degrees?(?:\s+(?:in\s+)?(base|lg|xl|2xl))?\b/i;
+// "degrees" anywhere — combined with note names if present, standalone otherwise.
+// The literal word "degree(s)" isn't used by any other parser rule
+// (bass-degree / starting-degree use "5th", "9th", etc.), so a broad match is safe.
+const DEGREES_KEYWORD_RE = /\bdegrees?(?:\s+(?:in\s+)?(base|lg|xl|2xl))?\b/i;
 
 // "with heading" / "with a heading" / "show heading"
 const HEADING_RE = /\b(?:with\s+)?(?:a\s+)?(?:show\s+)?heading\b/i;
@@ -493,18 +493,18 @@ export function parseChordDescription(input: string): ParsedChordRequest {
     result.colorTheme = THEME_MAP[themeMatch[1].toLowerCase()] ?? themeMatch[1].toLowerCase();
   }
 
-  // Extract degree display mode (before scale detection, since it applies to both)
-  const namesDegMatch = input.match(NAMES_AND_DEGREES_RE);
-  const degOnlyMatch = input.match(DEGREE_ONLY_RE);
-  if (namesDegMatch) {
-    result.showNoteNames = true;
-    result.noteNameMode = "pitch-class+degree";
-    const sz = toTextSize(namesDegMatch[1]);
-    if (sz) result.noteNameSize = sz;
-  } else if (degOnlyMatch) {
-    result.showNoteNames = true;
-    result.noteNameMode = "degree";
-    const sz = toTextSize(degOnlyMatch[1]);
+  // Degrees keyword is independent — combines with note names if already detected,
+  // otherwise stands alone as degree-only mode. Skipped if MIDI names are active
+  // since "midi+degree" isn't a supported display mode.
+  const degMatch = input.match(DEGREES_KEYWORD_RE);
+  if (degMatch && result.noteNameMode !== "midi") {
+    if (result.showNoteNames) {
+      result.noteNameMode = "pitch-class+degree";
+    } else {
+      result.showNoteNames = true;
+      result.noteNameMode = "degree";
+    }
+    const sz = toTextSize(degMatch[1]);
     if (sz) result.noteNameSize = sz;
   }
 
@@ -568,8 +568,7 @@ export function parseChordDescription(input: string): ParsedChordRequest {
     .replace(OVER_BASS_NOTE_RE, "")
     .replace(STARTING_DEGREE_RE, "")
     .replace(STARTING_NOTE_RE, "")
-    .replace(NAMES_AND_DEGREES_RE, "")
-    .replace(DEGREE_DISPLAY_RE, "")
+    .replace(DEGREES_KEYWORD_RE, "")
     .replace(DIRECTION_RE, "")
     .replace(OCTAVES_RE, "")
     .replace(SCALE_UNAMBIGUOUS_RE, "")

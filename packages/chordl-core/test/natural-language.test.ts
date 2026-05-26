@@ -359,4 +359,32 @@ describe("parseChordDescription", () => {
       { notes: ["Db", "Eb", "F", "Gb"], hand: "rh" },
     ]);
   });
+
+  // Stacking note names + degrees + fingering — flexible phrasing
+  it("stacks names+degrees+fingering: 'with note names and degrees and fingering'", () => {
+    const r = parseChordDescription("Cmaj7 with note names and degrees and fingering");
+    expect(r.showNoteNames).toBe(true);
+    expect(r.noteNameMode).toBe("pitch-class+degree");
+    expect(r.autoFingering).toBe(true);
+  });
+
+  it("stacks names+degrees+fingering: 'with note names with degrees with fingering'", () => {
+    const r = parseChordDescription("Cmaj7 with note names with degrees with fingering");
+    expect(r.showNoteNames).toBe(true);
+    expect(r.noteNameMode).toBe("pitch-class+degree");
+    expect(r.autoFingering).toBe(true);
+  });
+
+  it("stacks names+degrees+fingering: 'note names, degrees, fingering' (commas, no 'with')", () => {
+    const r = parseChordDescription("Cmaj7 note names, degrees, fingering");
+    expect(r.showNoteNames).toBe(true);
+    expect(r.noteNameMode).toBe("pitch-class+degree");
+    expect(r.autoFingering).toBe(true);
+  });
+
+  it("'show degrees' (no 'with') → degree-only mode", () => {
+    const r = parseChordDescription("Cmaj7 show degrees");
+    expect(r.showNoteNames).toBe(true);
+    expect(r.noteNameMode).toBe("degree");
+  });
 });
