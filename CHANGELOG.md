@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.3.4 — 2026-05-26
+
+### Added
+
+- **Board: JSON export / import.** Round-trip a board through a `chordl.board/v1` JSON file — items, meta, and an optional sha256 `cacheKey` (computed the same way as `ph-chordl`) for future ph-apps lookup. Toolbar gets **JSON** and **Import** buttons next to PNG/PDF.
+- **Board: card selection.** Click a card to select it; click the background to clear. Action chrome (edit, copy, cut, **repeat**, delete) fades in on hover and stays sticky while a card is selected. Selected cards get a blue ring.
+- **Board: repeat (duplicate) action.** Clones the selected card and inserts it right after the source.
+- **Board: scoped drag handle.** Drag is now armed by `mousedown` on the hand icon — the rest of the card body no longer steals drags from text/clicks.
+
+### Changed
+
+- **Board exports.** PNG/PDF capture now hides the drag handle and the action button row, so exports show only chords + their annotations (no edit/delete UI).
+- **Board title / subtitle.** Now render as semantic `<h1>` / `<h3>`, centered.
+
 ## 0.3.3 — 2026-05-21
 
 ### Added
