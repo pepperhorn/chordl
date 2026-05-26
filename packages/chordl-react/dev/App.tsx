@@ -441,6 +441,24 @@ function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExportStatu
     window.setTimeout(() => setInputPulsing(false), 1150);
   };
 
+  // While editing a board item, mirror live form changes back to the item so
+  // the card on the board updates as the user types/toggles annotations.
+  useEffect(() => {
+    if (!editingItemId) return;
+    const withOctave = octaveShift === 0
+      ? input
+      : `${input} chord ${octaveShift > 0 ? "up" : "down"} ${Math.abs(octaveShift)} octave${Math.abs(octaveShift) > 1 ? "s" : ""}`;
+    board.updateItem(editingItemId, {
+      nl: withOctave + detailsModifiers,
+      title: title || undefined,
+      subheading: subheading || undefined,
+      footerText: footerText || undefined,
+    });
+    // board.updateItem is stable (useCallback); board itself is a new object
+    // each render — depending on it would loop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editingItemId, input, octaveShift, detailsModifiers, title, subheading, footerText]);
+
   let progressionResult = null;
   if (isProg) {
     try {
