@@ -330,9 +330,31 @@ consumers can build galleries and indexes without importing chords-db."
 - Consumes: `INSTRUMENTS`, `dbPositionToChord`, `positionToMidi`
 - Produces: `PowerChordOptions` gains `instrument?: "guitar" | "bass4" | "bass5"` (default `"guitar"`)
 
-**Why this works:** bass strings are all perfect fourths — `bass4` `openMidi` is `[28, 33, 38, 43]`, consecutive differences 5, 5, 5. The existing rule (root on one string, fifth two frets up on the next, octave two frets up on the one after) depends only on adjacent strings being a fourth apart, so it transfers to bass unchanged. Guitar's G–B pair is a major third, which is why the existing `stringSet` is limited to `"E"` and `"A"` — bass has no such irregularity, but `bass4` has only 4 strings so an octave-inclusive shape from the A string needs care.
+**Why this works:** bass strings are all perfect fourths — `bass4` `openMidi` is `[28, 33, 38, 43]`, consecutive differences 5, 5, 5. The shape's rule (root on one string, fifth two frets up on the next, octave two frets up on the one after) depends *only* on each adjacent pair it uses being a fourth apart.
 
-**Bounds to respect:** `bass4` has 4 strings, `bass5` has 5. A three-note shape rooted at index `i` writes indices `i`, `i+1`, `i+2`, so on `bass4` the root may not be above index 1. Return `null` rather than writing out of range.
+**Validity has two conditions, not one.** Do not enumerate valid string sets per instrument as a hand-maintained list — derive them from `openMidi`. A shape rooted at string index `i` is valid when both hold:
+
+1. **It fits.** It occupies `i` and `i+1`, plus `i+2` when `includeOctave` is true (the default). So `i + (includeOctave ? 2 : 1) <= strings - 1`.
+2. **Every adjacent pair it uses is a perfect fourth** — `openMidi[i+1] - openMidi[i] === 5`, and likewise for `i+1`/`i+2` when the octave is included.
+
+Condition 2 is not hypothetical, and it is why the existing guitar type is limited to `"E"` and `"A"`. On guitar (`[40,45,50,55,59,64]`), a D-rooted three-note shape reaches D→G→B: D→G is a fourth so the fifth is correct, but **G→B is a major third**, so the third note lands 11 semitones above the root — a major seventh, not an octave. It fits geometrically and is musically wrong. Condition 1 alone would have admitted it.
+
+The two conditions interact with `includeOctave`. Working them through:
+
+| Instrument | Strings | Valid roots, 3-note (default) | Valid roots, 2-note (`includeOctave: false`) |
+|---|---|---|---|
+| `guitar` | E A D G B E | E, A | E, A, D, **B** |
+| `bass4` | E A D G | E, A | E, A, D |
+| `bass5` | B E A D G | B, E, A | B, E, A, D |
+
+Two entries in that table are easy to get wrong by hand and are worth checking against `openMidi` rather than trusting:
+
+- **Guitar's B is a valid two-note root.** B→E (indices 4→5) is a perfect fourth, so a B-rooted dyad is fine even though B cannot host a three-note shape. An earlier draft of this plan omitted it.
+- **The highest string is never a root** — `bass4`'s G, `bass5`'s G, guitar's high E — because the fifth has no string to sit on.
+
+Assert this table in a test that derives it from `INSTRUMENTS[...].openMidi` rather than restating the letters, so it cannot drift from the data.
+
+**Deriving this rather than listing it** keeps the guitar restriction honest (it falls out of the G–B third instead of being asserted), extends to any future instrument for free, and means the `bass4`-versus-`bass5` difference needs no special case. Return `null` when either condition fails.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -367,15 +389,44 @@ describe("powerChordPosition — bass", () => {
     }
   });
 
-  it("returns null when the shape would run off the end of the fretboard", () => {
-    // bass4 has 4 strings: a three-note shape cannot start on the D string.
+  it("rejects a D root on bass4 for the default three-note shape, but allows it without the octave", () => {
+    // D is index 2; the octave would need index 4, which bass4 does not have.
     expect(powerChordPosition(0, { stringSet: "D", instrument: "bass4" } as never)).toBeNull();
+
+    const dyad = powerChordPosition(0, {
+      stringSet: "D", instrument: "bass4", includeOctave: false,
+    } as never)!;
+    expect(dyad).not.toBeNull();
+    expect(positionToMidi(dyad, bass4)).toEqual([50 - 12, 57 - 12]); // D2 A2 -> 38, 45
+  });
+
+  it("never allows a root on the highest string, which has nowhere to put the fifth", () => {
+    expect(powerChordPosition(7, { stringSet: "G", instrument: "bass4" } as never)).toBeNull();
+    expect(
+      powerChordPosition(7, { stringSet: "G", instrument: "bass4", includeOctave: false } as never),
+    ).toBeNull();
   });
 
   it("supports the low B string on bass5", () => {
     const bass5 = INSTRUMENTS.bass5.openMidi;
     const pos = powerChordPosition(11, { stringSet: "B", instrument: "bass5" } as never)!;
     expect(positionToMidi(pos, bass5)[0] % 12).toBe(11);
+  });
+});
+
+describe("powerChordPosition — the perfect-fourth condition", () => {
+  it("rejects a guitar D root for three notes, because G to B is a major third", () => {
+    // D->G is a fourth so the fifth is right, but G->B is 4 semitones, which
+    // would put the third note a major seventh above the root, not an octave.
+    expect(powerChordPosition(2, { stringSet: "D" } as never)).toBeNull();
+  });
+
+  it("allows a guitar D root for two notes, where only the fourth pair is used", () => {
+    const guitar = INSTRUMENTS.guitar.openMidi;
+    const dyad = powerChordPosition(2, { stringSet: "D", includeOctave: false } as never)!;
+    const midi = positionToMidi(dyad, guitar);
+    expect(midi).toHaveLength(2);
+    expect(midi[1] - midi[0]).toBe(7);
   });
 
   it("leaves guitar behaviour unchanged", () => {
@@ -387,7 +438,9 @@ describe("powerChordPosition — bass", () => {
 });
 ```
 
-The `stringSet` values for bass are a design decision you must settle in Step 3 — the test above assumes string sets are named for the string that carries the root (`"E"`, `"A"`, `"D"` on bass4; `"B"`, `"E"`, `"A"`, `"D"` on bass5). If you choose a different scheme, update these assertions to match and say so in your report. The `as never` casts are placeholders for whatever type you land on; remove them once the type covers the value.
+`stringSet` names the string that carries the root. The **type** should admit every string an instrument has a name for — `"E" | "A" | "D" | "G"` on bass4, `"B" | "E" | "A" | "D" | "G"` on bass5, `"E" | "A" | "D" | "G" | "B"` on guitar — and the **function** decides validity at runtime from the two conditions above, returning `null` for the combinations that cannot work. Do not try to encode validity in the type: it depends on `includeOctave`, so the same string set is valid or not depending on another option, which a union type cannot express.
+
+The `as never` casts above are placeholders for whatever type you land on; remove them once the type covers the value. If you settle on a different naming scheme, update these assertions and say so in your report.
 
 - [ ] **Step 2: Run to verify it fails**
 
