@@ -16,6 +16,26 @@ export interface GuitarChordProps {
   style?: CSSProperties;
 }
 
+let keyCounter = 0;
+
+/**
+ * A value-identity for everything that goes into a drawing. `chord` and
+ * `settings` are plain data (svguitar's types carry no functions), and callers
+ * routinely rebuild them every render — GuitarChordPanel destructures the
+ * shape's title off, hosts pass object literals. Keying the draw on object
+ * identity therefore re-drew, and re-raised the loading veil, on every
+ * unrelated parent re-render.
+ */
+function drawKeyOf(input: unknown): string {
+  try {
+    return JSON.stringify(input) ?? "";
+  } catch {
+    // Unserialisable input (a cycle): fall back to redrawing every time rather
+    // than wrongly deciding nothing changed.
+    return `unkeyable:${keyCounter++}`;
+  }
+}
+
 /**
  * Render a single guitar chord diagram (fretboard "frame") with svguitar.
  *
@@ -36,43 +56,69 @@ export function GuitarChord({
   const { tokens: ui } = useUITheme();
   const color = ui.text ?? "#0a0a0a";
 
+  // Redraw when the drawing would differ, not when a prop object is merely a
+  // new instance of the same data. GuitarChord is public API, so this has to
+  // hold for any caller — memoising at the call site is not enough.
+  const drawKey = drawKeyOf({ chord, frets, settings, color });
+  // The effect runs off `drawKey` alone, so it reads the live props from here
+  // rather than closing over stale ones.
+  const drawRef = useRef({ chord, frets, settings, color });
+  drawRef.current = { chord, frets, settings, color };
+
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
     let firstFrame = 0;
     let secondFrame = 0;
+    const { chord: nextChord, frets: nextFrets, settings: nextSettings, color: nextColor } =
+      drawRef.current;
     setPainted(false);
     el.innerHTML = "";
+    let drawn = false;
     try {
       new SVGuitarChord(el)
         .configure({
-          frets,
+          frets: nextFrets,
           fontFamily: "'DM Sans', system-ui, sans-serif",
-          color,
+          color: nextColor,
           backgroundColor: "transparent",
           strokeWidth: 2,
-          fretLabelColor: color,
-          tuningsColor: color,
-          ...settings,
+          fretLabelColor: nextColor,
+          tuningsColor: nextColor,
+          ...nextSettings,
         })
-        .chord(chord)
+        .chord(nextChord)
         .draw();
-      // svguitar mutates the DOM synchronously, but the browser still needs a
-      // paint. Keep the loading veil through that paint and remove it on the
-      // following frame rather than exposing a blank frame container.
-      firstFrame = requestAnimationFrame(() => {
-        secondFrame = requestAnimationFrame(() => setPainted(true));
-      });
+      drawn = true;
     } catch {
       el.innerHTML = "";
       setPainted(true);
+    }
+    if (drawn) {
+      // svguitar mutates the DOM synchronously, but the browser still needs a
+      // paint. Keep the loading veil through that paint and remove it on the
+      // following frame rather than exposing a blank frame container.
+      //
+      // Scheduled outside the try above on purpose: that catch wipes the
+      // container, so a missing or throwing requestAnimationFrame would erase
+      // a diagram that drew perfectly well. Here the worst case is dropping the
+      // veil immediately.
+      try {
+        firstFrame = requestAnimationFrame(() => {
+          secondFrame = requestAnimationFrame(() => setPainted(true));
+        });
+      } catch {
+        setPainted(true);
+      }
     }
     return () => {
       cancelAnimationFrame(firstFrame);
       cancelAnimationFrame(secondFrame);
       el.innerHTML = "";
     };
-  }, [chord, frets, settings, color]);
+    // Deliberately keyed on the serialized drawing, not on prop identity.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [drawKey]);
 
   return (
     <div
