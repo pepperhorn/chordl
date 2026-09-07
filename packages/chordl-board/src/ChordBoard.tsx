@@ -535,8 +535,11 @@ const BOARD_INLINE_FIELD_CSS = `
   text-align: left;
   transition: border-color 0.2s ease;
 }
-.chordl-board-inline-input:hover { border-bottom-color: var(--btn-border, #ddd); }
+.chordl-board-inline-input:hover:not([readonly]) { border-bottom-color: var(--btn-border, #ddd); }
 .chordl-board-inline-input:focus { border-bottom-color: var(--accent, #38bdf8); }
+/* A host that passes no onMetaChange gets the board text as text: no hover
+   underline inviting an edit, and a caret that says nothing will happen. */
+.chordl-board-inline-input[readonly] { cursor: default; }
 .chordl-board-inline-separator {
   color: var(--text-dim, #999);
   opacity: 0.55;
@@ -586,6 +589,11 @@ export function ChordBoard({
 
   const safeMeta: BoardMeta = meta ?? {};
   const patchMeta = (patch: Partial<BoardMeta>) => onMetaChange?.(patch);
+  // `patchMeta` is a no-op without a handler, so the board text controls would
+  // look editable and silently swallow typing. Present them as read-only
+  // instead — still shown (they are the only place the board's title, subtitle
+  // and footer appear here), just honest about being unwritable.
+  const canEditMeta = Boolean(onMetaChange);
 
   const slugFilename = () => {
     const base = (safeMeta.title || "chord-board").trim();
@@ -986,6 +994,7 @@ export function ChordBoard({
                 <input
                   className="chordl-board-inline-input"
                   value={safeMeta[field.key] ?? ""}
+                  readOnly={!canEditMeta}
                   onChange={(e) => patchMeta({ [field.key]: e.target.value })}
                 />
               </label>
@@ -1022,6 +1031,10 @@ export function ChordBoard({
             <label
               htmlFor={importInputId}
               className="chordl-board-import"
+              // It behaves as a button (click or Enter/Space opens the file
+              // picker), so it has to announce as one — a <label> with no
+              // labelled control in the accessibility tree reads as plain text.
+              role="button"
               aria-disabled={!!exporting}
               tabIndex={exporting ? -1 : 0}
               title="Import board from JSON"
@@ -1045,6 +1058,12 @@ export function ChordBoard({
               type="file"
               accept="application/json,.json"
               disabled={!!exporting}
+              // Clipped rather than display:none (a hidden input cannot be
+              // opened by script in every browser), so it keeps its own tab
+              // stop unless told otherwise — two stops for one Import action,
+              // beside the focusable label above. The label still reaches it by
+              // click and by htmlFor.
+              tabIndex={-1}
               style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clipPath: "inset(50%)" }}
               onChange={handleImportFile}
             />
@@ -1068,6 +1087,9 @@ export function ChordBoard({
                     type="button"
                     className="chordl-board-columns-option"
                     aria-pressed={active}
+                    // Same reason as the read-only text fields above: without a
+                    // handler this button cannot change anything.
+                    disabled={!canEditMeta}
                     onClick={() => patchMeta({ columns: c === "auto" ? "auto" : c })}
                     style={{
                       padding: "4px 10px",

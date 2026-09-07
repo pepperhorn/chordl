@@ -208,3 +208,49 @@ describe("New board — when the download fails", () => {
     expect(document.querySelector(".chordl-board-new-overlay")).toBeTruthy();
   });
 });
+
+describe("Board text fields without an onMetaChange handler", () => {
+  it("presents them read-only rather than pretending to accept typing", () => {
+    const { container } = render(<ChordBoard items={items} meta={meta} onNew={() => {}} />);
+    const inputs = container.querySelectorAll<HTMLInputElement>(".chordl-board-inline-input");
+    expect(inputs).toHaveLength(3);
+    for (const input of inputs) expect(input.readOnly).toBe(true);
+    // The value is still shown — this is the only place the board's own text
+    // appears in the controls.
+    expect(inputs[0].value).toBe("Practice sheet");
+    // Per row is driven by the same no-op patch, so it is disabled too.
+    for (const btn of container.querySelectorAll<HTMLButtonElement>(".chordl-board-columns-option")) {
+      expect(btn.disabled).toBe(true);
+    }
+  });
+
+  it("is writable again as soon as a handler is supplied", () => {
+    const onMetaChange = vi.fn();
+    const { container } = render(
+      <ChordBoard items={items} meta={meta} onNew={() => {}} onMetaChange={onMetaChange} />,
+    );
+    const inputs = container.querySelectorAll<HTMLInputElement>(".chordl-board-inline-input");
+    for (const input of inputs) expect(input.readOnly).toBe(false);
+    fireEvent.change(inputs[0], { target: { value: "Set list" } });
+    expect(onMetaChange).toHaveBeenCalledWith({ title: "Set list" });
+
+    const perRow = container.querySelector<HTMLButtonElement>(".chordl-board-columns-option")!;
+    expect(perRow.disabled).toBe(false);
+  });
+});
+
+describe("Import control", () => {
+  it("is a single tab stop that announces as a button", () => {
+    const { container } = render(<ChordBoard items={items} onNew={() => {}} />);
+    const label = container.querySelector<HTMLLabelElement>("label.chordl-board-import")!;
+    const input = container.querySelector<HTMLInputElement>(".chordl-board-import-input")!;
+
+    expect(label.getAttribute("role")).toBe("button");
+    expect(label.tabIndex).toBe(0);
+    // The input is only visually hidden, so without this it keeps its own tab
+    // stop right beside the label — two stops for one action.
+    expect(input.tabIndex).toBe(-1);
+    // The label still drives it.
+    expect(label.htmlFor).toBe(input.id);
+  });
+});
