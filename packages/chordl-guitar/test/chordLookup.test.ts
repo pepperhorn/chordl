@@ -253,6 +253,51 @@ describe("top-3 string voicings", () => {
       expect(lookupGuitarChord(label, "guitar-top3"), label).not.toBeNull();
     }
   });
+
+  /**
+   * The generated table holds 517 shapes; before this, the label parser could
+   * address only the handful of roots and qualities the twenty hand-authored
+   * presets used. Every entry has to answer to a label a user would type, or the
+   * shapes exist and nothing can show them.
+   */
+  it("answers to a plain chord label for every shape in the table", () => {
+    const asLabel = (p: (typeof GUITAR_TOP3_PRESETS)[number]) => {
+      if (p.suffix === "major") return p.key;
+      if (p.suffix === "minor") return `${p.key}m`;
+      return `${p.key}${p.suffix}`;
+    };
+    const missing = GUITAR_TOP3_PRESETS.filter(
+      (p) => lookupGuitarChord(asLabel(p), "guitar-top3") === null,
+    );
+    expect(missing.map(asLabel)).toEqual([]);
+  });
+
+  it("accepts flat spellings of the roots the table stores as sharps", () => {
+    for (const [typed, stored] of [["Db", "C#"], ["Gb", "F#"]] as const) {
+      const a = lookupGuitarChord(typed, "guitar-top3");
+      const b = lookupGuitarChord(stored, "guitar-top3");
+      expect(a, typed).not.toBeNull();
+      expect(a!.positions).toEqual(b!.positions);
+    }
+  });
+
+  it("accepts sharp spellings of the roots the table stores as flats", () => {
+    for (const [typed, stored] of [["D#", "Eb"], ["G#", "Ab"], ["A#", "Bb"]] as const) {
+      const a = lookupGuitarChord(typed, "guitar-top3");
+      const b = lookupGuitarChord(stored, "guitar-top3");
+      expect(a, typed).not.toBeNull();
+      expect(a!.positions).toEqual(b!.positions);
+    }
+  });
+
+  it("resolves the same suffix spellings the six-string path does", () => {
+    // These all used to miss the preset table even where the shape existed.
+    for (const label of [
+      "C°", "C°7", "Cø", "CM7", "Cmin7", "Csus", "C7sus", "C6/9", "Cm6/9", "C-",
+    ]) {
+      expect(lookupGuitarChord(label, "guitar-top3"), label).not.toBeNull();
+    }
+  });
 });
 
 /**

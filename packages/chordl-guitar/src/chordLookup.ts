@@ -31,9 +31,10 @@ import type {
   InstrumentId,
 } from "./instruments.js";
 import { rootPitchClass } from "./pitch.js";
+import { splitLabel, toDbSuffix } from "./chordNames.js";
 import { powerChordPosition } from "./powerChords.js";
 import type { PowerChordStringSet } from "./powerChords.js";
-import { GUITAR_TOP3_PRESETS } from "./staticPresets.js";
+import { findTop3Preset } from "./staticPresets.js";
 import type { StaticPreset } from "./staticPresets.js";
 
 const GUITAR_DB = guitarDb as unknown as ChordsDb;
@@ -64,33 +65,6 @@ const ROOT_TO_DB_KEYS: Record<string, string[]> = {
   "A#": ["Bb", "Asharp"], Bb: ["Bb", "Asharp"],
   B: ["B"], Cb: ["B"],
 };
-
-// chordl suffix → chords-db suffix. Most match verbatim; only the triads and a
-// couple of aliases need translating.
-function toDbSuffix(suffix: string): string {
-  const s = suffix.trim();
-  if (s === "" || s === "maj" || s === "M") return "major";
-  if (s === "m" || s === "min" || s === "-") return "minor";
-  if (s === "min7") return "m7";
-  if (s === "M7") return "maj7";
-  if (s === "°") return "dim";
-  if (s === "°7") return "dim7";
-  if (s === "ø" || s === "ø7") return "m7b5";
-  // chords-db spells the 6/9 voicings without the slash.
-  if (s === "6/9") return "69";
-  if (s === "m6/9") return "m69";
-  // Bare "sus" (and "7sus") carry no extension number; sus4 is the convention.
-  if (s === "sus") return "sus4";
-  if (s === "7sus") return "7sus4";
-  return s; // m7, maj7, 7, dim7, sus4, 6, 9, 11, 13, m7b5, ... match verbatim
-}
-
-function splitLabel(label: string): { root: string; suffix: string } | null {
-  const m = label.trim().match(/^([A-Ga-g][#b]?)(.*)$/);
-  if (!m) return null;
-  const root = m[1].charAt(0).toUpperCase() + m[1].slice(1);
-  return { root, suffix: m[2] };
-}
 
 function findEntry(db: ChordsDb, label: string): ChordsDbEntry | null {
   const parsed = splitLabel(label);
@@ -132,19 +106,6 @@ function powerChordPositions(label: string): ChordsDbPosition[] {
 }
 
 // ── Top-3-string presets ────────────────────────────────────────────────────
-
-/**
- * The preset table spells qualities in words where chords-db uses symbols, so a
- * chordl label has to be translated before lookup. Only the suffixes the table
- * actually carries are mapped; anything else finds nothing, which is correct —
- * falling back to a six-string shape under a three-string label would be a lie.
- */
-function toPresetSuffix(suffix: string): string {
-  const s = suffix.trim();
-  if (s === "") return "major";
-  if (s === "m" || s === "min") return "minor";
-  return s; // 7, m7, maj7 match the table verbatim
-}
 
 /**
  * Presets are authored as svguitar shapes, but callers expect chords-db-style
@@ -194,13 +155,17 @@ function presetToPosition(preset: StaticPreset, instrument: InstrumentId): Chord
   };
 }
 
+/**
+ * The table resolves both halves of the label itself — root by pitch class, and
+ * suffix through the same `toDbSuffix` the six-string path uses — so there is
+ * nothing to translate here beyond finding where the root stops.
+ *
+ * A miss still returns null. Falling back to a six-string shape under a
+ * three-string label would be a lie.
+ */
 function findPreset(label: string): StaticPreset | null {
   const parsed = splitLabel(label);
-  if (!parsed) return null;
-  const suffix = toPresetSuffix(parsed.suffix);
-  return (
-    GUITAR_TOP3_PRESETS.find((p) => p.key === parsed.root && p.suffix === suffix) ?? null
-  );
+  return parsed ? findTop3Preset(parsed.root, parsed.suffix) : null;
 }
 
 export interface GuitarChordResult {

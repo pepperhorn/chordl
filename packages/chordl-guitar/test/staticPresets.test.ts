@@ -339,6 +339,76 @@ describe("the shapes the design calls out by name", () => {
   }
 });
 
+/**
+ * A table nobody can address is a table nobody has. The generated shapes are
+ * keyed the way chords-db spells roots — `C#` and `F#` but `Eb`, `Ab`, `Bb` —
+ * and the way it spells qualities: `minor`, not `m`; `m7b5`, not `ø`. A user
+ * types neither consistently, so both sides have to resolve.
+ */
+describe("every generated shape is reachable", () => {
+  const ENHARMONIC: Record<string, string> = {
+    "C#": "Db", Eb: "D#", "F#": "Gb", Ab: "G#", Bb: "A#",
+  };
+
+  it("by the key and suffix it is stored under", () => {
+    const missing = GUITAR_TOP3_PRESETS.filter(
+      (p) => lookupTop3Chord(p.key, p.suffix) === null,
+    );
+    expect(missing.map(label)).toEqual([]);
+  });
+
+  it("by the other spelling of an accidental root", () => {
+    const missing = GUITAR_TOP3_PRESETS.flatMap((p) => {
+      const other = ENHARMONIC[p.key];
+      if (!other) return [];
+      return lookupTop3Chord(other, p.suffix) === null ? [`${other}${p.suffix}`] : [];
+    });
+    expect(missing).toEqual([]);
+  });
+
+  it("by the same shape whichever spelling of the root is used", () => {
+    for (const [key, other] of Object.entries(ENHARMONIC)) {
+      expect(lookupTop3Chord(other, "major"), `${other} major`)
+        .toEqual(lookupTop3Chord(key, "major"));
+    }
+  });
+
+  it("by the suffix aliases a user actually types", () => {
+    const ALIASES: Array<[string, string]> = [
+      ["", "major"],
+      ["maj", "major"],
+      ["M", "major"],
+      ["m", "minor"],
+      ["min", "minor"],
+      ["-", "minor"],
+      ["min7", "m7"],
+      ["M7", "maj7"],
+      ["°", "dim"],
+      ["°7", "dim7"],
+      ["ø", "m7b5"],
+      ["ø7", "m7b5"],
+      ["sus", "sus4"],
+      ["7sus", "7sus4"],
+      ["6/9", "69"],
+      ["m6/9", "m69"],
+    ];
+    const missing = ALIASES.flatMap(([typed, stored]) => {
+      const want = lookupTop3Chord("C", stored);
+      if (want === null) return [`C${stored} is not in the table`];
+      const got = lookupTop3Chord("C", typed);
+      return got === null || JSON.stringify(got) !== JSON.stringify(want)
+        ? [`C"${typed}" should resolve to C${stored}`]
+        : [];
+    });
+    expect(missing).toEqual([]);
+  });
+
+  it("but still refuses a suffix that names no chord", () => {
+    expect(lookupTop3Chord("C", "not-a-chord")).toBeNull();
+    expect(lookupTop3Chord("H", "major")).toBeNull();
+  });
+});
+
 describe("lookupTop3Chord", () => {
   it("returns a shape for a known chord", () => {
     expect(lookupTop3Chord("B", "minor")).not.toBeNull();
