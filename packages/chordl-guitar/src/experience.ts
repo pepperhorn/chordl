@@ -39,6 +39,23 @@ export function levelForFacts(facts: PositionFacts): ExperienceLevel {
  * finger count, open strings, distance from the nut. A shape a learner can
  * play without moving out of first position is the dividing line, because
  * finding a hand position is the skill that separates the first two rungs.
+ *
+ * Accepts either of two representations of the same shape, and returns the
+ * same level for both:
+ *
+ *   - absolute frets measured from the nut, with `position` pinned at 1 —
+ *     what the generated table stores (`Top3GeneratedEntry.frets`);
+ *   - window-relative frets paired with the diagram's real `position` —
+ *     what `staticPresets.top3Window()` produces for rendering.
+ *
+ * They agree because the function only ever compares
+ * `position - 1 + max(fretted)` to the nut: sliding a window down by
+ * `position - 1` and adding it back is the same transform run forward and
+ * back, so the recovered highest fret — and therefore the level — is
+ * identical either way. A caller holding a rendered preset (windowed frets
+ * plus its real position) can pass those straight in rather than
+ * reconstructing absolute frets by hand, which is exactly the arithmetic that
+ * has produced off-diagram bugs elsewhere in this codebase.
  */
 export function levelForTop3(frets: number[], position: number): ExperienceLevel {
   const fretted = frets.filter((f) => f > 0);

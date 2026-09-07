@@ -7,6 +7,8 @@ import {
 } from "../src/experience";
 import { positionFacts } from "../src/voicingFacts";
 import { INSTRUMENTS, lookupGuitarChord } from "../src";
+import { TOP3_GENERATED } from "../src/top3Generated";
+import { top3Window } from "../src/staticPresets";
 
 const guitar = INSTRUMENTS.guitar.openMidi;
 
@@ -75,6 +77,21 @@ describe("levelForTop3", () => {
         expect(EXPERIENCE_LADDER).toContain(levelForTop3(f, p));
       }
     }
+  });
+
+  // The doc comment claims both accepted input forms — absolute frets at
+  // position 1, and window-relative frets at the diagram's real position —
+  // yield the same level. Derive both from a real generated row rather than
+  // hand-writing numbers, so the test tracks the data instead of a story
+  // about it.
+  it("agrees between absolute and windowed input for a shape drawn off the nut", () => {
+    const entry = TOP3_GENERATED.find((e) => top3Window(e.frets).position > 1);
+    expect(entry, "no generated shape has a window off the nut").toBeDefined();
+    const window = top3Window(entry!.frets);
+    expect(window.position).toBeGreaterThan(1);
+    expect(levelForTop3(window.frets, window.position)).toBe(
+      levelForTop3(entry!.frets, 1),
+    );
   });
 });
 
