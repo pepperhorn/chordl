@@ -16,8 +16,9 @@ export type {
 export { lookupGuitarChord, hasGuitarChord } from "./chordLookup.js";
 export type { GuitarChordResult } from "./chordLookup.js";
 
-export { GUITAR_TOP3_PRESETS, lookupTop3Chord } from "./staticPresets.js";
+export { GUITAR_TOP3_PRESETS, lookupTop3Chord, TOP3_UNRESOLVED } from "./staticPresets.js";
 export type { StaticPreset } from "./staticPresets.js";
+export type { Top3Source } from "./top3Generated.js";
 
 export { positionToMidi, rootPitchClass } from "./pitch.js";
 

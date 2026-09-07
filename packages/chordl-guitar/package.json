@@ -1,7 +1,7 @@
 {
   "name": "@pepperhorn/chordl-guitar",
   "version": "0.2.0",
-  "description": "Guitar/ukulele chord-shape lookup and svguitar diagram data — chords-db backed, with alternate fret positions",
+  "description": "Guitar/ukulele chord-shape lookup and svguitar diagram data \u2014 chords-db backed, with alternate fret positions",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -22,6 +22,7 @@
   ],
   "scripts": {
     "build:data": "node scripts/build-data.mjs",
+    "build:top3": "node scripts/build-top3.mjs",
     "build": "pnpm run build:data && tsc",
     "lint": "pnpm run build:data && tsc --noEmit",
     "test": "pnpm run build:data && vitest",
