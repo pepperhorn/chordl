@@ -327,15 +327,17 @@ export function GuitarChordPanel({
   // filter couldn't be honoured exactly, rather than silently serving
   // something else. (`droppedShapeClass` can't fire here — the panel never
   // sets a shape class, so `selectForExperience` always sees "any".)
+  //
+  // `selection.widenedFrom`, when present, is always a strictly easier rung
+  // than `selection.level` — cumulative matching guarantees selectForExperience
+  // never widens to the same level it started from (see its "3. widen" step),
+  // so there is no second case here for "nothing at any level matched" the
+  // way there was under the old exclusive matching. That branch used to
+  // report a self-contradictory `level`/`widenedFrom` pair; it was deleted
+  // from `selectForExperience` as dead code, and this string went with it.
   let filterNotice: string | null = null;
-  if (selection.widenedFrom !== undefined && selection.widenedFrom !== selection.level) {
+  if (selection.widenedFrom !== undefined) {
     filterNotice = `No ${selection.widenedFrom} shape for ${label} — showing ${selection.level} instead.`;
-  } else if (selection.widenedFrom !== undefined) {
-    // Nothing at any level matched — selectForExperience's last-resort
-    // fallback, which reports the same level it was asked for rather than a
-    // higher one. Say that plainly instead of "no established shape — showing
-    // established instead", which would be true but nonsensical to read.
-    filterNotice = `No ${selection.level} shape for ${label} — showing every shape instead.`;
   }
 
   return (
