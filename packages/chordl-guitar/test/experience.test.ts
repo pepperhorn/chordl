@@ -21,11 +21,10 @@ describe("levelForFacts", () => {
   });
 
   it("ranks a barre-free shape away from the nut as emerging", () => {
-    const d = lookupGuitarChord("D", "guitar")!;
-    const moved = d.positions.find(
+    const e = lookupGuitarChord("E", "guitar")!;
+    const moved = e.positions.find(
       (p) => p.barres.length === 0 && p.baseFret > 1,
-    );
-    if (!moved) return; // guarded: the corpus need not contain one for D
+    )!;
     expect(levelForFacts(positionFacts(moved, guitar, 2))).toBe("emerging");
   });
 
