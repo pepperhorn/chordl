@@ -88,6 +88,7 @@ export function StaffNotation({
   useEffect(() => {
     let cancelled = false;
     setFailed(false);
+    setStaffSvg(null);
     renderMeiToSvg(mei, { font, scale: verovioScale })
       .then((svg) => { if (!cancelled) setStaffSvg(svg); })
       // Clear the SVG on failure so a later retry of identical MEI still
@@ -135,6 +136,7 @@ export function StaffNotation({
 
   const staffColor = ui.text ?? "#333";
   const controlsX = totalWidth - CONTROLS_WIDTH + 4;
+  const loading = staffSvg === null && !failed;
 
   return (
     <svg
@@ -187,6 +189,26 @@ export function StaffNotation({
         >
           notation unavailable
         </text>
+      ) : loading ? (
+        <g
+          className="bc-render-loading bc-staff__loading"
+          role="status"
+          aria-label="Rendering notation"
+          transform={`translate(${totalWidth / 2 - 14}, ${controlsH + labelH + Math.max(engHeight / 2, 14)})`}
+          fill={ui.textMuted ?? "#888"}
+        >
+          {[0, 1, 2].map((index) => (
+            <circle key={index} cx={index * 14} cy={0} r={3} opacity={0.25}>
+              <animate
+                attributeName="opacity"
+                values="0.25;1;0.25"
+                dur="0.9s"
+                begin={`${index * 0.15}s`}
+                repeatCount="indefinite"
+              />
+            </circle>
+          ))}
+        </g>
       ) : (
         // Verovio's SVG is injected here imperatively (see effect above).
         <g ref={nestRef} className="bc-staff__engraving" transform={`translate(0, ${controlsH + labelH})`} />

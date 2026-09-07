@@ -11,6 +11,7 @@ describe("GuitarChord", () => {
     const host = container.querySelector(".bc-guitar-chord")!;
     expect(host).toBeTruthy();
     expect(host.querySelector("svg")).toBeTruthy();
+    expect(host.querySelector('[aria-label="Rendering chord frame"]')).toBeTruthy();
   });
 
   it("redraws in place instead of appending when the chord changes", () => {

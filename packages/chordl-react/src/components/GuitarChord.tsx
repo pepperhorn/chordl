@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { SVGuitarChord } from "svguitar";
 import type { Chord, ChordSettings } from "svguitar";
@@ -32,12 +32,16 @@ export function GuitarChord({
   style,
 }: GuitarChordProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const [painted, setPainted] = useState(false);
   const { tokens: ui } = useUITheme();
   const color = ui.text ?? "#0a0a0a";
 
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
+    let firstFrame = 0;
+    let secondFrame = 0;
+    setPainted(false);
     el.innerHTML = "";
     try {
       new SVGuitarChord(el)
@@ -53,17 +57,64 @@ export function GuitarChord({
         })
         .chord(chord)
         .draw();
+      // svguitar mutates the DOM synchronously, but the browser still needs a
+      // paint. Keep the loading veil through that paint and remove it on the
+      // following frame rather than exposing a blank frame container.
+      firstFrame = requestAnimationFrame(() => {
+        secondFrame = requestAnimationFrame(() => setPainted(true));
+      });
     } catch {
       el.innerHTML = "";
+      setPainted(true);
     }
-    return () => { el.innerHTML = ""; };
+    return () => {
+      cancelAnimationFrame(firstFrame);
+      cancelAnimationFrame(secondFrame);
+      el.innerHTML = "";
+    };
   }, [chord, frets, settings, color]);
 
   return (
     <div
-      ref={containerRef}
       className={`bc-guitar-chord ${className ?? ""}`.trim()}
-      style={{ width: "100%", maxWidth: 260 * scale, ...style }}
-    />
+      style={{
+        position: "relative",
+        width: "100%",
+        maxWidth: 260 * scale,
+        minHeight: painted ? undefined : 160 * scale,
+        ...style,
+      }}
+    >
+      <style>{`
+        @keyframes bc-render-loading-pulse {
+          0%, 100% { opacity: 0.25; transform: translateY(0); }
+          50% { opacity: 1; transform: translateY(-2px); }
+        }
+      `}</style>
+      <div ref={containerRef} className="bc-guitar-chord__canvas" />
+      {!painted && (
+        <div
+          className="bc-render-loading bc-guitar-chord__loading"
+          role="status"
+          aria-label="Rendering chord frame"
+          style={{
+            position: "absolute", inset: 0,
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+            color: ui.textMuted ?? "#888",
+          }}
+        >
+          {[0, 1, 2].map((index) => (
+            <span
+              key={index}
+              style={{
+                width: 6, height: 6, borderRadius: "50%", background: "currentColor",
+                animation: "bc-render-loading-pulse 0.9s ease-in-out infinite",
+                animationDelay: `${index * 0.15}s`,
+              }}
+            />
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

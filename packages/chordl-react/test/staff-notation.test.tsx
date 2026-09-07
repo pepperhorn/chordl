@@ -26,6 +26,11 @@ describe("StaffNotation (verovio)", () => {
     expect(container.querySelector("svg.bc-staff")).toBeTruthy();
   });
 
+  it("shows a loading animation while notation is rendering", () => {
+    const { container } = render(<StaffNotation notes={["C", "E", "G"]} />);
+    expect(container.querySelector('.bc-staff__loading[aria-label="Rendering notation"]')).toBeTruthy();
+  });
+
   it("builds MEI and injects the engraving", async () => {
     const { container } = render(<StaffNotation notes={["C", "E", "G"]} />);
     await waitFor(() => {
