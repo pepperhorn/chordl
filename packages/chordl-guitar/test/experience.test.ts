@@ -104,23 +104,29 @@ describe("selectForExperience", () => {
   });
 
   it("drops the shape class BEFORE widening the level", () => {
-    const facts = factsFor("C");
-    // Ask for an impossible refinement within a level that does have shapes.
-    const sel = selectForExperience(facts, { level: "beginner", shapeClass: "no-barre" });
-    // "no-barre" is satisfiable here, so nothing should relax.
-    expect(sel.droppedShapeClass).toBe(false);
-    expect(sel.widenedFrom).toBeUndefined();
+    // Bm has no beginner (open) positions, so "open" is unsatisfiable at
+    // every rung above beginner too — it *is* the beginner predicate
+    // (isOpenShape). That makes this the case that tells the two relaxation
+    // orders apart:
+    //   - drop the class first, then widen: beginner+open empty, drop class,
+    //     beginner (no class) still empty, widen to emerging (no class) ->
+    //     emerging's real shapes.
+    //   - widen first while keeping the class: beginner+open empty, widen to
+    //     emerging+open empty, widen to established+open empty -> falls all
+    //     the way through to the "return everything" fallback instead.
+    // Those two outcomes have different index counts, so the count
+    // discriminates the order even though both "succeed".
+    const facts = factsFor("Bm");
+    const emergingCount = facts.filter((f) => levelForFacts(f) === "emerging").length;
+    expect(facts.some((f) => levelForFacts(f) === "beginner")).toBe(false);
+    expect(emergingCount).toBeGreaterThan(0);
+    expect(emergingCount).toBeLessThan(facts.length);
 
-    // A level whose members all carry barres: the refinement must go first,
-    // and the level must NOT widen while shapes remain at this rung.
-    const barreOnly = factsFor("F").filter((f) => f.hasBarre);
-    const sel2 = selectForExperience(barreOnly, {
-      level: "established",
-      shapeClass: "open",
-    });
-    expect(sel2.droppedShapeClass).toBe(true);
-    expect(sel2.level).toBe("established");
-    expect(sel2.widenedFrom).toBeUndefined();
+    const sel = selectForExperience(facts, { level: "beginner", shapeClass: "open" });
+    expect(sel.indices.length).toBe(emergingCount);
+    expect(sel.level).toBe("emerging");
+    expect(sel.widenedFrom).toBe("beginner");
+    expect(sel.droppedShapeClass).toBe(true);
   });
 
   it("never returns empty while any shape exists", () => {
