@@ -164,7 +164,16 @@ export function selectForExperience(
   if (noClass.length > 0) {
     return { indices: noClass, level: query.level, droppedShapeClass: cls !== "any" };
   }
-  // 3. widen the level, one rung at a time, refinement already gone
+  // 3. widen the level, one rung at a time, refinement already gone. This
+  // loop always returns before exhausting the ladder: matching is cumulative
+  // (step 2 above), so `at("established", false)` — the last rung — matches
+  // every index whenever `facts` is non-empty, which the guard at the top of
+  // this function guarantees. A fourth "take everything" fallback after this
+  // loop used to exist for the case where even that failed; it was dead code
+  // that could never run, and it lied about `level` when it did (claiming to
+  // serve `query.level` while actually serving every shape). Deleted rather
+  // than kept honest, because there is nothing truthful left for it to say —
+  // the loop already covers the one case it was for.
   const start = EXPERIENCE_LADDER.indexOf(query.level);
   for (let i = start + 1; i < EXPERIENCE_LADDER.length; i++) {
     const wider = at(EXPERIENCE_LADDER[i], false);
@@ -177,13 +186,10 @@ export function selectForExperience(
       };
     }
   }
-  // 4. everything is easier than the request — take it all rather than nothing.
-  return {
-    indices: facts.map((_, i) => i),
-    level: query.level,
-    droppedShapeClass: cls !== "any",
-    widenedFrom: query.level,
-  };
+  throw new Error(
+    "selectForExperience: unreachable — cumulative matching guarantees the " +
+      "widening loop returns by \"established\" whenever facts is non-empty",
+  );
 }
 
 /**
