@@ -50,3 +50,15 @@ export { powerChordPosition, powerChordShape } from "./powerChords.js";
 export type { PowerChordStringSet, PowerChordOptions } from "./powerChords.js";
 
 export { bassShapeFor, violinShapeFor, violinCoverage } from "./generatedShapes.js";
+
+export {
+  EXPERIENCE_LADDER,
+  levelForFacts,
+  levelForTop3,
+  selectForExperience,
+} from "./experience.js";
+export type {
+  ExperienceLevel,
+  ExperienceQuery,
+  ExperienceSelection,
+} from "./experience.js";

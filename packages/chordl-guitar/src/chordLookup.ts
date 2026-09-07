@@ -36,6 +36,9 @@ import { powerChordPosition } from "./powerChords.js";
 import type { PowerChordStringSet } from "./powerChords.js";
 import { findTop3Preset } from "./staticPresets.js";
 import type { StaticPreset } from "./staticPresets.js";
+import { positionFacts } from "./voicingFacts.js";
+import { levelForFacts } from "./experience.js";
+import type { ExperienceLevel } from "./experience.js";
 
 const GUITAR_DB = guitarDb as unknown as ChordsDb;
 const UKULELE_DB = ukuleleDb as unknown as ChordsDb;
@@ -153,6 +156,8 @@ export interface GuitarChordResult {
   positions: ChordsDbPosition[];
   /** svguitar Chord objects, one per position, ready to render. */
   shapes: Chord[];
+  /** How hard each shape is to play, parallel to `positions`/`shapes`. */
+  levels: ExperienceLevel[];
 }
 
 /**
@@ -165,7 +170,16 @@ export function lookupGuitarChord(
 ): GuitarChordResult | null {
   const strings = INSTRUMENTS[instrument]?.strings;
   if (strings == null) return null;
-  const toResult = (positions: ChordsDbPosition[]): GuitarChordResult | null =>
+  const openMidi = INSTRUMENTS[instrument].openMidi;
+  const rootPc = rootPitchClass(label);
+  // chords-db and generated positions have no stored level: derive it from the
+  // same facts levelForFacts always ranks on.
+  const derivedLevels = (positions: ChordsDbPosition[]): ExperienceLevel[] =>
+    positions.map((pos) => levelForFacts(positionFacts(pos, openMidi, rootPc)));
+  const toResult = (
+    positions: ChordsDbPosition[],
+    levels: ExperienceLevel[] = derivedLevels(positions),
+  ): GuitarChordResult | null =>
     positions.length === 0
       ? null
       : {
@@ -173,13 +187,15 @@ export function lookupGuitarChord(
           instrument,
           positions,
           shapes: positions.map((pos) => dbPositionToChord(pos, strings, label)),
+          levels,
         };
 
   // 1. Hand-authored beats generated: the preset table is the only source of
-  //    three-string voicings, and it does not fall back to chords-db.
+  //    three-string voicings, and it does not fall back to chords-db. Its
+  //    level is precomputed and stored on the preset — see src/experience.ts.
   if (instrument === "guitar-top3") {
     const preset = findPreset(label);
-    return preset ? toResult([presetToPosition(preset)]) : null;
+    return preset ? toResult([presetToPosition(preset)], [preset.level]) : null;
   }
 
   // 2. chords-db, for the instruments that ship a library.

@@ -7,6 +7,9 @@ import {
   INSTRUMENTS,
   GUITAR_TOP3_PRESETS,
   TOP3_UNRESOLVED,
+  positionFacts,
+  levelForFacts,
+  EXPERIENCE_LADDER,
 } from "../src";
 
 describe("lookupGuitarChord", () => {
@@ -334,5 +337,29 @@ describe("power chords sound correct", () => {
         );
       }
     }
+  });
+});
+
+describe("experience level on lookup results", () => {
+  it("returns one level per shape, in the same order", () => {
+    const res = lookupGuitarChord("C", "guitar")!;
+    expect(res.levels).toHaveLength(res.shapes.length);
+    expect(res.levels).toHaveLength(res.positions.length);
+  });
+
+  it("agrees with levelForFacts for every shape", () => {
+    for (const label of ["C", "G", "F", "Bm", "Am7"]) {
+      const res = lookupGuitarChord(label, "guitar")!;
+      res.positions.forEach((p, i) => {
+        const expected = levelForFacts(positionFacts(p, INSTRUMENTS.guitar.openMidi, 0));
+        expect(res.levels[i], `${label}[${i}]`).toBe(expected);
+      });
+    }
+  });
+
+  it("levels a top-3 result from its own ranking", () => {
+    const res = lookupGuitarChord("C", "guitar-top3")!;
+    expect(res.levels).toHaveLength(res.shapes.length);
+    expect(EXPERIENCE_LADDER).toContain(res.levels[0]);
   });
 });
