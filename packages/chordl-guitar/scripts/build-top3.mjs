@@ -240,6 +240,33 @@ function renderable(frets) {
   return highest <= DIAGRAM_FRETS || !frets.includes(0);
 }
 
+/**
+ * How hard a row's shape is to play. This is `levelForTop3` in
+ * src/experience.ts, reimplemented: the script is plain ESM and cannot import
+ * that TypeScript module, so the same three lines exist twice.
+ * test/top3Generated.test.ts pins the two together, exactly as `DIAGRAM_FRETS`
+ * is pinned above — if the rule changes here without changing there (or vice
+ * versa), that test fails.
+ *
+ * The table stores absolute frets and no window position. Passing them
+ * straight through with `position` fixed at 1 still gives `levelForTop3` the
+ * true highest fret: `position - 1 + max(fretted)` recovers the same value
+ * whether `frets` is windowed-and-shifted with its real position, or absolute
+ * with position 1, because only their difference is used. Span, open-string
+ * count and finger count are unaffected by windowing either way, since a
+ * window only ever shifts the fretted (non-open) strings by a constant.
+ */
+function levelForRow(frets) {
+  const position = 1;
+  const fretted = frets.filter((f) => f > 0);
+  const opens = frets.filter((f) => f === 0).length;
+  const span = fretted.length ? Math.max(...fretted) - Math.min(...fretted) : 0;
+  const highest = position - 1 + (fretted.length ? Math.max(...fretted) : 0);
+  if (position > 1 || highest > 4) return "established";
+  if (span <= 1 && (opens > 0 || fretted.length <= 2)) return "beginner";
+  return "emerging";
+}
+
 /** One finger per fret, lowest fret = index finger. Open strings carry no label. */
 function fingersFor(frets) {
   const fretted = frets.filter((f) => f > 0);
@@ -602,6 +629,7 @@ function rowLiteral(row) {
     `fingers: [${c.fingers.map((f) => JSON.stringify(f)).join(", ")}]`,
     `source: ${JSON.stringify(SOURCE_BY_TIER[c.tier])}`,
     `tier: ${c.tier}`,
+    `level: ${JSON.stringify(levelForRow(c.frets))}`,
   ];
   // Tiers 6 and 7 accept ambiguity, any tier can land on a rootless window or on
   // a shape that spells someone else's chord, and a re-used shape is already
@@ -634,6 +662,8 @@ export function renderTop3Source() {
   lines.push("// [G, B, E] — chords-db string order. svguitar numbers those strings 3, 2, 1;");
   lines.push("// staticPresets.ts does that relabelling, and it is the only place it happens.");
   lines.push("");
+  lines.push('import type { ExperienceLevel } from "./experience.js";');
+  lines.push("");
   lines.push("/** Where a shape came from: see the source-precedence tiers in the design. */");
   lines.push('export type Top3Source = "legacy" | "corpus" | "constructed";');
   lines.push("");
@@ -649,6 +679,8 @@ export function renderTop3Source() {
   lines.push("  source: Top3Source;");
   lines.push("  /** Source-precedence tier that produced it, 1-7. */");
   lines.push("  tier: number;");
+  lines.push("  /** How hard the shape is to play. Derived; see src/experience.ts. */");
+  lines.push("  level: ExperienceLevel;");
   lines.push("  /** True when the shape is ambiguous or drops the root: playable, not a faithful spelling. */");
   lines.push("  approximate?: boolean;");
   lines.push("}");

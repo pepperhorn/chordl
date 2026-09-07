@@ -28,3 +28,26 @@ export function levelForFacts(facts: PositionFacts): ExperienceLevel {
   if (!facts.hasBarre) return "emerging";
   return "established";
 }
+
+/**
+ * Rank a three-string shape. `PositionFacts` cannot: it assumes six strings
+ * and real barres, and a top-3 shape has neither.
+ *
+ * The axes are the ones the generator already ranks candidates by — stretch,
+ * finger count, open strings, distance from the nut. A shape a learner can
+ * play without moving out of first position is the dividing line, because
+ * finding a hand position is the skill that separates the first two rungs.
+ */
+export function levelForTop3(frets: number[], position: number): ExperienceLevel {
+  const fretted = frets.filter((f) => f > 0);
+  const opens = frets.filter((f) => f === 0).length;
+  const span = fretted.length ? Math.max(...fretted) - Math.min(...fretted) : 0;
+  const highest = position - 1 + (fretted.length ? Math.max(...fretted) : 0);
+
+  // Away from the nut is established regardless of how few fingers it takes:
+  // the hand has to be placed before it can be shaped.
+  if (position > 1 || highest > 4) return "established";
+  // At the nut: open strings or at most two fingers, with no stretch.
+  if (span <= 1 && (opens > 0 || fretted.length <= 2)) return "beginner";
+  return "emerging";
+}
