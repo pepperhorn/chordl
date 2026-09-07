@@ -9,3 +9,10 @@ site-dist
 
 # generated from chords-db by packages/chordl-guitar/scripts/build-data.mjs
 packages/chordl-guitar/src/generated/
+
+# local scratch and tool output (gstack browse/QA artifacts)
+tmp/
+.gstack/browse-audit.jsonl
+.gstack/browse-dialog.log
+.gstack/claude-available.json
+.gstack/qa-reports/
