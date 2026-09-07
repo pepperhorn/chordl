@@ -228,14 +228,38 @@ export function GuitarChordPanel({
   // (widening past `active`, or excluding it outright) without ever calling
   // `onPositionChange`, so a host that persists the callback's value (a
   // board's "Add to board" payload) could record a shape the screen wasn't
-  // even showing. `active` itself is left untouched — it is still what was
-  // asked for, so widening the level back out re-reveals it rather than
-  // losing it.
+  // even showing. `active` itself is left untouched by this effect — but the
+  // only shipped host (`dev/App.tsx`) is controlled, feeding the reported
+  // index straight back in as `position`, which re-syncs `active` right back
+  // to `displayedIdx`. So in practice widening the level back out does NOT
+  // re-reveal the originally requested shape there; it keeps showing the
+  // widened one, because the round trip already overwrote what "requested"
+  // meant. Only an uncontrolled panel (no `onPositionChange`, or one that
+  // doesn't feed the index back into `position`) preserves the original
+  // `active` the way this comment used to claim for every host.
+  //
+  // Guarded the same way as the identity-notify effect above
+  // (`notifiedIdentity`): a plain `[displayedIdx, active, onPositionChange]`
+  // dependency re-fires on every render for a host passing an inline
+  // callback (a new function identity each render) even when nothing about
+  // the displayed shape changed — that was an infinite render loop, since
+  // calling `onPositionChange` triggers the host to re-render with yet
+  // another new callback identity. The ref instead remembers which
+  // `displayedIdx` has already been reported, so once notified the effect is
+  // a no-op regardless of how many times identity churns; it resets when the
+  // shape converges back onto `active`, so a later, different divergence
+  // still gets reported.
   const displayedIdx = placements?.idx;
+  const notifiedDrift = useRef<number | undefined>(undefined);
   useEffect(() => {
-    if (displayedIdx !== undefined && displayedIdx !== active) {
-      onPositionChange?.(displayedIdx);
+    if (displayedIdx === undefined) return;
+    if (displayedIdx === active) {
+      notifiedDrift.current = undefined;
+      return;
     }
+    if (notifiedDrift.current === displayedIdx) return;
+    notifiedDrift.current = displayedIdx;
+    onPositionChange?.(displayedIdx);
   }, [displayedIdx, active, onPositionChange]);
 
   const notice = (msg: string) => (

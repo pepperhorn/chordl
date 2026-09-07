@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { describe, it, expect, vi } from "vitest";
 import { render, fireEvent, within } from "@testing-library/react";
 import { GuitarChordPanel } from "../src/components/GuitarChordPanel";
@@ -186,6 +187,47 @@ describe("GuitarChordPanel position reporting", () => {
       />,
     );
     expect(onPositionChange).toHaveBeenCalledWith(selection.indices[0]);
+  });
+
+  // CRITICAL from the whole-branch review: the drift effect above lists
+  // `onPositionChange` in its dependency array but never updates `active`.
+  // The ordinary React idiom for a host that doesn't feed the reported index
+  // back into `position` is an inline callback — `onPositionChange={(i) =>
+  // setLog(l => [...l, i])}` — which gets a fresh function identity on every
+  // one of the host's own re-renders. Without a guard, each notification
+  // triggers the host to re-render (a new inline identity), which re-fires
+  // the effect (identity is a dependency) even though nothing about the
+  // displayed shape changed, which notifies again — an infinite loop that
+  // used to run until React's "Maximum update depth exceeded" guard threw.
+  // Bm has no beginner shape at all (see the widen test above), so
+  // level="beginner" moves the displayed shape off `active`=0 on the very
+  // first render, hitting the drift effect immediately.
+  it("settles instead of looping forever when the host's inline onPositionChange never feeds the index back into position", () => {
+    const calls: number[] = [];
+    let renders = 0;
+    function Host() {
+      renders++;
+      // Real React state, not a vi.fn(): the setter is what makes the host
+      // actually re-render on each notification, which is what regrows a
+      // fresh `onPositionChange` identity and is the mechanism of the loop.
+      const [, setTick] = useState(0);
+      return (
+        <GuitarChordPanel
+          chord="Bm"
+          level="beginner"
+          position={0}
+          onPositionChange={(i) => {
+            calls.push(i);
+            setTick((t) => t + 1);
+          }}
+        />
+      );
+    }
+    expect(() => render(<Host />)).not.toThrow();
+    // Bounded: one notification for the one divergence, not one per render
+    // of a loop (the reviewer's repro logged 60 before its guard threw).
+    expect(renders).toBeLessThan(10);
+    expect(calls.length).toBe(1);
   });
 
   it("reports the index when the user picks a placement", () => {
