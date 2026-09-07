@@ -1,4 +1,4 @@
-import { Component, Fragment, useState, useEffect, useRef, useCallback } from "react";
+import { Component, Fragment, useState, useEffect, useRef, useCallback, useId } from "react";
 import type { CSSProperties, ReactNode, SVGProps } from "react";
 import { PianoChord, GuitarChordPanel, CardHeading, CardFooter, resolveUITheme } from "@pepperhorn/chordl-react";
 import type { InstrumentId, UIThemeMode } from "@pepperhorn/chordl-react";
@@ -188,7 +188,6 @@ const BOARD_STYLES = `
 .chordl-board-actions { transition: opacity 0.15s ease; opacity: 0; }
 .chordl-board-card:hover .chordl-board-actions,
 .chordl-board-card[data-selected="true"] .chordl-board-actions { opacity: 1; }
-
 /* ── Capture styling ──────────────────────────────────────────────────────
    A card is styled for two different jobs. Editing chrome — the selection
    ring, the edit ring, the drag glow, the pulse — exists to tell you what
@@ -481,6 +480,73 @@ export interface ChordBoardProps {
   style?: CSSProperties;
 }
 
+/**
+ * The board's own text, in the order it reads on the page. `key` is the
+ * `BoardMeta` field; `label` is both the placeholder and the accessible name,
+ * because the field carries no separate label — that is the point of editing
+ * in place.
+ */
+const BOARD_TEXT_FIELDS = [
+  { key: "title", label: "Board title" },
+  { key: "subtitle", label: "Subtitle" },
+  { key: "footer", label: "Footer text" },
+] as const satisfies readonly { key: keyof BoardMeta; label: string }[];
+
+/**
+ * Hover and focus cannot be written as inline styles, and the underline that
+ * appears on both is what tells a reader these words are editable at all. A
+ * consumer of this package imports no stylesheet from us, so the board ships
+ * the rule with the markup. Scoped to `chordl-board-` class names.
+ */
+const BOARD_INLINE_FIELD_CSS = `
+.chordl-board-inline-fields {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.chordl-board-inline-field {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  min-width: 0;
+  flex: 1 1 0;
+}
+.chordl-board-inline-label {
+  flex: 0 0 auto;
+  color: var(--text-dim, #999);
+  opacity: 0.75;
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+.chordl-board-inline-input {
+  min-width: 0;
+  flex: 1 1 0;
+  padding: 5px 2px;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  outline: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.8rem;
+  /* Left, not centred: the value reads as a continuation of its label. */
+  text-align: left;
+  transition: border-color 0.2s ease;
+}
+.chordl-board-inline-input:hover:not([readonly]) { border-bottom-color: var(--btn-border, #ddd); }
+.chordl-board-inline-input:focus { border-bottom-color: var(--accent, #38bdf8); }
+/* A host that passes no onMetaChange gets the board text as text: no hover
+   underline inviting an edit, and a caret that says nothing will happen. */
+.chordl-board-inline-input[readonly] { cursor: default; }
+.chordl-board-inline-separator {
+  color: var(--text-dim, #999);
+  opacity: 0.55;
+  font-size: 0.75rem;
+}
+`;
+
 export function ChordBoard({
   items,
   clipboard,
@@ -519,9 +585,15 @@ export function ChordBoard({
   // so React re-renders with `draggable={true}` and the HTML5 drag actually fires.
   const [armedDragId, setArmedDragId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const importInputId = useId();
 
   const safeMeta: BoardMeta = meta ?? {};
   const patchMeta = (patch: Partial<BoardMeta>) => onMetaChange?.(patch);
+  // `patchMeta` is a no-op without a handler, so the board text controls would
+  // look editable and silently swallow typing. Present them as read-only
+  // instead — still shown (they are the only place the board's title, subtitle
+  // and footer appear here), just honest about being unwritable.
+  const canEditMeta = Boolean(onMetaChange);
 
   const slugFilename = () => {
     const base = (safeMeta.title || "chord-board").trim();
@@ -779,18 +851,6 @@ export function ChordBoard({
     ? { gridColumn: "1 / -1", height: 0 }
     : { flexBasis: "100%", height: 0 };
 
-  const inputStyle: CSSProperties = {
-    width: "100%",
-    padding: "6px 10px",
-    fontSize: "0.85rem",
-    fontFamily: "inherit",
-    border: "1px solid var(--btn-border, #ddd)",
-    borderRadius: 6,
-    background: "#fff",
-    color: "inherit",
-    outline: "none",
-  };
-
   /**
    * Escape backs out of whatever the board has the user in — a selection, or a
    * card open for editing. The pointer routes are a second click on the card
@@ -908,30 +968,128 @@ export function ChordBoard({
         </div>
       )}
 
-      {/* Settings + download toolbar */}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-        <details style={{ flex: "1 1 auto", minWidth: 240 }}>
-          <summary style={{ cursor: "pointer", fontSize: "0.85rem", color: "var(--text-muted, #666)", padding: "4px 0", userSelect: "none" }}>
-            Board settings
-          </summary>
-          <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "8px 12px", alignItems: "center", marginTop: 8, padding: 12, border: "1px solid var(--btn-border, #eee)", borderRadius: 8, background: "#fff" }}>
-            <label style={{ fontSize: "0.8rem", color: "var(--text-muted, #666)" }}>Title</label>
-            <input style={inputStyle} value={safeMeta.title ?? ""} onChange={(e) => patchMeta({ title: e.target.value })} placeholder="Optional board title" />
+      {/* Board settings stay visible; file/actions live on their own row. */}
+      <div className="chordl-board-controls" style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 12 }}>
+        {/* Board text edits in place, mirroring the chord editor's card fields:
+            the placeholder is the label, so there is no separate one, and the
+            underline appears on hover and focus rather than sitting there as a
+            box. Pseudo-classes cannot be expressed as inline styles, so the
+            board ships the rule itself — this is a library component and a
+            consumer imports no stylesheet of ours. */}
+        <style>{BOARD_INLINE_FIELD_CSS}</style>
+        <section
+          className="chordl-board-settings chordl-board-inline-fields"
+          aria-label="Board text"
+        >
+          {BOARD_TEXT_FIELDS.map((field, index) => (
+            <Fragment key={field.key}>
+              {index > 0 && (
+                <span className="chordl-board-inline-separator" aria-hidden="true">|</span>
+              )}
+              {/* Spelled out rather than left to the placeholder, which
+                  disappears as soon as there is text — a filled-in field then
+                  stopped saying what it was for. */}
+              <label className="chordl-board-inline-field">
+                <span className="chordl-board-inline-label">{field.label}:</span>
+                <input
+                  className="chordl-board-inline-input"
+                  value={safeMeta[field.key] ?? ""}
+                  readOnly={!canEditMeta}
+                  onChange={(e) => patchMeta({ [field.key]: e.target.value })}
+                />
+              </label>
+            </Fragment>
+          ))}
+        </section>
 
-            <label style={{ fontSize: "0.8rem", color: "var(--text-muted, #666)" }}>Subtitle</label>
-            <input style={inputStyle} value={safeMeta.subtitle ?? ""} onChange={(e) => patchMeta({ subtitle: e.target.value })} placeholder="Optional subtitle" />
+        <div className="chordl-board-toolbar" style={{ width: "100%", display: "flex", gap: 12, alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" }}>
+          <div className="chordl-board-toolbar-primary" style={{ display: "flex", gap: 6, alignItems: "center" }}>
+            {onNew && (
+              <button
+                type="button"
+                className="chordl-board-new"
+                style={actionBtnStyle}
+                onClick={() => setConfirmNew(true)}
+                disabled={!!exporting || !hasBoard}
+                title={hasBoard ? "Start a new board" : "The board is already empty"}
+              >
+                NEW
+              </button>
+            )}
+            {onAddTextCard && (
+              <button
+                type="button"
+                className="chordl-board-add-text"
+                style={actionBtnStyle}
+                onClick={onAddTextCard}
+                disabled={!!exporting}
+                title="Add a text card"
+              >
+                + Text
+              </button>
+            )}
+            <label
+              htmlFor={importInputId}
+              className="chordl-board-import"
+              // It behaves as a button (click or Enter/Space opens the file
+              // picker), so it has to announce as one — a <label> with no
+              // labelled control in the accessibility tree reads as plain text.
+              role="button"
+              aria-disabled={!!exporting}
+              tabIndex={exporting ? -1 : 0}
+              title="Import board from JSON"
+              onKeyDown={(e) => {
+                if (!exporting && (e.key === "Enter" || e.key === " ")) {
+                  e.preventDefault();
+                  handleImportClick();
+                }
+              }}
+              style={{
+                padding: "4px 6px", fontSize: "0.8rem", color: "var(--text-muted, #666)",
+                cursor: exporting ? "wait" : "pointer", opacity: exporting ? 0.6 : 1,
+              }}
+            >
+              Import
+            </label>
+            <input
+              id={importInputId}
+              className="chordl-board-import-input"
+              ref={fileInputRef}
+              type="file"
+              accept="application/json,.json"
+              disabled={!!exporting}
+              // Clipped rather than display:none (a hidden input cannot be
+              // opened by script in every browser), so it keeps its own tab
+              // stop unless told otherwise — two stops for one Import action,
+              // beside the focusable label above. The label still reaches it by
+              // click and by htmlFor.
+              tabIndex={-1}
+              style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clipPath: "inset(50%)" }}
+              onChange={handleImportFile}
+            />
 
-            <label style={{ fontSize: "0.8rem", color: "var(--text-muted, #666)" }}>Footer</label>
-            <input style={inputStyle} value={safeMeta.footer ?? ""} onChange={(e) => patchMeta({ footer: e.target.value })} placeholder="Optional footer text" />
-
-            <label style={{ fontSize: "0.8rem", color: "var(--text-muted, #666)" }}>Per row</label>
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            {/* Per row sits with the actions rather than the text fields: it
+                changes the board's layout, not its wording. */}
+            <div
+              className="chordl-board-columns"
+              role="group"
+              aria-label="Cards per row"
+              style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}
+            >
+              <span className="chordl-board-columns-label" style={{ fontSize: "0.8rem", color: "var(--text-muted, #666)" }}>
+                Per row
+              </span>
               {(["auto", 1, 2, 3, 4, 5, 6] as const).map((c) => {
                 const active = (safeMeta.columns ?? "auto") === c;
                 return (
                   <button
                     key={String(c)}
                     type="button"
+                    className="chordl-board-columns-option"
+                    aria-pressed={active}
+                    // Same reason as the read-only text fields above: without a
+                    // handler this button cannot change anything.
+                    disabled={!canEditMeta}
                     onClick={() => patchMeta({ columns: c === "auto" ? "auto" : c })}
                     style={{
                       padding: "4px 10px",
@@ -949,53 +1107,19 @@ export function ChordBoard({
               })}
             </div>
           </div>
-        </details>
 
-        <div className="chordl-board-toolbar" style={{ display: "flex", gap: 6, alignItems: "center" }}>
-          {onNew && (
-            <button
-              type="button"
-              className="chordl-board-new"
-              style={actionBtnStyle}
-              onClick={() => setConfirmNew(true)}
-              disabled={!!exporting || !hasBoard}
-              title={hasBoard ? "Start a new board" : "The board is already empty"}
-            >
-              NEW
+          <div className="chordl-board-toolbar-export" style={{ display: "flex", gap: 6, alignItems: "center", marginLeft: "auto" }}>
+            <span className="chordl-board-export-label" style={{ fontSize: "0.8rem", color: "var(--text-muted, #666)" }}>Export:</span>
+            <button type="button" className="chordl-board-export-png" style={actionBtnStyle} onClick={handleDownloadPng} disabled={!!exporting} title="Download as PNG">
+              {exporting === "png" ? "…" : "PNG"}
             </button>
-          )}
-          {onAddTextCard && (
-            <button
-              type="button"
-              className="chordl-board-add-text"
-              style={actionBtnStyle}
-              onClick={onAddTextCard}
-              disabled={!!exporting}
-              title="Add a text card"
-            >
-              + Text
+            <button type="button" className="chordl-board-export-pdf" style={actionBtnStyle} onClick={handleDownloadPdf} disabled={!!exporting} title="Download as PDF">
+              {exporting === "pdf" ? "…" : "PDF"}
             </button>
-          )}
-          <button type="button" className="chordl-board-export-png" style={actionBtnStyle} onClick={handleDownloadPng} disabled={!!exporting} title="Download as PNG">
-            {exporting === "png" ? "…" : "PNG"}
-          </button>
-          <button type="button" className="chordl-board-export-pdf" style={actionBtnStyle} onClick={handleDownloadPdf} disabled={!!exporting} title="Download as PDF">
-            {exporting === "pdf" ? "…" : "PDF"}
-          </button>
-          <button type="button" className="chordl-board-export-json" style={actionBtnStyle} onClick={handleExportJson} disabled={!!exporting} title="Export board as JSON">
-            JSON
-          </button>
-          <button type="button" className="chordl-board-import" style={actionBtnStyle} onClick={handleImportClick} disabled={!!exporting} title="Import board from JSON">
-            Import
-          </button>
-          <input
-            className="chordl-board-import-input"
-            ref={fileInputRef}
-            type="file"
-            accept="application/json,.json"
-            style={{ display: "none" }}
-            onChange={handleImportFile}
-          />
+            <button type="button" className="chordl-board-export-json" style={actionBtnStyle} onClick={handleExportJson} disabled={!!exporting} title="Export board as JSON">
+              JSON
+            </button>
+          </div>
         </div>
       </div>
 

@@ -26,6 +26,15 @@ const isRuntimeDep = (id: string) =>
 export default defineConfig(({ command }) => ({
   plugins: [react(), ...(command === "build" ? [dts({ rollupTypes: true })] : [])],
   root: command === "serve" ? "dev" : undefined,
+  // The playground is a workspace integration surface. Resolve sibling
+  // packages to source while serving so board changes hot-reload instead of
+  // silently coming from the last published/built dist artifact.
+  resolve: command === "serve" ? {
+    alias: {
+      "@pepperhorn/chordl-react": resolve(__dirname, "src/index.ts"),
+      "@pepperhorn/chordl-board": resolve(__dirname, "../chordl-board/src/index.ts"),
+    },
+  } : undefined,
   build: {
     lib: {
       entry: resolve(__dirname, "src/index.ts"),

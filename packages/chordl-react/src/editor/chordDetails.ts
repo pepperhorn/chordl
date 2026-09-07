@@ -24,7 +24,7 @@ export interface ChordDetailState {
 export const DEFAULT_CHORD_DETAILS: ChordDetailState = {
   showNoteNames: false,
   noteNameMode: "pitch-class",
-  noteNameSize: "lg",
+  noteNameSize: "xl",
   showDegrees: false,
   degreeSize: "lg",
   fingeringMode: "none",

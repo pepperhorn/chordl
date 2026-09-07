@@ -132,6 +132,34 @@ export function GuitarChordPanel({
   // once the filter changes.
   const [hideBarres, setHideBarres] = useState(false);
 
+  // Visible placements, each carrying its index into the full list so a click
+  // reports the same number whether or not the filter is on.
+  //
+  // Computed here — above the early returns, so the hook order is stable —
+  // rather than at the point of use, because `diagram` is handed to
+  // GuitarChord. Rebuilding it on every render made it a new object each time,
+  // which used to re-raise the diagram's "rendering" veil whenever anything
+  // else re-rendered this panel (typing in the board's title field, say).
+  const placements = useMemo(() => {
+    if (!result) return null;
+    const allPlacements = result.shapes.map((_, i) => i);
+    const barreFree = allPlacements.filter((i) => result.positions[i].barres.length === 0);
+    // A chord whose every shape is a barre (F, Bm — exactly the chords a
+    // beginner wants this switch for) would otherwise render an empty frame.
+    // Show them and say why instead.
+    const onlyBarres = hideBarres && barreFree.length === 0;
+    const visible = hideBarres && !onlyBarres ? barreFree : allPlacements;
+    const idx = visible.includes(active)
+      ? active
+      : visible[0] ?? Math.max(0, Math.min(active, result.shapes.length - 1));
+    // chordLookup bakes the chord name into the shape as svguitar's diagram
+    // title. The panel renders the name itself (in the same type as the
+    // keyboard and staff cards), so drop the SVG's copy rather than showing it
+    // twice in a font svguitar sizes independently of the DOM.
+    const { title: _shapeTitle, ...diagram } = result.shapes[idx];
+    return { allPlacements, barreFree, onlyBarres, visible, idx, diagram };
+  }, [result, hideBarres, active]);
+
   const notice = (msg: string) => (
     <UIThemeProvider value={uiCtx}>
       <div className={`bc-guitar-panel bc-guitar-notice ${className ?? ""}`.trim()}
@@ -184,24 +212,8 @@ export function GuitarChordPanel({
     );
   }
 
-  // Visible placements, each carrying its index into the full list so a click
-  // reports the same number whether or not the filter is on.
-  const allPlacements = result.shapes.map((_, i) => i);
-  const barreFree = allPlacements.filter((i) => result.positions[i].barres.length === 0);
-  // A chord whose every shape is a barre (F, Bm — exactly the chords a beginner
-  // wants this switch for) would otherwise render an empty frame. Show them and
-  // say why instead.
-  const onlyBarres = hideBarres && barreFree.length === 0;
-  const visible = hideBarres && !onlyBarres ? barreFree : allPlacements;
-
-  const idx = visible.includes(active)
-    ? active
-    : visible[0] ?? Math.max(0, Math.min(active, result.shapes.length - 1));
-  // chordLookup bakes the chord name into the shape as svguitar's diagram title.
-  // The panel renders the name itself (in the same type as the keyboard and
-  // staff cards), so drop the SVG's copy rather than showing it twice in a font
-  // svguitar sizes independently of the DOM.
-  const { title: _shapeTitle, ...diagram } = result.shapes[idx];
+  // `result` is non-null past the guard above, so the memo above resolved too.
+  const { allPlacements, barreFree, onlyBarres, visible, idx, diagram } = placements!;
 
   return (
     <UIThemeProvider value={uiCtx}>

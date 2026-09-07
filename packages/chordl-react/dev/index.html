@@ -132,6 +132,13 @@
     </style>
     <style>
       :root {
+        /* Tells the UA which palette to draw the bits we do not: <select>
+           option lists, form control internals, scrollbars. Without it those
+           are always drawn light, so the annotation size select's
+           --pill-active-text (near-white in dark theme) landed on a white
+           popup. Themes here are explicit (data-bc-theme), never "auto", so
+           this is a plain declaration rather than a media query. */
+        color-scheme: light;
         --bg: #f8f9fc;
         --bg-mesh-1: rgba(200, 220, 250, 0.3);
         --bg-mesh-2: rgba(240, 220, 210, 0.2);
@@ -165,6 +172,7 @@
       }
 
       [data-bc-theme="dark"] {
+        color-scheme: dark;
         --bg: #0f1219;
         --bg-mesh-1: rgba(30, 60, 120, 0.25);
         --bg-mesh-2: rgba(50, 30, 70, 0.15);
@@ -346,6 +354,178 @@
         flex: 1;
         display: flex;
         align-items: center;
+      }
+
+      .interactive-controls-line {
+        display: flex;
+        gap: 0.75rem;
+        align-items: stretch;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+
+      .interactive-controls-line-annotations {
+        padding-top: 0.75rem;
+        border-top: 1px solid var(--btn-border);
+      }
+
+      .annotation-control-content {
+        position: relative;
+        gap: 6px;
+      }
+
+      .annotation-toggle {
+        background: var(--pill-bg);
+      }
+
+      /* Looks like the badge it replaced, but it is a real <select>, so the
+         size list is one click away and keyboard/screen-reader support is the
+         browser's rather than ours. */
+      .annotation-size {
+        min-width: 26px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--pill-active-text);
+        text-align: center;
+        appearance: none;
+        -webkit-appearance: none;
+        padding: 6px 6px;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        background: transparent;
+        font-family: inherit;
+        cursor: pointer;
+        transition: background 0.2s ease, border-color 0.2s ease;
+      }
+
+      .annotation-size:hover { background: var(--pill-bg); border-color: var(--btn-border); }
+      .annotation-size:focus-visible { outline: none; border-color: var(--accent); }
+
+      /* The closed control is transparent so it reads as a badge; the open list
+         is a UA popup and needs a ground of its own. Belt and braces with the
+         color-scheme above, since some platforms ignore one or the other. */
+      .annotation-size option {
+        background: var(--panel-bg);
+        color: var(--text);
+      }
+
+      .annotation-options {
+        position: relative;
+        font-size: 0.75rem;
+        color: var(--text-muted);
+      }
+
+      .annotation-options > summary {
+        padding: 6px 8px;
+        border-radius: 8px;
+        cursor: pointer;
+        list-style: none;
+        user-select: none;
+      }
+
+      .annotation-options > summary::-webkit-details-marker { display: none; }
+      .annotation-options > summary:hover { color: var(--pill-active-text); background: var(--pill-bg); }
+
+      .annotation-options-menu {
+        position: absolute;
+        z-index: 20;
+        top: calc(100% + 6px);
+        right: 0;
+        width: max-content;
+        min-width: 180px;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        border: 1px solid var(--btn-border);
+        border-radius: 10px;
+        background: var(--input-floating-bg);
+        color: var(--text);
+        box-shadow: var(--input-floating-shadow);
+      }
+
+
+      .annotation-option-group {
+        margin: 0;
+        padding: 0;
+        display: flex;
+        gap: 10px;
+        border: 0;
+      }
+
+      .annotation-option-group legend {
+        margin-bottom: 5px;
+        padding: 0;
+        color: var(--text-dim);
+      }
+
+      .annotation-option-group label { white-space: nowrap; }
+
+      .fingering-values {
+        display: flex;
+        gap: 4px;
+      }
+
+      .fingering-values input {
+        width: 32px;
+        height: 28px;
+        padding: 0;
+        border: 1px solid var(--btn-border);
+        border-radius: 6px;
+        background: var(--pill-bg);
+        color: var(--text);
+        font: inherit;
+        text-align: center;
+      }
+
+      .inline-card-text-fields {
+        width: 100%;
+        max-width: 640px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .inline-card-text-field {
+        display: flex;
+        align-items: baseline;
+        gap: 4px;
+        min-width: 0;
+        flex: 1 1 0;
+      }
+
+      .inline-card-text-label {
+        flex: 0 0 auto;
+        color: var(--text-dim);
+        opacity: 0.75;
+        font: 400 0.75rem 'DM Sans', system-ui, sans-serif;
+        white-space: nowrap;
+      }
+
+      .inline-card-text-input {
+        min-width: 0;
+        flex: 1 1 0;
+        padding: 5px 2px;
+        border: 0;
+        border-bottom: 1px solid transparent;
+        outline: none;
+        background: transparent;
+        color: var(--text);
+        font: 400 0.8rem 'DM Sans', system-ui, sans-serif;
+        /* Left, not centred: the value now reads as a continuation of the
+           "Title:" label sitting immediately before it. */
+        text-align: left;
+        transition: border-color 0.2s ease;
+      }
+
+      .inline-card-text-input::placeholder { color: var(--text-dim); opacity: 0.75; }
+      .inline-card-text-input:hover { border-bottom-color: var(--btn-border); }
+      .inline-card-text-input:focus { border-bottom-color: var(--accent); }
+
+      .inline-card-text-separator {
+        color: var(--text-dim);
+        opacity: 0.55;
+        font-size: 0.75rem;
       }
 
       /* Chord output area */

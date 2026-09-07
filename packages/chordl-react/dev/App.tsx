@@ -26,6 +26,7 @@ import type { StaffGlyphSet, ChordSheetData } from "../src";
 import type { InstrumentId, UIThemeMode } from "../src";
 import { SHOW_HINTS, HINT_SPEED } from "../src/config";
 import { HINTS } from "./hints";
+import packageMetadata from "../package.json";
 
 const SCALE_OPTIONS = [
   { label: "50%", value: 0.5 },
@@ -194,21 +195,114 @@ const SIZE_OPTIONS: { label: string; value: TextSize }[] = [
   { label: "2xl", value: "2xl" },
 ];
 
+function AnnotationControl({
+  label,
+  active,
+  onToggle,
+  size,
+  onSizeChange,
+  children,
+}: {
+  label: string;
+  active: boolean;
+  onToggle: () => void;
+  size: TextSize;
+  onSizeChange: (v: TextSize) => void;
+  children?: React.ReactNode;
+}) {
+  return (
+    <div className="control-item annotation-control">
+      <span className="control-label">{label}</span>
+      <div className="control-content annotation-control-content">
+        <button
+          type="button"
+          className="pill-btn annotation-toggle"
+          data-active={active}
+          aria-pressed={active}
+          onClick={onToggle}
+        >
+          {active ? "On" : "Off"}
+        </button>
+        {active && (
+          <>
+            {/* The size badge IS the control. It used to be dead text beside an
+                "Options" menu that held the real select, so the one thing that
+                looked clickable was not, and the setting it named was two
+                clicks away. */}
+            <select
+              className="annotation-size"
+              aria-label={`${label} size`}
+              value={size}
+              onChange={(e) => onSizeChange(e.target.value as TextSize)}
+            >
+              {SIZE_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+            {/* Only render the menu when something is left to put in it —
+                Degrees has no options beyond size, and an empty dropdown is
+                worse than none. */}
+            {children && (
+              <details className="annotation-options">
+                <summary>Options</summary>
+                <div className="annotation-options-menu">{children}</div>
+              </details>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function InlineCardTextFields({
+  title,
+  onTitleChange,
+  subheading,
+  onSubheadingChange,
+  footerText,
+  onFooterTextChange,
+}: {
+  title: string;
+  onTitleChange: (value: string) => void;
+  subheading: string;
+  onSubheadingChange: (value: string) => void;
+  footerText: string;
+  onFooterTextChange: (value: string) => void;
+}) {
+  const fields = [
+    { label: "Title", value: title, onChange: onTitleChange },
+    { label: "Subheading", value: subheading, onChange: onSubheadingChange },
+    { label: "Footer text", value: footerText, onChange: onFooterTextChange },
+  ];
+
+  return (
+    <div className="inline-card-text-fields" aria-label="Card text">
+      {fields.map((field, index) => (
+        <React.Fragment key={field.label}>
+          {index > 0 && <span className="inline-card-text-separator" aria-hidden="true">|</span>}
+          {/* The label is spelled out rather than left to the placeholder: a
+              placeholder disappears the moment there is text, so a filled-in
+              field stopped saying what it was for. */}
+          <label className="inline-card-text-field">
+            <span className="inline-card-text-label">{field.label}:</span>
+            <input
+              className="inline-card-text-input"
+              value={field.value}
+              onChange={(event) => field.onChange(event.target.value)}
+            />
+          </label>
+        </React.Fragment>
+      ))}
+    </div>
+  );
+}
+
 interface ChordDetailsPanelProps {
   title: string; onTitleChange: (v: string) => void;
   subheading: string; onSubheadingChange: (v: string) => void;
   footerText: string; onFooterTextChange: (v: string) => void;
-  showNoteNames: boolean; onShowNoteNamesChange: (v: boolean) => void;
-  noteNameMode: NoteNameMode; onNoteNameModeChange: (v: NoteNameMode) => void;
-  noteNameSize: TextSize; onNoteNameSizeChange: (v: TextSize) => void;
-  showDegrees: boolean; onShowDegreesChange: (v: boolean) => void;
-  degreeSize: TextSize; onDegreeSizeChange: (v: TextSize) => void;
-  fingeringMode: "none" | "auto" | "custom"; onFingeringModeChange: (v: "none" | "auto" | "custom") => void;
-  fingeringValues: string[]; onFingeringValuesChange: (v: string[]) => void;
-  fingeringSize: TextSize; onFingeringSizeChange: (v: TextSize) => void;
-  noteCount: number;
-  /** Editing a text card: the annotation toggles below describe a chord diagram
-   *  this card does not have, so they give way to the icon/picture controls. */
+  /** Editing a text card reveals its icon/picture controls in this panel. */
   textCardMode: boolean;
   icon: string; onIconChange: (v: string) => void;
   image: string; onImageChange: (file: File | null) => void;
@@ -220,12 +314,7 @@ interface ChordDetailsPanelProps {
 function ChordDetailsPanel(p: ChordDetailsPanelProps) {
   const setCount = p.textCardMode
     ? [p.title, p.subheading, p.footerText, p.icon, p.image].filter((v) => v).length
-    : [
-      p.title, p.subheading, p.footerText,
-      p.showNoteNames ? "x" : "",
-      p.showDegrees ? "x" : "",
-      p.fingeringMode !== "none" ? "x" : "",
-    ].filter((v) => v).length;
+    : [p.title, p.subheading, p.footerText].filter((v) => v).length;
 
   // A text card's only editor is inside this panel, and the panel ships
   // collapsed — so opening it once on entry is the difference between "the
@@ -248,20 +337,6 @@ function ChordDetailsPanel(p: ChordDetailsPanelProps) {
     fontFamily: "inherit", border: "1px solid var(--btn-border)", borderRadius: 8,
     background: "var(--pill-bg)", color: "var(--text)", outline: "none",
   };
-  const sizeSelect = (value: TextSize, onChange: (v: TextSize) => void) => (
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value as TextSize)}
-      style={{
-        padding: "5px 8px", fontSize: "0.8rem", fontFamily: "inherit",
-        border: "1px solid var(--btn-border)", borderRadius: 6,
-        background: "var(--pill-bg)", color: "var(--text)", cursor: "pointer",
-      }}
-    >
-      {SIZE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-    </select>
-  );
-
   return (
     <details ref={detailsRef} className={`chord-details-panel${p.textCardMode ? " chord-details-panel--text-card" : ""}`} style={{
       width: "100%", maxWidth: 640,
@@ -304,100 +379,17 @@ function ChordDetailsPanel(p: ChordDetailsPanelProps) {
             placeholder="pp legato" style={inputStyle} />
         </div>
 
-        <hr style={{ border: "none", borderTop: "1px solid var(--btn-border)", margin: "10px 0" }} />
-
         {p.textCardMode ? (
-          <TextCardArtControls
-            icon={p.icon} onIconChange={p.onIconChange}
-            image={p.image} onImageChange={p.onImageChange} onImageClear={p.onImageClear}
-            imageError={p.imageError}
-            rowStyle={rowStyle} labelStyle={labelStyle}
-          />
-        ) : (
-        <>
-        <div style={rowStyle}>
-          <label style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 110, fontSize: "0.85rem", cursor: "pointer" }}>
-            <input type="checkbox" checked={p.showNoteNames}
-              onChange={(e) => p.onShowNoteNamesChange(e.target.checked)} />
-            Note names
-          </label>
-          {p.showNoteNames && (
-            <>
-              <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: "0.82rem" }}>
-                <input type="radio" name="nnmode" checked={p.noteNameMode === "pitch-class"}
-                  onChange={() => p.onNoteNameModeChange("pitch-class")} />
-                Pitch class
-              </label>
-              <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: "0.82rem" }}>
-                <input type="radio" name="nnmode" checked={p.noteNameMode === "midi"}
-                  onChange={() => p.onNoteNameModeChange("midi")} />
-                MIDI
-              </label>
-              {sizeSelect(p.noteNameSize, p.onNoteNameSizeChange)}
-            </>
-          )}
-        </div>
-
-        <div style={rowStyle}>
-          <label style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 110, fontSize: "0.85rem", cursor: "pointer" }}>
-            <input type="checkbox" checked={p.showDegrees}
-              onChange={(e) => p.onShowDegreesChange(e.target.checked)} />
-            Degrees
-          </label>
-          {p.showDegrees && sizeSelect(p.degreeSize, p.onDegreeSizeChange)}
-        </div>
-
-        <div style={rowStyle}>
-          <label style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 110, fontSize: "0.85rem", cursor: "pointer" }}>
-            <input type="checkbox" checked={p.fingeringMode !== "none"}
-              onChange={(e) => p.onFingeringModeChange(e.target.checked ? "auto" : "none")} />
-            Fingering
-          </label>
-          {p.fingeringMode !== "none" && (
-            <>
-              <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: "0.82rem" }}>
-                <input type="radio" name="fmode" checked={p.fingeringMode === "auto"}
-                  onChange={() => p.onFingeringModeChange("auto")} />
-                Auto
-              </label>
-              <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: "0.82rem" }}>
-                <input type="radio" name="fmode" checked={p.fingeringMode === "custom"}
-                  onChange={() => p.onFingeringModeChange("custom")} />
-                Custom
-              </label>
-              {p.fingeringMode === "custom" && p.noteCount > 0 && (
-                <div style={{ display: "flex", gap: 4 }}>
-                  {Array.from({ length: p.noteCount }).map((_, i) => (
-                    <input
-                      key={i}
-                      value={p.fingeringValues[i] ?? ""}
-                      onChange={(e) => {
-                        const next = [...p.fingeringValues];
-                        while (next.length < p.noteCount) next.push("");
-                        // Free-form labels (violin fingerings like "D1") —
-                        // strip only the characters that would break the
-                        // quoted serialization (quotes, commas).
-                        next[i] = e.target.value.replace(/["“”',]/g, "").slice(0, 3);
-                        p.onFingeringValuesChange(next);
-                      }}
-                      maxLength={3}
-                      placeholder="·"
-                      style={{
-                        width: 34, height: 28, textAlign: "center",
-                        padding: 0, fontSize: "0.85rem", fontFamily: "inherit",
-                        border: "1px solid var(--btn-border)", borderRadius: 6,
-                        background: "var(--input-floating-bg)", color: "var(--text)", outline: "none",
-                      }}
-                    />
-                  ))}
-                </div>
-              )}
-              {sizeSelect(p.fingeringSize, p.onFingeringSizeChange)}
-            </>
-          )}
-        </div>
-        </>
-        )}
+          <>
+            <hr style={{ border: "none", borderTop: "1px solid var(--btn-border)", margin: "10px 0" }} />
+            <TextCardArtControls
+              icon={p.icon} onIconChange={p.onIconChange}
+              image={p.image} onImageChange={p.onImageChange} onImageClear={p.onImageClear}
+              imageError={p.imageError}
+              rowStyle={rowStyle} labelStyle={labelStyle}
+            />
+          </>
+        ) : null}
       </div>
     </details>
   );
@@ -560,15 +552,26 @@ function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExportStatu
   const [guitarInstrument, setGuitarInstrument] = useState<InstrumentId>("guitar");
   const [guitarPosition, setGuitarPosition] = useState(0);
 
-  // Chord Details form state (separate from NL input). Title/sub/footer are
-  // pure props. Annotation toggles get serialized into the chord string passed
-  // downstream so existing NL paths keep working.
+  // Card text and annotation controls are separate from NL input. Annotation
+  // toggles get serialized into the chord string passed downstream so existing
+  // NL paths keep working.
   const [title, setTitle] = useState("");
   const [subheading, setSubheading] = useState("");
   const [footerText, setFooterText] = useState("");
+  /**
+   * Whether the card's text is the user's own typing rather than leftovers.
+   *
+   * Card text used to survive both "+ Add to board" and typing a fresh chord,
+   * so a title written for one chord silently attached itself to the next. It
+   * cannot simply clear on every chord keystroke either: writing the title
+   * before the chord is a normal order to work in, and that would delete it as
+   * you typed. So text the user touched is theirs and stays; untouched text is
+   * leftovers and goes.
+   */
+  const [cardTextTouched, setCardTextTouched] = useState(false);
   const [showNoteNames, setShowNoteNames] = useState(false);
   const [noteNameMode, setNoteNameMode] = useState<NoteNameMode>("pitch-class");
-  const [noteNameSize, setNoteNameSize] = useState<TextSize>("lg");
+  const [noteNameSize, setNoteNameSize] = useState<TextSize>("xl");
   const [showDegrees, setShowDegrees] = useState(false);
   const [degreeSize, setDegreeSize] = useState<TextSize>("lg");
   const [fingeringMode, setFingeringMode] = useState<"none" | "auto" | "custom">("none");
@@ -694,6 +697,7 @@ function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExportStatu
     setTitle("");
     setSubheading("");
     setFooterText("");
+    setCardTextTouched(false);
     setCardIcon("");
     setCardImage("");
     setImageError(null);
@@ -714,6 +718,31 @@ function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExportStatu
     if (editingItemId) stopEditing();
   };
 
+  /** Card text back to empty, and back to counting as leftovers. */
+  const clearCardText = () => {
+    setTitle("");
+    setSubheading("");
+    setFooterText("");
+    setCardTextTouched(false);
+  };
+
+  /** Any manual edit makes the text the user's, so a chord change keeps it. */
+  const handleTitleChange = (v: string) => { setCardTextTouched(true); setTitle(v); };
+  const handleSubheadingChange = (v: string) => { setCardTextTouched(true); setSubheading(v); };
+  const handleFooterTextChange = (v: string) => { setCardTextTouched(true); setFooterText(v); };
+
+  /**
+   * Typing a different chord drops card text that was never typed by hand, so
+   * a previous card's title cannot ride along onto this one. Editing an
+   * existing card is exempt: that title belongs to the card, not to whatever
+   * chord is in the box.
+   */
+  const handleChordInputChange = (next: string) => {
+    setInput(next);
+    setError(null);
+    if (!editingItemId && !cardTextTouched) clearCardText();
+  };
+
   const handleAddToBoard = () => {
     if (isProg) return;
     // Always a chord card. "+ Text" on the board toolbar is the only route to a
@@ -723,6 +752,9 @@ function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExportStatu
     // the form now describes, and staying bound to the old one would silently
     // rewrite it on the next keystroke.
     if (editingItemId) stopEditing();
+    // The card now owns that text. Leaving it in the form made the next chord
+    // inherit the last one's title.
+    else clearCardText();
   };
 
   /** Appends a text card and drops the user straight into editing it. */
@@ -733,6 +765,7 @@ function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExportStatu
     setTitle("Section");
     setSubheading("");
     setFooterText("");
+    setCardTextTouched(false);
     setCardIcon("");
     setCardImage("");
     setImageError(null);
@@ -805,6 +838,9 @@ function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExportStatu
     setTitle(item.title ?? "");
     setSubheading(item.subheading ?? "");
     setFooterText(item.footerText ?? "");
+    // The card's own text, not something typed for a new chord — so a later
+    // chord change must not treat it as the user's and keep it around.
+    setCardTextTouched(false);
     setEditingKind(isTextCard(item) ? "text" : "chord");
     setCardIcon(item.icon ?? "");
     setCardImage(item.image ?? "");
@@ -898,7 +934,7 @@ function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExportStatu
         <input
           type="text"
           value={input}
-          onChange={(e) => { setInput(e.target.value); setError(null); }}
+          onChange={(e) => handleChordInputChange(e.target.value)}
           placeholder='Tell me what chord(s) you&apos;d like to visualize..'
           className={inputPulsing ? "chordl-input--edit-pulse" : undefined}
           style={{
@@ -981,7 +1017,7 @@ function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExportStatu
       {!isEditingTextCard && (
         <ChordQualityPicker
           input={input}
-          onPick={(next) => { setInput(next); setError(null); }}
+          onPick={(next) => handleChordInputChange(next)}
         />
       )}
 
@@ -1005,27 +1041,26 @@ function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExportStatu
         onActiveChange={(i) => { const it = board.items[i]; if (it) board.selectItem(it.id); }}
       />
 
-      {/* Chord Details — collapsible form for title/sub/footer + annotations */}
+      {/* Chord card text edits in place. Text cards keep the artwork panel. */}
       {!isProg && (
-        <ChordDetailsPanel
-          title={title} onTitleChange={setTitle}
-          subheading={subheading} onSubheadingChange={setSubheading}
-          footerText={footerText} onFooterTextChange={setFooterText}
-          showNoteNames={showNoteNames} onShowNoteNamesChange={setShowNoteNames}
-          noteNameMode={noteNameMode} onNoteNameModeChange={setNoteNameMode}
-          noteNameSize={noteNameSize} onNoteNameSizeChange={setNoteNameSize}
-          showDegrees={showDegrees} onShowDegreesChange={setShowDegrees}
-          degreeSize={degreeSize} onDegreeSizeChange={setDegreeSize}
-          fingeringMode={fingeringMode} onFingeringModeChange={setFingeringMode}
-          fingeringValues={fingeringValues} onFingeringValuesChange={setFingeringValues}
-          fingeringSize={fingeringSize} onFingeringSizeChange={setFingeringSize}
-          noteCount={noteCount}
-          textCardMode={isEditingTextCard}
-          icon={cardIcon} onIconChange={handlePickIcon}
-          image={cardImage} onImageChange={handlePickImage}
-          onImageClear={() => { setCardImage(""); setImageError(null); }}
-          imageError={imageError}
-        />
+        isEditingTextCard ? (
+          <ChordDetailsPanel
+            title={title} onTitleChange={handleTitleChange}
+            subheading={subheading} onSubheadingChange={handleSubheadingChange}
+            footerText={footerText} onFooterTextChange={handleFooterTextChange}
+            textCardMode
+            icon={cardIcon} onIconChange={handlePickIcon}
+            image={cardImage} onImageChange={handlePickImage}
+            onImageClear={() => { setCardImage(""); setImageError(null); }}
+            imageError={imageError}
+          />
+        ) : (
+          <InlineCardTextFields
+            title={title} onTitleChange={handleTitleChange}
+            subheading={subheading} onSubheadingChange={handleSubheadingChange}
+            footerText={footerText} onFooterTextChange={handleFooterTextChange}
+          />
+        )
       )}
 
       {/* Controls row — muted, secondary. Always on: these describe the chord
@@ -1034,6 +1069,7 @@ function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExportStatu
           goes away wholesale while a text card is being edited. */}
       {!isEditingTextCard && !isProg && <div className="interactive-controls-row" style={{
         display: "flex",
+        flexDirection: "column",
         gap: "0.75rem",
         alignItems: "stretch",
         flexWrap: "wrap",
@@ -1046,6 +1082,7 @@ function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExportStatu
         onMouseEnter={(e) => { if (!editingItemId) e.currentTarget.style.opacity = "0.9"; }}
         onMouseLeave={(e) => { if (!editingItemId) e.currentTarget.style.opacity = "0.55"; }}
       >
+        <div className="interactive-controls-line interactive-controls-line-primary">
         {editingItemId && (
           <div className="control-item control-item-editing">
             <span className="control-label">Editing</span>
@@ -1193,6 +1230,61 @@ function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExportStatu
             </div>
           </div>
         </div>
+        </div>
+        <div className="interactive-controls-line interactive-controls-line-annotations">
+          <AnnotationControl
+            label="Note names"
+            active={showNoteNames}
+            onToggle={() => setShowNoteNames((value) => !value)}
+            size={noteNameSize}
+            onSizeChange={setNoteNameSize}
+          >
+            <fieldset className="annotation-option-group">
+              <legend>Names</legend>
+              <label><input type="radio" name="nnmode" checked={noteNameMode === "pitch-class"} onChange={() => setNoteNameMode("pitch-class")} /> Pitch class</label>
+              <label><input type="radio" name="nnmode" checked={noteNameMode === "midi"} onChange={() => setNoteNameMode("midi")} /> MIDI</label>
+            </fieldset>
+          </AnnotationControl>
+          <AnnotationControl
+            label="Degrees"
+            active={showDegrees}
+            onToggle={() => setShowDegrees((value) => !value)}
+            size={degreeSize}
+            onSizeChange={setDegreeSize}
+          />
+          <AnnotationControl
+            label="Fingering"
+            active={fingeringMode !== "none"}
+            onToggle={() => setFingeringMode((value) => value === "none" ? "auto" : "none")}
+            size={fingeringSize}
+            onSizeChange={setFingeringSize}
+          >
+            <fieldset className="annotation-option-group">
+              <legend>Fingering</legend>
+              <label><input type="radio" name="fmode" checked={fingeringMode === "auto"} onChange={() => setFingeringMode("auto")} /> Auto</label>
+              <label><input type="radio" name="fmode" checked={fingeringMode === "custom"} onChange={() => setFingeringMode("custom")} /> Custom</label>
+            </fieldset>
+            {fingeringMode === "custom" && noteCount > 0 && (
+              <div className="fingering-values" aria-label="Custom fingering">
+                {Array.from({ length: noteCount }).map((_, index) => (
+                  <input
+                    key={index}
+                    value={fingeringValues[index] ?? ""}
+                    onChange={(event) => {
+                      const next = [...fingeringValues];
+                      while (next.length < noteCount) next.push("");
+                      next[index] = event.target.value.replace(/["“”',]/g, "").slice(0, 3);
+                      setFingeringValues(next);
+                    }}
+                    maxLength={3}
+                    placeholder="·"
+                    aria-label={`Finger ${index + 1}`}
+                  />
+                ))}
+              </div>
+            )}
+          </AnnotationControl>
+        </div>
       </div>}
 
       {/* Error */}
@@ -1271,11 +1363,12 @@ function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExportStatu
                 fontSize: "0.85rem",
                 fontWeight: 500,
                 fontFamily: "inherit",
-                border: "1px solid var(--btn-border)",
+                border: "1px solid var(--accent)",
                 borderRadius: 20,
-                background: "var(--pill-active-bg)",
-                color: "var(--pill-active-text)",
+                background: "var(--accent)",
+                color: "#fff",
                 cursor: "pointer",
+                boxShadow: "0 2px 8px var(--accent-soft)",
               }}
               title="Add the current chord to the board"
             >
@@ -1635,26 +1728,29 @@ function App() {
         alignItems: "center",
         marginBottom: "2.5rem",
       }}>
-        <div>
-          <h1 style={{
-            fontSize: "1.6rem",
-            fontWeight: 600,
-            letterSpacing: "-0.03em",
-            color: "var(--text)",
-            lineHeight: 1.2,
-          }}>
-            chordl
-            <span style={{ color: "var(--accent)", fontWeight: 300 }}>.app</span>
-          </h1>
-          <p style={{
-            fontSize: "0.82rem",
-            color: "var(--text-muted)",
-            marginTop: 4,
-            fontWeight: 300,
-            letterSpacing: "0.01em",
-          }}>
-            Interactive chord visualization
-          </p>
+        <div className="app-title" style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <img src="./favicon-32.png" alt="" width={32} height={32} aria-hidden="true" />
+          <div>
+            <h1 style={{
+              fontSize: "1.6rem",
+              fontWeight: 600,
+              letterSpacing: "-0.03em",
+              color: "var(--text)",
+              lineHeight: 1.2,
+            }}>
+              chordl
+              <span style={{ color: "var(--accent)", fontWeight: 300 }}>.app</span>
+            </h1>
+            <p style={{
+              fontSize: "0.82rem",
+              color: "var(--text-muted)",
+              marginTop: 4,
+              fontWeight: 300,
+              letterSpacing: "0.01em",
+            }}>
+              Interactive chord visualization
+            </p>
+          </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           {exportStatus === "preparing" && (
@@ -1905,27 +2001,30 @@ function App() {
             PepperHorn Music
           </a>.
         </p>
-        <a
-          href="https://github.com/pepperhorn/chordl"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="github-link"
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 6,
-            color: "var(--text-dim)",
-            textDecoration: "none",
-            fontSize: "0.75rem",
-            fontWeight: 400,
-            transition: "color 0.2s ease",
-          }}
-        >
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/>
-          </svg>
-          GitHub
-        </a>
+        <div className="footer-meta" style={{ display: "flex", alignItems: "center", gap: 10, color: "var(--text-dim)", fontSize: "0.75rem" }}>
+          <a
+            href="https://github.com/pepperhorn/chordl"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="github-link"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              color: "inherit",
+              textDecoration: "none",
+              fontWeight: 400,
+              transition: "color 0.2s ease",
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/>
+            </svg>
+            GitHub
+          </a>
+          <span aria-hidden="true">·</span>
+          <span className="app-version" title="Deployed app version">v{packageMetadata.version}</span>
+        </div>
       </footer>
     </div>
   );

@@ -18,6 +18,12 @@ const compose = (base: string, state: Partial<typeof DEFAULT_CHORD_DETAILS>) => 
  * "note names in lg" to a string that already had one.
  */
 describe("splitChordDetails", () => {
+  it("defaults note names to xl while the other annotations remain lg", () => {
+    expect(DEFAULT_CHORD_DETAILS.noteNameSize).toBe("xl");
+    expect(DEFAULT_CHORD_DETAILS.degreeSize).toBe("lg");
+    expect(DEFAULT_CHORD_DETAILS.fingeringSize).toBe("lg");
+  });
+
   it("reads back the annotations a card carries", () => {
     const split = splitChordDetails("C note names in xl with degrees in lg");
 
