@@ -1,7 +1,7 @@
 # Frames / chordl-guitar Boundary
 
 **Date:** 2026-08-08 (supersedes 2026-08-06 draft)
-**Status:** approved — design agreed, ready for implementation planning
+**Status:** approved — sub-projects 1 and 1b built and merged (library side complete); 2 and 3 await their own brainstorm cycles
 **Context:** companion to `docs/plans/2026-03-07-core-extraction-design.md` (chordl-core extraction) — same pattern, applied to the guitar shape/rendering split
 
 ## Problem
@@ -27,7 +27,7 @@ Recorded so the stale claims don't get re-inherited:
 | chordl-guitar owns "adult/junior hand-span playability scoring" | Does not exist. Deferred with `matchVoicing`. |
 | Restore `midi` / `capo` to `build-data.mjs`'s `KEEP` list | **Rejected.** Derive instead — see Pitch model. |
 | Open question: where does the card generator live? | **Answered by fact.** It is `/home/shaun/chordcards`, a standalone repo, already depending on chordl-guitar via `file:` links. |
-| frames retires four vendored modules "once the dependency is in place" | frames has **no** `@pepperhorn/*` dependency of any kind today. Migration is unstarted, and blocked on bass support. |
+| frames retires four vendored modules "once the dependency is in place" | Migration is unstarted, and still blocked on bass support. ~~frames has no `@pepperhorn/*` dependency of any kind today.~~ **Superseded 2026-09-07:** frames took a `^0.2.0` dependency on `@pepperhorn/chordl-guitar` in PR #5 (2026-09-02) to re-export `GUITAR_TOP3_PRESETS`. One table, not the four modules — and it landed ahead of the characterization tests that were meant to precede it. |
 
 ## Ownership
 
@@ -200,7 +200,7 @@ Both live consumers already depend on core (`ph-chordl` pins `chordl-core@^0.3.4
 
 ## Sub-project 2 — frames migration (scoped, not yet designed)
 
-Blocked on sub-project 1 (needs bass). Largest blast radius; its own brainstorm cycle.
+Sub-project 1 has landed, so this is unblocked. Largest blast radius; its own brainstorm cycle.
 
 - Adopt `@pepperhorn/chordl-guitar`; retire vendored `instruments.ts`, `notes.ts`, `tab/pitch.ts`, `tab/instruments.ts`, `tab/chordLookup.ts`
 - Reconcile three tuning tables into one. The values in frames are **correct** — `bass4` `[43,38,33,28]` reverses to `[28,33,38,43]`, and its ukulele `[69,64,60,67]` reverses to exactly the verified `[67,60,64,69]`. This is a reversal-and-merge, not a re-derivation.
@@ -210,7 +210,7 @@ Blocked on sub-project 1 (needs bass). Largest blast radius; its own brainstorm 
 
 ## Sub-project 3 — chordcards boundary cleanup (scoped, not yet designed)
 
-Blocked on 1b, and on chordcards' own Tasks 16–17 (deck CLI, print proof). Lowest urgency — chordcards works today.
+1b has landed; still gated on chordcards' own Tasks 16–17 (deck CLI, print proof). Lowest urgency — chordcards works today.
 
 - Replace `keyboard-window.ts`'s `voiceAscending()` with core's reduction
 - Remove `diagrams.ts`'s local `PC` / `INTERVALS` / `SUFFIX` / `split()` chord vocabulary, which already drifts from `cli.ts`'s `QUALITY_LABELS`
@@ -243,9 +243,9 @@ More fundamentally, "root position" means far less on guitar than on keyboard �
 
 ## Open items
 
-- [ ] Sub-project 1 — implementation plan and build
-- [ ] Sub-project 1b — implementation plan and build
+- [x] Sub-project 1 — implementation plan and build — **merged**
+- [x] Sub-project 1b — implementation plan and build — **merged**
 - [ ] Spike: evaluate `szaza/guitar-chords-db-json` as a supplementary source (decode single-char fret encoding, normalize, merge). Runs alongside 1, gated on a written go/no-go so it cannot silently expand into a merge project.
-- [ ] Sub-project 2 — frames migration: own brainstorm cycle after 1 lands
-- [ ] Sub-project 3 — chordcards cleanup: own brainstorm cycle after 1b lands
+- [ ] Sub-project 2 — frames migration: own brainstorm cycle. **Unblocked** — 1 has landed.
+- [ ] Sub-project 3 — chordcards cleanup: own brainstorm cycle. **Unblocked on the chordl side** — 1b has landed; chordcards' own Tasks 16–17 still gate it.
 - [ ] Version-skew policy: `chordcards` consumes chordl packages via `file:` symlinks while `ph-chordl` pins registry `^0.3.x`. Changes land instantly in one consumer and not the other.
