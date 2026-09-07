@@ -254,7 +254,23 @@ function AnnotationControl({
             {children && (
               <details className="annotation-options">
                 <summary>Options</summary>
-                <div className="annotation-options-menu">{children}</div>
+                {/* `disabled` only reaches the toggle/select above by default —
+                    the Names and Fingering-mode radios living in `children`
+                    are plain form controls this component doesn't otherwise
+                    touch. A disabled <fieldset> cascades to every descendant
+                    form control (including ones nested in the child's own
+                    <fieldset>), so wrap here rather than threading `disabled`
+                    through each caller's radio group. `display: contents`
+                    keeps it invisible to layout — `.annotation-options-menu`
+                    already supplies the box (border/padding/background) that
+                    a plain <fieldset> would otherwise duplicate with its own
+                    UA-default border and margin. */}
+                <fieldset
+                  disabled={disabled}
+                  style={{ display: "contents", border: 0, margin: 0, padding: 0 }}
+                >
+                  <div className="annotation-options-menu">{children}</div>
+                </fieldset>
               </details>
             )}
           </>

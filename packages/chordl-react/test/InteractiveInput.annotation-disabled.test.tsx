@@ -46,6 +46,21 @@ function expectAnnotationState(container: HTMLElement, label: string, disabled: 
   expect(toggle.getAttribute("aria-disabled")).toBe(String(disabled));
   expect(select).not.toBeNull();
   expect(select!.disabled).toBe(disabled);
+  // The Options menu's radio groups (Note names' "Names" group, Fingering's
+  // mode group) must be disabled in lockstep with the toggle/select above —
+  // greying the container while leaving its radios clickable was the bug.
+  // Degrees has no Options menu, so this is an empty (harmless) check there.
+  //
+  // `<fieldset disabled>` cascades to descendant form controls via the
+  // `:disabled` CSS pseudo-class, not the `.disabled` IDL property — a
+  // radio's own `.disabled` reflects only its own content attribute in both
+  // real browsers and jsdom, and stays `false` even when an ancestor
+  // fieldset disables it. `matches(":disabled")` is the correct check for
+  // "is this control actually disabled right now".
+  const radios = control.querySelectorAll('input[type="radio"]');
+  for (const radio of Array.from(radios) as HTMLInputElement[]) {
+    expect(radio.matches(":disabled")).toBe(disabled);
+  }
   if (disabled) {
     expect(control.className).toContain("annotation-control--disabled");
     expect(control.getAttribute("title")).toBe(EXPECTED_TITLE);
