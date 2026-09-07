@@ -284,6 +284,7 @@ export function GuitarChordPanel({
         return (
           <button
             key={id}
+            type="button"
             className="bc-guitar-instrument-btn"
             onClick={() => selectInstrument(id)}
             data-active={on}
@@ -376,6 +377,7 @@ export function GuitarChordPanel({
               return (
                 <button
                   key={l}
+                  type="button"
                   className="bc-guitar-level-btn"
                   onClick={() => selectLevel(l)}
                   data-active={on}
@@ -417,6 +419,7 @@ export function GuitarChordPanel({
               return (
                 <button
                   key={i}
+                  type="button"
                   className="bc-guitar-position-btn"
                   onClick={() => selectPosition(i)}
                   data-active={i === idx}

@@ -270,6 +270,20 @@ describe("GuitarChordPanel position reporting", () => {
     fireEvent.click(instrumentButtons(container).ukulele);
     expect(onInstrumentChange).toHaveBeenCalledWith("ukulele");
   });
+
+  // MINOR from the whole-branch review: every button here (instrument,
+  // level, and A/B/C position) omitted `type="button"`, so inside a host
+  // `<form>` clicking one submits it instead of just switching state. Am's
+  // default (established) has more than one visible placement, so this one
+  // render exercises all three button groups.
+  it("gives every button an explicit type, so a host form is not submitted by clicking one", () => {
+    const { container } = render(<GuitarChordPanel chord="Am" />);
+    const buttons = Array.from(container.querySelectorAll("button"));
+    expect(buttons.length).toBeGreaterThan(0);
+    for (const button of buttons) {
+      expect(button.getAttribute("type")).toBe("button");
+    }
+  });
 });
 
 describe("instrument coverage", () => {
