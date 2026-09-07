@@ -29,6 +29,34 @@ function displayToggleButton(container: HTMLElement) {
   return item.querySelector("button") as HTMLButtonElement;
 }
 
+const EXPECTED_TITLE = "Applies to the keyboard and staff, not to guitar frames";
+
+/**
+ * Asserts the full disabled/enabled contract for one control: the button and
+ * select's `disabled`/`aria-disabled`, the `annotation-control--disabled`
+ * class, and the explanatory `title` — present with the exact wording when
+ * disabled, absent otherwise. Checked at every display mode the test passes
+ * through, not just the keyboard/guitar endpoints, so a condition like
+ * `displayMode !== "keyboard"` (which would also grey out Both and Notation)
+ * cannot slip past on the intermediate modes.
+ */
+function expectAnnotationState(container: HTMLElement, label: string, disabled: boolean) {
+  const { toggle, select, control } = annotationParts(container, label);
+  expect(toggle.disabled).toBe(disabled);
+  expect(toggle.getAttribute("aria-disabled")).toBe(String(disabled));
+  expect(select).not.toBeNull();
+  expect(select!.disabled).toBe(disabled);
+  if (disabled) {
+    expect(control.className).toContain("annotation-control--disabled");
+    expect(control.getAttribute("title")).toBe(EXPECTED_TITLE);
+  } else {
+    expect(control.className).not.toContain("annotation-control--disabled");
+    expect(control.getAttribute("title")).toBeNull();
+  }
+}
+
+const LABELS = ["Note names", "Degrees", "Fingering"];
+
 describe("InteractiveInput annotation controls on guitar display", () => {
   it("disables Note names, Degrees and Fingering only while the display mode is guitar", async () => {
     const { container } = render(
@@ -44,42 +72,29 @@ describe("InteractiveInput annotation controls on guitar display", () => {
     fireEvent.click(degrees.toggle);
     fireEvent.click(fingering.toggle);
 
-    // Baseline: enabled in keyboard mode (the default), with selects visible.
-    for (const label of ["Note names", "Degrees", "Fingering"]) {
-      const { toggle, select, control } = annotationParts(container, label);
-      expect(toggle.disabled).toBe(false);
-      expect(toggle.getAttribute("aria-disabled")).toBe("false");
-      expect(select).not.toBeNull();
-      expect(select!.disabled).toBe(false);
-      expect(control.className).not.toContain("annotation-control--disabled");
-    }
-
-    // Cycle Diagram (keyboard) -> Both -> Notation (staff) -> Guitar.
+    // DISPLAY_MODES cycles Diagram (keyboard) -> Both -> Notation (staff) ->
+    // Guitar -> back to Diagram. Assert after *every* step: the point isn't
+    // just that guitar disables the controls, it's that nothing else does.
     const display = displayToggleButton(container);
+
+    // Baseline: keyboard mode (the default), all enabled.
+    for (const label of LABELS) expectAnnotationState(container, label, false);
+
     fireEvent.click(display);
+    await waitFor(() => expect(display.textContent).toContain("Both"));
+    for (const label of LABELS) expectAnnotationState(container, label, false);
+
     fireEvent.click(display);
+    await waitFor(() => expect(display.textContent).toContain("Notation"));
+    for (const label of LABELS) expectAnnotationState(container, label, false);
+
     fireEvent.click(display);
     await waitFor(() => expect(display.textContent).toContain("Guitar"));
-
-    for (const label of ["Note names", "Degrees", "Fingering"]) {
-      const { toggle, select, control } = annotationParts(container, label);
-      expect(toggle.disabled).toBe(true);
-      expect(toggle.getAttribute("aria-disabled")).toBe("true");
-      expect(select).not.toBeNull();
-      expect(select!.disabled).toBe(true);
-      expect(control.className).toContain("annotation-control--disabled");
-    }
+    for (const label of LABELS) expectAnnotationState(container, label, true);
 
     // Cycle back around to Diagram (keyboard) and confirm re-enabling.
     fireEvent.click(display);
     await waitFor(() => expect(display.textContent).toContain("Diagram"));
-
-    for (const label of ["Note names", "Degrees", "Fingering"]) {
-      const { toggle, select, control } = annotationParts(container, label);
-      expect(toggle.disabled).toBe(false);
-      expect(toggle.getAttribute("aria-disabled")).toBe("false");
-      expect(select!.disabled).toBe(false);
-      expect(control.className).not.toContain("annotation-control--disabled");
-    }
+    for (const label of LABELS) expectAnnotationState(container, label, false);
   });
 });

@@ -2044,6 +2044,14 @@ function App() {
 
 // Guarded so this module can be imported (e.g. by tests exercising
 // `InteractiveInput` directly) without a #root element present — the real
-// dev/index.html always provides one.
+// dev/index.html always provides one, so this branch is a no-op in the real
+// app. Do not "simplify" this back to a bare `!` — that turns a missing
+// #root into a loud crash at import time for tests, but if dev/index.html
+// itself is ever the one missing it, mounting nothing here would otherwise
+// fail *silently*: a blank page with no console output and no clue why.
 const rootEl = document.getElementById("root");
-if (rootEl) createRoot(rootEl).render(<App />);
+if (rootEl) {
+  createRoot(rootEl).render(<App />);
+} else {
+  console.error("chordl dev app: no #root element found in the document — nothing was mounted.");
+}
