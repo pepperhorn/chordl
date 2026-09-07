@@ -47,10 +47,13 @@ export interface GuitarChordPanelProps {
   /**
    * Number of frets to draw. Optional — the panel always computes a floor
    * from the shape actually on screen (the highest window-relative fret it
-   * uses, minimum 1) and never draws fewer than that, so a request below the
-   * floor can widen the window but never crop the chord. Default is the
-   * floor itself, which is at most 4 for anything in the corpus — tighter
-   * than the instrument's own default of 5.
+   * uses) and never draws fewer than that, so a request below the floor can
+   * widen the window but never crop the chord. That floor is at most 4 for
+   * any fretted shape in the corpus — tighter than the instrument's own
+   * default of 5 — except for a shape with no fretted string at all (every
+   * string open or muted, e.g. ukulele Am7/C6, guitar Em/D), which has
+   * nothing to floor on and falls back to the instrument's own default width
+   * instead. Default is the floor itself.
    */
   frets?: number;
   scale?: number;
@@ -215,7 +218,10 @@ export function GuitarChordPanel({
     // bars. These values are relative to `baseFret`, already windowed (see
     // instruments.ts / pitch.ts), so this is not an absolute fret number.
     const usedFrets = result.positions[idx].frets.filter((f) => f > 0);
-    const minFrets = usedFrets.length > 0 ? Math.max(...usedFrets) : 1;
+    // All-open shapes (every string open or muted — ukulele Am7/C6, guitar
+    // Em/D) have no fretted string to floor on. Fall back to the instrument's
+    // own default width rather than 1, which drew a single-fret sliver.
+    const minFrets = usedFrets.length > 0 ? Math.max(...usedFrets) : cfg.frets;
     return { selection, visible, idx, diagram, minFrets };
   }, [result, resolved, rootPc, level, active, showControls]);
 

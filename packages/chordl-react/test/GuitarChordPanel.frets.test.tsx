@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { render } from "@testing-library/react";
-import { lookupGuitarChord } from "@pepperhorn/chordl-guitar";
+import { lookupGuitarChord, INSTRUMENTS } from "@pepperhorn/chordl-guitar";
 import { GuitarChordPanel } from "../src/components/GuitarChordPanel";
 
 // GuitarChord draws through svguitar into real SVG, but its internal markup
@@ -59,5 +59,20 @@ describe("GuitarChordPanel fret window", () => {
       <GuitarChordPanel chord="C" showControls={false} position={2} frets={1} />,
     );
     expect(passedFrets(container)).toBe(4);
+  });
+
+  // C2 from the whole-branch review: a shape with no fretted string at all
+  // (every string open or muted) has nothing to floor `Math.max(...)` on.
+  // Ukulele Am7's first position is exactly this — [0,0,0,0] — and it's what
+  // the panel shows by default (established includes every rung, and the
+  // default `position` is 0). Falling back to 1 there drew a single-fret
+  // sliver; the fix floors on the instrument's own default width instead.
+  it("floors an all-open shape on the instrument's default width, not a single fret", () => {
+    const am7 = lookupGuitarChord("Am7", "ukulele")!;
+    expect(am7.positions[0].frets).toEqual([0, 0, 0, 0]);
+    const { container } = render(
+      <GuitarChordPanel chord="Am7" instrument="ukulele" showControls={false} position={0} />,
+    );
+    expect(passedFrets(container)).toBe(INSTRUMENTS.ukulele.frets);
   });
 });
