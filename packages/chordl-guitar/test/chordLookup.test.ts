@@ -181,8 +181,17 @@ describe("top-3 string voicings", () => {
   });
 
   it("returns null rather than falling back to a six-string shape", () => {
-    // A six-string shape under a three-string label would be a lie.
-    expect(lookupGuitarChord("C#dim7", "guitar-top3")).toBeNull();
+    // A six-string shape under a three-string label would be a lie. The table
+    // now covers every root, so the chord that proves the rule is an altered
+    // dominant — it needs four notes, and three strings cannot carry them.
+    expect(lookupGuitarChord("C#alt", "guitar-top3")).toBeNull();
+  });
+
+  it("reaches the roots the hand-authored table had nothing for", () => {
+    // C#, D#, F#, G# and A# had no shape at all before the table was generated.
+    for (const label of ["C#", "F#m", "Bb7", "Absus4", "Ebdim"]) {
+      expect(lookupGuitarChord(label, "guitar-top3"), label).not.toBeNull();
+    }
   });
 });
 
