@@ -4,9 +4,8 @@ import { parseChordDescription } from "@pepperhorn/chordl-core";
 import {
   lookupGuitarChord,
   INSTRUMENTS,
-  positionFacts,
   rootPitchClass,
-  selectForExperience,
+  selectForResult,
   EXPERIENCE_LADDER,
 } from "@pepperhorn/chordl-guitar";
 import type { InstrumentId, ExperienceLevel } from "@pepperhorn/chordl-guitar";
@@ -191,21 +190,16 @@ export function GuitarChordPanel({
     // different one because "established" (the interactive default) isn't
     // what that shape happens to be. So the filter is interactive-only: it
     // never runs where there is no control to change its outcome.
+    //
+    // Only `indices`/`level`/`widenedFrom` are ever read below — the bypass
+    // branch deliberately doesn't fabricate a full `ExperienceSelection`
+    // (`droppedShapeClass` in particular is never read here: the panel never
+    // sets a shape class, so it would always be a dead `false`).
     const allPositions = result.positions.map((_, i) => i);
-    const selection = showControls
-      ? selectForExperience(
-          result.positions.map((pos) =>
-            positionFacts(pos, INSTRUMENTS[resolved].openMidi, rootPc),
-          ),
-          { level },
-          // Authoritative, not re-derived: chordLookup already computed the
-          // right level per shape, including for guitar-top3, where facts
-          // alone structurally cannot say "established" (a top-3 preset
-          // never carries a barre) even when the stored level, ranked on the
-          // shape itself, correctly does.
-          result.levels,
-        )
-      : { indices: allPositions, level, droppedShapeClass: false as boolean, widenedFrom: undefined as ExperienceLevel | undefined };
+    const selection: { indices: number[]; level: ExperienceLevel; widenedFrom?: ExperienceLevel } =
+      showControls
+        ? selectForResult(result, INSTRUMENTS[resolved].openMidi, rootPc, { level })
+        : { indices: allPositions, level };
     const visible = selection.indices;
     const idx = visible.includes(active)
       ? active
@@ -224,6 +218,25 @@ export function GuitarChordPanel({
     const minFrets = usedFrets.length > 0 ? Math.max(...usedFrets) : 1;
     return { selection, visible, idx, diagram, minFrets };
   }, [result, resolved, rootPc, level, active, showControls]);
+
+  // Tell the host when the level filter puts a different shape on screen than
+  // `active` names. Interactive-only (`showControls`), same as the filter
+  // itself: a board card's `placements.idx` never diverges from `active`
+  // because its bypass branch never drops anything, so this never fires
+  // there. Previously silent — clicking a position stored it via
+  // `selectPosition`, but the filter could ALSO move the displayed shape
+  // (widening past `active`, or excluding it outright) without ever calling
+  // `onPositionChange`, so a host that persists the callback's value (a
+  // board's "Add to board" payload) could record a shape the screen wasn't
+  // even showing. `active` itself is left untouched — it is still what was
+  // asked for, so widening the level back out re-reveals it rather than
+  // losing it.
+  const displayedIdx = placements?.idx;
+  useEffect(() => {
+    if (displayedIdx !== undefined && displayedIdx !== active) {
+      onPositionChange?.(displayedIdx);
+    }
+  }, [displayedIdx, active, onPositionChange]);
 
   const notice = (msg: string) => (
     <UIThemeProvider value={uiCtx}>

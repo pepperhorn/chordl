@@ -160,6 +160,34 @@ describe("GuitarChordPanel position reporting", () => {
     expect(onPositionChange).not.toHaveBeenCalled();
   });
 
+  // C3 from the whole-branch review: the level filter can move the displayed
+  // shape off the `position` a host asked for (or defaulted to), and that
+  // used to happen silently — the screen would show one shape while a host
+  // that persists `onPositionChange`'s value (a board's "Add to board"
+  // payload) recorded a different one. Bm has no beginner shape at all, so a
+  // beginner query widens to its two emerging shapes at indices 2 and 3,
+  // excluding index 0 (the requested/default position) outright.
+  it("notifies the host when the level filter displays a different shape than requested", () => {
+    const result = lookupGuitarChord("Bm", "guitar")!;
+    const openMidi = INSTRUMENTS.guitar.openMidi;
+    const rootPc = rootPitchClass("Bm");
+    const facts = result.positions.map((p) => positionFacts(p, openMidi, rootPc));
+    const selection = selectForExperience(facts, { level: "beginner" });
+    expect(selection.widenedFrom).toBe("beginner"); // guard: Bm really has no beginner shape
+    expect(selection.indices).not.toContain(0); // guard: the requested index 0 is excluded
+
+    const onPositionChange = vi.fn();
+    render(
+      <GuitarChordPanel
+        chord="Bm"
+        level="beginner"
+        position={0}
+        onPositionChange={onPositionChange}
+      />,
+    );
+    expect(onPositionChange).toHaveBeenCalledWith(selection.indices[0]);
+  });
+
   it("reports the index when the user picks a placement", () => {
     // The default level ("established") filters Am's positions, so the
     // second *visible* button is not necessarily index 1 in the full list.
