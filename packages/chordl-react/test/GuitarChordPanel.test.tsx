@@ -1,6 +1,13 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, fireEvent, within } from "@testing-library/react";
 import { GuitarChordPanel } from "../src/components/GuitarChordPanel";
+import {
+  lookupGuitarChord,
+  INSTRUMENTS,
+  positionFacts,
+  rootPitchClass,
+  selectForExperience,
+} from "@pepperhorn/chordl-guitar";
 
 /** The Guitar/Ukulele pills are the first button row in the panel. */
 function instrumentButtons(container: HTMLElement) {
@@ -154,12 +161,23 @@ describe("GuitarChordPanel position reporting", () => {
   });
 
   it("reports the index when the user picks a placement", () => {
+    // The default level ("established") filters Am's positions, so the
+    // second *visible* button is not necessarily index 1 in the full list.
+    // Derive the expected underlying index from the same public API the
+    // panel calls, rather than assuming an unfiltered identity mapping.
+    const result = lookupGuitarChord("Am", "guitar")!;
+    const openMidi = INSTRUMENTS.guitar.openMidi;
+    const rootPc = rootPitchClass("Am");
+    const facts = result.positions.map((p) => positionFacts(p, openMidi, rootPc));
+    const selection = selectForExperience(facts, { level: "established", shapeClass: "any" });
+    expect(selection.indices.length).toBeGreaterThan(1); // guard: needs >1 visible placement
+
     const onPositionChange = vi.fn();
     const { container } = render(
       <GuitarChordPanel chord="Am" onPositionChange={onPositionChange} />,
     );
     fireEvent.click(positionButtons(container)[1]);
-    expect(onPositionChange).toHaveBeenCalledWith(1);
+    expect(onPositionChange).toHaveBeenCalledWith(selection.indices[1]);
   });
 
   it("reports the reset to 0 when the chord changes, so a host cannot drift", () => {
@@ -183,9 +201,6 @@ describe("GuitarChordPanel position reporting", () => {
     expect(onInstrumentChange).toHaveBeenCalledWith("ukulele");
   });
 });
-
-const barreToggle = (c: HTMLElement) =>
-  c.querySelector<HTMLInputElement>(".bc-guitar-barre-checkbox");
 
 describe("instrument coverage", () => {
   it("offers guitar, top-3 and ukulele", () => {
@@ -213,47 +228,38 @@ describe("instrument coverage", () => {
   });
 });
 
-describe("barre filter", () => {
-  it("is offered only when the chord has both barre and non-barre shapes", () => {
-    // Am has open shapes and barre shapes.
-    expect(barreToggle(render(<GuitarChordPanel chord="Am" />).container)).toBeTruthy();
-  });
-
+describe("level and shape-class controls", () => {
   it("is hidden on a board card", () => {
     const { container } = render(<GuitarChordPanel chord="Am" showControls={false} />);
-    expect(barreToggle(container)).toBeNull();
+    expect(container.querySelectorAll(".bc-guitar-level-btn")).toHaveLength(0);
+    expect(container.querySelectorAll(".bc-guitar-shapeclass-btn")).toHaveLength(0);
   });
 
-  it("removes barre placements when switched on", () => {
+  it("changes which positions are offered when the level changes", () => {
+    // Am: an open shape (beginner), two barre shapes (established), and one
+    // barre-free shape away from the nut (emerging) — a real multi-tier chord.
     const { container } = render(<GuitarChordPanel chord="Am" />);
-    const before = positionButtons(container).length;
-    fireEvent.click(barreToggle(container)!);
-    expect(positionButtons(container).length).toBeLessThan(before);
+    const established = positionButtons(container).length;
+    fireEvent.click(within(container).getByRole("button", { name: "Beginner" }));
+    const beginner = positionButtons(container).length;
+    // Am has only one beginner-tier shape, so the toggle row (which needs >1
+    // visible placement to appear at all) disappears entirely.
+    expect(beginner).toBeLessThan(established);
   });
 
   /**
-   * The filter hides shapes; it never renumbers them. A board card persists the
-   * position index, so a click has to report the index into the full list or a
-   * saved card would come back showing a different voicing.
+   * Level filters, shape class refines within it — dropping the refinement
+   * rather than emptying the frame, exactly as the old `onlyBarres` fallback
+   * did for the barre checkbox it replaced. Am's one emerging-tier shape
+   * (barre-free, away from the nut) is never "open", so asking for "open"
+   * within "emerging" always empties, forcing the drop.
    */
-  it("reports the underlying index, not the filtered one", () => {
-    const onPositionChange = vi.fn();
-    const { container } = render(
-      <GuitarChordPanel chord="Am" onPositionChange={onPositionChange} />,
-    );
-    const unfiltered = positionButtons(container);
-    // Index reported for the last placement with the filter off...
-    fireEvent.click(unfiltered[unfiltered.length - 1]);
-    const reportedUnfiltered = onPositionChange.mock.calls.at(-1)![0];
-
-    onPositionChange.mockClear();
-    fireEvent.click(barreToggle(container)!);
-    const filtered = positionButtons(container);
-    fireEvent.click(filtered[filtered.length - 1]);
-    const reportedFiltered = onPositionChange.mock.calls.at(-1)![0];
-
-    // ...must still be an index into the full list, so the two agree on meaning.
-    expect(reportedFiltered).toBeLessThanOrEqual(reportedUnfiltered);
-    expect(Number.isInteger(reportedFiltered)).toBe(true);
+  it("drops the shape-class refinement and says so, rather than emptying the frame", () => {
+    const { container } = render(<GuitarChordPanel chord="Am" />);
+    fireEvent.click(within(container).getByRole("button", { name: "Emerging" }));
+    fireEvent.click(within(container).getByRole("button", { name: "Open" }));
+    expect(container.textContent).toMatch(/no open emerging shape/i);
+    // Still renders a diagram rather than going blank.
+    expect(container.querySelector(".bc-guitar-chord")).toBeTruthy();
   });
 });
