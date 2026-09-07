@@ -6,7 +6,9 @@
  * same facts; this ranks on them. They are deliberately separate — a filter
  * answers "show me the open ones", a rank answers "can I play this yet".
  */
+import type { ChordsDbPosition } from "./instruments.js";
 import type { PositionFacts } from "./voicingFacts.js";
+import { positionFacts } from "./voicingFacts.js";
 import type { ShapeClass } from "./voicingSelect.js";
 import { matchesShapeClass } from "./voicingSelect.js";
 
@@ -73,7 +75,17 @@ export function levelForTop3(frets: number[], position: number): ExperienceLevel
 
 export interface ExperienceQuery {
   level: ExperienceLevel;
-  /** Optional refinement within the level. Default "any". */
+  /**
+   * Optional refinement within the level. Default "any".
+   *
+   * Published API, kept for when the level control gains a paired shape-class
+   * control — deliberately not wired into any UI yet (see
+   * `GuitarChordPanel`'s level toggle, which is the only control shipped so
+   * far). Under cumulative level matching it now genuinely refines at the
+   * `emerging` and `established` rungs (it can drop shapes those levels would
+   * otherwise include), so do not delete this as dead — only its UI is
+   * deferred, not the mechanism.
+   */
   shapeClass?: ShapeClass;
 }
 
@@ -91,10 +103,19 @@ export interface ExperienceSelection {
 /**
  * Filter by level, refine by shape class, and relax rather than show nothing.
  *
- * Emptiness is the common case, not the edge: 220 of 529 chords have no open
- * shape at all and 88 have only barre shapes, so a beginner filter finds
+ * Level matching is CUMULATIVE, not exclusive: `query.level` answers "can I
+ * play this yet", so a level matches every shape ranked at or below it on
+ * `EXPERIENCE_LADDER` — `established` matches everything, `emerging` matches
+ * beginner + emerging, `beginner` matches only beginner (there is nothing
+ * below it to include). An established player can certainly play an open C;
+ * excluding the open shape from an "established" query was the bug, not a
+ * feature.
+ *
+ * Emptiness is still possible at the bottom rung: 220 of 529 chords have no
+ * open shape at all and 88 have only barre shapes, so a beginner filter finds
  * nothing for nearly half the corpus. Returning an empty frame there would
- * punish exactly the learner the filter is for.
+ * punish exactly the learner the filter is for, so relaxation still widens
+ * one rung at a time rather than giving up.
  *
  * Relaxation order is deliberate. The refinement goes first because the level
  * is what the user asked for and the shape class only narrows it; widening the
@@ -107,7 +128,10 @@ export interface ExperienceSelection {
  *   "established" even when its authoritative, stored level (`levelForTop3`)
  *   says otherwise. Shape-class matching still reads `facts[i]` either way:
  *   only the level lookup is overridable. Missing entries (a shorter array,
- *   or `undefined` at an index) fall back to the derived level.
+ *   or `undefined` at an index) fall back to the derived level. Prefer
+ *   `selectForResult` when a `GuitarChordResult` (or equivalent
+ *   positions+levels pair) is in hand — it threads this argument for you so a
+ *   caller cannot forget it and silently reintroduce derived-only ranking.
  */
 export function selectForExperience(
   facts: PositionFacts[],
@@ -119,12 +143,14 @@ export function selectForExperience(
   }
   const cls = query.shapeClass ?? "any";
   const levelOf = (i: number): ExperienceLevel => levels?.[i] ?? levelForFacts(facts[i]);
+  const rank = (level: ExperienceLevel) => EXPERIENCE_LADDER.indexOf(level);
+  // Cumulative: everything ranked at or below `level` counts as a match.
   const at = (level: ExperienceLevel, withClass: boolean) =>
     facts
       .map((f, i) => i)
       .filter(
         (i) =>
-          levelOf(i) === level &&
+          rank(levelOf(i)) <= rank(level) &&
           (!withClass || matchesShapeClass(facts[i], cls)),
       );
 
@@ -158,4 +184,32 @@ export function selectForExperience(
     droppedShapeClass: cls !== "any",
     widenedFrom: query.level,
   };
+}
+
+/**
+ * `selectForExperience`, but for a `GuitarChordResult` (or any duck-typed
+ * `{ positions, levels }` pair) instead of a bare facts array.
+ *
+ * `selectForExperience`'s third argument is what stops top-3 shapes being
+ * mis-ranked: the six-string derivation (`levelForFacts`) is structurally
+ * unable to call a top-3 shape "established" because top-3 positions never
+ * carry barres, so a caller that forgets to pass `levels` silently gets a
+ * shape re-ranked one or more rungs too easy. Threading it by hand is exactly
+ * the kind of thing a future caller forgets, so this wrapper does it for you:
+ * it derives `facts` from `result.positions` and always passes
+ * `result.levels` through, leaving nowhere for the argument to get dropped.
+ *
+ * Prefer this whenever a full result (not just bare facts) is in hand. The
+ * bare-facts form of `selectForExperience` stays published for callers that
+ * only ever have `PositionFacts[]` — most tests, and anything working one
+ * level below a `GuitarChordResult`.
+ */
+export function selectForResult(
+  result: { positions: ChordsDbPosition[]; levels: ExperienceLevel[] },
+  openMidi: number[],
+  rootPc: number | null,
+  query: ExperienceQuery,
+): ExperienceSelection {
+  const facts = result.positions.map((pos) => positionFacts(pos, openMidi, rootPc));
+  return selectForExperience(facts, query, result.levels);
 }

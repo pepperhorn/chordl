@@ -56,6 +56,7 @@ export {
   levelForFacts,
   levelForTop3,
   selectForExperience,
+  selectForResult,
 } from "./experience.js";
 export type {
   ExperienceLevel,
