@@ -202,6 +202,7 @@ function AnnotationControl({
   size,
   onSizeChange,
   children,
+  disabled = false,
 }: {
   label: string;
   active: boolean;
@@ -209,9 +210,13 @@ function AnnotationControl({
   size: TextSize;
   onSizeChange: (v: TextSize) => void;
   children?: React.ReactNode;
+  disabled?: boolean;
 }) {
   return (
-    <div className="control-item annotation-control">
+    <div
+      className={`control-item annotation-control${disabled ? " annotation-control--disabled" : ""}`}
+      title={disabled ? "Applies to the keyboard and staff, not to guitar frames" : undefined}
+    >
       <span className="control-label">{label}</span>
       <div className="control-content annotation-control-content">
         <button
@@ -219,6 +224,8 @@ function AnnotationControl({
           className="pill-btn annotation-toggle"
           data-active={active}
           aria-pressed={active}
+          aria-disabled={disabled}
+          disabled={disabled}
           onClick={onToggle}
         >
           {active ? "On" : "Off"}
@@ -232,6 +239,8 @@ function AnnotationControl({
             <select
               className="annotation-size"
               aria-label={`${label} size`}
+              aria-disabled={disabled}
+              disabled={disabled}
               value={size}
               onChange={(e) => onSizeChange(e.target.value as TextSize)}
             >
@@ -536,7 +545,7 @@ function TextCardArtControls({
   );
 }
 
-function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExportStatus }: { uiTheme: UIThemeMode; showOptions: boolean; onToggleOptions: () => void; onExportStatus?: (status: "idle" | "preparing") => void }) {
+export function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExportStatus }: { uiTheme: UIThemeMode; showOptions: boolean; onToggleOptions: () => void; onExportStatus?: (status: "idle" | "preparing") => void }) {
   const [input, setInput] = useState("Cmaj7#5 starting on G#");
   const [theme, setTheme] = useState<string>("simple");
   const [keyFormat, setKeyFormat] = useState<"compact" | "exact">("compact");
@@ -1238,6 +1247,7 @@ function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExportStatu
             onToggle={() => setShowNoteNames((value) => !value)}
             size={noteNameSize}
             onSizeChange={setNoteNameSize}
+            disabled={displayMode === "guitar"}
           >
             <fieldset className="annotation-option-group">
               <legend>Names</legend>
@@ -1251,6 +1261,7 @@ function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExportStatu
             onToggle={() => setShowDegrees((value) => !value)}
             size={degreeSize}
             onSizeChange={setDegreeSize}
+            disabled={displayMode === "guitar"}
           />
           <AnnotationControl
             label="Fingering"
@@ -1258,6 +1269,7 @@ function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExportStatu
             onToggle={() => setFingeringMode((value) => value === "none" ? "auto" : "none")}
             size={fingeringSize}
             onSizeChange={setFingeringSize}
+            disabled={displayMode === "guitar"}
           >
             <fieldset className="annotation-option-group">
               <legend>Fingering</legend>
@@ -2030,4 +2042,8 @@ function App() {
   );
 }
 
-createRoot(document.getElementById("root")!).render(<App />);
+// Guarded so this module can be imported (e.g. by tests exercising
+// `InteractiveInput` directly) without a #root element present — the real
+// dev/index.html always provides one.
+const rootEl = document.getElementById("root");
+if (rootEl) createRoot(rootEl).render(<App />);
