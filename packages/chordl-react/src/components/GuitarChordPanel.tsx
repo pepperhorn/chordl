@@ -1,8 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { parseChordDescription } from "@pepperhorn/chordl-core";
-import { lookupGuitarChord, INSTRUMENTS } from "@pepperhorn/chordl-guitar";
-import type { InstrumentId } from "@pepperhorn/chordl-guitar";
+import {
+  lookupGuitarChord,
+  INSTRUMENTS,
+  rootPitchClass,
+  selectForResult,
+  EXPERIENCE_LADDER,
+} from "@pepperhorn/chordl-guitar";
+import type { InstrumentId, ExperienceLevel } from "@pepperhorn/chordl-guitar";
 import type { UIThemeMode } from "../config";
 import { resolveUITheme, UIThemeProvider } from "../ui-theme";
 import { GuitarChord } from "./GuitarChord";
@@ -23,10 +29,33 @@ export interface GuitarChordPanelProps {
   /** Fires when the user picks a different fret position. */
   onPositionChange?: (position: number) => void;
   /**
+   * Difficulty filter on the frame's alternate shapes — "can I play this
+   * yet". Like `instrument`/`position`, this seeds internal state and
+   * re-syncs whenever the prop changes. Default "established". Only affects
+   * rendering when `showControls` is true — a board card pins one exact
+   * shape via `position` and must keep showing exactly that shape, so it
+   * never runs the filter, even if this prop is set.
+   */
+  level?: ExperienceLevel;
+  /** Fires when the user picks a different level, so hosts can persist it. */
+  onLevelChange?: (level: ExperienceLevel) => void;
+  /**
    * Show the instrument and A/B/C position toggles. Default true; board cards
    * render one fixed shape and pass false.
    */
   showControls?: boolean;
+  /**
+   * Number of frets to draw. Optional — the panel always computes a floor
+   * from the shape actually on screen (the highest window-relative fret it
+   * uses) and never draws fewer than that, so a request below the floor can
+   * widen the window but never crop the chord. That floor is at most 4 for
+   * any fretted shape in the corpus — tighter than the instrument's own
+   * default of 5 — except for a shape with no fretted string at all (every
+   * string open or muted, e.g. ukulele Am7/C6, guitar Em/D), which has
+   * nothing to floor on and falls back to the instrument's own default width
+   * instead. Default is the floor itself.
+   */
+  frets?: number;
   scale?: number;
   uiTheme?: UIThemeMode;
   title?: string;
@@ -57,7 +86,10 @@ export function GuitarChordPanel({
   onInstrumentChange,
   position: positionProp,
   onPositionChange,
+  level: levelProp,
+  onLevelChange,
   showControls = true,
+  frets,
   scale = 1,
   uiTheme,
   title,
@@ -126,14 +158,27 @@ export function GuitarChordPanel({
   const selectPosition = (i: number) => { setActive(i); onPositionChange?.(i); };
   const selectInstrument = (id: InstrumentId) => { setInstrument(id); onInstrumentChange?.(id); };
 
-  // Barre filtering hides shapes; it never changes what was looked up. Indices
-  // stay indices into the full list, so a host that persists one (a board card
-  // stores `position`) is never handed a number that means something different
-  // once the filter changes.
-  const [hideBarres, setHideBarres] = useState(false);
+  const [level, setLevel] = useState<ExperienceLevel>(levelProp ?? "established");
+  // Follow the prop if the host drives the level, same pattern as `position`.
+  const [prevLevelProp, setPrevLevelProp] = useState(levelProp);
+  if (levelProp !== prevLevelProp) {
+    setPrevLevelProp(levelProp);
+    if (levelProp !== undefined) setLevel(levelProp);
+  }
+  const selectLevel = (l: ExperienceLevel) => { setLevel(l); onLevelChange?.(l); };
+
+  // Root pitch class of the parsed label, needed to derive facts (inversion)
+  // for every stored position below. null when the label can't be parsed to
+  // a root — positionFacts degrades to inversion "other" rather than guessing.
+  const rootPc = useMemo(() => (label ? rootPitchClass(label) : null), [label]);
 
   // Visible placements, each carrying its index into the full list so a click
-  // reports the same number whether or not the filter is on.
+  // reports the same number whether or not the filter is on. Indices stay
+  // indices into the full list, so a host that persists one (a board card
+  // stores `position`) is never handed a number that means something
+  // different once the filter changes — `selectForExperience` is built to
+  // return indices into whatever array it is handed, so it is always given
+  // the full `result.positions`, never a pre-filtered slice.
   //
   // Computed here — above the early returns, so the hook order is stable —
   // rather than at the point of use, because `diagram` is handed to
@@ -142,13 +187,23 @@ export function GuitarChordPanel({
   // else re-rendered this panel (typing in the board's title field, say).
   const placements = useMemo(() => {
     if (!result) return null;
-    const allPlacements = result.shapes.map((_, i) => i);
-    const barreFree = allPlacements.filter((i) => result.positions[i].barres.length === 0);
-    // A chord whose every shape is a barre (F, Bm — exactly the chords a
-    // beginner wants this switch for) would otherwise render an empty frame.
-    // Show them and say why instead.
-    const onlyBarres = hideBarres && barreFree.length === 0;
-    const visible = hideBarres && !onlyBarres ? barreFree : allPlacements;
+    // A board card (showControls false) has no level toggle to override the
+    // default, and pins one exact shape via `position` — it must keep
+    // showing exactly that shape, not have it silently swapped for a
+    // different one because "established" (the interactive default) isn't
+    // what that shape happens to be. So the filter is interactive-only: it
+    // never runs where there is no control to change its outcome.
+    //
+    // Only `indices`/`level`/`widenedFrom` are ever read below — the bypass
+    // branch deliberately doesn't fabricate a full `ExperienceSelection`
+    // (`droppedShapeClass` in particular is never read here: the panel never
+    // sets a shape class, so it would always be a dead `false`).
+    const allPositions = result.positions.map((_, i) => i);
+    const selection: { indices: number[]; level: ExperienceLevel; widenedFrom?: ExperienceLevel } =
+      showControls
+        ? selectForResult(result, INSTRUMENTS[resolved].openMidi, rootPc, { level })
+        : { indices: allPositions, level };
+    const visible = selection.indices;
     const idx = visible.includes(active)
       ? active
       : visible[0] ?? Math.max(0, Math.min(active, result.shapes.length - 1));
@@ -157,8 +212,61 @@ export function GuitarChordPanel({
     // keyboard and staff cards), so drop the SVG's copy rather than showing it
     // twice in a font svguitar sizes independently of the DOM.
     const { title: _shapeTitle, ...diagram } = result.shapes[idx];
-    return { allPlacements, barreFree, onlyBarres, visible, idx, diagram };
-  }, [result, hideBarres, active]);
+    // Floor for the fret window: the highest window-relative fret the
+    // displayed shape actually uses. `-1` (muted) and `0` (open) are
+    // sentinels, not frets — they're excluded rather than treated as 0-height
+    // bars. These values are relative to `baseFret`, already windowed (see
+    // instruments.ts / pitch.ts), so this is not an absolute fret number.
+    const usedFrets = result.positions[idx].frets.filter((f) => f > 0);
+    // All-open shapes (every string open or muted — ukulele Am7/C6, guitar
+    // Em/D) have no fretted string to floor on. Fall back to the instrument's
+    // own default width rather than 1, which drew a single-fret sliver.
+    const minFrets = usedFrets.length > 0 ? Math.max(...usedFrets) : cfg.frets;
+    return { selection, visible, idx, diagram, minFrets };
+  }, [result, resolved, rootPc, level, active, showControls]);
+
+  // Tell the host when the level filter puts a different shape on screen than
+  // `active` names. Interactive-only (`showControls`), same as the filter
+  // itself: a board card's `placements.idx` never diverges from `active`
+  // because its bypass branch never drops anything, so this never fires
+  // there. Previously silent — clicking a position stored it via
+  // `selectPosition`, but the filter could ALSO move the displayed shape
+  // (widening past `active`, or excluding it outright) without ever calling
+  // `onPositionChange`, so a host that persists the callback's value (a
+  // board's "Add to board" payload) could record a shape the screen wasn't
+  // even showing. `active` itself is left untouched by this effect — but the
+  // only shipped host (`dev/App.tsx`) is controlled, feeding the reported
+  // index straight back in as `position`, which re-syncs `active` right back
+  // to `displayedIdx`. So in practice widening the level back out does NOT
+  // re-reveal the originally requested shape there; it keeps showing the
+  // widened one, because the round trip already overwrote what "requested"
+  // meant. Only an uncontrolled panel (no `onPositionChange`, or one that
+  // doesn't feed the index back into `position`) preserves the original
+  // `active` the way this comment used to claim for every host.
+  //
+  // Guarded the same way as the identity-notify effect above
+  // (`notifiedIdentity`): a plain `[displayedIdx, active, onPositionChange]`
+  // dependency re-fires on every render for a host passing an inline
+  // callback (a new function identity each render) even when nothing about
+  // the displayed shape changed — that was an infinite render loop, since
+  // calling `onPositionChange` triggers the host to re-render with yet
+  // another new callback identity. The ref instead remembers which
+  // `displayedIdx` has already been reported, so once notified the effect is
+  // a no-op regardless of how many times identity churns; it resets when the
+  // shape converges back onto `active`, so a later, different divergence
+  // still gets reported.
+  const displayedIdx = placements?.idx;
+  const notifiedDrift = useRef<number | undefined>(undefined);
+  useEffect(() => {
+    if (displayedIdx === undefined) return;
+    if (displayedIdx === active) {
+      notifiedDrift.current = undefined;
+      return;
+    }
+    if (notifiedDrift.current === displayedIdx) return;
+    notifiedDrift.current = displayedIdx;
+    onPositionChange?.(displayedIdx);
+  }, [displayedIdx, active, onPositionChange]);
 
   const notice = (msg: string) => (
     <UIThemeProvider value={uiCtx}>
@@ -176,6 +284,7 @@ export function GuitarChordPanel({
         return (
           <button
             key={id}
+            type="button"
             className="bc-guitar-instrument-btn"
             onClick={() => selectInstrument(id)}
             data-active={on}
@@ -213,7 +322,24 @@ export function GuitarChordPanel({
   }
 
   // `result` is non-null past the guard above, so the memo above resolved too.
-  const { allPlacements, barreFree, onlyBarres, visible, idx, diagram } = placements!;
+  const { selection, visible, idx, diagram, minFrets } = placements!;
+
+  // Generalises the old `onlyBarres` notice: say so whenever the level
+  // filter couldn't be honoured exactly, rather than silently serving
+  // something else. (`droppedShapeClass` can't fire here — the panel never
+  // sets a shape class, so `selectForExperience` always sees "any".)
+  //
+  // `selection.widenedFrom`, when present, is always a strictly easier rung
+  // than `selection.level` — cumulative matching guarantees selectForExperience
+  // never widens to the same level it started from (see its "3. widen" step),
+  // so there is no second case here for "nothing at any level matched" the
+  // way there was under the old exclusive matching. That branch used to
+  // report a self-contradictory `level`/`widenedFrom` pair; it was deleted
+  // from `selectForExperience` as dead code, and this string went with it.
+  let filterNotice: string | null = null;
+  if (selection.widenedFrom !== undefined) {
+    filterNotice = `No ${selection.widenedFrom} shape for ${label} — showing ${selection.level} instead.`;
+  }
 
   return (
     <UIThemeProvider value={uiCtx}>
@@ -243,42 +369,49 @@ export function GuitarChordPanel({
 
         {instrumentToggle}
 
-        {/* Only offered when it would change something — a chord with no barre
-            shapes doesn't need a switch that does nothing. */}
-        {showControls && barreFree.length < allPlacements.length && (
-          <label
-            className="bc-guitar-barre-toggle"
-            style={{
-              display: "inline-flex", alignItems: "center", gap: 6, cursor: "pointer",
-              fontFamily: "system-ui, sans-serif", fontSize: "0.8rem", color: muted,
-            }}
-          >
-            <input
-              type="checkbox"
-              className="bc-guitar-barre-checkbox"
-              checked={hideBarres}
-              onChange={(e) => setHideBarres(e.target.checked)}
-            />
-            Hide barre shapes
-          </label>
+        {showControls && (
+          <div className="bc-guitar-level-toggle" style={{ display: "flex", gap: 6, justifyContent: "center" }}>
+            {EXPERIENCE_LADDER.map((l) => {
+              const on = l === level;
+              const displayLabel = l.charAt(0).toUpperCase() + l.slice(1);
+              return (
+                <button
+                  key={l}
+                  type="button"
+                  className="bc-guitar-level-btn"
+                  onClick={() => selectLevel(l)}
+                  data-active={on}
+                  style={{
+                    padding: "4px 14px", borderRadius: 999, cursor: "pointer",
+                    border: on ? "1px solid transparent" : "1px solid var(--btn-border, #ddd)",
+                    background: on ? "var(--pill-active-bg, #0ea5e9)" : "var(--pill-bg, #f1f5f9)",
+                    color: on ? "var(--pill-active-text, #fff)" : "var(--text-muted, #64748b)",
+                    fontFamily: "system-ui, sans-serif", fontSize: "0.8rem", fontWeight: on ? 600 : 500,
+                  }}
+                >
+                  {displayLabel}
+                </button>
+              );
+            })}
+          </div>
         )}
 
-        {onlyBarres && (
+        {filterNotice && (
           <div className="bc-guitar-notice" style={{ textAlign: "center", color: muted, fontSize: "0.8rem" }}>
-            Every {label} shape needs a barre — showing them anyway.
+            {filterNotice}
           </div>
         )}
 
         <GuitarChord
           chord={diagram}
           scale={scale}
-          frets={cfg.frets}
+          frets={Math.max(frets ?? minFrets, minFrets)}
           settings={guitarSettings}
         />
 
         {/* Alternate placements. Labelled by visible order so the row reads
-            A/B/C even when the barre filter has removed shapes between them,
-            while the click still reports the underlying index. */}
+            A/B/C even when the level filter has removed shapes
+            between them, while the click still reports the underlying index. */}
         {showControls && visible.length > 1 && (
           <div className="bc-guitar-position-toggle" style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "center" }}>
             {visible.map((i, shown) => {
@@ -286,6 +419,7 @@ export function GuitarChordPanel({
               return (
                 <button
                   key={i}
+                  type="button"
                   className="bc-guitar-position-btn"
                   onClick={() => selectPosition(i)}
                   data-active={i === idx}

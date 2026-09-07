@@ -7,6 +7,11 @@ import {
   INSTRUMENTS,
   GUITAR_TOP3_PRESETS,
   TOP3_UNRESOLVED,
+  positionFacts,
+  levelForFacts,
+  EXPERIENCE_LADDER,
+  findTop3Preset,
+  splitLabel,
 } from "../src";
 
 describe("lookupGuitarChord", () => {
@@ -334,5 +339,42 @@ describe("power chords sound correct", () => {
         );
       }
     }
+  });
+});
+
+describe("experience level on lookup results", () => {
+  it("returns one level per shape, in the same order", () => {
+    const res = lookupGuitarChord("C", "guitar")!;
+    expect(res.levels).toHaveLength(res.shapes.length);
+    expect(res.levels).toHaveLength(res.positions.length);
+  });
+
+  it("agrees with levelForFacts for every shape", () => {
+    for (const label of ["C", "G", "F", "Bm", "Am7"]) {
+      const res = lookupGuitarChord(label, "guitar")!;
+      res.positions.forEach((p, i) => {
+        const expected = levelForFacts(positionFacts(p, INSTRUMENTS.guitar.openMidi, 0));
+        expect(res.levels[i], `${label}[${i}]`).toBe(expected);
+      });
+    }
+  });
+
+  it("reads the preset's stored level rather than recomputing it", () => {
+    // Cm: the preset's window sits at fret 3 (frets [3,2,1], baseFret 3), no
+    // barre. The generated table's stored level is "established" (tier-2
+    // corpus shape away from the nut), but recomputing from `positionFacts`
+    // the way six-string shapes are leveled would call this "emerging" — not
+    // open (baseFret !== 1) and no barre to reach "established" with, since a
+    // top-3 preset never carries one. That disagreement is what makes this
+    // assertion able to catch a regression to recomputing instead of reading
+    // `.level`; "C" major does not disagree (both paths say "beginner"), so
+    // it could not.
+    const res = lookupGuitarChord("Cm", "guitar-top3")!;
+    const parsed = splitLabel("Cm")!;
+    const preset = findTop3Preset(parsed.root, parsed.suffix)!;
+    expect(preset.level).toBe("established");
+    expect(res.levels).toHaveLength(res.shapes.length);
+    expect(res.levels[0]).toBe(preset.level);
+    expect(EXPERIENCE_LADDER).toContain(res.levels[0]);
   });
 });

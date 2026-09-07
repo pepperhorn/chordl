@@ -374,6 +374,14 @@
         gap: 6px;
       }
 
+      /* Greyed, not hidden: the control stays in place when the display mode
+         changes to guitar, which ignores note names, degrees and fingering
+         entirely. Hiding it would make the control row jump and leave the
+         user hunting for a control that vanished. */
+      .annotation-control--disabled { opacity: 0.45; }
+      .annotation-control--disabled .pill-btn,
+      .annotation-control--disabled .annotation-size { cursor: not-allowed; }
+
       .annotation-toggle {
         background: var(--pill-bg);
       }

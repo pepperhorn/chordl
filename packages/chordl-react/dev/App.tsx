@@ -202,6 +202,7 @@ function AnnotationControl({
   size,
   onSizeChange,
   children,
+  disabled = false,
 }: {
   label: string;
   active: boolean;
@@ -209,9 +210,13 @@ function AnnotationControl({
   size: TextSize;
   onSizeChange: (v: TextSize) => void;
   children?: React.ReactNode;
+  disabled?: boolean;
 }) {
   return (
-    <div className="control-item annotation-control">
+    <div
+      className={`control-item annotation-control${disabled ? " annotation-control--disabled" : ""}`}
+      title={disabled ? "Applies to the keyboard and staff, not to guitar frames" : undefined}
+    >
       <span className="control-label">{label}</span>
       <div className="control-content annotation-control-content">
         <button
@@ -219,6 +224,8 @@ function AnnotationControl({
           className="pill-btn annotation-toggle"
           data-active={active}
           aria-pressed={active}
+          aria-disabled={disabled}
+          disabled={disabled}
           onClick={onToggle}
         >
           {active ? "On" : "Off"}
@@ -232,6 +239,8 @@ function AnnotationControl({
             <select
               className="annotation-size"
               aria-label={`${label} size`}
+              aria-disabled={disabled}
+              disabled={disabled}
               value={size}
               onChange={(e) => onSizeChange(e.target.value as TextSize)}
             >
@@ -245,7 +254,23 @@ function AnnotationControl({
             {children && (
               <details className="annotation-options">
                 <summary>Options</summary>
-                <div className="annotation-options-menu">{children}</div>
+                {/* `disabled` only reaches the toggle/select above by default —
+                    the Names and Fingering-mode radios living in `children`
+                    are plain form controls this component doesn't otherwise
+                    touch. A disabled <fieldset> cascades to every descendant
+                    form control (including ones nested in the child's own
+                    <fieldset>), so wrap here rather than threading `disabled`
+                    through each caller's radio group. `display: contents`
+                    keeps it invisible to layout — `.annotation-options-menu`
+                    already supplies the box (border/padding/background) that
+                    a plain <fieldset> would otherwise duplicate with its own
+                    UA-default border and margin. */}
+                <fieldset
+                  disabled={disabled}
+                  style={{ display: "contents", border: 0, margin: 0, padding: 0 }}
+                >
+                  <div className="annotation-options-menu">{children}</div>
+                </fieldset>
               </details>
             )}
           </>
@@ -536,7 +561,7 @@ function TextCardArtControls({
   );
 }
 
-function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExportStatus }: { uiTheme: UIThemeMode; showOptions: boolean; onToggleOptions: () => void; onExportStatus?: (status: "idle" | "preparing") => void }) {
+export function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExportStatus }: { uiTheme: UIThemeMode; showOptions: boolean; onToggleOptions: () => void; onExportStatus?: (status: "idle" | "preparing") => void }) {
   const [input, setInput] = useState("Cmaj7#5 starting on G#");
   const [theme, setTheme] = useState<string>("simple");
   const [keyFormat, setKeyFormat] = useState<"compact" | "exact">("compact");
@@ -1238,6 +1263,7 @@ function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExportStatu
             onToggle={() => setShowNoteNames((value) => !value)}
             size={noteNameSize}
             onSizeChange={setNoteNameSize}
+            disabled={displayMode === "guitar"}
           >
             <fieldset className="annotation-option-group">
               <legend>Names</legend>
@@ -1251,6 +1277,7 @@ function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExportStatu
             onToggle={() => setShowDegrees((value) => !value)}
             size={degreeSize}
             onSizeChange={setDegreeSize}
+            disabled={displayMode === "guitar"}
           />
           <AnnotationControl
             label="Fingering"
@@ -1258,6 +1285,7 @@ function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExportStatu
             onToggle={() => setFingeringMode((value) => value === "none" ? "auto" : "none")}
             size={fingeringSize}
             onSizeChange={setFingeringSize}
+            disabled={displayMode === "guitar"}
           >
             <fieldset className="annotation-option-group">
               <legend>Fingering</legend>
@@ -2030,4 +2058,16 @@ function App() {
   );
 }
 
-createRoot(document.getElementById("root")!).render(<App />);
+// Guarded so this module can be imported (e.g. by tests exercising
+// `InteractiveInput` directly) without a #root element present — the real
+// dev/index.html always provides one, so this branch is a no-op in the real
+// app. Do not "simplify" this back to a bare `!` — that turns a missing
+// #root into a loud crash at import time for tests, but if dev/index.html
+// itself is ever the one missing it, mounting nothing here would otherwise
+// fail *silently*: a blank page with no console output and no clue why.
+const rootEl = document.getElementById("root");
+if (rootEl) {
+  createRoot(rootEl).render(<App />);
+} else {
+  console.error("chordl dev app: no #root element found in the document — nothing was mounted.");
+}

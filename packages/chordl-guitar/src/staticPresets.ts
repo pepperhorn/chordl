@@ -4,6 +4,7 @@ import { rootPitchClass } from "./pitch.js";
 import { toDbSuffix } from "./chordNames.js";
 import { TOP3_GENERATED, TOP3_UNRESOLVED } from "./top3Generated.js";
 import type { Top3GeneratedEntry, Top3Source } from "./top3Generated.js";
+import type { ExperienceLevel } from "./experience.js";
 
 export interface StaticPreset {
   key: string;
@@ -14,6 +15,8 @@ export interface StaticPreset {
    * from a stored chords-db voicing, or one built from the chord's pitch classes.
    */
   source?: Top3Source;
+  /** How hard the shape is to play. Derived; see src/experience.ts. */
+  level: ExperienceLevel;
   /**
    * True when the shape is playable but not a faithful spelling — it drops the
    * root, or its three notes also name another chord. A caller may present these
@@ -85,6 +88,7 @@ function toPreset(entry: Top3GeneratedEntry): StaticPreset {
       position: window.position,
     },
     source: entry.source,
+    level: entry.level,
     ...(entry.approximate ? { approximate: true as const } : {}),
   };
 }

@@ -1,6 +1,14 @@
+import { useState } from "react";
 import { describe, it, expect, vi } from "vitest";
 import { render, fireEvent, within } from "@testing-library/react";
 import { GuitarChordPanel } from "../src/components/GuitarChordPanel";
+import {
+  lookupGuitarChord,
+  INSTRUMENTS,
+  positionFacts,
+  rootPitchClass,
+  selectForExperience,
+} from "@pepperhorn/chordl-guitar";
 
 /** The Guitar/Ukulele pills are the first button row in the panel. */
 function instrumentButtons(container: HTMLElement) {
@@ -153,13 +161,93 @@ describe("GuitarChordPanel position reporting", () => {
     expect(onPositionChange).not.toHaveBeenCalled();
   });
 
+  // C3 from the whole-branch review: the level filter can move the displayed
+  // shape off the `position` a host asked for (or defaulted to), and that
+  // used to happen silently — the screen would show one shape while a host
+  // that persists `onPositionChange`'s value (a board's "Add to board"
+  // payload) recorded a different one. Bm has no beginner shape at all, so a
+  // beginner query widens to its two emerging shapes at indices 2 and 3,
+  // excluding index 0 (the requested/default position) outright.
+  it("notifies the host when the level filter displays a different shape than requested", () => {
+    const result = lookupGuitarChord("Bm", "guitar")!;
+    const openMidi = INSTRUMENTS.guitar.openMidi;
+    const rootPc = rootPitchClass("Bm");
+    const facts = result.positions.map((p) => positionFacts(p, openMidi, rootPc));
+    const selection = selectForExperience(facts, { level: "beginner" });
+    expect(selection.widenedFrom).toBe("beginner"); // guard: Bm really has no beginner shape
+    expect(selection.indices).not.toContain(0); // guard: the requested index 0 is excluded
+
+    const onPositionChange = vi.fn();
+    render(
+      <GuitarChordPanel
+        chord="Bm"
+        level="beginner"
+        position={0}
+        onPositionChange={onPositionChange}
+      />,
+    );
+    expect(onPositionChange).toHaveBeenCalledWith(selection.indices[0]);
+  });
+
+  // CRITICAL from the whole-branch review: the drift effect above lists
+  // `onPositionChange` in its dependency array but never updates `active`.
+  // The ordinary React idiom for a host that doesn't feed the reported index
+  // back into `position` is an inline callback — `onPositionChange={(i) =>
+  // setLog(l => [...l, i])}` — which gets a fresh function identity on every
+  // one of the host's own re-renders. Without a guard, each notification
+  // triggers the host to re-render (a new inline identity), which re-fires
+  // the effect (identity is a dependency) even though nothing about the
+  // displayed shape changed, which notifies again — an infinite loop that
+  // used to run until React's "Maximum update depth exceeded" guard threw.
+  // Bm has no beginner shape at all (see the widen test above), so
+  // level="beginner" moves the displayed shape off `active`=0 on the very
+  // first render, hitting the drift effect immediately.
+  it("settles instead of looping forever when the host's inline onPositionChange never feeds the index back into position", () => {
+    const calls: number[] = [];
+    let renders = 0;
+    function Host() {
+      renders++;
+      // Real React state, not a vi.fn(): the setter is what makes the host
+      // actually re-render on each notification, which is what regrows a
+      // fresh `onPositionChange` identity and is the mechanism of the loop.
+      const [, setTick] = useState(0);
+      return (
+        <GuitarChordPanel
+          chord="Bm"
+          level="beginner"
+          position={0}
+          onPositionChange={(i) => {
+            calls.push(i);
+            setTick((t) => t + 1);
+          }}
+        />
+      );
+    }
+    expect(() => render(<Host />)).not.toThrow();
+    // Bounded: one notification for the one divergence, not one per render
+    // of a loop (the reviewer's repro logged 60 before its guard threw).
+    expect(renders).toBeLessThan(10);
+    expect(calls.length).toBe(1);
+  });
+
   it("reports the index when the user picks a placement", () => {
+    // The default level ("established") filters Am's positions, so the
+    // second *visible* button is not necessarily index 1 in the full list.
+    // Derive the expected underlying index from the same public API the
+    // panel calls, rather than assuming an unfiltered identity mapping.
+    const result = lookupGuitarChord("Am", "guitar")!;
+    const openMidi = INSTRUMENTS.guitar.openMidi;
+    const rootPc = rootPitchClass("Am");
+    const facts = result.positions.map((p) => positionFacts(p, openMidi, rootPc));
+    const selection = selectForExperience(facts, { level: "established", shapeClass: "any" });
+    expect(selection.indices.length).toBeGreaterThan(1); // guard: needs >1 visible placement
+
     const onPositionChange = vi.fn();
     const { container } = render(
       <GuitarChordPanel chord="Am" onPositionChange={onPositionChange} />,
     );
     fireEvent.click(positionButtons(container)[1]);
-    expect(onPositionChange).toHaveBeenCalledWith(1);
+    expect(onPositionChange).toHaveBeenCalledWith(selection.indices[1]);
   });
 
   it("reports the reset to 0 when the chord changes, so a host cannot drift", () => {
@@ -182,10 +270,21 @@ describe("GuitarChordPanel position reporting", () => {
     fireEvent.click(instrumentButtons(container).ukulele);
     expect(onInstrumentChange).toHaveBeenCalledWith("ukulele");
   });
-});
 
-const barreToggle = (c: HTMLElement) =>
-  c.querySelector<HTMLInputElement>(".bc-guitar-barre-checkbox");
+  // MINOR from the whole-branch review: every button here (instrument,
+  // level, and A/B/C position) omitted `type="button"`, so inside a host
+  // `<form>` clicking one submits it instead of just switching state. Am's
+  // default (established) has more than one visible placement, so this one
+  // render exercises all three button groups.
+  it("gives every button an explicit type, so a host form is not submitted by clicking one", () => {
+    const { container } = render(<GuitarChordPanel chord="Am" />);
+    const buttons = Array.from(container.querySelectorAll("button"));
+    expect(buttons.length).toBeGreaterThan(0);
+    for (const button of buttons) {
+      expect(button.getAttribute("type")).toBe("button");
+    }
+  });
+});
 
 describe("instrument coverage", () => {
   it("offers guitar, top-3 and ukulele", () => {
@@ -213,47 +312,48 @@ describe("instrument coverage", () => {
   });
 });
 
-describe("barre filter", () => {
-  it("is offered only when the chord has both barre and non-barre shapes", () => {
-    // Am has open shapes and barre shapes.
-    expect(barreToggle(render(<GuitarChordPanel chord="Am" />).container)).toBeTruthy();
-  });
-
+describe("level control", () => {
   it("is hidden on a board card", () => {
     const { container } = render(<GuitarChordPanel chord="Am" showControls={false} />);
-    expect(barreToggle(container)).toBeNull();
+    expect(container.querySelectorAll(".bc-guitar-level-btn")).toHaveLength(0);
   });
 
-  it("removes barre placements when switched on", () => {
+  it("changes which positions are offered when the level changes", () => {
+    // Am: an open shape (beginner), two barre shapes (established), and one
+    // barre-free shape away from the nut (emerging) — a real multi-tier chord.
     const { container } = render(<GuitarChordPanel chord="Am" />);
-    const before = positionButtons(container).length;
-    fireEvent.click(barreToggle(container)!);
-    expect(positionButtons(container).length).toBeLessThan(before);
+    const established = positionButtons(container).length;
+    fireEvent.click(within(container).getByRole("button", { name: "Beginner" }));
+    const beginner = positionButtons(container).length;
+    // Am has only one beginner-tier shape, so the toggle row (which needs >1
+    // visible placement to appear at all) disappears entirely.
+    expect(beginner).toBeLessThan(established);
   });
 
   /**
-   * The filter hides shapes; it never renumbers them. A board card persists the
-   * position index, so a click has to report the index into the full list or a
-   * saved card would come back showing a different voicing.
+   * Regression for the bug the coordinator's ruling identified: the panel
+   * used to derive every level from `positionFacts` alone via
+   * `selectForExperience`, which can never call a top-3 shape "established"
+   * (a top-3 preset never carries a barre) even when the shape's real,
+   * stored level — computed on the shape itself by `levelForTop3` — says it
+   * is. That made every guitar-top3 chord fail to match the default
+   * "established" level and show a spurious widen notice. Cm's top-3 preset
+   * is a concrete case: stored level "established", facts-derived level
+   * "emerging" (see the `chordl-guitar` `experience.test.ts` test that pins
+   * this exact mismatch). Passing `result.levels` to `selectForExperience`
+   * must make the authoritative stored level win, so no notice appears.
    */
-  it("reports the underlying index, not the filtered one", () => {
-    const onPositionChange = vi.fn();
+  it("does not widen a guitar-top3 chord whose stored level already matches", () => {
     const { container } = render(
-      <GuitarChordPanel chord="Am" onPositionChange={onPositionChange} />,
+      <GuitarChordPanel chord="Cm" instrument="guitar-top3" />,
     );
-    const unfiltered = positionButtons(container);
-    // Index reported for the last placement with the filter off...
-    fireEvent.click(unfiltered[unfiltered.length - 1]);
-    const reportedUnfiltered = onPositionChange.mock.calls.at(-1)![0];
-
-    onPositionChange.mockClear();
-    fireEvent.click(barreToggle(container)!);
-    const filtered = positionButtons(container);
-    fireEvent.click(filtered[filtered.length - 1]);
-    const reportedFiltered = onPositionChange.mock.calls.at(-1)![0];
-
-    // ...must still be an index into the full list, so the two agree on meaning.
-    expect(reportedFiltered).toBeLessThanOrEqual(reportedUnfiltered);
-    expect(Number.isInteger(reportedFiltered)).toBe(true);
+    expect(container.querySelector(".bc-guitar-chord")).toBeTruthy();
+    expect(container.textContent).not.toMatch(/no established shape/i);
+    // No assertion against "showing every shape instead" here: that string
+    // was generated by a branch (`selectForExperience`'s dead step 4, and the
+    // panel's dead `else if` mirroring it) that could never actually run —
+    // asserting its absence passed vacuously regardless of correctness. Both
+    // were deleted rather than kept as an untestable no-op; see
+    // `chordl-guitar`'s experience.ts and this file's filterNotice comment.
   });
 });

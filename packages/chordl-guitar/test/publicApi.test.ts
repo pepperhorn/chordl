@@ -28,4 +28,15 @@ describe("public API", () => {
   it("no longer exports the retired svguitar-order table", () => {
     expect(api).not.toHaveProperty("OPEN_STRING_MIDI");
   });
+
+  it("exports the experience surface", () => {
+    for (const name of [
+      "EXPERIENCE_LADDER",
+      "levelForFacts",
+      "levelForTop3",
+      "selectForExperience",
+    ]) {
+      expect(api, `missing export ${name}`).toHaveProperty(name);
+    }
+  });
 });
