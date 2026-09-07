@@ -8,9 +8,8 @@ import {
   rootPitchClass,
   selectForExperience,
   EXPERIENCE_LADDER,
-  SHAPE_CLASS_LADDER,
 } from "@pepperhorn/chordl-guitar";
-import type { InstrumentId, ExperienceLevel, ShapeClass } from "@pepperhorn/chordl-guitar";
+import type { InstrumentId, ExperienceLevel } from "@pepperhorn/chordl-guitar";
 import type { UIThemeMode } from "../config";
 import { resolveUITheme, UIThemeProvider } from "../ui-theme";
 import { GuitarChord } from "./GuitarChord";
@@ -41,14 +40,6 @@ export interface GuitarChordPanelProps {
   level?: ExperienceLevel;
   /** Fires when the user picks a different level, so hosts can persist it. */
   onLevelChange?: (level: ExperienceLevel) => void;
-  /**
-   * Refinement within the level — "show me the open ones". Default "any".
-   * Seeds internal state and re-syncs whenever the prop changes, same as
-   * `level`, and shares its `showControls`-only caveat.
-   */
-  shapeClass?: ShapeClass;
-  /** Fires when the user picks a different shape class. */
-  onShapeClassChange?: (shapeClass: ShapeClass) => void;
   /**
    * Show the instrument and A/B/C position toggles. Default true; board cards
    * render one fixed shape and pass false.
@@ -86,8 +77,6 @@ export function GuitarChordPanel({
   onPositionChange,
   level: levelProp,
   onLevelChange,
-  shapeClass: shapeClassProp,
-  onShapeClassChange,
   showControls = true,
   scale = 1,
   uiTheme,
@@ -166,15 +155,6 @@ export function GuitarChordPanel({
   }
   const selectLevel = (l: ExperienceLevel) => { setLevel(l); onLevelChange?.(l); };
 
-  const [shapeClass, setShapeClass] = useState<ShapeClass>(shapeClassProp ?? "any");
-  // Follow the prop if the host drives the shape class, same pattern as `position`.
-  const [prevShapeClassProp, setPrevShapeClassProp] = useState(shapeClassProp);
-  if (shapeClassProp !== prevShapeClassProp) {
-    setPrevShapeClassProp(shapeClassProp);
-    if (shapeClassProp !== undefined) setShapeClass(shapeClassProp);
-  }
-  const selectShapeClass = (c: ShapeClass) => { setShapeClass(c); onShapeClassChange?.(c); };
-
   // Root pitch class of the parsed label, needed to derive facts (inversion)
   // for every stored position below. null when the label can't be parsed to
   // a root — positionFacts degrades to inversion "other" rather than guessing.
@@ -195,10 +175,10 @@ export function GuitarChordPanel({
   // else re-rendered this panel (typing in the board's title field, say).
   const placements = useMemo(() => {
     if (!result) return null;
-    // A board card (showControls false) has no level/shape-class toggle to
-    // override the default, and pins one exact shape via `position` — it
-    // must keep showing exactly that shape, not have it silently swapped for
-    // a different one because "established" (the interactive default) isn't
+    // A board card (showControls false) has no level toggle to override the
+    // default, and pins one exact shape via `position` — it must keep
+    // showing exactly that shape, not have it silently swapped for a
+    // different one because "established" (the interactive default) isn't
     // what that shape happens to be. So the filter is interactive-only: it
     // never runs where there is no control to change its outcome.
     const allPositions = result.positions.map((_, i) => i);
@@ -207,7 +187,13 @@ export function GuitarChordPanel({
           result.positions.map((pos) =>
             positionFacts(pos, INSTRUMENTS[resolved].openMidi, rootPc),
           ),
-          { level, shapeClass },
+          { level },
+          // Authoritative, not re-derived: chordLookup already computed the
+          // right level per shape, including for guitar-top3, where facts
+          // alone structurally cannot say "established" (a top-3 preset
+          // never carries a barre) even when the stored level, ranked on the
+          // shape itself, correctly does.
+          result.levels,
         )
       : { indices: allPositions, level, droppedShapeClass: false as boolean, widenedFrom: undefined as ExperienceLevel | undefined };
     const visible = selection.indices;
@@ -220,7 +206,7 @@ export function GuitarChordPanel({
     // twice in a font svguitar sizes independently of the DOM.
     const { title: _shapeTitle, ...diagram } = result.shapes[idx];
     return { selection, visible, idx, diagram };
-  }, [result, resolved, rootPc, level, shapeClass, active, showControls]);
+  }, [result, resolved, rootPc, level, active, showControls]);
 
   const notice = (msg: string) => (
     <UIThemeProvider value={uiCtx}>
@@ -277,8 +263,10 @@ export function GuitarChordPanel({
   // `result` is non-null past the guard above, so the memo above resolved too.
   const { selection, visible, idx, diagram } = placements!;
 
-  // Generalises the old `onlyBarres` notice: say so whenever the filter
-  // couldn't be honoured exactly, rather than silently serving something else.
+  // Generalises the old `onlyBarres` notice: say so whenever the level
+  // filter couldn't be honoured exactly, rather than silently serving
+  // something else. (`droppedShapeClass` can't fire here — the panel never
+  // sets a shape class, so `selectForExperience` always sees "any".)
   let filterNotice: string | null = null;
   if (selection.widenedFrom !== undefined && selection.widenedFrom !== selection.level) {
     filterNotice = `No ${selection.widenedFrom} shape for ${label} — showing ${selection.level} instead.`;
@@ -288,8 +276,6 @@ export function GuitarChordPanel({
     // higher one. Say that plainly instead of "no established shape — showing
     // established instead", which would be true but nonsensical to read.
     filterNotice = `No ${selection.level} shape for ${label} — showing every shape instead.`;
-  } else if (selection.droppedShapeClass) {
-    filterNotice = `No ${shapeClass} ${selection.level} shape for ${label} — showing all ${selection.level} shapes.`;
   }
 
   return (
@@ -346,32 +332,6 @@ export function GuitarChordPanel({
           </div>
         )}
 
-        {showControls && (
-          <div className="bc-guitar-shapeclass-toggle" style={{ display: "flex", gap: 6, justifyContent: "center" }}>
-            {SHAPE_CLASS_LADDER.map((c) => {
-              const on = c === shapeClass;
-              const displayLabel = c === "no-barre" ? "No barre" : c.charAt(0).toUpperCase() + c.slice(1);
-              return (
-                <button
-                  key={c}
-                  className="bc-guitar-shapeclass-btn"
-                  onClick={() => selectShapeClass(c)}
-                  data-active={on}
-                  style={{
-                    padding: "3px 12px", borderRadius: 999, cursor: "pointer",
-                    border: on ? "1px solid transparent" : "1px solid var(--btn-border, #ddd)",
-                    background: on ? "var(--pill-active-bg-soft, #e0f2fe)" : "var(--pill-bg, #f1f5f9)",
-                    color: on ? "var(--pill-active-text-soft, #0369a1)" : "var(--text-muted, #64748b)",
-                    fontFamily: "system-ui, sans-serif", fontSize: "0.75rem", fontWeight: on ? 600 : 500,
-                  }}
-                >
-                  {displayLabel}
-                </button>
-              );
-            })}
-          </div>
-        )}
-
         {filterNotice && (
           <div className="bc-guitar-notice" style={{ textAlign: "center", color: muted, fontSize: "0.8rem" }}>
             {filterNotice}
@@ -386,7 +346,7 @@ export function GuitarChordPanel({
         />
 
         {/* Alternate placements. Labelled by visible order so the row reads
-            A/B/C even when the level/shape-class filter has removed shapes
+            A/B/C even when the level filter has removed shapes
             between them, while the click still reports the underlying index. */}
         {showControls && visible.length > 1 && (
           <div className="bc-guitar-position-toggle" style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "center" }}>

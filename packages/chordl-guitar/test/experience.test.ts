@@ -160,4 +160,42 @@ describe("selectForExperience", () => {
     const sel = selectForExperience([], { level: "beginner" });
     expect(sel.indices).toEqual([]);
   });
+
+  // Top-3 shapes never carry barres, so `levelForFacts` can never call one
+  // "established" no matter how far up the neck it sits — Cm's top-3 preset
+  // is a real example: stored level "established" (levelForTop3, off the
+  // nut), derived level "emerging" (positionFacts: no barre, not at the nut).
+  // A caller holding the authoritative stored level must be able to make it
+  // win outright, not just influence the derived one.
+  it("uses a supplied level verbatim instead of re-deriving it", () => {
+    const cm = lookupGuitarChord("Cm", "guitar-top3")!;
+    expect(cm.levels).toEqual(["established"]);
+    const facts = cm.positions.map((p) => positionFacts(p, guitar, 0));
+    // Confirm the mismatch is real: derived from facts alone, this position
+    // is "emerging", not "established" — otherwise the test would prove
+    // nothing about which one selectForExperience actually used.
+    expect(levelForFacts(facts[0])).toBe("emerging");
+
+    // Without supplied levels: derives "emerging", so an "established" query
+    // finds nothing and has to widen (there is nowhere to widen *to* above
+    // established, so it falls through to the "take everything" fallback).
+    const derived = selectForExperience(facts, { level: "established" });
+    expect(derived.widenedFrom).toBe("established");
+
+    // With supplied levels: the stored "established" is used as-is, so the
+    // same query matches directly and never widens.
+    const supplied = selectForExperience(facts, { level: "established" }, cm.levels);
+    expect(supplied.indices).toEqual([0]);
+    expect(supplied.level).toBe("established");
+    expect(supplied.widenedFrom).toBeUndefined();
+  });
+
+  it("falls back to the derived level for an index the supplied array omits", () => {
+    const facts = factsFor("C");
+    // A shorter/sparse levels array: index 0 has no supplied entry, so it
+    // must fall back to levelForFacts rather than being treated as unmatched.
+    const sel = selectForExperience(facts, { level: "beginner" }, []);
+    expect(sel.indices.length).toBeGreaterThan(0);
+    for (const i of sel.indices) expect(facts[i].isOpenShape).toBe(true);
+  });
 });

@@ -228,11 +228,10 @@ describe("instrument coverage", () => {
   });
 });
 
-describe("level and shape-class controls", () => {
+describe("level control", () => {
   it("is hidden on a board card", () => {
     const { container } = render(<GuitarChordPanel chord="Am" showControls={false} />);
     expect(container.querySelectorAll(".bc-guitar-level-btn")).toHaveLength(0);
-    expect(container.querySelectorAll(".bc-guitar-shapeclass-btn")).toHaveLength(0);
   });
 
   it("changes which positions are offered when the level changes", () => {
@@ -248,18 +247,24 @@ describe("level and shape-class controls", () => {
   });
 
   /**
-   * Level filters, shape class refines within it — dropping the refinement
-   * rather than emptying the frame, exactly as the old `onlyBarres` fallback
-   * did for the barre checkbox it replaced. Am's one emerging-tier shape
-   * (barre-free, away from the nut) is never "open", so asking for "open"
-   * within "emerging" always empties, forcing the drop.
+   * Regression for the bug the coordinator's ruling identified: the panel
+   * used to derive every level from `positionFacts` alone via
+   * `selectForExperience`, which can never call a top-3 shape "established"
+   * (a top-3 preset never carries a barre) even when the shape's real,
+   * stored level — computed on the shape itself by `levelForTop3` — says it
+   * is. That made every guitar-top3 chord fail to match the default
+   * "established" level and show a spurious widen notice. Cm's top-3 preset
+   * is a concrete case: stored level "established", facts-derived level
+   * "emerging" (see the `chordl-guitar` `experience.test.ts` test that pins
+   * this exact mismatch). Passing `result.levels` to `selectForExperience`
+   * must make the authoritative stored level win, so no notice appears.
    */
-  it("drops the shape-class refinement and says so, rather than emptying the frame", () => {
-    const { container } = render(<GuitarChordPanel chord="Am" />);
-    fireEvent.click(within(container).getByRole("button", { name: "Emerging" }));
-    fireEvent.click(within(container).getByRole("button", { name: "Open" }));
-    expect(container.textContent).toMatch(/no open emerging shape/i);
-    // Still renders a diagram rather than going blank.
+  it("does not widen a guitar-top3 chord whose stored level already matches", () => {
+    const { container } = render(
+      <GuitarChordPanel chord="Cm" instrument="guitar-top3" />,
+    );
     expect(container.querySelector(".bc-guitar-chord")).toBeTruthy();
+    expect(container.textContent).not.toMatch(/no established shape/i);
+    expect(container.textContent).not.toMatch(/showing every shape instead/i);
   });
 });

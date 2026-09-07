@@ -99,21 +99,32 @@ export interface ExperienceSelection {
  * Relaxation order is deliberate. The refinement goes first because the level
  * is what the user asked for and the shape class only narrows it; widening the
  * level changes the answer to the question they asked.
+ *
+ * @param levels - Optional, parallel to `facts`. When an entry is present it
+ *   is used verbatim instead of `levelForFacts(facts[i])`. This is for
+ *   shapes whose facts cannot support the six-string derivation — top-3
+ *   presets never carry barres, so `levelForFacts` can never call one
+ *   "established" even when its authoritative, stored level (`levelForTop3`)
+ *   says otherwise. Shape-class matching still reads `facts[i]` either way:
+ *   only the level lookup is overridable. Missing entries (a shorter array,
+ *   or `undefined` at an index) fall back to the derived level.
  */
 export function selectForExperience(
   facts: PositionFacts[],
   query: ExperienceQuery,
+  levels?: ExperienceLevel[],
 ): ExperienceSelection {
   if (facts.length === 0) {
     return { indices: [], level: query.level, droppedShapeClass: false };
   }
   const cls = query.shapeClass ?? "any";
+  const levelOf = (i: number): ExperienceLevel => levels?.[i] ?? levelForFacts(facts[i]);
   const at = (level: ExperienceLevel, withClass: boolean) =>
     facts
       .map((f, i) => i)
       .filter(
         (i) =>
-          levelForFacts(facts[i]) === level &&
+          levelOf(i) === level &&
           (!withClass || matchesShapeClass(facts[i], cls)),
       );
 
