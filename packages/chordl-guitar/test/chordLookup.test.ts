@@ -1,5 +1,13 @@
 import { describe, it, expect } from "vitest";
-import { lookupGuitarChord, hasGuitarChord, dbPositionToChord, positionToMidi, INSTRUMENTS } from "../src";
+import {
+  lookupGuitarChord,
+  hasGuitarChord,
+  dbPositionToChord,
+  positionToMidi,
+  INSTRUMENTS,
+  GUITAR_TOP3_PRESETS,
+  TOP3_UNRESOLVED,
+} from "../src";
 
 describe("lookupGuitarChord", () => {
   it("finds an open A minor with multiple positions", () => {
@@ -181,8 +189,121 @@ describe("top-3 string voicings", () => {
   });
 
   it("returns null rather than falling back to a six-string shape", () => {
-    // A six-string shape under a three-string label would be a lie.
-    expect(lookupGuitarChord("C#dim7", "guitar-top3")).toBeNull();
+    // A six-string shape under a three-string label would be a lie. The table
+    // now covers every root, so the chord that proves the rule is an altered
+    // dominant — it needs four notes, and three strings cannot carry them.
+    expect(lookupGuitarChord("C#alt", "guitar-top3")).toBeNull();
+  });
+
+  /**
+   * The table is no longer all first-position shapes, so the diagram window is no
+   * longer always the nut. A position has to say where its window starts, and its
+   * frets have to be relative to that, or the renderer draws dots off the picture.
+   */
+  it("slides the window up to a shape that is not at the nut", () => {
+    const res = lookupGuitarChord("Fmaj7", "guitar-top3");
+    expect(res).not.toBeNull();
+    const pos = res!.positions[0];
+    // Fmaj7 sounds F and A at the 10th fret and E at the 12th.
+    expect(pos.baseFret).toBe(10);
+    expect(pos.frets).toEqual([-1, -1, -1, 1, 1, 3]);
+  });
+
+  it("keeps the nut window, and absolute frets, for first-position shapes", () => {
+    const res = lookupGuitarChord("C", "guitar-top3");
+    expect(res).not.toBeNull();
+    expect(res!.positions[0].baseFret).toBe(1);
+    expect(res!.positions[0].frets).toEqual([-1, -1, -1, 0, 1, 0]);
+  });
+
+  it("sounds the same pitches whichever window it is drawn in", () => {
+    const openMidi = INSTRUMENTS["guitar-top3"].openMidi;
+    for (const [chord, notes] of [
+      ["C", [55, 60, 64]], // G C E at the nut
+      ["Fmaj7", [65, 69, 76]], // F A E, window at fret 10
+      ["D7", [62, 66, 72]], // D F# C, window at fret 7
+    ] as const) {
+      const res = lookupGuitarChord(chord, "guitar-top3");
+      expect(res, chord).not.toBeNull();
+      expect(positionToMidi(res!.positions[0], openMidi), chord).toEqual(notes);
+    }
+  });
+
+  it("draws every shape inside the instrument's fret window", () => {
+    const window = INSTRUMENTS["guitar-top3"].frets;
+    const wrong = GUITAR_TOP3_PRESETS.flatMap((p) => {
+      const res = lookupGuitarChord(`${p.key}${p.suffix}`, "guitar-top3");
+      if (!res) return []; // reachability is a separate concern, tested elsewhere
+      const pos = res.positions[0];
+      const fretted = pos.frets.filter((f) => f > 0);
+      const tooHigh = fretted.length > 0 && Math.max(...fretted) > window;
+      // An open string only exists at the nut, so a slid window must not have one.
+      const strayOpen = pos.baseFret > 1 && pos.frets.slice(3).includes(0);
+      return tooHigh || strayOpen
+        ? [`${p.key}${p.suffix} baseFret ${pos.baseFret} frets [${pos.frets.slice(3).join(", ")}]`]
+        : [];
+    });
+    expect(wrong).toEqual([]);
+  });
+
+  it("returns nothing for a chord no window can hold", () => {
+    // Em(add9) is E-G-F#, and its only three-string window puts the F# at the
+    // 7th fret against two open strings. A broken diagram is worse than a gap,
+    // and GuitarChordResult has nowhere to say "do not draw this".
+    expect(lookupGuitarChord("Emadd9", "guitar-top3")).toBeNull();
+    expect(TOP3_UNRESOLVED).toContain("Emadd9");
+  });
+
+  it("reaches the roots the hand-authored table had nothing for", () => {
+    // C#, D#, F#, G# and A# had no shape at all before the table was generated.
+    for (const label of ["C#", "F#m", "Bb7", "Absus4", "Ebdim"]) {
+      expect(lookupGuitarChord(label, "guitar-top3"), label).not.toBeNull();
+    }
+  });
+
+  /**
+   * The generated table holds 517 shapes; before this, the label parser could
+   * address only the handful of roots and qualities the twenty hand-authored
+   * presets used. Every entry has to answer to a label a user would type, or the
+   * shapes exist and nothing can show them.
+   */
+  it("answers to a plain chord label for every shape in the table", () => {
+    const asLabel = (p: (typeof GUITAR_TOP3_PRESETS)[number]) => {
+      if (p.suffix === "major") return p.key;
+      if (p.suffix === "minor") return `${p.key}m`;
+      return `${p.key}${p.suffix}`;
+    };
+    const missing = GUITAR_TOP3_PRESETS.filter(
+      (p) => lookupGuitarChord(asLabel(p), "guitar-top3") === null,
+    );
+    expect(missing.map(asLabel)).toEqual([]);
+  });
+
+  it("accepts flat spellings of the roots the table stores as sharps", () => {
+    for (const [typed, stored] of [["Db", "C#"], ["Gb", "F#"]] as const) {
+      const a = lookupGuitarChord(typed, "guitar-top3");
+      const b = lookupGuitarChord(stored, "guitar-top3");
+      expect(a, typed).not.toBeNull();
+      expect(a!.positions).toEqual(b!.positions);
+    }
+  });
+
+  it("accepts sharp spellings of the roots the table stores as flats", () => {
+    for (const [typed, stored] of [["D#", "Eb"], ["G#", "Ab"], ["A#", "Bb"]] as const) {
+      const a = lookupGuitarChord(typed, "guitar-top3");
+      const b = lookupGuitarChord(stored, "guitar-top3");
+      expect(a, typed).not.toBeNull();
+      expect(a!.positions).toEqual(b!.positions);
+    }
+  });
+
+  it("resolves the same suffix spellings the six-string path does", () => {
+    // These all used to miss the preset table even where the shape existed.
+    for (const label of [
+      "C°", "C°7", "Cø", "CM7", "Cmin7", "Csus", "C7sus", "C6/9", "Cm6/9", "C-",
+    ]) {
+      expect(lookupGuitarChord(label, "guitar-top3"), label).not.toBeNull();
+    }
   });
 });
 
