@@ -45,6 +45,15 @@ export interface GuitarChordPanelProps {
    * render one fixed shape and pass false.
    */
   showControls?: boolean;
+  /**
+   * Number of frets to draw. Optional — the panel always computes a floor
+   * from the shape actually on screen (the highest window-relative fret it
+   * uses, minimum 1) and never draws fewer than that, so a request below the
+   * floor can widen the window but never crop the chord. Default is the
+   * floor itself, which is at most 4 for anything in the corpus — tighter
+   * than the instrument's own default of 5.
+   */
+  frets?: number;
   scale?: number;
   uiTheme?: UIThemeMode;
   title?: string;
@@ -78,6 +87,7 @@ export function GuitarChordPanel({
   level: levelProp,
   onLevelChange,
   showControls = true,
+  frets,
   scale = 1,
   uiTheme,
   title,
@@ -205,7 +215,14 @@ export function GuitarChordPanel({
     // keyboard and staff cards), so drop the SVG's copy rather than showing it
     // twice in a font svguitar sizes independently of the DOM.
     const { title: _shapeTitle, ...diagram } = result.shapes[idx];
-    return { selection, visible, idx, diagram };
+    // Floor for the fret window: the highest window-relative fret the
+    // displayed shape actually uses. `-1` (muted) and `0` (open) are
+    // sentinels, not frets — they're excluded rather than treated as 0-height
+    // bars. These values are relative to `baseFret`, already windowed (see
+    // instruments.ts / pitch.ts), so this is not an absolute fret number.
+    const usedFrets = result.positions[idx].frets.filter((f) => f > 0);
+    const minFrets = usedFrets.length > 0 ? Math.max(...usedFrets) : 1;
+    return { selection, visible, idx, diagram, minFrets };
   }, [result, resolved, rootPc, level, active, showControls]);
 
   const notice = (msg: string) => (
@@ -261,7 +278,7 @@ export function GuitarChordPanel({
   }
 
   // `result` is non-null past the guard above, so the memo above resolved too.
-  const { selection, visible, idx, diagram } = placements!;
+  const { selection, visible, idx, diagram, minFrets } = placements!;
 
   // Generalises the old `onlyBarres` notice: say so whenever the level
   // filter couldn't be honoured exactly, rather than silently serving
@@ -341,7 +358,7 @@ export function GuitarChordPanel({
         <GuitarChord
           chord={diagram}
           scale={scale}
-          frets={cfg.frets}
+          frets={Math.max(frets ?? minFrets, minFrets)}
           settings={guitarSettings}
         />
 
