@@ -1,5 +1,13 @@
 import { describe, it, expect } from "vitest";
-import { lookupGuitarChord, hasGuitarChord, dbPositionToChord, positionToMidi, INSTRUMENTS, GUITAR_TOP3_PRESETS } from "../src";
+import {
+  lookupGuitarChord,
+  hasGuitarChord,
+  dbPositionToChord,
+  positionToMidi,
+  INSTRUMENTS,
+  GUITAR_TOP3_PRESETS,
+  TOP3_UNRESOLVED,
+} from "../src";
 
 describe("lookupGuitarChord", () => {
   it("finds an open A minor with multiple positions", () => {
@@ -224,7 +232,6 @@ describe("top-3 string voicings", () => {
   it("draws every shape inside the instrument's fret window", () => {
     const window = INSTRUMENTS["guitar-top3"].frets;
     const wrong = GUITAR_TOP3_PRESETS.flatMap((p) => {
-      if (p.unrenderable) return []; // no window can hold it; pinned below
       const res = lookupGuitarChord(`${p.key}${p.suffix}`, "guitar-top3");
       if (!res) return []; // reachability is a separate concern, tested elsewhere
       const pos = res.positions[0];
@@ -239,12 +246,12 @@ describe("top-3 string voicings", () => {
     expect(wrong).toEqual([]);
   });
 
-  it("has exactly one chord no window can hold", () => {
-    // Em(add9) is E-G-F#, and the only three-string window for it puts the F# at
-    // the 7th fret against two open strings. Pinned so the set cannot grow
-    // unnoticed: everything else in the table draws.
-    const undrawable = GUITAR_TOP3_PRESETS.filter((p) => p.unrenderable);
-    expect(undrawable.map((p) => `${p.key}${p.suffix}`)).toEqual(["Emadd9"]);
+  it("returns nothing for a chord no window can hold", () => {
+    // Em(add9) is E-G-F#, and its only three-string window puts the F# at the
+    // 7th fret against two open strings. A broken diagram is worse than a gap,
+    // and GuitarChordResult has nowhere to say "do not draw this".
+    expect(lookupGuitarChord("Emadd9", "guitar-top3")).toBeNull();
+    expect(TOP3_UNRESOLVED).toContain("Emadd9");
   });
 
   it("reaches the roots the hand-authored table had nothing for", () => {

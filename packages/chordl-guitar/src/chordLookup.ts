@@ -112,22 +112,12 @@ function powerChordPositions(label: string): ChordsDbPosition[] {
  * positions (that is what carries `baseFret` for the "fret N" caption). Convert
  * back: svguitar numbers strings high-to-low from 1, positions run low-to-high.
  *
- * Preset frets are absolute, measured from the nut. chords-db positions are not:
- * a value f > 0 sounds at `baseFret - 1 + f`, so a window that does not start at
- * the nut needs its frets rewritten relative to it. Which window depends on the
- * shape:
- *
- *   - everything within the drawn window (`INSTRUMENTS[...].frets`) stays at the
- *     nut, `baseFret: 1`, absolute frets — this is every first-position shape,
- *     and every open string lives here;
- *   - anything higher slides: `baseFret` is the shape's lowest fretted fret, and
- *     each fret becomes `f - baseFret + 1`.
- *
- * -1 (muted) and 0 (open) are sentinels and are never offset. A slid window has
- * no open strings to offset anyway — the generator will not emit a shape that
- * mixes one with a note past the window, because no window could show both.
+ * The window is already decided — `toPreset` put it on `chord.position`, so
+ * every consumer of the preset table sees the same one — and `chord` frets are
+ * relative to it, which is exactly what `baseFret` means. So there is nothing to
+ * recompute here, only to rename.
  */
-function presetToPosition(preset: StaticPreset, instrument: InstrumentId): ChordsDbPosition {
+function presetToPosition(preset: StaticPreset): ChordsDbPosition {
   const frets = new Array<number>(6).fill(-1);
   const fingers = new Array<number>(6).fill(0);
   for (const f of preset.chord.fingers) {
@@ -139,20 +129,7 @@ function presetToPosition(preset: StaticPreset, instrument: InstrumentId): Chord
     const n = Number(label);
     fingers[idx] = Number.isFinite(n) ? n : 0;
   }
-
-  const fretted = frets.filter((f) => f > 0);
-  const highest = fretted.length ? Math.max(...fretted) : 0;
-  if (highest <= INSTRUMENTS[instrument].frets) {
-    return { frets, fingers, baseFret: 1, barres: [] };
-  }
-
-  const baseFret = Math.min(...fretted);
-  return {
-    frets: frets.map((f) => (f > 0 ? f - baseFret + 1 : f)),
-    fingers,
-    baseFret,
-    barres: [],
-  };
+  return { frets, fingers, baseFret: preset.chord.position ?? 1, barres: [] };
 }
 
 /**
@@ -202,7 +179,7 @@ export function lookupGuitarChord(
   //    three-string voicings, and it does not fall back to chords-db.
   if (instrument === "guitar-top3") {
     const preset = findPreset(label);
-    return preset ? toResult([presetToPosition(preset, instrument)]) : null;
+    return preset ? toResult([presetToPosition(preset)]) : null;
   }
 
   // 2. chords-db, for the instruments that ship a library.

@@ -28,15 +28,9 @@ export interface Top3GeneratedEntry {
   tier: number;
   /** True when the shape is ambiguous or drops the root: playable, not a faithful spelling. */
   approximate?: boolean;
-  /**
-   * True when the shape mixes an open string with a fret past the diagram window,
-   * so no window shows all three notes. Only set where the chord has no other
-   * shape at all — a caller may prefer to show nothing.
-   */
-  unrenderable?: boolean;
 }
 
-/** 517 of 529 (root, suffix) pairs; the rest have no honest three-string window. */
+/** 516 of 529 (root, suffix) pairs; the rest have no honest three-string window. */
 export const TOP3_GENERATED: Top3GeneratedEntry[] = [
   { key: "C", suffix: "major", frets: [0, 1, 0], fingers: ["", "1", ""], source: "legacy", tier: 1 },
   { key: "C", suffix: "minor", frets: [5, 4, 3], fingers: ["3", "2", "1"], source: "corpus", tier: 2 },
@@ -241,7 +235,6 @@ export const TOP3_GENERATED: Top3GeneratedEntry[] = [
   { key: "E", suffix: "mmaj9", frets: [12, 12, 14], fingers: ["1", "1", "3"], source: "corpus", tier: 7, approximate: true },
   { key: "E", suffix: "mmaj11", frets: [0, 4, 0], fingers: ["", "1", ""], source: "constructed", tier: 5, approximate: true },
   { key: "E", suffix: "add9", frets: [13, 12, 14], fingers: ["2", "1", "3"], source: "corpus", tier: 4, approximate: true },
-  { key: "E", suffix: "madd9", frets: [0, 7, 0], fingers: ["", "1", ""], source: "constructed", tier: 5, unrenderable: true },
   { key: "E", suffix: "/F", frets: [1, 0, 0], fingers: ["1", "", ""], source: "corpus", tier: 2 },
   { key: "E", suffix: "/F#", frets: [1, 0, 0], fingers: ["1", "", ""], source: "corpus", tier: 2 },
   { key: "E", suffix: "/G", frets: [1, 0, 0], fingers: ["1", "", ""], source: "corpus", tier: 2 },
@@ -569,6 +562,7 @@ export const TOP3_UNRESOLVED: string[] = [
   "Dalt",
   "Ebalt",
   "Ealt",
+  "Emadd9",
   "Falt",
   "F#alt",
   "Galt",

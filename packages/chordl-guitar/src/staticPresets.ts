@@ -1,4 +1,5 @@
 import type { Chord } from "svguitar";
+import { INSTRUMENTS } from "./instruments.js";
 import { rootPitchClass } from "./pitch.js";
 import { toDbSuffix } from "./chordNames.js";
 import { TOP3_GENERATED, TOP3_UNRESOLVED } from "./top3Generated.js";
@@ -19,27 +20,47 @@ export interface StaticPreset {
    * differently; nothing here treats them as second class.
    */
   approximate?: boolean;
-  /**
-   * True when the shape mixes an open string with a fret past the diagram window,
-   * so no window shows all three notes at once. Set only where the chord has no
-   * other shape at all; a caller may prefer to show nothing over a broken diagram.
-   */
-  unrenderable?: boolean;
 }
 
 /** Strings 4-6 are always muted for top-3 voicings. */
 const MUTED_LOW: Chord["fingers"] = [[4, "x"], [5, "x"], [6, "x"]];
 
+/** How many frets a `guitar-top3` diagram draws. */
+const DIAGRAM_FRETS = INSTRUMENTS["guitar-top3"].frets;
+
 /**
- * One generated row → an svguitar shape.
+ * Where a shape's diagram window starts, and its frets within that window.
+ *
+ * The generated table stores absolute frets, measured from the nut. Two thirds
+ * of it sits past the drawn window, so a diagram has to say which window it is:
+ *
+ *   - within `DIAGRAM_FRETS` of the nut, the window is the nut. Frets stay as
+ *     they are, and open strings are drawn as open strings.
+ *   - anything higher slides. The window starts at the shape's lowest fretted
+ *     fret and each fret becomes `f - position + 1`.
+ *
+ * -1 and 0 are sentinels and are never offset. A slid window never carries a 0:
+ * the generator does not emit a shape that mixes an open string with a note past
+ * the window, because no window could show both.
+ */
+export function top3Window(frets: readonly number[]): {
+  position: number;
+  frets: number[];
+} {
+  const fretted = frets.filter((f) => f > 0);
+  const highest = fretted.length ? Math.max(...fretted) : 0;
+  if (highest <= DIAGRAM_FRETS) return { position: 1, frets: [...frets] };
+  const position = Math.min(...fretted);
+  return { position, frets: frets.map((f) => (f > 0 ? f - position + 1 : f)) };
+}
+
+/**
+ * One generated row → an svguitar shape, in the window it is drawn in.
  *
  * The table lists frets low → high as [G, B, E], which is chords-db's string
  * order. svguitar numbers strings from the highest pitch, so those same three
  * are svguitar 3, 2 and 1. This is the relabelling, and it is the only one:
  * `dbPositionToChord` remains the single function that inverts string order.
- *
- * Frets are absolute from the nut, as the hand-authored table's were, so no
- * `position` offset is applied here.
  */
 function toPreset(entry: Top3GeneratedEntry): StaticPreset {
   const finger = (
@@ -48,21 +69,23 @@ function toPreset(entry: Top3GeneratedEntry): StaticPreset {
     label: string,
   ): Chord["fingers"][number] => (label ? [stringNo, fret, label] : [stringNo, fret]);
 
+  const window = top3Window(entry.frets);
+
   return {
     key: entry.key,
     suffix: entry.suffix,
     chord: {
       fingers: [
-        finger(3, entry.frets[0], entry.fingers[0]),
-        finger(2, entry.frets[1], entry.fingers[1]),
-        finger(1, entry.frets[2], entry.fingers[2]),
+        finger(3, window.frets[0], entry.fingers[0]),
+        finger(2, window.frets[1], entry.fingers[1]),
+        finger(1, window.frets[2], entry.fingers[2]),
         ...MUTED_LOW,
       ],
       barres: [],
+      position: window.position,
     },
     source: entry.source,
     ...(entry.approximate ? { approximate: true as const } : {}),
-    ...(entry.unrenderable ? { unrenderable: true as const } : {}),
   };
 }
 

@@ -86,8 +86,8 @@ const OPEN_MIDI = INSTRUMENTS["guitar-top3"].openMidi;
  * `positionToMidi` rather than a second copy of the fret→pitch rule.
  *
  * Presets are svguitar shapes: string 1 is the highest pitch, so svguitar 3/2/1
- * are chords-db indices 3/4/5. Frets are absolute from the nut, which is what
- * baseFret 1 means.
+ * are chords-db indices 3/4/5. Fret values are relative to `chord.position`,
+ * which is exactly what chords-db means by `baseFret`.
  */
 function toPosition(preset: StaticPreset): ChordsDbPosition {
   const frets = [-1, -1, -1, -1, -1, -1];
@@ -96,10 +96,26 @@ function toPosition(preset: StaticPreset): ChordsDbPosition {
     const fret = f[1];
     frets[6 - stringNo] = fret === "x" ? -1 : Number(fret);
   }
-  return { frets, fingers: [0, 0, 0, 0, 0, 0], baseFret: 1, barres: [] };
+  return {
+    frets,
+    fingers: [0, 0, 0, 0, 0, 0],
+    baseFret: preset.chord.position ?? 1,
+    barres: [],
+  };
 }
 
+/** Fret values as drawn — relative to the shape's own window. */
 const sounding = (preset: StaticPreset) => toPosition(preset).frets.slice(3);
+
+/**
+ * Fret values measured from the nut, which is how the design names shapes and
+ * how the hand-authored table was written. -1 and 0 are sentinels, never offset.
+ */
+const absolute = (preset: StaticPreset) => {
+  const base = preset.chord.position ?? 1;
+  return sounding(preset).map((f) => (f > 0 ? f + base - 1 : f));
+};
+
 const label = (p: StaticPreset) => `${p.key}${p.suffix}`;
 
 describe("GUITAR_TOP3_PRESETS coverage", () => {
@@ -142,7 +158,7 @@ describe("every preset sounds its chord", () => {
 describe("every preset is playable on the top three strings", () => {
   it("sounds exactly G, B and E — three strings, none muted", () => {
     const wrong = GUITAR_TOP3_PRESETS.flatMap((p) => {
-      const top = sounding(p);
+      const top = absolute(p);
       const midi = positionToMidi(toPosition(p), OPEN_MIDI);
       return top.some((f) => f < 0) || midi.length !== 3
         ? [`${label(p)} [${top.join(", ")}]`]
@@ -158,14 +174,13 @@ describe("every preset is playable on the top three strings", () => {
    * neither: slide the window and the open string is gone, keep it at the nut and
    * the fretted note falls off the bottom of the picture.
    *
-   * Such a shape is not a candidate, however well it spells the chord. Any entry
-   * that still carries one says so with `unrenderable`, and there should be none.
+   * Such a shape is not a candidate, however well it spells the chord, and a
+   * chord with no other is left out of the table rather than returned broken.
    */
   it("draws inside the diagram window", () => {
     const window = INSTRUMENTS["guitar-top3"].frets;
     const wrong = GUITAR_TOP3_PRESETS.flatMap((p) => {
-      if (p.unrenderable) return [];
-      const top = sounding(p);
+      const top = absolute(p);
       const fretted = top.filter((f) => f > 0);
       const highest = fretted.length ? Math.max(...fretted) : 0;
       const drawableAtNut = highest <= window;
@@ -177,7 +192,7 @@ describe("every preset is playable on the top three strings", () => {
 
   it("keeps every shape inside a two-fret reach", () => {
     const wrong = GUITAR_TOP3_PRESETS.flatMap((p) => {
-      const fretted = sounding(p).filter((f) => f > 0);
+      const fretted = absolute(p).filter((f) => f > 0);
       const span = fretted.length < 2 ? 0 : Math.max(...fretted) - Math.min(...fretted);
       return span > 2 ? [`${label(p)} spans ${span}`] : [];
     });
@@ -225,7 +240,7 @@ describe("no two chords share a diagram", () => {
   it("unless they are the same notes", () => {
     const byShape = new Map<string, StaticPreset[]>();
     for (const p of GUITAR_TOP3_PRESETS) {
-      const k = sounding(p).join(",");
+      const k = absolute(p).join(",");
       byShape.set(k, [...(byShape.get(k) ?? []), p]);
     }
 
@@ -289,7 +304,7 @@ describe("the qualifying legacy presets are unchanged", () => {
     it(`${key}${suffix} is still [${frets.join(", ")}] on G, B, E`, () => {
       const preset = GUITAR_TOP3_PRESETS.find((p) => p.key === key && p.suffix === suffix);
       expect(preset, `${key}${suffix} must exist`).toBeDefined();
-      expect(sounding(preset!)).toEqual(frets);
+      expect(absolute(preset!)).toEqual(frets);
       expect(preset!.source).toBe("legacy");
     });
   }
@@ -313,7 +328,7 @@ describe("the root-dropped legacy presets have changed", () => {
     it(`${key}${suffix} no longer uses the rootless [${old.join(", ")}]`, () => {
       const preset = GUITAR_TOP3_PRESETS.find((p) => p.key === key && p.suffix === suffix);
       expect(preset, `${key}${suffix} must exist`).toBeDefined();
-      expect(sounding(preset!)).not.toEqual(old);
+      expect(absolute(preset!)).not.toEqual(old);
       expect(preset!.source).not.toBe("legacy");
       const pcs = positionToMidi(toPosition(preset!), OPEN_MIDI).map((m) => m % 12);
       expect(pcs, `${key}${suffix} must now sound its root`).toContain(PC[key]);
@@ -334,7 +349,7 @@ describe("the shapes the design calls out by name", () => {
     it(`${key}${suffix} is [${frets.join(", ")}]`, () => {
       const preset = GUITAR_TOP3_PRESETS.find((p) => p.key === key && p.suffix === suffix);
       expect(preset, `${key}${suffix} must exist`).toBeDefined();
-      expect(sounding(preset!)).toEqual(frets);
+      expect(absolute(preset!)).toEqual(frets);
     });
   }
 });
@@ -345,6 +360,49 @@ describe("the shapes the design calls out by name", () => {
  * and the way it spells qualities: `minor`, not `m`; `m7b5`, not `ø`. A user
  * types neither consistently, so both sides have to resolve.
  */
+/**
+ * `GUITAR_TOP3_PRESETS` and `lookupTop3Chord` hand out svguitar `Chord` objects
+ * directly — no `lookupGuitarChord` in between to fix them up. Most of the table
+ * now sits past the drawn window, so each shape has to carry the window it is
+ * drawn in, or a caller renders dots off the bottom of the diagram.
+ */
+describe("every exported chord carries the window it draws in", () => {
+  const window = INSTRUMENTS["guitar-top3"].frets;
+
+  it("sets position on every shape", () => {
+    const missing = GUITAR_TOP3_PRESETS.filter((p) => p.chord.position === undefined);
+    expect(missing.map(label)).toEqual([]);
+  });
+
+  it("puts every fret inside that window", () => {
+    const wrong = GUITAR_TOP3_PRESETS.flatMap((p) => {
+      const frets = sounding(p).filter((f) => f > 0);
+      return frets.length && Math.max(...frets) > window
+        ? [`${label(p)} draws ${Math.max(...frets)} in a ${window}-fret window`]
+        : [];
+    });
+    expect(wrong).toEqual([]);
+  });
+
+  it("keeps open strings only at the nut", () => {
+    const wrong = GUITAR_TOP3_PRESETS.flatMap((p) =>
+      (p.chord.position ?? 1) > 1 && sounding(p).includes(0) ? [label(p)] : [],
+    );
+    expect(wrong).toEqual([]);
+  });
+
+  it("hands lookupTop3Chord the same windowed shape", () => {
+    // C aug7 is C-E-G#-Bb: its shape sits at the 11th fret, not the 1st.
+    const chord = lookupTop3Chord("C", "aug7");
+    expect(chord).not.toBeNull();
+    const frets = chord!.fingers
+      .filter((f) => Number(f[0]) <= 3 && f[1] !== "x")
+      .map((f) => Number(f[1]));
+    expect(Math.max(...frets)).toBeLessThanOrEqual(window);
+    expect(chord!.position).toBeGreaterThan(1);
+  });
+});
+
 describe("every generated shape is reachable", () => {
   const ENHARMONIC: Record<string, string> = {
     "C#": "Db", Eb: "D#", "F#": "Gb", Ab: "G#", Bb: "A#",

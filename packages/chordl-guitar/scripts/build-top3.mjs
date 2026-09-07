@@ -190,13 +190,17 @@ function pitchClassesOf(frets) {
 }
 
 /**
- * Frets a diagram draws — INSTRUMENTS["guitar-top3"].frets.
+ * Frets a diagram draws.
  *
- * Kept as a literal because this script must not import from src/ (it writes
- * src/), and because changing it changes which shapes are eligible: a bump here
- * is a change to the table, not just to the picture.
+ * This must equal `INSTRUMENTS["guitar-top3"].frets`, which is what decides the
+ * window at render time. It is a literal rather than an import because the
+ * script is plain ESM and `src/instruments.ts` is TypeScript; the two are pinned
+ * together by test/top3Generated.test.ts, which fails if they drift.
+ *
+ * Changing it changes which shapes are eligible, so it is a change to the table,
+ * not just to the picture.
  */
-const DIAGRAM_FRETS = 4;
+export const DIAGRAM_FRETS = 4;
 
 /**
  * Can a reader actually see this shape?
@@ -522,13 +526,15 @@ function buildTable(db) {
   // Per the product decision, a chord with a shape it can honestly wear gets it
   // even though another chord is already wearing it; `approximate` says so.
   for (const row of pending) {
-    if (row.chosen || row.candidates.length === 0) continue;
-    const best = row.candidates[0];
+    if (row.chosen) continue;
+    const best = row.candidates.find((c) => renderable(c.frets));
+    // A chord with nothing drawable gets nothing. Handing back a shape that the
+    // renderer cannot place is worse than the honest gap: `lookupGuitarChord`
+    // exposes only positions and shapes, so a caller has no way to see that the
+    // diagram it is about to draw is broken.
+    if (!best) continue;
     row.chosen = best;
-    // A shape nobody can draw is worse than sharing one that they can, so the
-    // undrawable candidate is only reached when the chord has no other.
-    if (renderable(best.frets)) row.reused = true;
-    else row.unrenderable = true;
+    row.reused = true;
   }
 
   // chords-db root order, then chords-db suffix order — a stable, reviewable diff.
@@ -562,7 +568,6 @@ function rowLiteral(row) {
   // a re-used shape is already another chord's. None of those is a faithful
   // spelling of this chord, and the flag says so.
   if (c.tier >= 6 || !c.cand.hasRoot || row.reused) parts.push("approximate: true");
-  if (row.unrenderable) parts.push("unrenderable: true");
   return `  { ${parts.join(", ")} },`;
 }
 
@@ -605,12 +610,6 @@ export function renderTop3Source() {
   lines.push("  tier: number;");
   lines.push("  /** True when the shape is ambiguous or drops the root: playable, not a faithful spelling. */");
   lines.push("  approximate?: boolean;");
-  lines.push("  /**");
-  lines.push("   * True when the shape mixes an open string with a fret past the diagram window,");
-  lines.push("   * so no window shows all three notes. Only set where the chord has no other");
-  lines.push("   * shape at all — a caller may prefer to show nothing.");
-  lines.push("   */");
-  lines.push("  unrenderable?: boolean;");
   lines.push("}");
   lines.push("");
   lines.push(`/** ${resolved.length} of ${rows.length} (root, suffix) pairs; the rest have no honest three-string window. */`);
@@ -654,7 +653,6 @@ export function summarise() {
     noRenderable: rows
       .filter((r) => r.candidates.length && !r.candidates.some((c) => renderable(c.frets)))
       .map((r) => r.key + r.suffix),
-    unrenderable: rows.filter((r) => r.unrenderable).map((r) => r.key + r.suffix),
     rows,
   };
 }
@@ -674,6 +672,5 @@ if (invokedDirectly) {
     `  renderability: ${s.lostFirstChoice.length} chords gave up their best-spelled shape, ` +
       `${s.noRenderable.length} had no readable shape at all`,
   );
-  if (s.unrenderable.length) console.log(`  undrawable: ${s.unrenderable.join(", ")}`);
   if (s.unresolved.length) console.log(`  no shape: ${s.unresolved.join(", ")}`);
 }
