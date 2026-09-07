@@ -20,7 +20,9 @@
 - Unknown input returns `null` or an empty result. Never invent or guess a shape.
 - `chordl-guitar` depends only on `@tombatossals/chords-db` and `svguitar` — **no workspace dependencies**, which is what lets it publish standalone. Do not add any dependency, and never import from `chordl-core` or `chordl-voicings`.
 - Repo style: double quotes, 2-space indent, `export function` for public API.
-- Baseline: package 11 files / 116 tests; repo-wide 35 files / 474 tests, zero failures. Confirm before starting.
+- Baseline **as re-measured 2026-09-07**: package 12 files / 203 tests; repo-wide 65 files / 1031 tests, zero failures. Confirm before starting.
+
+  The figures this plan carried when it was written on 2026-08-09 (11/116 and 35/474) are long dead — the monorepo has since had its first six-package npm release and a month of unrelated work. If you measure something near the old numbers you are on the wrong commit, not ahead of schedule.
 - Work on a branch off `origin/main`: `feat/guitar-enumeration`.
 
 ---
@@ -330,6 +332,28 @@ consumers can build galleries and indexes without importing chords-db."
 - Consumes: `INSTRUMENTS`, `dbPositionToChord`, `positionToMidi`
 - Produces: `PowerChordOptions` gains `instrument?: "guitar" | "bass4" | "bass5"` (default `"guitar"`)
 
+**Read this before starting: the package already has a different bass shape generator.**
+
+`src/generatedShapes.ts` landed on 2026-08-14 in `f32a102`, five days after this plan was written, and `bassShapeFor(root)` is already public API. This plan predates it and its tasks below do not account for it. It does **not** satisfy this task, and this task does not make it redundant — they are different functions serving different callers, and both should exist:
+
+| | `bassShapeFor` (exists) | `powerChordPosition` + bass (this task) |
+|---|---|---|
+| Input | root **name** (`"G"`) | root **pitch class** (`7`) |
+| Output | svguitar `Chord` — a rendering shape | chords-db-style position (`baseFret` + `frets`) |
+| String choice | picked for you: E or A, whichever lands the root in frets 3–9 | caller's, via `stringSet` |
+| Open strings | never — deliberately, an open root cannot slide and booms on a bass | yes, the nut is a valid placement |
+| Octave | always | optional (`includeOctave`) |
+| bass5 | no, 4-string only | yes |
+
+The two disagree on the same chord *by design*: `bassShapeFor("E")` returns the A string at fret 7, because fret 0 is outside its sweet range; this task's Step 1 test asserts an open E5 at the nut. Neither is wrong. One is a movable teaching pattern for chordl-board's cards, the other is the chords-db-shaped position `frames` indexes through `/api/frame`.
+
+**What this means for you:**
+
+- Do not "unify" them, do not reimplement one in terms of the other, and do not change `bassShapeFor` — it is shipped public API in 0.2.0 with its own tests and consumers in `chordl-board` and `chordl-react`. The additive-only constraint above covers it.
+- Task 4 adds this task's function to the public surface alongside `bassShapeFor`, not instead of it.
+- **Say in the changelog how a caller chooses between them**, or the package ships two bass generators with no guidance and the next reader picks by coin toss.
+- Step 5's diff against frames' `BASS_PRESETS` compares *this task's* output. `bassShapeFor` is not the comparison target and its differing placement is not evidence of a bug in either.
+
 **Why this works:** bass strings are all perfect fourths — `bass4` `openMidi` is `[28, 33, 38, 43]`, consecutive differences 5, 5, 5. The shape's rule (root on one string, fifth two frets up on the next, octave two frets up on the one after) depends *only* on each adjacent pair it uses being a fourth apart.
 
 **Validity has two conditions, not one.** Do not enumerate valid string sets per instrument as a hand-maintained list — derive them from `openMidi`. A shape rooted at string index `i` is valid when both hold:
@@ -545,7 +569,7 @@ Cover: `lookupChordByKeySuffix` and why it exists alongside `lookupGuitarChord`;
 - [ ] **Step 6: Verify the whole monorepo**
 
 Run, from the repository root (two levels up): `pnpm build && pnpm test:run`
-Expected: all packages build; totals are the 35 files / 474 tests baseline plus this branch's additions, zero failures.
+Expected: all packages build; totals are the 65 files / 1031 tests baseline plus this branch's additions, zero failures.
 
 - [ ] **Step 7: Commit**
 
@@ -579,7 +603,9 @@ Confirm the tarball contains `dist/` and nothing else of substance (`files: ["di
 
 From a scratch directory outside the repo, `npm pack` the built package and install the tarball into an empty project, then import it and call `lookupChordByKeySuffix("C", "major")` and `[...chordLibraryEntries("guitar")].length`.
 
-This is worth doing rather than assuming: the package is ESM-only with no `require` condition, and its built output has been observed to emit extensionless relative specifiers and a JSON import without an import attribute — both fine under a bundler, both potentially fatal in plain Node. **Report exactly what happens, including any failure.** Whether that blocks the release is a decision for the controller, not for you to work around.
+This is now a **regression check, not an open risk** — that changed after this plan was written. The extensionless-specifier and missing-JSON-import-attribute faults described here were real; they were fixed before the first publish (`moduleResolution` moved to `nodenext`, `src/chordLookup.ts` now imports its slim JSON `with { type: "json" }`) and shipped in the 2026-09-01 release. There is also live evidence the consumer path works: `chordl-guitar@0.2.0` is on npm and `frames` installs and builds against `^0.2.0` today.
+
+So expect this step to pass. **Report exactly what happens anyway, including any failure** — if it fails, something regressed since 0.2.0 and that blocks the release. Whether to work around it is a decision for the controller, not for you.
 
 - [ ] **Step 3: Write `RELEASING.md`**
 
@@ -600,6 +626,8 @@ git commit -m "docs(guitar): record the release procedure and consumer verificat
 
 **Deliberately not automated:** the `npm publish` itself. Task 5 prepares and verifies; a human runs the command.
 
-**Known open question, flagged rather than resolved:** Task 5 Step 2 may find that the published package does not import cleanly in plain Node. That risk is pre-existing and was observed twice during earlier work; it is surfaced here as a verification step rather than a fix, because fixing it means changing `moduleResolution` across the monorepo — well outside this plan's scope, and a decision for the controller once there is evidence.
+**Formerly open, now closed:** this plan originally flagged that the published package might not import cleanly in plain Node, and declined to fix it because that meant changing `moduleResolution` across the monorepo. That work has since happened independently — all packages moved to `nodenext` and the release went out on 2026-09-01 — so Task 5 Step 2 is a regression check now. The original reasoning is left in place above because the failure mode is worth recognising if it returns.
+
+**Still open:** how the two bass generators divide the work. Task 3's preamble records the split; nothing in this plan forces a caller-facing decision beyond documenting it in the changelog. If the answer turns out to be that one of them should absorb the other, that is a separate design cycle, not a step here.
 
 **Test-count expectation:** Tasks 1–4 add roughly 20 tests. The plan does not pin an exact total, because Task 3's bass string-set scheme is a design decision left to the implementer and changes the count.

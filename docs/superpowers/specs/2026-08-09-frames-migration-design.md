@@ -1,7 +1,9 @@
 # frames → chordl-guitar Migration
 
 **Date:** 2026-08-09
-**Status:** approved — design agreed, phases A and B ready for implementation planning
+**Status:** approved — design agreed; phase B has an implementation plan (`../plans/2026-08-09-chordl-guitar-gap-closing.md`), phase A's plan lives in the `frames` repo. **Nothing has been implemented.**
+
+**Progress note, 2026-09-07:** re-audited both repos. Phases A–E are all unstarted. Two facts below have changed since 2026-08-09 and are corrected in place: `chordl-guitar` is now actually published to npm (0.2.0, in the 2026-09-01 six-package release), and `frames` has since taken a dependency on it — see "What has already happened in frames" below.
 **Context:** sub-project 2 of `docs/superpowers/specs/2026-08-08-chordl-guitar-boundary-design.md`, which named this work but deliberately left it undesigned until the package landed.
 
 ## Problem
@@ -95,11 +97,11 @@ These assert **what the code does today, not what it should do.** If a test reve
 
 4. **Publish `@pepperhorn/chordl-guitar@0.3.0`** to npm.
 
-**Gated on:** `feat/guitar-foundations` being merged, which it now is (PR #17, `chordl-guitar@0.2.0` on `main`). 0.3.0 ships 0.2.0's work plus these additions as a single release.
+**Gated on:** `feat/guitar-foundations` being merged, which it now is (PR #17). **Update 2026-09-07:** 0.2.0 is no longer just "on `main`" — it was published to npm on 2026-09-01, so 0.3.0 is now a second release rather than the package's first, and the registry path this whole design depends on is proven rather than assumed.
 
 ### Phase C — Chord and scale migration (scoped, not yet designed)
 
-- Add the registry dependency; retire `src/lib/instruments.ts` and `src/lib/notes.ts`
+- ~~Add the registry dependency~~ — **already done, out of order.** See below. Bump the range to `^0.3.0` once phase B publishes; retire `src/lib/instruments.ts` and `src/lib/notes.ts`
 - Alias `"bass"` → `bass4` at the API boundary so the public value keeps working
 - Preserve `positionIndex` semantics by indexing the raw `positions` array
 - Keep `patch` and `presetSource` local
@@ -120,6 +122,19 @@ Separate from C deliberately: the tab module carries its own instrument universe
 
 Four exports have a runtime dependency on `INSTRUMENTS`, reading only `.strings`, `.tuning`, and `.frets` — all present in the package's config, so that dependency swaps cleanly once ids are reconciled. `openStringPitchClass` derives pitch class from the tuning *letter*, losing octave; the package's `openMidi` would serve it strictly better.
 
+## What has already happened in frames (2026-09-07)
+
+One piece of real migration work landed outside this phase sequence, and anyone resuming should know about it before re-reading phase C.
+
+`frames` commit `6d7377b` (PR #5, 2026-09-02) added `"@pepperhorn/chordl-guitar": "^0.2.0"` to `package.json` and replaced frames' hand-maintained top-3 table with a re-export: `src/lib/staticPresets.ts` now does `export { GUITAR_TOP3_PRESETS } from "@pepperhorn/chordl-guitar";`. The local copy had drifted ten chords behind the package, so the change was worth making on its own merits.
+
+Two consequences worth being explicit about:
+
+- **The registry path is proven.** This design's central bet — that frames consumes the package from npm rather than through `file:` or a workspace, leaving the Dockerfile untouched — is no longer a prediction. It installs, builds and ships.
+- **It landed without phase A.** No characterization tests existed when it went in, so the top-3 swap was made without the safety net this design says must come first. It is a narrow, verifiable change and nothing suggests it broke anything, but it is precisely the pattern phase A exists to prevent, and the next such change will not be as narrow.
+
+Everything else in phases C, D and E is untouched: `src/lib/instruments.ts` and `src/lib/notes.ts` still exist and are imported in ten places, `"bass"` is still a native id rather than an alias to `bass4`, both workbenches still derive their instrument tab list from `Object.keys(INSTRUMENTS)`, `tab/instruments.ts` still stores `openMidi` high→low, and `scales.ts` is still one 251-line file.
+
 ## Testing strategy
 
 Phase A's suite is the acceptance criterion for C and D. Neither lands without it green.
@@ -137,8 +152,10 @@ Phase B follows the package's existing practice: derived values verified against
 
 ## Open items
 
-- [ ] Phase A — implementation plan and build
-- [ ] Phase B — implementation plan and build; publish 0.3.0
+- [x] Phase A — implementation plan written (`frames`: `docs/superpowers/plans/2026-08-09-frames-characterization-tests.md`)
+- [ ] Phase A — build. **Not started.** Note there is a separate uncommitted golden-master attempt in frames' working tree (`src/lib/__migration__/`) that does not match this plan's scope; reconcile the two before building
+- [x] Phase B — implementation plan written (`../plans/2026-08-09-chordl-guitar-gap-closing.md`, baseline refreshed 2026-09-07)
+- [ ] Phase B — build; publish 0.3.0. **Not started**
 - [ ] Confirm generated bass power chords against frames' `BASS_PRESETS`
 - [ ] Phase C — own brainstorm cycle after A and B land
 - [ ] Phase D — own brainstorm cycle after C
