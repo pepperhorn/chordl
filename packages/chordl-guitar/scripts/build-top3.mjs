@@ -189,6 +189,34 @@ function pitchClassesOf(frets) {
   return new Set(pitchesOf(frets).map((m) => m % 12));
 }
 
+/**
+ * Frets a diagram draws — INSTRUMENTS["guitar-top3"].frets.
+ *
+ * Kept as a literal because this script must not import from src/ (it writes
+ * src/), and because changing it changes which shapes are eligible: a bump here
+ * is a change to the table, not just to the picture.
+ */
+const DIAGRAM_FRETS = 4;
+
+/**
+ * Can a reader actually see this shape?
+ *
+ * A diagram is drawn either from the nut or from a window that slides up the
+ * neck, and an open string exists only at the nut. So a shape that mixes an open
+ * string with a note past the window can be drawn in neither: slide the window
+ * and the open string is gone, keep it at the nut and the fretted note falls off
+ * the picture. `[0, 5, 5]` and `[8, 0, 8]` are unreadable however well they spell
+ * the chord.
+ *
+ * Everything else is fine. Span is already ≤2, so any shape without an open
+ * string fits inside a window at its own lowest fret.
+ */
+function renderable(frets) {
+  const fretted = frets.filter((f) => f > 0);
+  const highest = fretted.length ? Math.max(...fretted) : 0;
+  return highest <= DIAGRAM_FRETS || !frets.includes(0);
+}
+
 /** One finger per fret, lowest fret = index finger. Open strings carry no label. */
 function fingersFor(frets) {
   const fretted = frets.filter((f) => f > 0);
@@ -419,8 +447,14 @@ function candidatesFor(dbKey, suffix, entry) {
     offer(5, frets);
   }
 
+  // Renderability sorts ahead of the tier, which makes it a hard filter rather
+  // than a preference: the assignment below never looks past the renderable
+  // candidates unless a chord has none at all.
   return [...tiers.values()].sort(
-    (a, b) => a.tier - b.tier || rankCompare(a.cand, b.cand),
+    (a, b) =>
+      Number(renderable(b.frets)) - Number(renderable(a.frets)) ||
+      a.tier - b.tier ||
+      rankCompare(a.cand, b.cand),
   );
 }
 
@@ -444,6 +478,7 @@ function buildTable(db) {
     for (const entry of db.chords[dbKey]) {
       const roles = rolesForSuffix(entry.suffix);
       if (!roles) throw new Error(`no chord tones defined for suffix "${entry.suffix}"`);
+      const candidates = candidatesFor(dbKey, entry.suffix, entry);
       rows.push({
         dbKey,
         key: DB_KEY_LABEL[dbKey],
@@ -454,7 +489,12 @@ function buildTable(db) {
           ? QUALITY_PRIORITY.indexOf(entry.suffix)
           : 100 + db.suffixes.indexOf(entry.suffix),
         toneSet: toneSetKey(DB_KEY_PC[dbKey], roles),
-        candidates: candidatesFor(dbKey, entry.suffix, entry),
+        candidates,
+        // The same list ranked on musical grounds alone, so the build log can
+        // report what the renderability filter cost.
+        candidatesUnfiltered: [...candidates].sort(
+          (a, b) => a.tier - b.tier || rankCompare(a.cand, b.cand),
+        ),
       });
     }
   }
@@ -466,6 +506,7 @@ function buildTable(db) {
 
   for (const row of pending) {
     for (const c of row.candidates) {
+      if (!renderable(c.frets)) break; // renderable candidates sort first
       const k = keyOf(c.frets);
       const held = claimed.get(k);
       if (held !== undefined && held !== row.toneSet) continue;
@@ -482,8 +523,12 @@ function buildTable(db) {
   // even though another chord is already wearing it; `approximate` says so.
   for (const row of pending) {
     if (row.chosen || row.candidates.length === 0) continue;
-    row.chosen = row.candidates[0];
-    row.reused = true;
+    const best = row.candidates[0];
+    row.chosen = best;
+    // A shape nobody can draw is worse than sharing one that they can, so the
+    // undrawable candidate is only reached when the chord has no other.
+    if (renderable(best.frets)) row.reused = true;
+    else row.unrenderable = true;
   }
 
   // chords-db root order, then chords-db suffix order — a stable, reviewable diff.
@@ -517,6 +562,7 @@ function rowLiteral(row) {
   // a re-used shape is already another chord's. None of those is a faithful
   // spelling of this chord, and the flag says so.
   if (c.tier >= 6 || !c.cand.hasRoot || row.reused) parts.push("approximate: true");
+  if (row.unrenderable) parts.push("unrenderable: true");
   return `  { ${parts.join(", ")} },`;
 }
 
@@ -559,6 +605,12 @@ export function renderTop3Source() {
   lines.push("  tier: number;");
   lines.push("  /** True when the shape is ambiguous or drops the root: playable, not a faithful spelling. */");
   lines.push("  approximate?: boolean;");
+  lines.push("  /**");
+  lines.push("   * True when the shape mixes an open string with a fret past the diagram window,");
+  lines.push("   * so no window shows all three notes. Only set where the chord has no other");
+  lines.push("   * shape at all — a caller may prefer to show nothing.");
+  lines.push("   */");
+  lines.push("  unrenderable?: boolean;");
   lines.push("}");
   lines.push("");
   lines.push(`/** ${resolved.length} of ${rows.length} (root, suffix) pairs; the rest have no honest three-string window. */`);
@@ -594,6 +646,15 @@ export function summarise() {
     resolved: rows.filter((r) => r.chosen).length,
     tiers,
     unresolved: rows.filter((r) => !r.chosen).map((r) => r.key + r.suffix),
+    /** Chords whose best-spelled shape was dropped because nobody could read it. */
+    lostFirstChoice: rows
+      .filter((r) => r.candidates.length && !renderable(r.candidatesUnfiltered[0].frets))
+      .map((r) => r.key + r.suffix),
+    /** Chords with no readable shape at all. */
+    noRenderable: rows
+      .filter((r) => r.candidates.length && !r.candidates.some((c) => renderable(c.frets)))
+      .map((r) => r.key + r.suffix),
+    unrenderable: rows.filter((r) => r.unrenderable).map((r) => r.key + r.suffix),
     rows,
   };
 }
@@ -609,5 +670,10 @@ if (invokedDirectly) {
     `guitar-top3: ${s.resolved}/${s.total} shapes — tiers ` +
       Object.entries(s.tiers).map(([t, n]) => `${t}:${n}`).join(" "),
   );
+  console.log(
+    `  renderability: ${s.lostFirstChoice.length} chords gave up their best-spelled shape, ` +
+      `${s.noRenderable.length} had no readable shape at all`,
+  );
+  if (s.unrenderable.length) console.log(`  undrawable: ${s.unrenderable.join(", ")}`);
   if (s.unresolved.length) console.log(`  no shape: ${s.unresolved.join(", ")}`);
 }

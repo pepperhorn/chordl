@@ -151,6 +151,30 @@ describe("every preset is playable on the top three strings", () => {
     expect(wrong).toEqual([]);
   });
 
+  /**
+   * A diagram draws `INSTRUMENTS["guitar-top3"].frets` frets, either from the nut
+   * or from a window that slides up the neck. An open string only exists at the
+   * nut, so a shape that mixes one with a note past the window can be drawn in
+   * neither: slide the window and the open string is gone, keep it at the nut and
+   * the fretted note falls off the bottom of the picture.
+   *
+   * Such a shape is not a candidate, however well it spells the chord. Any entry
+   * that still carries one says so with `unrenderable`, and there should be none.
+   */
+  it("draws inside the diagram window", () => {
+    const window = INSTRUMENTS["guitar-top3"].frets;
+    const wrong = GUITAR_TOP3_PRESETS.flatMap((p) => {
+      if (p.unrenderable) return [];
+      const top = sounding(p);
+      const fretted = top.filter((f) => f > 0);
+      const highest = fretted.length ? Math.max(...fretted) : 0;
+      const drawableAtNut = highest <= window;
+      const slidable = !top.includes(0);
+      return drawableAtNut || slidable ? [] : [`${label(p)} [${top.join(", ")}]`];
+    });
+    expect(wrong).toEqual([]);
+  });
+
   it("keeps every shape inside a two-fret reach", () => {
     const wrong = GUITAR_TOP3_PRESETS.flatMap((p) => {
       const fretted = sounding(p).filter((f) => f > 0);
