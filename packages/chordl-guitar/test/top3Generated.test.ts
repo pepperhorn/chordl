@@ -52,10 +52,25 @@ describe("experience level on the generated table", () => {
   });
 
   it("the generator's ranking agrees with the library's", () => {
+    // TOP3_GENERATED.frets are already absolute (measured from the nut), and
+    // Top3GeneratedEntry has no `position` field — the table's rows are all
+    // implicitly position 1. The real windowed (position > 1) check lives in
+    // experience.test.ts, against staticPresets.top3Window().
     for (const e of TOP3_GENERATED) {
-      const relative = e.frets.map((f) => (f > 0 ? f : f));
-      expect(levelForTop3(relative, e.position ?? 1), `${e.key}${e.suffix}`)
-        .toBe(e.level);
+      expect(levelForTop3(e.frets, 1), `${e.key}${e.suffix}`).toBe(e.level);
     }
+  });
+
+  // Pins the actual distribution so a future change to levelForTop3 or the
+  // generator's ranking shows up here rather than drifting unnoticed. (The
+  // design spec claims 124/183/209 for this same table — that mismatch is
+  // documentation debt to reconcile before publishing, not a bug this test
+  // is meant to catch; this test protects the shipped numbers from silently
+  // changing again, whichever numbers are eventually declared correct.)
+  it("keeps the corpus-wide level distribution pinned", () => {
+    const counts = { beginner: 0, emerging: 0, established: 0 };
+    for (const e of TOP3_GENERATED) counts[e.level]++;
+    expect(counts).toEqual({ beginner: 115, emerging: 151, established: 250 });
+    expect(counts.beginner + counts.emerging + counts.established).toBe(TOP3_GENERATED.length);
   });
 });
