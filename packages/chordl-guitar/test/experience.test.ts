@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { EXPERIENCE_LADDER, levelForFacts, levelForTop3 } from "../src/experience";
+import {
+  EXPERIENCE_LADDER,
+  levelForFacts,
+  levelForTop3,
+  selectForExperience,
+} from "../src/experience";
 import { positionFacts } from "../src/voicingFacts";
 import { INSTRUMENTS, lookupGuitarChord } from "../src";
 
@@ -70,5 +75,66 @@ describe("levelForTop3", () => {
         expect(EXPERIENCE_LADDER).toContain(levelForTop3(f, p));
       }
     }
+  });
+});
+
+const factsFor = (label: string) => {
+  const res = lookupGuitarChord(label, "guitar")!;
+  return res.positions.map((p) => positionFacts(p, guitar, 0));
+};
+
+describe("selectForExperience", () => {
+  it("returns the matching shapes when the level has some", () => {
+    const facts = factsFor("C");
+    const sel = selectForExperience(facts, { level: "beginner" });
+    expect(sel.indices.length).toBeGreaterThan(0);
+    expect(sel.level).toBe("beginner");
+    expect(sel.widenedFrom).toBeUndefined();
+    for (const i of sel.indices) expect(facts[i].isOpenShape).toBe(true);
+  });
+
+  it("widens rather than returning nothing when a level is empty", () => {
+    // F has no open shape in the corpus.
+    const facts = factsFor("F");
+    expect(facts.some((f) => f.isOpenShape)).toBe(false);
+    const sel = selectForExperience(facts, { level: "beginner" });
+    expect(sel.indices.length).toBeGreaterThan(0);
+    expect(sel.widenedFrom).toBe("beginner");
+    expect(sel.level).not.toBe("beginner");
+  });
+
+  it("drops the shape class BEFORE widening the level", () => {
+    const facts = factsFor("C");
+    // Ask for an impossible refinement within a level that does have shapes.
+    const sel = selectForExperience(facts, { level: "beginner", shapeClass: "no-barre" });
+    // "no-barre" is satisfiable here, so nothing should relax.
+    expect(sel.droppedShapeClass).toBe(false);
+    expect(sel.widenedFrom).toBeUndefined();
+
+    // A level whose members all carry barres: the refinement must go first,
+    // and the level must NOT widen while shapes remain at this rung.
+    const barreOnly = factsFor("F").filter((f) => f.hasBarre);
+    const sel2 = selectForExperience(barreOnly, {
+      level: "established",
+      shapeClass: "open",
+    });
+    expect(sel2.droppedShapeClass).toBe(true);
+    expect(sel2.level).toBe("established");
+    expect(sel2.widenedFrom).toBeUndefined();
+  });
+
+  it("never returns empty while any shape exists", () => {
+    for (const label of ["C", "F", "Bm", "G", "Am", "E7"]) {
+      const facts = factsFor(label);
+      for (const level of EXPERIENCE_LADDER) {
+        const sel = selectForExperience(facts, { level });
+        expect(sel.indices.length, `${label} @ ${level}`).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it("returns an empty selection only for empty input", () => {
+    const sel = selectForExperience([], { level: "beginner" });
+    expect(sel.indices).toEqual([]);
   });
 });
