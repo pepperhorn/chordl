@@ -79,6 +79,47 @@ const chordTones = (key: string, suffix: string): Set<number> => {
 const toneSetKey = (key: string, suffix: string) =>
   [...chordTones(key, suffix)].sort((a, b) => a - b).join(",");
 
+/**
+ * The tones without which the chord is a different chord.
+ *
+ * Two come out of the full set. The root, because a rootless voicing is a real
+ * voicing — it is marked `approximate` and checked separately. And the perfect
+ * fifth, because it is the one tone a listener supplies for themselves; that is
+ * the design's "drop the 5th" rule.
+ *
+ * Everything left names the chord. A `9` keeps its 3rd, its b7 *and* its 9th —
+ * drop the 9th and the shape is a plain dominant 7th wearing a 9 label, which is
+ * the fault this table exists to fix. An altered 5th is not a perfect 5th and so
+ * survives: `7b5` without its b5 is just `7`.
+ */
+const namingTones = (key: string, suffix: string): Set<number> => {
+  const root = PC[key];
+  const intervals = intervalsFor(suffix);
+  const droppable = new Set(intervals.includes(7) ? [0, 7] : [0]);
+  return new Set(
+    intervals.filter((i) => !droppable.has(i)).map((i) => (root + i) % 12),
+  );
+};
+
+/** The three complete chords a listener names on hearing three notes. */
+const TRIAD_SHAPES: Record<string, number[]> = {
+  major: [0, 4, 7], minor: [0, 3, 7], dim: [0, 3, 6],
+  aug: [0, 4, 8], sus2: [0, 2, 7], sus4: [0, 5, 7],
+};
+
+/** Roots on which these three pitch classes spell a complete triad. */
+function triadRoots(pcs: Set<number>): number[] {
+  const want = [...pcs].sort((a, b) => a - b).join(",");
+  const out: number[] = [];
+  for (const intervals of Object.values(TRIAD_SHAPES)) {
+    for (let root = 0; root < 12; root++) {
+      const set = intervals.map((i) => (root + i) % 12).sort((a, b) => a - b).join(",");
+      if (set === want) out.push(root);
+    }
+  }
+  return out;
+}
+
 const OPEN_MIDI = INSTRUMENTS["guitar-top3"].openMidi;
 
 /**
@@ -227,6 +268,65 @@ describe("the root is present", () => {
 });
 
 /**
+ * The fault this table exists to fix, in its second form.
+ *
+ * The first was a shape that dropped the root and so spelled another chord. The
+ * second is a shape that drops the tone the chord is *named* for: `C9` voiced as
+ * C-E-Bb is a C7, `C69` voiced as C-E-A is a C6. Both sound only tones the chord
+ * contains, so the "spells only its own chord tones" check above passes them,
+ * and both print a diagram that is really another chord.
+ */
+describe("every preset keeps the tones that name its chord", () => {
+  it("in every entry not marked approximate", () => {
+    const wrong = GUITAR_TOP3_PRESETS.flatMap((p) => {
+      if (p.approximate) return [];
+      const pcs = new Set(positionToMidi(toPosition(p), OPEN_MIDI).map((m) => m % 12));
+      const missing = [...namingTones(p.key, p.suffix)].filter((t) => !pcs.has(t));
+      return missing.length ? [`${label(p)} drops ${missing.join("/")}`] : [];
+    });
+    expect(wrong).toEqual([]);
+  });
+
+  it("or says so — an extension chord that cannot keep them is approximate", () => {
+    // A 9th chord needs root, 3rd, b7 and 9th. Three strings hold three of them,
+    // so every entry for one is either rootless or otherwise inexact, never a
+    // silent dominant 7th.
+    for (const suffix of ["9", "69", "11", "13", "m9", "maj9"]) {
+      const entries = GUITAR_TOP3_PRESETS.filter((p) => p.suffix === suffix);
+      expect(entries.length, `${suffix} should still be covered`).toBeGreaterThan(0);
+      for (const p of entries) {
+        const pcs = new Set(positionToMidi(toPosition(p), OPEN_MIDI).map((m) => m % 12));
+        const kept = [...namingTones(p.key, p.suffix)].every((t) => pcs.has(t));
+        expect(kept || p.approximate === true, `${label(p)} is a quiet ${suffix}`).toBe(true);
+      }
+    }
+  });
+});
+
+/**
+ * `approximate` is documented as "drops the root, or its three notes also name
+ * another chord". The second half has to hold on every path into the table, not
+ * only on the corpus tiers that happened to evaluate it.
+ *
+ * A shape that *is* the whole of its own chord is exempt however many names it
+ * answers to: an augmented triad genuinely names three roots and `Csus2` is
+ * `Gsus4`, and neither has dropped anything to get there.
+ */
+describe("a shape that spells someone else's chord is marked approximate", () => {
+  it("wherever it came from", () => {
+    const wrong = GUITAR_TOP3_PRESETS.flatMap((p) => {
+      if (p.approximate) return [];
+      const pcs = new Set(positionToMidi(toPosition(p), OPEN_MIDI).map((m) => m % 12));
+      const complete = pcs.size === chordTones(p.key, p.suffix).size;
+      if (complete) return [];
+      const others = triadRoots(pcs).filter((r) => r !== PC[p.key]);
+      return others.length ? [`${label(p)} spells a triad on ${others.join("/")}`] : [];
+    });
+    expect(wrong).toEqual([]);
+  });
+});
+
+/**
  * Fault 3 of the design: `Am7`, `Fmaj7` and `Dm7` each rendered a diagram that
  * already belonged to another chord, and the per-preset checks above cannot see
  * it because they never compare presets to each other.
@@ -238,21 +338,28 @@ describe("the root is present", () => {
  */
 describe("no two chords share a diagram", () => {
   it("unless they are the same notes", () => {
-    const byShape = new Map<string, StaticPreset[]>();
+    // Grouped by what the shapes *sound*, not by their frets. Two entries can
+    // print different diagrams and still be the same three pitch classes an
+    // octave or an inversion apart, which is how C69 read as C6 for a while.
+    const bySound = new Map<string, StaticPreset[]>();
     for (const p of GUITAR_TOP3_PRESETS) {
-      const k = absolute(p).join(",");
-      byShape.set(k, [...(byShape.get(k) ?? []), p]);
+      const pcs = [...new Set(positionToMidi(toPosition(p), OPEN_MIDI).map((m) => m % 12))];
+      const k = pcs.sort((a, b) => a - b).join(",");
+      bySound.set(k, [...(bySound.get(k) ?? []), p]);
     }
 
     const collisions: string[] = [];
-    for (const [shape, group] of byShape) {
+    for (const [sound, group] of bySound) {
       for (let i = 0; i < group.length; i++) {
         for (let j = i + 1; j < group.length; j++) {
           const a = group[i];
           const b = group[j];
+          // Exempt only chords that are the same notes *by definition* — a slash
+          // chord and its triad, a sus2 and the sus4 a fifth up, the symmetric
+          // qualities. Not a reduction that landed on another chord by accident.
           if (toneSetKey(a.key, a.suffix) === toneSetKey(b.key, b.suffix)) continue;
           if (a.approximate || b.approximate) continue;
-          collisions.push(`[${shape}] ${label(a)} / ${label(b)}`);
+          collisions.push(`{${sound}} ${label(a)} / ${label(b)}`);
         }
       }
     }

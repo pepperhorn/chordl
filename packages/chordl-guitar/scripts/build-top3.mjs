@@ -147,21 +147,40 @@ function toneIntervals(roles) {
 }
 
 /**
- * The three tones to build from when a chord has more than three.
+ * The tones without which the chord is a different chord.
  *
- * Root, then the 3rd (or the sus tone that stands in for it), then the tone
- * that names the chord. The 5th is what goes: it carries the least information
- * and is the one tone a listener supplies for themselves. The root never goes —
- * dropping it is what made `Am7` render as `C major`.
+ * Exactly two are droppable, and everything else names the chord:
  *
- * Returns null where no honest three-note reduction exists.
+ *   - the **root**, because a rootless voicing is a real voicing. Dropping it is
+ *     what made `Am7` print C major, so it is never dropped silently — an entry
+ *     without its root is marked `approximate`.
+ *   - the **perfect fifth**, because it is the one tone a listener supplies for
+ *     themselves. This is the design's "drop the 5th". An *altered* fifth is not
+ *     droppable: `C7b5` without its b5 is `C7`.
+ *
+ * The 9th, 11th, 13th and 6th are therefore essential, not optional colour. An
+ * earlier version ranked them below the 7th and so reduced `C9` to root-3rd-b7,
+ * which is a `C7` printed under a `C9` label — the same fault as the rootless
+ * presets, one tone further out.
+ */
+function essentialIntervals(roles) {
+  const droppable = new Set([0]);
+  if (roles.fifth === 7) droppable.add(7);
+  return toneIntervals(roles).filter((i) => !droppable.has(i));
+}
+
+/**
+ * The three tones to build from, or null where three is not enough.
+ *
+ * Root plus everything essential; where that leaves room, the 5th comes back to
+ * fill it. A chord needing four essential tones — `C9` (3rd, b7, 9th), `C7b5`
+ * (3rd, b5, b7), every diminished 7th — has no three-note version that keeps its
+ * name, so nothing is constructed for it and it takes what the corpus offers.
  */
 function reductionIntervals(roles) {
-  const colour = roles.seventh ?? roles.sixth ?? roles.ninth ?? roles.eleventh
-    ?? roles.thirteenth ?? roles.fifth;
-  const third = roles.third ?? roles.sus;
-  if (third === undefined || colour === undefined) return null;
-  const set = new Set([0, third, colour]);
+  const essential = essentialIntervals(roles);
+  const set = new Set([0, ...essential]);
+  if (set.size < 3 && roles.fifth !== undefined) set.add(roles.fifth);
   return set.size === 3 ? [...set].sort((a, b) => a - b) : null;
 }
 
@@ -299,21 +318,41 @@ function describe(frets, rootPc, roles) {
   const rel = new Set([...pcs].map((pc) => (pc - rootPc + 12) % 12));
   const tones = new Set(toneIntervals(roles));
   const inChord = [...rel].every((i) => tones.has(i));
-  const third = roles.third ?? roles.sus;
-  const colour = roles.seventh ?? roles.sixth;
+  const essential = essentialIntervals(roles);
   const fretted = frets.filter((f) => f > 0);
+  /** The shape sounds the whole chord — nothing has been dropped to fit. */
+  const whole = inChord && pcs.size === tones.size;
+  const ambiguous = namesAnotherChord(pcs, rootPc);
   return {
     frets,
     pcs,
     inChord,
     hasRoot: rel.has(0),
-    /** "3rd + root-or-5th, 7th kept where the parent has one." */
+    /**
+     * Every tone that names the chord is sounding, and the shape is grounded.
+     *
+     * "Grounded" is the design's "root-or-5th", and it applies only where there
+     * is room for it: a chord with three essential tones fills all three strings
+     * with them, and the standard voicing of exactly those chords — the rootless
+     * 3rd-b7-9th shell of a 9th, the 3rd-b5-b7 of a 7b5 — is grounded by nothing
+     * but the label. Where two tones name the chord, the third string owes the
+     * listener the root or the fifth.
+     */
     complete:
       inChord &&
-      third !== undefined && rel.has(third) &&
-      (rel.has(0) || (roles.fifth !== undefined && rel.has(roles.fifth))) &&
-      (colour === undefined || rel.has(colour)),
-    ambiguous: namesAnotherChord(pcs, rootPc),
+      essential.every((i) => rel.has(i)) &&
+      (essential.length >= 3 ||
+        rel.has(0) ||
+        (roles.fifth !== undefined && rel.has(roles.fifth))),
+    ambiguous,
+    /**
+     * The shape spells a complete chord rooted somewhere else *and* it got there
+     * by dropping something. A shape that is the whole of its own chord is not
+     * misleading however many names it answers to: an augmented triad genuinely
+     * names three roots, and `Csus2` and `Gsus4` are the same three notes.
+     */
+    misleading: ambiguous && !whole,
+    whole,
     distinct: pcs.size,
     highestFret: Math.max(...frets),
     span: spanOf(frets),
@@ -564,10 +603,12 @@ function rowLiteral(row) {
     `source: ${JSON.stringify(SOURCE_BY_TIER[c.tier])}`,
     `tier: ${c.tier}`,
   ];
-  // Tiers 6 and 7 accept ambiguity, any tier can land on a rootless window, and
-  // a re-used shape is already another chord's. None of those is a faithful
-  // spelling of this chord, and the flag says so.
-  if (c.tier >= 6 || !c.cand.hasRoot || row.reused) parts.push("approximate: true");
+  // Tiers 6 and 7 accept ambiguity, any tier can land on a rootless window or on
+  // a shape that spells someone else's chord, and a re-used shape is already
+  // another chord's. None is a faithful spelling, and the flag says so.
+  if (c.tier >= 6 || !c.cand.hasRoot || c.cand.misleading || row.reused) {
+    parts.push("approximate: true");
+  }
   return `  { ${parts.join(", ")} },`;
 }
 
