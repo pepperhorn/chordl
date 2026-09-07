@@ -131,3 +131,36 @@ describe("engraving box matches the engraving", () => {
     expect(vbH - h).toBeLessThanOrEqual(48 + 0.001);
   });
 });
+
+describe("loading state after a chord change", () => {
+  it("does not leave the previous engraving inside the loading node", async () => {
+    const { container, rerender } = render(<StaffNotation notes={["C", "E", "G"]} chordLabel="C" />);
+    await waitFor(() => {
+      expect(container.querySelector(".bc-staff__engraving svg")).toBeTruthy();
+    });
+
+    // Changing the chord drops back to "loading" while Verovio re-engraves.
+    rerender(<StaffNotation notes={["D", "F#", "A"]} chordLabel="D" />);
+
+    const loading = container.querySelector('.bc-staff__loading[aria-label="Rendering notation"]');
+    expect(loading).toBeTruthy();
+    // The stale engraving must be gone: otherwise it inherits the loading
+    // transform, keeps its old width/height and is clipped by the placeholder
+    // viewBox while the dots animate on top of it.
+    expect(loading!.querySelector("svg") === null).toBe(true);
+    expect(container.querySelector(".bc-staff__engraving") === null).toBe(true);
+    expect(container.querySelectorAll("svg.bc-staff svg").length).toBe(0);
+  });
+
+  it("re-injects the engraving after the loading state, even for identical markup", async () => {
+    const { container, rerender } = render(<StaffNotation notes={["C", "E", "G"]} chordLabel="C" />);
+    await waitFor(() => {
+      expect(container.querySelector(".bc-staff__engraving svg")).toBeTruthy();
+    });
+    rerender(<StaffNotation notes={["D", "F#", "A"]} chordLabel="D" />);
+    await waitFor(() => {
+      expect(container.querySelector(".bc-staff__engraving svg")).toBeTruthy();
+    });
+    expect(container.querySelectorAll(".bc-staff__engraving svg").length).toBe(1);
+  });
+});

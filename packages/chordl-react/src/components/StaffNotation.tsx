@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { buildMei } from "@pepperhorn/chordl-core";
 import type { StaffGlyphSet } from "@pepperhorn/chordl-core";
@@ -81,6 +81,14 @@ export function StaffNotation({
   const nestRef = useRef<SVGGElement | null>(null);
   /** Last markup written into `nestRef`, so a size change alone doesn't re-parse it. */
   const injectedRef = useRef<string | null>(null);
+  // The engraving node is unmounted whenever the component drops back to
+  // loading (it is keyed apart from the loading node), so a remount starts from
+  // an empty <g>. Forget what was injected then, or identical markup coming
+  // back would be skipped as "already there" and the staff would never appear.
+  const setNest = useCallback((node: SVGGElement | null) => {
+    nestRef.current = node;
+    if (!node) injectedRef.current = null;
+  }, []);
 
   // Verovio scale is a percent; map the component's ~0.5 scale into its range.
   const verovioScale = Math.max(24, Math.round(scale * 80));
@@ -190,7 +198,13 @@ export function StaffNotation({
           notation unavailable
         </text>
       ) : loading ? (
+        // Keyed apart from the engraving <g> below: both are <g> in the same
+        // ternary slot, so without distinct keys React reuses one DOM node
+        // across the two states and the imperatively injected Verovio markup
+        // survives into the loading state — old staff, loading transform,
+        // placeholder viewBox.
         <g
+          key="loading"
           className="bc-render-loading bc-staff__loading"
           role="status"
           aria-label="Rendering notation"
@@ -211,7 +225,7 @@ export function StaffNotation({
         </g>
       ) : (
         // Verovio's SVG is injected here imperatively (see effect above).
-        <g ref={nestRef} className="bc-staff__engraving" transform={`translate(0, ${controlsH + labelH})`} />
+        <g key="engraving" ref={setNest} className="bc-staff__engraving" transform={`translate(0, ${controlsH + labelH})`} />
       )}
     </svg>
   );
