@@ -5,9 +5,9 @@ import { InteractiveInput } from "../dev/App";
 /**
  * Coverage for the guitar experience-level radio group that moved into the
  * annotations row (previously GuitarChordPanel's own pill toggle, deleted in
- * this branch). Nothing exercised it directly before: `LevelControl` had no
- * test of its own, and the panel-level tests only drive the `level` prop by
- * hand.
+ * #56, already on main before this branch). Nothing exercised it directly
+ * before: `LevelControl` had no test of its own, and the panel-level tests
+ * only drive the `level` prop by hand.
  */
 
 function levelRadio(container: HTMLElement, label: "Beginner" | "Emerging" | "Established") {
