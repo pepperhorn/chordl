@@ -9,7 +9,7 @@ import {
 } from "@pepperhorn/chordl-voicings";
 import type { VoicingEntry } from "@pepperhorn/chordl-voicings";
 import { calculateLayout, computeKeyboard, normalizeNote } from "@pepperhorn/chordl-core";
-import { PianoChord } from "../src/components/PianoChord";
+import { PianoChord, MAX_SPAN_SEMITONES } from "../src/components/PianoChord";
 import { ascendingOctaves } from "../src/diatonic-step";
 
 // Capture the MEI the staff builds, without loading the WASM toolkit.
@@ -112,15 +112,12 @@ describe("nothing else moves", () => {
     expect(VOICING_LIBRARY.length - moved.length).toBe(63);
   });
 
-  it("leaves the other entries drawn exactly as the stack drew them", () => {
-    for (const entry of VOICING_LIBRARY) {
-      if (moved.includes(entry.id)) continue;
-      for (const root of ROOTS) {
-        expect({ id: entry.id, root, shape: stacked(root, entry) })
-          .toEqual({ id: entry.id, root, shape: placed(root, entry) });
-      }
-    }
-  });
+  // No test for "the other 63 entries draw exactly as the stack drew them":
+  // `moved` above is *defined* as the entries where `stacked !== placed`, so
+  // asserting `stacked === placed` for everything not in `moved` only restates
+  // that definition back — it cannot fail. The "holds for every entry, in
+  // every key" test up top (comparing `placed` against `declared`, not
+  // `stacked`) is what actually protects the untouched entries.
 });
 
 /**
@@ -150,12 +147,15 @@ describe("every declared note lands on a drawn key", () => {
   });
 
   it("stays inside the span that would trigger the compaction fold", () => {
-    // PianoChord folds a note down an octave past 28 semitones from the bass.
-    // A tenth is 16 and the library's widest entry is 24, so no declared
-    // placement is ever folded — the fold guards hand span, not fidelity.
+    // PianoChord folds a note down an octave past MAX_SPAN_SEMITONES from the
+    // bass. A tenth is 16 and the library's widest entry is 24, so no
+    // declared placement is ever folded — the fold guards hand span, not
+    // fidelity. Referencing the real constant (instead of a copied literal)
+    // means lowering it can't silently start folding declared placements
+    // without this test noticing.
     for (const entry of VOICING_LIBRARY) {
       const shape = declared(entry);
-      expect(Math.max(...shape) - Math.min(...shape)).toBeLessThanOrEqual(28);
+      expect(Math.max(...shape) - Math.min(...shape)).toBeLessThanOrEqual(MAX_SPAN_SEMITONES);
     }
   });
 });
@@ -164,18 +164,27 @@ describe("every declared note lands on a drawn key", () => {
  * `PianoChord` places notes twice — once for the keyboard, once for the staff
  * — deliberately, over the same spellings, so the two views cannot disagree.
  * Both now prefer the declared octaves, so both had to move together.
+ *
+ * Db7 (not C7) on purpose: main already drew C7's Rootless Type A voicing
+ * consistently between the two views by accident — the letters happen not to
+ * wrap for that root — so a C7 fixture only discriminates on the hardcoded
+ * expected array, not on the invariant itself. On Db7, main's keyboard drew
+ * only 2 note names (F4, Bb4 — B and Eb collapsed onto keys already used by
+ * the fold-back-from-letters bug) while its staff engraved all 4. Reverting
+ * either M1 or M3 below reintroduces that split.
  */
 describe("keyboard and staff place the voicing identically", () => {
-  // C7 in the Rootless Type A voicing: M3, M13, m7, M9 = E4 A4 Bb4 D5, a
-  // close grip. Read off the letters instead, the Bb and D wrap and the grip
-  // becomes E4 A4 Bb5 D6 — an octave wider than the entry declares.
-  const CHORD = "C7 rootless style";
+  // Db7 in the Rootless Type A voicing: M3, M13, m7, M9 = F4 Bb4 B4 Eb5, a
+  // close grip. Read off the letters instead, the B and Eb wrap and the grip
+  // becomes F4 Bb4 B5 Eb6 — an octave wider than the entry declares, and two
+  // of the four keyboard highlights collide with keys already drawn.
+  const CHORD = "Db7 rootless style";
 
   it("names the same octaves under the keys as it engraves", async () => {
     const { container } = render(<PianoChord chord={`${CHORD} with midi note names`} />);
     const names = [...container.querySelectorAll<HTMLElement>(".bc-note-name")]
       .map((el) => el.textContent);
-    expect(names).toEqual(["E4", "A4", "A#4", "D5"]);
+    expect(names).toEqual(["F4", "Bb4", "B4", "Eb5"]);
 
     render(<PianoChord chord={CHORD} display="staff" />);
     await waitFor(() => expect(rendered.length).toBeGreaterThan(0));
@@ -202,6 +211,43 @@ describe("keyboard and staff place the voicing identically", () => {
     });
     const entry = VOICING_LIBRARY.find((e) => e.id === "rootless-dom7-a")!;
     expect(midis.map((m) => m - midis[0])).toEqual(declared(entry));
+  });
+});
+
+/**
+ * The tests above exercise the pure functions (`voicingOctaveOffsets`,
+ * `calculateLayout`) directly. Every one of them still passes against a
+ * hybrid build of this branch's `chordl-voicings`/`chordl-core` with *main's*
+ * `PianoChord.tsx` — the component never has to be told about the fix for the
+ * pure-function tests to go green. These two render the actual component and
+ * fail if either wire connecting it to those functions is cut.
+ */
+describe("PianoChord actually uses the declared octaves it computes", () => {
+  it("draws a rotation of a moved voicing at its rotated declared octaves", () => {
+    // C7 Rootless Type A ("rootless-dom7-a") is one of the nine entries the
+    // declared placement moves (see "nothing else moves" above). Starting it
+    // on A rotates the shape so A is lowest; `voicingOffsets` is cleared for
+    // rotations (PianoChord.tsx ~538) and the ascending stack takes back over
+    // — but only for the *rotated* notes, so the un-rotated pitch classes A,
+    // A#, D, E still have to land at A4 A#5 D6 E6, not the plain ascending
+    // stack from A4 (A4 A#4 D5 E5) that dropping this reset would produce.
+    const { container } = render(
+      <PianoChord chord="C7 rootless style starting on A with midi note names" />,
+    );
+    const names = [...container.querySelectorAll<HTMLElement>(".bc-note-name")]
+      .map((el) => el.textContent);
+    expect(names).toEqual(["A4", "A#5", "D6", "E6"]);
+  });
+
+  it("sizes the keyboard window for a moved voicing's real span", () => {
+    // Fed only the pitch classes (as the ascending stack would read them),
+    // C7 Rootless Type A looks like a close third-based grip and gets sized
+    // for one. Its declared placement is a tenth-plus-ninth spanning almost
+    // two octaves, and the keyboard has to be wide enough to hold it without
+    // cropping the top note off the right edge.
+    const { container } = render(<PianoChord chord="C7 rootless style" />);
+    const svg = container.querySelector("svg");
+    expect(svg?.getAttribute("viewBox")).toBe("11.5 0 219.5 97");
   });
 });
 

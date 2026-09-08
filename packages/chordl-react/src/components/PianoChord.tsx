@@ -82,6 +82,15 @@ function isChordProps(props: ChordProps | KeyboardProps): props is ChordProps {
   return "chord" in props;
 }
 
+/**
+ * Widest playable hand span (max ~19 semitones = octave + fifth, plus
+ * headroom): a voicing wider than this from its bass note gets a note folded
+ * down an octave rather than drawn as an unplayable stretch. Exported so
+ * tests can assert against the real value instead of a copied literal that
+ * could drift out of sync with it.
+ */
+export const MAX_SPAN_SEMITONES = 28;
+
 export function PianoChord(props: ChordProps | KeyboardProps) {
   if (!isChordProps(props)) {
     return <PianoKeyboard {...props} />;
@@ -617,8 +626,7 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
 
   // Helper: compute octave-qualified notes from pitch classes and a base octave.
   // After initial ascending assignment, folds notes down to keep the voicing
-  // within a playable hand span (max ~19 semitones = octave + fifth).
-  const MAX_SPAN_SEMITONES = 28;
+  // within a playable hand span — see MAX_SPAN_SEMITONES above.
 
   /**
    * Assign ascending octaves *without* touching spelling — this feeds the staff,
