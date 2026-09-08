@@ -31,15 +31,30 @@ describe("GuitarChordPanel fret window", () => {
       <GuitarChordPanel chord="C" showControls={false} position={0} />,
     );
     expect(cShapes.positions[0].frets.filter((f) => f > 0)).toEqual([3, 2, 1]);
-    expect(passedFrets(container)).toBe(3);
+    // The shape needs 3, but MIN_FRET_WINDOW keeps the window at 4 so there
+    // is an empty fret to read the hand against.
+    expect(passedFrets(container)).toBe(4);
+  });
+
+  it("never draws fewer than four frets, however little the shape needs", () => {
+    // Most ukulele shapes reach no further than the first fret. Sized to the
+    // shape, this drew a one-fret sliver with no neck around it.
+    const a = lookupGuitarChord("A", "ukulele")!;
+    const used = a.positions[0].frets.filter((f) => f > 0);
+    expect(Math.max(...used)).toBeLessThan(4);
+    const { container } = render(
+      <GuitarChordPanel chord="A" instrument="ukulele" showControls={false} position={0} />,
+    );
+    expect(passedFrets(container)).toBe(4);
   });
 
   it("raises a request below the floor instead of cropping the shape", () => {
     const { container } = render(
       <GuitarChordPanel chord="C" showControls={false} position={0} frets={1} />,
     );
-    // The floor for this shape is 3 (see above) — a request of 1 must not win.
-    expect(passedFrets(container)).toBe(3);
+    // The floor for this shape is 4 — the shape needs 3, MIN_FRET_WINDOW
+    // raises it — and a request of 1 must not win against either.
+    expect(passedFrets(container)).toBe(4);
   });
 
   it("honours a request above the floor", () => {

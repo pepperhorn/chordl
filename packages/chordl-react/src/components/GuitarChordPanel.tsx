@@ -68,6 +68,21 @@ export interface GuitarChordPanelProps {
 const POSITION_LABELS = "ABCDEFGH";
 
 /**
+ * Never draw fewer frets than this, however few the shape needs.
+ *
+ * A diagram cropped to exactly the frets it uses gives the eye nothing to
+ * read the hand against. Most ukulele shapes reach no further than the first
+ * fret and drew a single-fret sliver; #52's own measurement found 36 guitar
+ * positions in the same state. That design sized the window to the shape on
+ * the grounds that a one-fret shape "need not reserve four rows" — true about
+ * the space, wrong about what the rows were for. They are the reference.
+ *
+ * Four is the smallest window that still reads as a piece of a neck, and it
+ * is already the ukulele's own default width.
+ */
+const MIN_FRET_WINDOW = 4;
+
+/**
  * Instruments that can actually return a shape, in the order a player is most
  * likely to reach for them. `bass4`/`bass5` are deliberately absent: chords-db
  * ships no bass library, so they can only ever answer "no shape found", and an
@@ -220,7 +235,8 @@ export function GuitarChordPanel({
     // All-open shapes (every string open or muted — ukulele Am7/C6, guitar
     // Em/D) have no fretted string to floor on. Fall back to the instrument's
     // own default width rather than 1, which drew a single-fret sliver.
-    const minFrets = usedFrets.length > 0 ? Math.max(...usedFrets) : cfg.frets;
+    const needed = usedFrets.length > 0 ? Math.max(...usedFrets) : cfg.frets;
+    const minFrets = Math.max(MIN_FRET_WINDOW, needed);
     return { selection, visible, idx, diagram, minFrets };
   }, [result, resolved, rootPc, level, active, showControls]);
 
