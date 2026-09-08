@@ -166,3 +166,18 @@ export interface StorageAdapter {
   load(): Promise<BoardState | BoardItem[]> | BoardState | BoardItem[];
   save(state: BoardState): Promise<void> | void;
 }
+
+/**
+ * Most cards a row may hold.
+ *
+ * Five and six were offered and were a mistake: at a board's usual width they
+ * shrink a chord diagram past the point where its fret numbers and note dots
+ * stay readable, which is the whole job of the card. Four is the most that
+ * still renders a legible diagram.
+ *
+ * A board saved at 5 or 6 is not clamped to 4 — `parseMeta` drops an
+ * out-of-range count to `undefined`, so it reflows as "auto". Auto is the
+ * default and lays out by card size rather than by a fixed count, which is a
+ * truer answer than silently pretending the user asked for 4.
+ */
+export const MAX_COLUMNS = 4;

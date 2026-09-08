@@ -3,7 +3,7 @@ import type { CSSProperties, ReactNode, SVGProps } from "react";
 import { PianoChord, GuitarChordPanel, CardHeading, CardFooter, resolveUITheme } from "@pepperhorn/chordl-react";
 import type { InstrumentId, UIThemeMode } from "@pepperhorn/chordl-react";
 import type { BoardCardSize, BoardItem, BoardMeta, BoardState, StorageAdapter } from "./types.js";
-import { BOARD_CARD_SIZES, BOARD_CARD_SIZE_FACTORS, isTextCard } from "./types.js";
+import { BOARD_CARD_SIZES, BOARD_CARD_SIZE_FACTORS, isTextCard, MAX_COLUMNS } from "./types.js";
 import { BoardIcon } from "./icons.js";
 import { localStorageAdapter } from "./storage.js";
 import { exportBoardJson, importBoardJson } from "./io.js";
@@ -421,12 +421,13 @@ export function useChordBoard(opts?: {
  * Track count for the fixed-column grid.
  *
  * Every card width has to land on a whole track, at every column count the
- * board offers (1–6) and every card size (½, ¾, 1, 1½, 2 and 3 columns) — and
+ * board offers (1–4) and every card size (½, ¾, 1, 1½, 2 and 3 columns) — and
  * so does *half* the width left over at the end of a row, which is what centres
  * a short row exactly. 480 is the smallest count that satisfies all three:
  * `480 · size / columns` and `240 · size / columns` are whole for every pair.
  */
 const GRID_TRACKS = 480;
+
 
 /** Half the 12px gutter, carried by each card. See `columnGap: 0` below. */
 const CARD_GUTTER = 6;
@@ -511,7 +512,12 @@ const BOARD_INLINE_FIELD_CSS = `
   align-items: baseline;
   gap: 4px;
   min-width: 0;
-  flex: 1 1 0;
+  /* Sized to its content rather than taking an equal share of the row. An
+     equal share is what kept the label pinned left: the field filled its
+     third whatever it held, so there was never any free space to centre
+     within. Content-sized, the three label-and-value pairs group together and
+     the row's own justify-content centres them as one block. */
+  flex: 0 1 auto;
 }
 .chordl-board-inline-label {
   flex: 0 0 auto;
@@ -522,7 +528,13 @@ const BOARD_INLINE_FIELD_CSS = `
 }
 .chordl-board-inline-input {
   min-width: 0;
-  flex: 1 1 0;
+  /* A fixed base width, not a share of the row: at flex 1-1-0 the input ate
+     every spare pixel, which pushed its label to the left edge. 14ch is wide
+     enough for a typical title and short enough that three fields plus their
+     labels leave slack for the row to centre. Longer text scrolls inside;
+     flex-shrink still lets the field give way on a narrow screen. */
+  flex: 0 1 auto;
+  width: 14ch;
   padding: 5px 2px;
   border: 0;
   border-bottom: 1px solid transparent;
@@ -531,8 +543,10 @@ const BOARD_INLINE_FIELD_CSS = `
   color: inherit;
   font: inherit;
   font-size: 0.8rem;
-  /* Left, not centred: the value reads as a continuation of its label. */
-  text-align: left;
+  /* Centred to match the heading it edits: the board draws its title,
+     subtitle and footer centred, so a left-aligned box previewed the text at
+     an alignment it is never rendered at. */
+  text-align: center;
   transition: border-color 0.2s ease;
 }
 .chordl-board-inline-input:hover:not([readonly]) { border-bottom-color: var(--btn-border, #ddd); }
@@ -730,13 +744,14 @@ export function ChordBoard({
 
   const columns = safeMeta.columns;
   /*
-   * 1–6 is what the settings offer and what GRID_TRACKS divides evenly. A count
-   * from anywhere else — an imported board, a host setting `columns` directly —
+   * 1–MAX_COLUMNS is what the settings offer and what GRID_TRACKS divides
+   * evenly. A count from anywhere else — an imported board, one saved before
+   * the cap came down, a host setting `columns` directly —
    * would give a fractional span, which the CSS parser drops entirely, leaving
    * every card a one-track sliver. The wrapping layout handles it instead.
    */
   const useGrid = typeof columns === "number" && Number.isInteger(columns)
-    && columns >= 1 && columns <= 6;
+    && columns >= 1 && columns <= MAX_COLUMNS;
 
   const cardStyle: CSSProperties = {
     position: "relative",
@@ -1079,7 +1094,7 @@ export function ChordBoard({
               <span className="chordl-board-columns-label" style={{ fontSize: "0.8rem", color: "var(--text-muted, #666)" }}>
                 Per row
               </span>
-              {(["auto", 1, 2, 3, 4, 5, 6] as const).map((c) => {
+              {(["auto", 1, 2, 3, 4] as const).map((c) => {
                 const active = (safeMeta.columns ?? "auto") === c;
                 return (
                   <button
