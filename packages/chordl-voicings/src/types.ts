@@ -97,6 +97,16 @@ export interface VoicingVariant {
   id: string;                    // "rootless-maj7-a", "inv-1", "algo-open"
   label: string;                 // "Rootless A", "1st Inversion", "Open Voicing"
   notes: string[];               // Pitch classes for keyboard highlighting
+  /**
+   * Whole octaves above the first note, index-parallel to `notes`.
+   *
+   * Only library variants have this: their entry declares where every note
+   * sits, and the pitch classes alone cannot say. Inversions and algorithmic
+   * variants carry no octave information at all — their ordered pitch classes
+   * *are* the voicing — so the field is absent and a renderer stacks them
+   * ascending, as it always has.
+   */
+  octaveOffsets?: number[];
   handHints?: Hand[];            // Per-note hand assignments from library
   source: "library" | "inversion" | "algorithmic";
 }

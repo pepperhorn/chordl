@@ -327,6 +327,12 @@ export function realizeVoicing(
 /**
  * Get the pitch classes (without octave) from a realized voicing.
  * Useful for highlighting keys on the SVG keyboard.
+ *
+ * The octaves are dropped here on purpose — the keyboard highlights and the
+ * staff both want spelled pitch classes — but they are not gone: pair this
+ * with `voicingOctaveOffsets` to put each class back where the entry declared
+ * it. A renderer that uses the classes alone has to guess the octaves, and a
+ * guess cannot tell a tenth from the third inside it.
  */
 export function voicingPitchClasses(
   root: string,
@@ -334,6 +340,33 @@ export function voicingPitchClasses(
   octave: number = 3
 ): string[] {
   return realizeVoicingFull(root, voicing, octave).map((n) => n.pitchClass);
+}
+
+/**
+ * Where each note of a realized voicing sits, as whole octaves above the
+ * voicing's first note.
+ *
+ * Index-parallel to `voicingPitchClasses` on the same arguments. This is the
+ * half of the voicing the pitch classes cannot carry, and it is the half that
+ * makes the entry what it is: `shell-maj7-tenth` is [0, 16], a root and a
+ * third an octave above it, and its offsets are [0, 1]. Reduced to the pitch
+ * classes C and E, that entry is indistinguishable from `shell-maj7-r3` —
+ * [0, 4] — whose offsets are [0, 0].
+ *
+ * Octaves are counted the way MIDI counts them, incrementing at C, which is
+ * also how the keyboard numbers its own octaves and how the staff reads a
+ * note name. So the offsets can be added to any of the three views' base
+ * octave and all three land in the same place.
+ */
+export function voicingOctaveOffsets(
+  root: string,
+  voicing: VoicingEntry,
+  octave: number = 3
+): number[] {
+  const realized = realizeVoicingFull(root, voicing, octave);
+  if (realized.length === 0) return [];
+  const base = Math.floor(realized[0].midi / 12);
+  return realized.map((n) => Math.floor(n.midi / 12) - base);
 }
 
 /**

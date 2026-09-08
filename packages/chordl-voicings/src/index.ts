@@ -5,6 +5,7 @@ export {
   realizeVoicing,
   realizeVoicingFull,
   voicingPitchClasses,
+  voicingOctaveOffsets,
   getAlternativeVoicings,
   inferStyle,
   mapToVoicingQuality,
