@@ -83,6 +83,15 @@ export async function exportBoardJson(state: BoardState): Promise<string> {
       if (it.size !== undefined) renderConfig.size = it.size;
       if (it.instrument !== undefined) renderConfig.instrument = it.instrument;
       if (it.position !== undefined) renderConfig.position = it.position;
+      // `level` is deliberately absent here, unlike every other field above
+      // it: today every card that reaches this point has `showControls={false}`
+      // in the renderer, which bypasses the level filter entirely, so `level`
+      // affects nothing about the drawn image and does not belong in a cache
+      // key. That stops being true the moment a renderer actually reads
+      // `level` (the piano voicing this field is stored for) — at that point
+      // the cache key for every existing card silently becomes wrong (two
+      // different levels of the same chord would collide on one cached
+      // image) unless this line is added then, not before.
       let cacheKey: string | undefined;
       try {
         // `nl` is optional on the type so a text card is constructible; a chord
