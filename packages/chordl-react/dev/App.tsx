@@ -1422,7 +1422,6 @@ export function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExpo
                 position={guitarPosition}
                 onPositionChange={setGuitarPosition}
                 level={level}
-                onLevelChange={setLevel}
                 scale={scale}
                 uiTheme={uiTheme}
                 title={title || undefined}

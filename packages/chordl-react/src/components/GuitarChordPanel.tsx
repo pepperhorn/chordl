@@ -29,17 +29,16 @@ export interface GuitarChordPanelProps {
   onPositionChange?: (position: number) => void;
   /**
    * Difficulty filter on the frame's alternate shapes — "can I play this
-   * yet". Like `instrument`/`position`, this seeds internal state and
-   * re-syncs whenever the prop changes. Default "established". The panel
-   * itself draws no level control — a host drives this prop (and reads
-   * `onLevelChange`) to offer one. Only affects rendering when `showControls`
-   * is true — a board card pins one exact shape via `position` and must keep
-   * showing exactly that shape, so it never runs the filter, even if this
-   * prop is set.
+   * yet". The panel draws no control of its own for this — unlike
+   * `instrument`/`position`, which the panel can also drive itself when
+   * uncontrolled — the host owns the value entirely, and it is expected to
+   * come from a control the host renders (`dev/App.tsx`'s level radios, for
+   * one). Default "established" when the host doesn't pass one at all. Only
+   * affects rendering when `showControls` is true — a board card pins one
+   * exact shape via `position` and must keep showing exactly that shape, so
+   * it never runs the filter, even if this prop is set.
    */
   level?: ExperienceLevel;
-  /** Fires when the user picks a different level, so hosts can persist it. */
-  onLevelChange?: (level: ExperienceLevel) => void;
   /**
    * Show the instrument and A/B/C position toggles. Default true; board cards
    * render one fixed shape and pass false.
@@ -88,7 +87,6 @@ export function GuitarChordPanel({
   position: positionProp,
   onPositionChange,
   level: levelProp,
-  onLevelChange,
   showControls = true,
   frets,
   scale = 1,
@@ -159,14 +157,13 @@ export function GuitarChordPanel({
   const selectPosition = (i: number) => { setActive(i); onPositionChange?.(i); };
   const selectInstrument = (id: InstrumentId) => { setInstrument(id); onInstrumentChange?.(id); };
 
-  const [level, setLevel] = useState<ExperienceLevel>(levelProp ?? "established");
-  // Follow the prop if the host drives the level, same pattern as `position`.
-  const [prevLevelProp, setPrevLevelProp] = useState(levelProp);
-  if (levelProp !== prevLevelProp) {
-    setPrevLevelProp(levelProp);
-    if (levelProp !== undefined) setLevel(levelProp);
-  }
-  const selectLevel = (l: ExperienceLevel) => { setLevel(l); onLevelChange?.(l); };
+  // Unlike `instrument`/`position`, the panel draws no control of its own
+  // that could change this — it is derived straight from the prop rather than
+  // seeded into state, because mirroring an unwritable value into state could
+  // only let the two drift (a host that stops passing `level` would leave a
+  // stateful mirror stuck on the last value instead of reverting to the
+  // documented default).
+  const level = levelProp ?? "established";
 
   // Root pitch class of the parsed label, needed to derive facts (inversion)
   // for every stored position below. null when the label can't be parsed to
@@ -188,12 +185,13 @@ export function GuitarChordPanel({
   // else re-rendered this panel (typing in the board's title field, say).
   const placements = useMemo(() => {
     if (!result) return null;
-    // A board card (showControls false) has no level toggle to override the
-    // default, and pins one exact shape via `position` — it must keep
-    // showing exactly that shape, not have it silently swapped for a
-    // different one because "established" (the interactive default) isn't
-    // what that shape happens to be. So the filter is interactive-only: it
-    // never runs where there is no control to change its outcome.
+    // A board card (showControls false) pins one exact shape via `position`
+    // and must keep showing exactly that shape — it must never be silently
+    // swapped for a different one because whatever `level` the host happens
+    // to be passing doesn't include it. (A board card's host can pass any
+    // level: `dev/App.tsx`'s own default is "emerging", which would exclude
+    // plenty of pinned shapes.) So the filter is interactive-only: it never
+    // runs where there is no control to change its outcome.
     //
     // Only `indices`/`level`/`widenedFrom` are ever read below — the bypass
     // branch deliberately doesn't fabricate a full `ExperienceSelection`

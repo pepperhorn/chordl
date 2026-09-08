@@ -79,12 +79,12 @@ export interface ExperienceQuery {
    * Optional refinement within the level. Default "any".
    *
    * Published API, kept for when the level control gains a paired shape-class
-   * control — deliberately not wired into any UI yet (see
-   * `GuitarChordPanel`'s level toggle, which is the only control shipped so
-   * far). Under cumulative level matching it now genuinely refines at the
-   * `emerging` and `established` rungs (it can drop shapes those levels would
-   * otherwise include), so do not delete this as dead — only its UI is
-   * deferred, not the mechanism.
+   * control — deliberately not wired into any UI yet (the only level control
+   * shipped so far is `dev/App.tsx`'s radio group; `GuitarChordPanel` draws
+   * no control of its own). Under cumulative level matching it now genuinely
+   * refines at the `emerging` and `established` rungs (it can drop shapes
+   * those levels would otherwise include), so do not delete this as dead —
+   * only its UI is deferred, not the mechanism.
    */
   shapeClass?: ShapeClass;
 }
