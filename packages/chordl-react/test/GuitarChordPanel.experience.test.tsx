@@ -3,11 +3,19 @@ import { render, screen } from "@testing-library/react";
 import { GuitarChordPanel } from "../src/components/GuitarChordPanel";
 
 describe("GuitarChordPanel experience controls", () => {
-  it("offers the three levels", () => {
-    render(<GuitarChordPanel chord="C" />);
-    for (const level of ["Beginner", "Emerging", "Established"]) {
-      expect(screen.getByRole("button", { name: level })).toBeTruthy();
-    }
+  it("honours the level prop, without drawing its own control", () => {
+    // The panel no longer renders a level toggle of its own — a host drives
+    // `level` — but the prop must still change what's on screen. C has one
+    // beginner-or-below shape (an open C) and four established-or-below
+    // shapes, so the position toggle (only shown for >1 visible shape) is
+    // absent at "beginner" and shows all four at "established".
+    const { unmount } = render(<GuitarChordPanel chord="C" level="beginner" />);
+    expect(screen.queryAllByRole("button", { name: /Beginner|Emerging|Established/ })).toHaveLength(0);
+    expect(document.querySelectorAll(".bc-guitar-position-btn")).toHaveLength(0);
+    unmount();
+
+    render(<GuitarChordPanel chord="C" level="established" />);
+    expect(document.querySelectorAll(".bc-guitar-position-btn")).toHaveLength(4);
   });
 
   it("has no hide-barres checkbox any more", () => {

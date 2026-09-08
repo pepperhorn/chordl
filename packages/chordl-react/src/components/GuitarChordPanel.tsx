@@ -6,7 +6,6 @@ import {
   INSTRUMENTS,
   rootPitchClass,
   selectForResult,
-  EXPERIENCE_LADDER,
 } from "@pepperhorn/chordl-guitar";
 import type { InstrumentId, ExperienceLevel } from "@pepperhorn/chordl-guitar";
 import type { UIThemeMode } from "../config";
@@ -31,10 +30,12 @@ export interface GuitarChordPanelProps {
   /**
    * Difficulty filter on the frame's alternate shapes — "can I play this
    * yet". Like `instrument`/`position`, this seeds internal state and
-   * re-syncs whenever the prop changes. Default "established". Only affects
-   * rendering when `showControls` is true — a board card pins one exact
-   * shape via `position` and must keep showing exactly that shape, so it
-   * never runs the filter, even if this prop is set.
+   * re-syncs whenever the prop changes. Default "established". The panel
+   * itself draws no level control — a host drives this prop (and reads
+   * `onLevelChange`) to offer one. Only affects rendering when `showControls`
+   * is true — a board card pins one exact shape via `position` and must keep
+   * showing exactly that shape, so it never runs the filter, even if this
+   * prop is set.
    */
   level?: ExperienceLevel;
   /** Fires when the user picks a different level, so hosts can persist it. */
@@ -368,33 +369,6 @@ export function GuitarChordPanel({
         )}
 
         {instrumentToggle}
-
-        {showControls && (
-          <div className="bc-guitar-level-toggle" style={{ display: "flex", gap: 6, justifyContent: "center" }}>
-            {EXPERIENCE_LADDER.map((l) => {
-              const on = l === level;
-              const displayLabel = l.charAt(0).toUpperCase() + l.slice(1);
-              return (
-                <button
-                  key={l}
-                  type="button"
-                  className="bc-guitar-level-btn"
-                  onClick={() => selectLevel(l)}
-                  data-active={on}
-                  style={{
-                    padding: "4px 14px", borderRadius: 999, cursor: "pointer",
-                    border: on ? "1px solid transparent" : "1px solid var(--btn-border, #ddd)",
-                    background: on ? "var(--pill-active-bg, #0ea5e9)" : "var(--pill-bg, #f1f5f9)",
-                    color: on ? "var(--pill-active-text, #fff)" : "var(--text-muted, #64748b)",
-                    fontFamily: "system-ui, sans-serif", fontSize: "0.8rem", fontWeight: on ? 600 : 500,
-                  }}
-                >
-                  {displayLabel}
-                </button>
-              );
-            })}
-          </div>
-        )}
 
         {filterNotice && (
           <div className="bc-guitar-notice" style={{ textAlign: "center", color: muted, fontSize: "0.8rem" }}>
