@@ -307,9 +307,9 @@ function LevelControl({
   onChange: (level: ExperienceLevel) => void;
 }) {
   return (
-    <fieldset className="level-control">
-      <legend className="level-control-legend">Level</legend>
-      <div className="level-control-options">
+    <fieldset className="control-item level-control">
+      <legend className="control-label level-control-legend">Level</legend>
+      <div className="control-content level-control-options">
         {LEVEL_OPTIONS.map((option) => (
           <label key={option.value}>
             <input
