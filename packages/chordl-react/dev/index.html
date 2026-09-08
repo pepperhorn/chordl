@@ -487,6 +487,12 @@
 
       .level-control-legend {
         padding: 0;
+        /* A <legend> is laid out by the fieldset, not as a flex item, so
+           `.control-item`'s `align-items: center` never reaches it and the
+           heading sat left while every other label in the row was centred.
+           Width plus text-align centres it without taking it out of flow. */
+        width: 100%;
+        text-align: center;
       }
 
       .level-control-options {

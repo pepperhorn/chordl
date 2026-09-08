@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, fireEvent, waitFor } from "@testing-library/react";
 import { ChordBoard } from "../src";
 import type { BoardItem } from "../src";
+import { MAX_COLUMNS } from "../src/types.js";
 
 const items: BoardItem[] = [
   { id: "a", nl: "C" },
@@ -76,7 +77,8 @@ describe("New board", () => {
     expect(
       importLabel.compareDocumentPosition(columns) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
-    expect(columns.querySelectorAll(".chordl-board-columns-option")).toHaveLength(7);
+    // auto, plus one per allowed count.
+    expect(columns.querySelectorAll(".chordl-board-columns-option")).toHaveLength(MAX_COLUMNS + 1);
     expect(container.querySelector(".chordl-board-settings-grid")).toBeNull();
   });
 

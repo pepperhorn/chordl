@@ -1,4 +1,4 @@
-import { BOARD_CARD_SIZES, BOARD_DISPLAY_MODES, BOARD_EXPERIENCE_LEVELS, BOARD_ICON_PREFIXES, BOARD_ITEM_KINDS, isTextCard } from "./types.js";
+import { BOARD_CARD_SIZES, BOARD_DISPLAY_MODES, BOARD_EXPERIENCE_LEVELS, BOARD_ICON_PREFIXES, BOARD_ITEM_KINDS, MAX_COLUMNS, isTextCard } from "./types.js";
 import type {
   BoardCardSize,
   BoardDisplayMode,
@@ -169,13 +169,15 @@ function parseImage(value: unknown): string | undefined {
 /**
  * Imported meta is as untrusted as an imported item. `columns` reaches a CSS
  * grid, where a count the layout cannot divide evenly renders every card as a
- * sliver — so anything outside what the settings offer becomes "auto".
+ * sliver — so anything outside what the settings offer becomes "auto". That
+ * now includes 5 and 6, which the settings used to offer: a board saved at
+ * either reflows as "auto" rather than being clamped to 4.
  */
 function parseMeta(value: unknown): BoardMeta {
   const raw = (value ?? {}) as BoardMeta;
   const columns = raw.columns;
   const usable = columns === "auto"
-    || (typeof columns === "number" && Number.isInteger(columns) && columns >= 1 && columns <= 6);
+    || (typeof columns === "number" && Number.isInteger(columns) && columns >= 1 && columns <= MAX_COLUMNS);
   return usable ? raw : { ...raw, columns: undefined };
 }
 

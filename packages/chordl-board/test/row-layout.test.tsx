@@ -2,6 +2,11 @@ import { describe, it, expect } from "vitest";
 import { render } from "@testing-library/react";
 import { ChordBoard } from "../src";
 import type { BoardItem } from "../src";
+import { MAX_COLUMNS } from "../src/types.js";
+
+/* Derived, not written out: a hardcoded 1..6 is exactly what went stale
+ * when the cap came down to 4. */
+const COLUMN_COUNTS = Array.from({ length: MAX_COLUMNS }, (_, i) => i + 1);
 
 const card = (id: string, breakAfter = false): BoardItem => ({ id, nl: "C", breakAfter });
 
@@ -72,7 +77,7 @@ describe("row layout", () => {
   });
 
   it("lands on a whole track for every column count and row length", () => {
-    for (const columns of [1, 2, 3, 4, 5, 6]) {
+    for (const columns of COLUMN_COUNTS) {
       for (let short = 1; short <= columns; short++) {
         const items = Array.from({ length: short }, (_, i) => card(`s${i}`, i === short - 1));
         const { container, unmount } = render(<ChordBoard items={items} meta={{ columns }} />);
@@ -109,9 +114,20 @@ describe("an unusable column count", () => {
   });
 
   it("still uses the grid for every count the settings offer", () => {
-    for (const columns of [1, 2, 3, 4, 5, 6]) {
+    for (const columns of COLUMN_COUNTS) {
       const { container, unmount } = render(<ChordBoard items={cards} meta={{ columns }} />);
       expect(gridOf(container).style.display, String(columns)).toBe("grid");
+      unmount();
+    }
+  });
+
+  it("falls back to auto flow for a count above the cap", () => {
+    // 5 and 6 were offered once. A board saved at either is not clamped to 4 —
+    // it reflows as "auto", which lays out by card size instead of pretending
+    // the user asked for a count they did not.
+    for (const columns of [MAX_COLUMNS + 1, MAX_COLUMNS + 2]) {
+      const { container, unmount } = render(<ChordBoard items={cards} meta={{ columns }} />);
+      expect(gridOf(container).style.display, String(columns)).not.toBe("grid");
       unmount();
     }
   });
