@@ -51,7 +51,7 @@ The reusable React components expose the same values as optional props. The edit
 Add these chord-only fields to `ChordData` and `BoardItem`:
 
 - `playbackNotes?: number[]` — ordered MIDI pitches, exactly as performed
-- `playbackInstrument?: "acoustic_grand_piano" | "electric_guitar_clean"`
+- `playbackInstrument?: "acoustic_grand_piano" | "electric_guitar_clean" | "ukulele"`
 
 MIDI numbers, not pitch classes, preserve register, inversion and doubled strings. Array order is performance order: piano voicing order or guitar low-string-to-high-string order. Muted guitar strings are omitted.
 
@@ -59,9 +59,11 @@ These are a rendered snapshot for consumers such as a future playback-only teach
 
 Board cards remain static in this change. They persist playback fields but continue to pass `showPlayback={false}` and render no active-note animation. Because older board readers would silently discard the new educational data, board export advances to `chordl.board/v3`; imports continue to accept v1 and v2.
 
-### Guitar uses smplr's bundled clean electric guitar
+### Guitar and ukulele timbres
 
 Frame playback uses `electric_guitar_clean` from smplr's existing General MIDI sample set. It is lazy-loaded after user interaction and shares the AudioContext with piano.
+
+Ukulele frames use FreePats' purpose-recorded Flight Fireball tenor ukulele SF2 (version 2026-08-11, CC0). The 2.6 MiB bank is published as a separate package asset and fetched only when a ukulele frame is played; it is not inlined into the main JavaScript bundle.
 
 The linked Musical Artifacts bank is not shipped: although it contains jazz, clean and muted guitar programs, it is labelled with a mixed/“various” licence, requires the optional raw-SF2 parser path, and its host currently challenges direct file requests. The playback engine keeps instrument selection explicit so a reviewed replacement can be added later.
 
@@ -69,7 +71,11 @@ The linked Musical Artifacts bank is not shipped: although it contains jazz, cle
 
 Interactive guitar frames receive block and arpeggio buttons. The arpeggio is a low-to-high strum in physical string order. Muted strings do not schedule events. Open, fretted and doubled pitches remain separate events because each belongs to a different visible string.
 
-Ukulele and top-three guitar use the same pitch derivation and visual targeting. The initial timbre remains clean electric guitar for every guitar-family frame; timbre-per-instrument is a later refinement.
+Ukulele and top-three guitar use the same pitch derivation and visual targeting. Ukulele selects the dedicated ukulele bank; guitar and top-three guitar select clean electric guitar.
+
+### Staff notation shares playback paint
+
+Every MEI note receives a stable playback index before Verovio engraving. The resulting note group uses the configured playback highlight colour, so staff-only playback follows notation as well as audio. In `both` mode there is one set of playback controls and one active-index state shared by the keyboard and staff; clicking play therefore paints both representations on the same attack timeline.
 
 ### Slider placement
 
@@ -82,8 +88,9 @@ Playback controls inside exported SVG remain buttons only. The HTML slider is ap
 Additive changes:
 
 - `DisplayDefaults` and `ChordData`: `arpeggioBpm`, `playbackHighlightColor`; chord data also accepts `playbackNotes`, `playbackInstrument`.
-- `KeyboardProps` and `ChordProps`: `arpeggioBpm`, `playbackHighlightColor`, and `onPlaybackSpecChange`.
-- `GuitarChordPanelProps`: the same playback options plus `showPlayback`, defaulting to true.
+- `KeyboardProps` and `ChordProps`: `arpeggioBpm`, `playbackHighlightColor`, and `onPlaybackSpecChange`; keyboard renderers also accept controlled playback indices for combined displays.
+- `StaffNotationProps`: playback colour plus controlled playback indices for combined displays.
+- `GuitarChordPanelProps`: the same playback options plus `showPlayback`, defaulting to the value of `showControls`.
 - `GuitarChordProps`: an active low-to-high string index used only for the transient overlay.
 - `VariationContext`: gains ordered `playbackNotes` so hosts can persist the exact rendered voicing.
 - `BoardItem`: the four playback fields; board JSON v3 validates and preserves them.

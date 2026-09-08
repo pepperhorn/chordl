@@ -39,12 +39,13 @@ interface PitchedNote {
   letter: string; // "C".."B"
   accid: "s" | "f" | null;
   octave: number;
+  playbackIndex: number;
 }
 
-function toPitched(note: string, octave: number): PitchedNote {
+function toPitched(note: string, octave: number, playbackIndex = 0): PitchedNote {
   const letter = note.charAt(0).toUpperCase();
   const accid = note.includes("#") ? "s" : note.slice(1).includes("b") ? "f" : null;
-  return { letter, accid, octave };
+  return { letter, accid, octave, playbackIndex };
 }
 
 function noteToMidi(n: PitchedNote): number {
@@ -54,7 +55,7 @@ function noteToMidi(n: PitchedNote): number {
 }
 
 /** Ascending octave assignment: a note that doesn't rise diatonically bumps up. */
-function assignOctaves(notes: string[], baseOctave: number): PitchedNote[] {
+function assignOctaves(notes: string[], baseOctave: number, indexOffset = 0): PitchedNote[] {
   const result: PitchedNote[] = [];
   let octave = baseOctave;
   let prevDiatonic = -1;
@@ -63,21 +64,21 @@ function assignOctaves(notes: string[], baseOctave: number): PitchedNote[] {
     const diatonic = DIATONIC_INDEX[letter] ?? 0;
     if (prevDiatonic >= 0 && diatonic <= prevDiatonic) octave++;
     prevDiatonic = diatonic;
-    result.push(toPitched(note, octave));
+    result.push(toPitched(note, octave, indexOffset + result.length));
   }
   return result;
 }
 
 function parseOctaveQualified(notes: string[]): PitchedNote[] {
-  return notes.map((n) => {
+  return notes.map((n, playbackIndex) => {
     const [pc, oct] = n.split(":");
-    return toPitched(pc, parseInt(oct, 10));
+    return toPitched(pc, parseInt(oct, 10), playbackIndex);
   });
 }
 
 function noteXml(n: PitchedNote): string {
   const accid = n.accid ? ` accid="${n.accid}"` : "";
-  return `<note pname="${n.letter.toLowerCase()}" oct="${n.octave}"${accid}/>`;
+  return `<note xml:id="chordl-playback-note-${n.playbackIndex}" pname="${n.letter.toLowerCase()}" oct="${n.octave}"${accid}/>`;
 }
 
 /** Wrap one staff's notes as a chord / single note / whole rest. */
@@ -86,7 +87,7 @@ function layerXml(notes: PitchedNote[]): string {
   if (notes.length === 1) {
     const n = notes[0];
     const accid = n.accid ? ` accid="${n.accid}"` : "";
-    return `<layer n="1"><note dur="1" pname="${n.letter.toLowerCase()}" oct="${n.octave}"${accid}/></layer>`;
+    return `<layer n="1"><note xml:id="chordl-playback-note-${n.playbackIndex}" dur="1" pname="${n.letter.toLowerCase()}" oct="${n.octave}"${accid}/></layer>`;
   }
   return `<layer n="1"><chord dur="1">${notes.map(noteXml).join("")}</chord></layer>`;
 }
@@ -110,8 +111,8 @@ export function buildMei(notes: string[], options: MeiBuildOptions = {}): MeiBui
     rhResolved = all.filter((n) => !lhChroma.has(chromaOf(n)));
   } else {
     const rhInput = lhNotes ? notes.filter((n) => !lhNotes.includes(n)) : notes;
-    rhResolved = assignOctaves(rhInput, rhOctave);
     lhResolved = assignOctaves(lhNotes ?? [], lhOctave);
+    rhResolved = assignOctaves(rhInput, rhOctave, lhResolved.length);
     all = [...lhResolved, ...rhResolved];
   }
 

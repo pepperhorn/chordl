@@ -162,9 +162,12 @@ export function PianoKeyboard({
   style,
   arpeggioBpm,
   playbackHighlightColor = DEFAULT_PLAYBACK_HIGHLIGHT_COLOR,
+  activePlaybackIndices,
+  onPlaybackActiveChange,
   onPlaybackSpecChange,
 }: KeyboardProps) {
-  const [activePlaybackIndices, setActivePlaybackIndices] = useState<number[]>([]);
+  const [internalActivePlaybackIndices, setInternalActivePlaybackIndices] = useState<number[]>([]);
+  const visibleActivePlaybackIndices = activePlaybackIndices ?? internalActivePlaybackIndices;
   const parentCtx = useUITheme();
   const ctx = uiTheme ? resolveUITheme(uiTheme) : parentCtx;
   const uiTokens = ctx.tokens;
@@ -220,7 +223,7 @@ export function PianoKeyboard({
     return match.index;
   });
   const paintTargets = matchHighlightsToKeys(keys, highlightKeys, undefined, "pitch-class", midiBaseOctave);
-  const activeHighlights = new Set(activePlaybackIndices.map((index) => playbackToHighlight[index]));
+  const activeHighlights = new Set(visibleActivePlaybackIndices.map((index) => playbackToHighlight[index]));
   const activeKeyIndices = new Set(
     paintTargets.filter((target) => activeHighlights.has(target.index)).map((target) => target.keyIndex),
   );
@@ -256,7 +259,10 @@ export function PianoKeyboard({
             x={controlsX}
             y={controlsY}
             arpeggioBpm={arpeggioBpm}
-            onActiveChange={setActivePlaybackIndices}
+            onActiveChange={(indices) => {
+              setInternalActivePlaybackIndices(indices);
+              onPlaybackActiveChange?.(indices);
+            }}
             onPlaybackSpecChange={onPlaybackSpecChange}
           />
         </g>

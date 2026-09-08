@@ -32,6 +32,9 @@ export interface KeyboardProps {
   showPlayback?: boolean;
   arpeggioBpm?: number;
   playbackHighlightColor?: string;
+  /** Controlled active note indices for synchronising multiple renderers. */
+  activePlaybackIndices?: number[];
+  onPlaybackActiveChange?: (indices: number[]) => void;
   onPlaybackSpecChange?: (spec: PlaybackSpecSnapshot) => void;
   chordLabel?: string;
   /** Show chord/scale name as a heading above the keyboard. */

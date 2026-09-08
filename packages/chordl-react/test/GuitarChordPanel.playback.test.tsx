@@ -44,6 +44,14 @@ describe("GuitarChordPanel playback", () => {
     }));
   });
 
+  it("uses the dedicated ukulele soundfont for ukulele frames", async () => {
+    const report = vi.fn();
+    render(<GuitarChordPanel chord="C" instrument="ukulele" onPlaybackSpecChange={report} />);
+    await waitFor(() => expect(report).toHaveBeenCalledWith(expect.objectContaining({
+      instrument: "ukulele",
+    })));
+  });
+
   it("keeps playback controls out of static frames", () => {
     const { queryByLabelText } = render(<GuitarChordPanel chord="C" showPlayback={false} />);
     expect(queryByLabelText("Play block guitar chord")).toBeNull();

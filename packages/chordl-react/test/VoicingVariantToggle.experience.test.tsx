@@ -54,7 +54,9 @@ describe("VoicingVariantToggle level filtering", () => {
 
   it("says so when the level had to widen and that actually excluded something", () => {
     render(<VoicingVariantToggle chord="C9 rootless style" level="beginner" />);
-    expect(screen.getByText(/no beginner voicing/i)).toBeTruthy();
+    expect(screen.getByText(
+      "No beginner voicings, but you can try some of these more advanced spellings …",
+    )).toBeTruthy();
   });
 
   it("does not say so when the widen left every variant visible", () => {

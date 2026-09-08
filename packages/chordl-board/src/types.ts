@@ -35,6 +35,7 @@ export const BOARD_EXPERIENCE_LEVELS: readonly string[] = ["beginner", "emerging
 export const BOARD_PLAYBACK_INSTRUMENTS: readonly string[] = [
   "acoustic_grand_piano",
   "electric_guitar_clean",
+  "ukulele",
 ];
 
 /**

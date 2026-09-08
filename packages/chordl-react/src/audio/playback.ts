@@ -28,32 +28,56 @@ export interface StartPlaybackOptions {
 }
 
 let ctx: AudioContext | null = null;
-const instruments = new Map<PlaybackInstrument, Soundfont>();
-const loading = new Map<PlaybackInstrument, Promise<Soundfont>>();
+type PlaybackPlayer = Pick<Soundfont, "start">;
+
+const instruments = new Map<PlaybackInstrument, PlaybackPlayer>();
+const loading = new Map<PlaybackInstrument, Promise<PlaybackPlayer>>();
+// Kept outside Vite's static `new URL()` transform: library mode otherwise
+// base64-inlines every asset. This resolves to the separately published
+// package `soundfonts/` directory in production and the same path in dev.
+const UKULELE_SOUNDFONT_FILE = "freepats-ukulele-20260811.sf2";
+const UKULELE_SOUNDFONT_URL = import.meta.env.DEV
+  ? `/soundfonts/${UKULELE_SOUNDFONT_FILE}`
+  : new URL("../soundfonts/" + UKULELE_SOUNDFONT_FILE, import.meta.url).href;
 
 function getContext(): AudioContext {
   if (!ctx) ctx = new AudioContext();
   return ctx;
 }
 
-async function ensureInstrument(instrument: PlaybackInstrument): Promise<Soundfont> {
+async function ensureInstrument(instrument: PlaybackInstrument): Promise<PlaybackPlayer> {
   const ready = instruments.get(instrument);
   if (ready) return ready;
   const pending = loading.get(instrument);
   if (pending) return pending;
 
-  const promise = import("smplr").then(async ({ Soundfont }) => {
+  const promise = instrument === "ukulele"
+    ? Promise.all([import("smplr"), import("soundfont2")]).then(async ([{ Soundfont2Sampler }, { SoundFont2 }]) => {
+      const instance = new Soundfont2Sampler(getContext(), {
+        url: UKULELE_SOUNDFONT_URL,
+        createSoundfont: (data) => new SoundFont2(data),
+      });
+      await instance.load;
+      const voice = instance.instrumentNames[0];
+      if (!voice) throw new Error("The ukulele soundfont contains no playable instrument");
+      await instance.loadInstrument(voice);
+      instruments.set(instrument, instance);
+      loading.delete(instrument);
+      return instance;
+    })
+    : import("smplr").then(async ({ Soundfont }) => {
     const instance = new Soundfont(getContext(), { instrument });
     await instance.load;
     instruments.set(instrument, instance);
     loading.delete(instrument);
     return instance;
-  }).catch((error) => {
+  });
+  const guarded = promise.catch((error) => {
     loading.delete(instrument);
     throw error;
   });
-  loading.set(instrument, promise);
-  return promise;
+  loading.set(instrument, guarded);
+  return guarded;
 }
 
 const PC_SEMITONES: Record<string, number> = {

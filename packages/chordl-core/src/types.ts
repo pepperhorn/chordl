@@ -10,7 +10,7 @@ export type NoteNameMode =
   | "midi+degree";
 export type WhiteNote = "C" | "D" | "E" | "F" | "G" | "A" | "B";
 export type NoteName = string;
-export type PlaybackInstrument = "acoustic_grand_piano" | "electric_guitar_clean";
+export type PlaybackInstrument = "acoustic_grand_piano" | "electric_guitar_clean" | "ukulele";
 
 export interface ColorTheme {
   name: string;

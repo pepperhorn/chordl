@@ -1284,20 +1284,25 @@ export function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExpo
         <div className="control-item playback-speed-control">
           <label className="control-label" htmlFor="arpeggio-bpm">Arpeggio speed</label>
           <div className="control-content">
-            <input
-              id="arpeggio-bpm"
-              type="range"
-              min={MIN_ARPEGGIO_BPM}
-              max={MAX_ARPEGGIO_BPM}
-              step={1}
-              value={arpeggioBpm}
-              onChange={(event) => setArpeggioBpm(Number(event.target.value))}
-              aria-valuetext={`${arpeggioBpm} BPM`}
-              style={{ width: 120, accentColor: "var(--accent)", cursor: "pointer" }}
-            />
-            <output htmlFor="arpeggio-bpm" style={{ minWidth: 62, fontSize: "0.8rem", fontWeight: 600 }}>
-              {arpeggioBpm} BPM
-            </output>
+            <div className="size-slider-group" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <input
+                id="arpeggio-bpm"
+                type="range"
+                min={MIN_ARPEGGIO_BPM}
+                max={MAX_ARPEGGIO_BPM}
+                step={1}
+                value={arpeggioBpm}
+                onChange={(event) => setArpeggioBpm(Number(event.target.value))}
+                aria-valuetext={`${arpeggioBpm} BPM`}
+                style={{ width: 100, accentColor: "var(--accent)", cursor: "pointer" }}
+              />
+              <output
+                htmlFor="arpeggio-bpm"
+                style={{ fontSize: "0.8rem", fontWeight: 500, color: "var(--pill-active-text)", minWidth: 62 }}
+              >
+                {arpeggioBpm} BPM
+              </output>
+            </div>
           </div>
         </div>
         <div className="control-item playback-color-control">

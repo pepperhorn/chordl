@@ -338,6 +338,7 @@ export function GuitarChordPanel({
     return positionToSoundingStrings(result.positions[displayedIdx], cfg.openMidi);
   }, [cfg.openMidi, displayedIdx, result]);
   const soundingMidis = soundingStrings.map(({ midi }) => midi);
+  const playbackInstrument = resolved === "ukulele" ? "ukulele" : "electric_guitar_clean";
   const playbackDiagram = useMemo(() => {
     if (!placements || !result) return null;
     const position = result.positions[placements.idx];
@@ -346,8 +347,8 @@ export function GuitarChordPanel({
 
   useEffect(() => {
     if (soundingMidis.length === 0) return;
-    onPlaybackSpecChange?.({ notes: soundingMidis, instrument: "electric_guitar_clean" });
-  }, [onPlaybackSpecChange, soundingMidis.join(",")]);
+    onPlaybackSpecChange?.({ notes: soundingMidis, instrument: playbackInstrument });
+  }, [onPlaybackSpecChange, playbackInstrument, soundingMidis.join(",")]);
 
   const notice = (msg: string) => (
     <UIThemeProvider value={uiCtx}>
@@ -469,6 +470,7 @@ export function GuitarChordPanel({
           <GuitarPlaybackControls
             notes={soundingMidis}
             arpeggioBpm={arpeggioBpm}
+            instrument={playbackInstrument}
             onActiveChange={(indices) => {
               setActiveStrings(indices.flatMap((index) => {
                 const physicalString = soundingStrings[index]?.stringIndex;

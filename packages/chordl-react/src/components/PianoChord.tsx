@@ -1,4 +1,4 @@
-import { cloneElement, useCallback, useEffect, useRef } from "react";
+import { cloneElement, useCallback, useEffect, useRef, useState } from "react";
 import { Note } from "tonal";
 import type { ChordProps, KeyboardProps, HandBracket, WhiteNote, DisplayMode } from "../types";
 import type { VariationContext } from "../types";
@@ -102,6 +102,7 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
   const uiCtx = resolveUITheme(uiTheme);
 
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const [bothActivePlaybackIndices, setBothActivePlaybackIndices] = useState<number[]>([]);
   const lastReportedRef = useRef<string>("");
   const playbackSpecRef = useRef<import("../types").PlaybackSpecSnapshot | null>(null);
   const reportPlaybackSpec = useCallback((spec: import("../types").PlaybackSpecSnapshot) => {
@@ -622,7 +623,12 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
   // Staff notation helper — accepts octave-qualified notes for exact pitch matching
   const renderStaff = (
     resolvedNotes: string[],
-    opts?: { bassNote?: string; octaveQualifiedNotes?: string[] },
+    opts?: {
+      bassNote?: string;
+      octaveQualifiedNotes?: string[];
+      activePlaybackIndices?: number[];
+      showPlayback?: boolean;
+    },
   ) => {
     const staffNotes = opts?.bassNote ? [opts.bassNote, ...resolvedNotes] : resolvedNotes;
     const lhPlaybackOctave = 3 + (parsed.bassOctaveShift ?? 0);
@@ -640,8 +646,10 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
         // shared DOM heading, so the in-SVG label would double it up.
         showLabel={!cardText}
         scale={scale}
-        showPlayback={showPlayback}
+        showPlayback={opts?.showPlayback ?? showPlayback}
         arpeggioBpm={arpeggioBpm}
+        playbackHighlightColor={playbackHighlightColor}
+        activePlaybackIndices={opts?.activePlaybackIndices}
         onPlaybackSpecChange={reportPlaybackSpec}
         className={className}
         style={style}
@@ -836,6 +844,8 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
         arpeggioBpm={arpeggioBpm}
         playbackHighlightColor={playbackHighlightColor}
         onPlaybackSpecChange={reportPlaybackSpec}
+        activePlaybackIndices={display === "both" ? bothActivePlaybackIndices : undefined}
+        onPlaybackActiveChange={display === "both" ? setBothActivePlaybackIndices : undefined}
         title={title}
         subheading={subheading}
         footerText={footerText}
@@ -875,7 +885,12 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
                 {/* Card text spans both diagrams rather than sitting over one. */}
                 {staffCardText}
                 {bareKeyboard}
-                {renderStaff(notes, { bassNote: lhBassNote, octaveQualifiedNotes: staffOctaveNotesBass })}
+                {renderStaff(notes, {
+                  bassNote: lhBassNote,
+                  octaveQualifiedNotes: staffOctaveNotesBass,
+                  activePlaybackIndices: bothActivePlaybackIndices,
+                  showPlayback: false,
+                })}
                 <CardFooter text={footerText} tokens={uiCtx.tokens} variant="staff" />
               </div>
             </UIThemeProvider>
@@ -1079,6 +1094,8 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
       arpeggioBpm={arpeggioBpm}
       playbackHighlightColor={playbackHighlightColor}
       onPlaybackSpecChange={reportPlaybackSpec}
+      activePlaybackIndices={display === "both" ? bothActivePlaybackIndices : undefined}
+      onPlaybackActiveChange={display === "both" ? setBothActivePlaybackIndices : undefined}
       style={style}
     />
   );
@@ -1117,7 +1134,11 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
               {/* Card text spans both diagrams rather than sitting over one. */}
               {staffCardText}
               <div className="bc-display-both-row" style={{ display: "flex", gap: 16, alignItems: "flex-start", flexWrap: "wrap", justifyContent: "center" }}>
-                {renderStaff(notes, { octaveQualifiedNotes: staffOctaveNotes })}
+                {renderStaff(notes, {
+                  octaveQualifiedNotes: staffOctaveNotes,
+                  activePlaybackIndices: bothActivePlaybackIndices,
+                  showPlayback: false,
+                })}
                 {bareKeyboard}
               </div>
               <CardFooter text={footerText} tokens={uiCtx.tokens} variant="staff" />

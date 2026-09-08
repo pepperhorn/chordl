@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { Format, ColorTheme, WhiteNote, DisplayMode, TextSize, NoteNameMode, OnVariation, RenderVariationExtras, VariationContext, PlaybackSpecSnapshot } from "../types";
 import { PianoKeyboard } from "./PianoKeyboard";
 import { ascendingOctaves } from "../diatonic-step";
@@ -60,6 +60,7 @@ export function ChordGroup({
   renderVariationExtras,
 }: ChordGroupProps) {
   const { tokens: ui } = useUITheme();
+  const [activePlaybackByChord, setActivePlaybackByChord] = useState<Record<number, number[]>>({});
   // Calculate all layouts, then use the max size for uniform keyboards
   const layouts = chords.map((chord) => calculateLayout(chord.notes, { padding: 1 }));
   const uniformSize = Math.max(...layouts.map((l) => l.size), 8);
@@ -111,6 +112,8 @@ export function ChordGroup({
                 showPlayback={showPlayback}
                 scale={scale}
                 arpeggioBpm={arpeggioBpm}
+                playbackHighlightColor={playbackHighlightColor}
+                onPlaybackSpecChange={onPlaybackSpecChange}
               />
             ) : display === "both" ? (
               <div className="bc-display-both" style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
@@ -119,6 +122,8 @@ export function ChordGroup({
                   chordLabel={chord.symbol}
                   showPlayback={false}
                   scale={scale}
+                  playbackHighlightColor={playbackHighlightColor}
+                  activePlaybackIndices={activePlaybackByChord[i] ?? []}
                 />
                 <PianoKeyboard
                   format={format}
@@ -139,6 +144,10 @@ export function ChordGroup({
                   arpeggioBpm={arpeggioBpm}
                   playbackHighlightColor={playbackHighlightColor}
                   onPlaybackSpecChange={onPlaybackSpecChange}
+                  activePlaybackIndices={activePlaybackByChord[i] ?? []}
+                  onPlaybackActiveChange={(indices) => {
+                    setActivePlaybackByChord((current) => ({ ...current, [i]: indices }));
+                  }}
                 />
               </div>
             ) : (
