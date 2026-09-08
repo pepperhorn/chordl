@@ -469,6 +469,48 @@
 
       .annotation-option-group label { white-space: nowrap; }
 
+      /* Guitar experience-level radios, first in the annotations row. Mirrors
+         .control-item's label-over-content layout (uppercase muted label,
+         centered content) and .annotation-option-group's plain radio+label
+         row, but is its own class rather than sharing either: unlike its
+         row-mates it is never disabled, so it must not pick up
+         .annotation-control--disabled's greyed-out look by accident. */
+      .level-control {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        margin: 0;
+        padding: 0;
+        border: 0;
+      }
+
+      .level-control-legend {
+        padding: 0;
+        font-size: 0.7rem;
+        color: var(--text-dim);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        font-weight: 500;
+        line-height: 1;
+      }
+
+      .level-control-options {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        font-size: 0.8rem;
+        color: var(--text-muted);
+      }
+
+      .level-control-options label {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        white-space: nowrap;
+        cursor: pointer;
+      }
+
       .fingering-values {
         display: flex;
         gap: 4px;

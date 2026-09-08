@@ -49,12 +49,25 @@ describe("board JSON round-trip", () => {
     });
   });
 
+  it("preserves a card's experience level, regardless of display mode", async () => {
+    // Unlike instrument/position, `level` is stored whatever the display mode
+    // is — the guitar renderer is the only current reader, but a piano
+    // voicing is expected to read it in a later PR.
+    const state = board([
+      { id: "a", nl: "Cmaj7", display: "guitar", level: "beginner" },
+      { id: "b", nl: "Dm7", level: "established" },
+    ]);
+    const back = importBoardJson(await exportBoardJson(state));
+    expect(back.items.map((i) => i.level)).toEqual(["beginner", "established"]);
+  });
+
   it("leaves the new fields undefined on a legacy card", async () => {
     const state = board([{ id: "a", nl: "Cmaj7" }]);
     const back = importBoardJson(await exportBoardJson(state));
     expect(back.items[0].display).toBeUndefined();
     expect(back.items[0].instrument).toBeUndefined();
     expect(back.items[0].position).toBeUndefined();
+    expect(back.items[0].level).toBeUndefined();
   });
 
   it("drops an unrecognised display mode rather than trusting it", async () => {
@@ -97,6 +110,24 @@ describe("board JSON round-trip", () => {
       ],
     });
     expect(importBoardJson(json).items.map((i) => i.instrument)).toEqual([
+      undefined,
+      undefined,
+      undefined,
+    ]);
+  });
+
+  it("drops a non-string or empty level", async () => {
+    const json = JSON.stringify({
+      schema: "chordl.board/v1",
+      exportedAt: "2026-08-12T00:00:00.000Z",
+      meta: {},
+      items: [
+        { id: "a", nl: "Cmaj7", level: "" },
+        { id: "b", nl: "Dm7", level: 42 },
+        { id: "c", nl: "G7", level: null },
+      ],
+    });
+    expect(importBoardJson(json).items.map((i) => i.level)).toEqual([
       undefined,
       undefined,
       undefined,

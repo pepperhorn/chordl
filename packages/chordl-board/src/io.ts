@@ -186,6 +186,7 @@ export function importBoardJson(text: string): BoardState {
       display: parseDisplayMode(raw.display),
       instrument: typeof raw.instrument === "string" && raw.instrument ? raw.instrument : undefined,
       position: parsePosition(raw.position),
+      level: typeof raw.level === "string" && raw.level ? raw.level : undefined,
       icon: parseIcon(raw.icon),
       image: parseImage(raw.image),
       size: parseSize(raw.size),

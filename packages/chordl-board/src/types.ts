@@ -89,6 +89,16 @@ export interface BoardItem {
    * shorter (e.g. after a chords-db update).
    */
   position?: number;
+  /**
+   * Difficulty filter on a chord's alternate shapes — "can I play this yet".
+   * Typed loosely (a bare string), like `instrument`, so the board carries no
+   * runtime dependency on chordl-guitar's `ExperienceLevel` union; an unknown
+   * value falls back to the consuming panel's default. Unlike
+   * `instrument`/`position`, stored regardless of `display`: only the guitar
+   * renderer reads it today, but a piano voicing is expected to in a later
+   * PR, and a card saved before that lands should not need a migration.
+   */
+  level?: string;
   /** Icon id (e.g. `"music:trebleClef"`) shown above the text. Text cards only. */
   icon?: string;
   /**
