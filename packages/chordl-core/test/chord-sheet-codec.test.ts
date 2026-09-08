@@ -22,7 +22,11 @@ const FULL: ChordSheetData = {
       textBelow: "Repeat 4x",
       defaults: { format: "compact" },
       chords: [
-        { chord: "Dm7", chordHeading: "ii", annotationText: "shell voicing" },
+        {
+          chord: "Dm7", chordHeading: "ii", annotationText: "shell voicing",
+          arpeggioBpm: 96, playbackHighlightColor: "#ff8800",
+          playbackNotes: [50, 53, 57, 60], playbackInstrument: "acoustic_grand_piano",
+        },
         { chord: "G7", chordHeading: "V" },
         { chord: "Cmaj7", chordHeading: "I" },
       ],

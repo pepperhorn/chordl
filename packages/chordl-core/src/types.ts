@@ -10,6 +10,7 @@ export type NoteNameMode =
   | "midi+degree";
 export type WhiteNote = "C" | "D" | "E" | "F" | "G" | "A" | "B";
 export type NoteName = string;
+export type PlaybackInstrument = "acoustic_grand_piano" | "electric_guitar_clean";
 
 export interface ColorTheme {
   name: string;
@@ -127,6 +128,10 @@ export interface DisplayDefaults {
   noteNameMode?: NoteNameMode;
   showFingering?: boolean;
   fingeringSize?: TextSize;
+  /** Arpeggio tempo on a sixteenth-note grid. */
+  arpeggioBpm?: number;
+  /** Transient colour used to identify the note currently being attacked. */
+  playbackHighlightColor?: string;
 }
 
 export interface ChordData {
@@ -142,6 +147,11 @@ export interface ChordData {
   theme?: ColorTheme | string;
   highlightColor?: string;
   padding?: number;
+  arpeggioBpm?: number;
+  playbackHighlightColor?: string;
+  /** Ordered MIDI pitches for the exact rendered voicing. */
+  playbackNotes?: number[];
+  playbackInstrument?: PlaybackInstrument;
 }
 
 export interface SectionData {

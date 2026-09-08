@@ -8,6 +8,29 @@
  */
 import type { ChordsDbPosition } from "./instruments.js";
 
+export interface SoundingString {
+  /** Zero-based physical string index in low-to-high instrument order. */
+  stringIndex: number;
+  midi: number;
+}
+
+export function positionToSoundingStrings(
+  pos: ChordsDbPosition,
+  openMidi: number[],
+): SoundingString[] {
+  const out: SoundingString[] = [];
+  pos.frets.forEach((fret, stringIndex) => {
+    if (fret === -1) return;
+    const open = openMidi[stringIndex];
+    if (open === undefined) return;
+    out.push({
+      stringIndex,
+      midi: fret === 0 ? open : open + pos.baseFret + fret - 1,
+    });
+  });
+  return out;
+}
+
 /**
  * Sounding MIDI pitches for a chords-db position.
  *
@@ -24,14 +47,7 @@ import type { ChordsDbPosition } from "./instruments.js";
  * @returns sounding pitches only, in chords-db string order
  */
 export function positionToMidi(pos: ChordsDbPosition, openMidi: number[]): number[] {
-  const out: number[] = [];
-  pos.frets.forEach((fret, i) => {
-    if (fret === -1) return;
-    const open = openMidi[i];
-    if (open === undefined) return;
-    out.push(fret === 0 ? open : open + pos.baseFret + fret - 1);
-  });
-  return out;
+  return positionToSoundingStrings(pos, openMidi).map(({ midi }) => midi);
 }
 
 const PITCH_CLASSES: Record<string, number> = {

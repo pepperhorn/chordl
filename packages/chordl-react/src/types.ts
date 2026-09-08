@@ -4,10 +4,15 @@ import type { UIThemeMode } from "./config";
 export type {
   Format, TextSize, NoteNameMode, WhiteNote, NoteName, ColorTheme,
   ParsedChordRequest, KeyDescriptor, HandBracket,
-  DisplayMode, DisplayDefaults, ChordData, SectionData, ChordSheetData,
+  DisplayMode, DisplayDefaults, ChordData, SectionData, ChordSheetData, PlaybackInstrument,
 } from "@pepperhorn/chordl-core";
 // Import for use in local types
-import type { Format, ColorTheme, TextSize, NoteNameMode, WhiteNote, NoteName, HandBracket, DisplayMode, ChordSheetData } from "@pepperhorn/chordl-core";
+import type { Format, ColorTheme, TextSize, NoteNameMode, WhiteNote, NoteName, HandBracket, DisplayMode, ChordSheetData, PlaybackInstrument } from "@pepperhorn/chordl-core";
+
+export interface PlaybackSpecSnapshot {
+  notes: number[];
+  instrument: PlaybackInstrument;
+}
 
 export interface KeyboardProps {
   format?: Format;
@@ -25,6 +30,9 @@ export interface KeyboardProps {
   theme?: ColorTheme | string;
   highlightColor?: string;
   showPlayback?: boolean;
+  arpeggioBpm?: number;
+  playbackHighlightColor?: string;
+  onPlaybackSpecChange?: (spec: PlaybackSpecSnapshot) => void;
   chordLabel?: string;
   /** Show chord/scale name as a heading above the keyboard. */
   showHeading?: boolean;
@@ -103,6 +111,9 @@ export interface ChordProps {
   uiTheme?: UIThemeMode;
   /** Show the inline play/copy/download controls. Default true. Set false for static export. */
   showPlayback?: boolean;
+  arpeggioBpm?: number;
+  playbackHighlightColor?: string;
+  onPlaybackSpecChange?: (spec: PlaybackSpecSnapshot) => void;
   /** Title above the keyboard. Defaults to the resolved chord/scale name. */
   title?: string;
   /** Subheading directly below the title (smaller, muted). */
@@ -151,6 +162,8 @@ export interface VariationContext {
   voicingId: string;
   /** Notes used in this variation (note-name strings as rendered) */
   notes: string[];
+  /** Ordered MIDI pitches used by playback for this exact voicing. */
+  playbackNotes?: number[];
   /** Inline SVG markup of the rendered variation */
   svgString: string;
 }

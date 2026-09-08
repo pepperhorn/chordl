@@ -7,6 +7,7 @@ import { useUITheme } from "../ui-theme";
 import { renderMeiToSvg } from "../verovio";
 import type { VerovioFont } from "../verovio";
 import { getDefaultGlyphs } from "@pepperhorn/chordl-core";
+import type { PlaybackSpecSnapshot } from "../types";
 
 export interface StaffNotationProps {
   notes: string[];
@@ -26,6 +27,8 @@ export interface StaffNotationProps {
   showLabel?: boolean;
   scale?: number;
   showPlayback?: boolean;
+  arpeggioBpm?: number;
+  onPlaybackSpecChange?: (spec: PlaybackSpecSnapshot) => void;
   /** Which SMuFL font to engrave with. `name` selects the Verovio font
    *  (Bravura / Petaluma); defaults to the app-wide glyph selection. */
   glyphs?: StaffGlyphSet;
@@ -66,6 +69,8 @@ export function StaffNotation({
   glyphs,
   className,
   style,
+  arpeggioBpm,
+  onPlaybackSpecChange,
 }: StaffNotationProps) {
   const { tokens: ui } = useUITheme();
   const font = fontFor(glyphs);
@@ -160,13 +165,15 @@ export function StaffNotation({
       {controlsH > 0 && (
         <g data-controls="">
           <PlaybackControls
-            notes={notes}
+            notes={(octaveQualifiedNotes ?? notes).map((note) => note.replace(":", ""))}
             lhNotes={lhNotes}
             rhOctave={rhOctave}
             lhOctave={lhOctave}
             chordName={chordLabel ?? notes.join("-")}
             x={controlsX}
             y={4}
+            arpeggioBpm={arpeggioBpm}
+            onPlaybackSpecChange={onPlaybackSpecChange}
           />
         </g>
       )}

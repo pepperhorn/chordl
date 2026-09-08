@@ -1,5 +1,5 @@
 import { useEffect, useRef, type ReactNode } from "react";
-import type { Format, ColorTheme, WhiteNote, DisplayMode, TextSize, NoteNameMode, OnVariation, RenderVariationExtras, VariationContext } from "../types";
+import type { Format, ColorTheme, WhiteNote, DisplayMode, TextSize, NoteNameMode, OnVariation, RenderVariationExtras, VariationContext, PlaybackSpecSnapshot } from "../types";
 import { PianoKeyboard } from "./PianoKeyboard";
 import { ascendingOctaves } from "../diatonic-step";
 import { StaffNotation } from "./StaffNotation";
@@ -21,6 +21,9 @@ export interface ChordGroupProps {
   noteNameSize?: TextSize;
   showFingering?: boolean;
   fingeringSize?: TextSize;
+  arpeggioBpm?: number;
+  playbackHighlightColor?: string;
+  onPlaybackSpecChange?: (spec: PlaybackSpecSnapshot) => void;
   onVariation?: OnVariation;
   renderVariationExtras?: RenderVariationExtras;
 }
@@ -50,6 +53,9 @@ export function ChordGroup({
   noteNameSize,
   showFingering,
   fingeringSize,
+  arpeggioBpm,
+  playbackHighlightColor,
+  onPlaybackSpecChange,
   onVariation,
   renderVariationExtras,
 }: ChordGroupProps) {
@@ -104,6 +110,7 @@ export function ChordGroup({
                 chordLabel={chord.symbol}
                 showPlayback={showPlayback}
                 scale={scale}
+                arpeggioBpm={arpeggioBpm}
               />
             ) : display === "both" ? (
               <div className="bc-display-both" style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
@@ -129,6 +136,9 @@ export function ChordGroup({
                   displayNoteNames={chord.notes}
                   fingering={showFingering ? autoFingering(chord.notes) : undefined}
                   fingeringSize={fingeringSize}
+                  arpeggioBpm={arpeggioBpm}
+                  playbackHighlightColor={playbackHighlightColor}
+                  onPlaybackSpecChange={onPlaybackSpecChange}
                 />
               </div>
             ) : (
@@ -148,6 +158,9 @@ export function ChordGroup({
                 displayNoteNames={chord.notes}
                 fingering={showFingering ? autoFingering(chord.notes) : undefined}
                 fingeringSize={fingeringSize}
+                arpeggioBpm={arpeggioBpm}
+                playbackHighlightColor={playbackHighlightColor}
+                onPlaybackSpecChange={onPlaybackSpecChange}
               />
             )}
             {chord.voicingStyle && (

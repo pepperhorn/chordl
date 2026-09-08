@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useCallback } from "react";
-import type { DisplayMode, OnVariation, RenderVariationExtras } from "../types";
+import type { DisplayMode, OnVariation, RenderVariationExtras, PlaybackSpecSnapshot } from "../types";
 import type { UIThemeMode } from "../config";
 import { PianoChord } from "./PianoChord";
 import {
@@ -42,6 +42,9 @@ export interface VoicingVariantToggleProps {
    * doesn't pass it sees today's unfiltered behaviour.
    */
   level?: ExperienceLevel;
+  arpeggioBpm?: number;
+  playbackHighlightColor?: string;
+  onPlaybackSpecChange?: (spec: PlaybackSpecSnapshot) => void;
 }
 
 const LABELS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -62,6 +65,9 @@ export function VoicingVariantToggle({
   subheading,
   footerText,
   level = "established",
+  arpeggioBpm,
+  playbackHighlightColor,
+  onPlaybackSpecChange,
 }: VoicingVariantToggleProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [totalCount, setTotalCount] = useState(3);
@@ -172,6 +178,9 @@ export function VoicingVariantToggle({
           title={title}
           subheading={subheading}
           footerText={footerText}
+          arpeggioBpm={arpeggioBpm}
+          playbackHighlightColor={playbackHighlightColor}
+          onPlaybackSpecChange={onPlaybackSpecChange}
           onVariation={onVariation}
           renderVariationExtras={renderVariationExtras}
           voicingId="default"
@@ -312,6 +321,9 @@ export function VoicingVariantToggle({
           title={title}
           subheading={subheading}
           footerText={footerText}
+          arpeggioBpm={arpeggioBpm}
+          playbackHighlightColor={playbackHighlightColor}
+          onPlaybackSpecChange={onPlaybackSpecChange}
           onVariation={onVariation}
           renderVariationExtras={renderVariationExtras}
           voicingId={variants[activeIdx]?.label ?? "default"}

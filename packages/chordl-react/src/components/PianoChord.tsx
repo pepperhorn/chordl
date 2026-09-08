@@ -1,4 +1,4 @@
-import { cloneElement, useEffect, useRef } from "react";
+import { cloneElement, useCallback, useEffect, useRef } from "react";
 import { Note } from "tonal";
 import type { ChordProps, KeyboardProps, HandBracket, WhiteNote, DisplayMode } from "../types";
 import type { VariationContext } from "../types";
@@ -96,13 +96,18 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
     return <PianoKeyboard {...props} />;
   }
 
-  const { chord, format, theme: themeProp, highlightColor, padding, scale: scaleProp, display = "keyboard", uiTheme, showPlayback = true, showChordName, title, subheading, footerText, className, style } =
+  const { chord, format, theme: themeProp, highlightColor, padding, scale: scaleProp, display = "keyboard", uiTheme, showPlayback = true, showChordName, title, subheading, footerText, className, style, arpeggioBpm, playbackHighlightColor, onPlaybackSpecChange } =
     props;
   const { onVariation, renderVariationExtras, voicingId = "default", chordIndex = 0 } = props;
   const uiCtx = resolveUITheme(uiTheme);
 
   const containerRef = useRef<HTMLDivElement | null>(null);
   const lastReportedRef = useRef<string>("");
+  const playbackSpecRef = useRef<import("../types").PlaybackSpecSnapshot | null>(null);
+  const reportPlaybackSpec = useCallback((spec: import("../types").PlaybackSpecSnapshot) => {
+    playbackSpecRef.current = spec;
+    onPlaybackSpecChange?.(spec);
+  }, [onPlaybackSpecChange]);
 
   // Notes that the active render branch uses — set per branch before return.
   let currentNotes: string[] = [];
@@ -111,6 +116,7 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
     chordIndex,
     voicingId,
     notes: currentNotes,
+    playbackNotes: playbackSpecRef.current?.notes,
     svgString: containerRef.current?.querySelector("svg")?.outerHTML ?? "",
   });
 
@@ -219,6 +225,7 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
           size={kbSize}
           startFrom={startPc}
           highlightKeys={scaleHighlightKeys}
+          allNotes={scaleMidis.map((midi) => Note.fromMidi(midi))}
           displayNoteNames={scaleResolved.notes}
           theme={theme}
           highlightColor={highlightColor}
@@ -240,6 +247,9 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
           footerText={footerText}
           className={className}
           style={style}
+          arpeggioBpm={arpeggioBpm}
+          playbackHighlightColor={playbackHighlightColor}
+          onPlaybackSpecChange={reportPlaybackSpec}
         />
       </UIThemeProvider>
         </div>
@@ -396,6 +406,7 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
               size={kbSize}
               startFrom={startNote}
               highlightKeys={highlightKeys}
+              allNotes={allResolved.map((note) => `${note.pc}${note.octave}`)}
               displayNoteNames={displayNoteNames}
               theme={theme}
               highlightColor={highlightColor}
@@ -404,6 +415,9 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
               showChordName={showChordName}
               handBrackets={notesHandBrackets.length > 0 ? notesHandBrackets : undefined}
               scale={scale}
+              arpeggioBpm={arpeggioBpm}
+              playbackHighlightColor={playbackHighlightColor}
+              onPlaybackSpecChange={reportPlaybackSpec}
               showNoteNames={parsed.showNoteNames}
               noteNameSize={parsed.noteNameSize}
               degreeSize={parsed.degreeSize}
@@ -456,6 +470,9 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
               highlightColor={highlightColor}
               showPlayback={showPlayback}
               scale={scale}
+              arpeggioBpm={arpeggioBpm}
+              playbackHighlightColor={playbackHighlightColor}
+              onPlaybackSpecChange={reportPlaybackSpec}
             />
           </UIThemeProvider>
         </div>
@@ -624,6 +641,8 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
         showLabel={!cardText}
         scale={scale}
         showPlayback={showPlayback}
+        arpeggioBpm={arpeggioBpm}
+        onPlaybackSpecChange={reportPlaybackSpec}
         className={className}
         style={style}
       />
@@ -814,6 +833,9 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
         fingering={bassResolvedFingering}
         fingeringSize={parsed.fingeringSize}
         showPlayback={showPlayback}
+        arpeggioBpm={arpeggioBpm}
+        playbackHighlightColor={playbackHighlightColor}
+        onPlaybackSpecChange={reportPlaybackSpec}
         title={title}
         subheading={subheading}
         footerText={footerText}
@@ -1028,6 +1050,7 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
       size={kbSize}
       startFrom={layout.startFrom as WhiteNote}
       highlightKeys={highlightKeys}
+      allNotes={chordMidiValues.map((midi) => Note.fromMidi(midi))}
       displayNoteNames={notes}
       clipLeft={layout.clipLeft}
       clipRight={layout.clipRight}
@@ -1053,6 +1076,9 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
       subheading={subheading}
       footerText={footerText}
       className={className}
+      arpeggioBpm={arpeggioBpm}
+      playbackHighlightColor={playbackHighlightColor}
+      onPlaybackSpecChange={reportPlaybackSpec}
       style={style}
     />
   );
