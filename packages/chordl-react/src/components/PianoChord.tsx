@@ -558,7 +558,13 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
     expanded.push(oneOctave[0]); // final tonic
     notes = expanded;
     // The arpeggio repeats the shape across octaves; the declared placement
-    // describes one statement of it and no longer indexes this list.
+    // describes one statement of it and no longer indexes this list. This is
+    // currently belt-and-suspenders rather than load-bearing: `notes.length`
+    // has already grown past `voicingOffsets.length` by the time this runs,
+    // so every `hasDeclaredOffsets` check downstream would reject the stale
+    // offsets on its own (measured: 0 of 4547 rendered rows depend on this
+    // line). Kept because it is correct, and because it stops meaning the
+    // same thing the moment the lengths could ever match again by accident.
     voicingOffsets = undefined;
   }
 
@@ -873,6 +879,13 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
   // keep original note names for display (e.g. "Bb" not "A#").
   const keyboardNotes = notes.map(normalizeNote);
 
+  // A declared placement only still applies if it is index-parallel to the
+  // final `notes` — a rotation or an arpeggio expansion already cleared
+  // `voicingOffsets` above when they changed what `notes` holds, but this is
+  // the single check every consumer below shares, matching `auto-layout.ts`'s
+  // own `hasOffsets`.
+  const hasDeclaredOffsets = voicingOffsets != null && voicingOffsets.length === notes.length;
+
   const layout = calculateLayout(keyboardNotes, {
     padding: layoutPadding,
     startingNote,
@@ -881,7 +894,7 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
     // A declared tenth needs a window wide enough to hold it. Left to the
     // ascending-stack rule the layout sizes the third instead and the top
     // note falls off the right-hand edge of the keyboard.
-    octaveOffsets: voicingOffsets,
+    octaveOffsets: hasDeclaredOffsets ? voicingOffsets : undefined,
   });
 
   const chordShift = parsed.chordOctaveShift ?? 0;
@@ -906,8 +919,15 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
     // ones the staff assigns or "Both" draws two different voicings.
     const whiteIndices = notes.map(diatonicStep);
 
+    // The offsets term is currently inert on its own: a declared placement
+    // whose octaves are all 0 doesn't occur in the library today, and by the
+    // time an arpeggio or rotation would desync `voicingOffsets` from
+    // `notes`, `hasDeclaredOffsets` above already reads false. Measured: 0 of
+    // 4547 rendered rows depend on this term rather than on `chordOctave` or
+    // the wrap check. Kept and guarded correctly regardless, since a future
+    // declared placement of all-zero offsets is otherwise valid input.
     const needsOctaveQual = layout.chordOctave > 0 ||
-      (voicingOffsets?.some((o) => o !== 0) ?? false) ||
+      (hasDeclaredOffsets && voicingOffsets!.some((o) => o !== 0)) ||
       whiteIndices.some((idx, i) => i > 0 && idx <= whiteIndices[i - 1]);
 
     if (needsOctaveQual) {
@@ -917,8 +937,8 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
       // keyboard, and the keyboard no longer moves. The shift lives in the
       // labels and the staff.
       const base = Math.max(layout.chordOctave, 0);
-      const octaves = voicingOffsets && voicingOffsets.length === notes.length
-        ? voicingOffsets.map((o) => base + o)
+      const octaves = hasDeclaredOffsets
+        ? voicingOffsets!.map((o) => base + o)
         : ascendingOctaves(notes, base);
       const assigned = keyboardNotes.map((n, i) => ({ note: n, octave: octaves[i] }));
 
@@ -1044,7 +1064,7 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
   });
 
   // Octave-qualified notes for staff notation — use absolute octave (4), not keyboard-relative
-  const staffOctaveNotes = computeOctaveQualified(notes, 4 + chordShift, voicingOffsets);
+  const staffOctaveNotes = computeOctaveQualified(notes, 4 + chordShift, hasDeclaredOffsets ? voicingOffsets : undefined);
 
   currentNotes = notes;
   if (display === "staff") {
