@@ -12,16 +12,25 @@
 
 **Four library entries are drawn as something other than what they are.** Not a consequence of this work — found while measuring for it, and it corrupts any span-based rule, so it is recorded here and fixed separately.
 
-`realizeVoicingFull` maps each entry's `intervals` to MIDI, then keeps only `Note.pitchClass(...)`. Every octave is discarded. `PianoChord` re-derives octaves from the ordered pitch classes with `ascendingOctaves` (`diatonic-step.ts`), which bumps an octave whenever a note's *letter* fails to advance. Declared span and drawn span therefore agree only by coincidence. Measured across all 72 entries, 4 disagree:
+`realizeVoicingFull` maps each entry's `intervals` to MIDI, then keeps only `Note.pitchClass(...)`. Every octave is discarded. `PianoChord` re-derives octaves from the ordered pitch classes with `ascendingOctaves` (`diatonic-step.ts`), which bumps an octave whenever a note's *letter* fails to advance. Declared span and drawn span therefore agree only by coincidence. And because `spellForKey` spells per key, the letter-walk — and so the drawn shape — depends on the **root**: the same entry is drawn correctly at one root and wrongly at another. Measured across all 72 entries × 12 roots, **64 of 864 pairs are misdrawn, spanning 9 entries**:
 
-| entry | declared | drawn | what happens |
-|---|---|---|---|
-| `shell-maj7-tenth` | 16 | **4** | a tenth, drawn as a major third |
-| `shell-dom7-tenth` | 16 | **4** | a tenth, drawn as a major third |
-| `shell-min7-tenth` | 15 | **3** | a tenth, drawn as a minor third |
-| `rootless-alt-b` | 10 | **22** | a close grip, drawn across two octaves |
+| entry | declared | drawn | roots | what happens |
+|---|---|---|---|---|
+| `shell-maj7-tenth` | `[0,16]` | `[0,4]` | all 12 | a tenth, drawn as a major third |
+| `shell-dom7-tenth` | `[0,16]` | `[0,4]` | all 12 | a tenth, drawn as a major third |
+| `shell-min7-tenth` | `[0,15]` | `[0,3]` | all 12 | a tenth, drawn as a minor third |
+| `rootless-alt-b` | `[0,5,6,10]` | `[0,5,18,22]` | 7 | a close grip, drawn across two octaves |
+| `rootless-min7-b` | `[0,4,5,9]` | `[0,4,17,21]` | 5 | ditto |
+| `rootless-m7b5-b` | `[0,4,5,8]` | `[0,4,17,20]` | 5 | ditto |
+| `spread-madd9` | `[0,7,14,15]` | `[0,7,14,27]` | 5 | ditto |
+| `rootless-dom7-a` | `[0,5,6,10]` | `[0,5,18,22]` | 3 | ditto |
+| `4close-dom7` | `[0,5,6,10]` | `[0,5,18,22]` | 3 | ditto |
 
-The three tenth shells are named for the interval that defines them and render as plain thirds. `rootless-alt-b` is `Bb Eb E Ab`, whose letters step 6 → 2 → 2 → 5: two bumps, giving Bb4-Eb5-E6-Ab6, which no hand plays.
+The three tenth shells are named for the interval that defines them and render as plain thirds. The rootless grips go the other way — close four-note voicings drawn across two octaves, which no hand plays.
+
+An earlier draft of this spec said four entries. That count was taken at root C with sharp spelling and missed the root-dependence entirely; it is corrected here, and the fix (#57) covers all nine.
+
+Six of the nine are also **unreachable** in the running app: `findVoicing` and `generateVariants` keep only the first entry per (quality, style), so the tenth shells lose to `shell-maj7-r7`, and `inferStyle` never returns "Rootless Type B" because the substring `rootless` matches Type A first. That reachability bug is real, separate, and not fixed by #57.
 
 ## Decisions
 
@@ -57,7 +66,7 @@ The two paths carry different information and must be measured differently:
 - **Library variants** carry `VoicingEntry.intervals` — real semitone offsets. Rank on `max - min`. This is the author's intent and the true playing difficulty.
 - **Inversion and algorithmic variants** have no intervals; the ordered pitch classes *are* the voicing. Rank on the span the `ascendingOctaves` walk produces, which is a pure function of that order — the agent trace confirmed no renderer state is needed, and that `chordOctave`, padding, `startingNote` and the octave-shift modifiers all shift the whole stack uniformly and so cannot change a span.
 
-For 68 of 72 library entries the two numbers are identical, so this distinction is invisible. For the 4 above it is the difference between calling a tenth stretch "beginner" and calling it what it is. Ranking on what is drawn would invert the tenth shells specifically — they are the *narrowest* things in the library on screen.
+For 63 of 72 library entries the two numbers are identical at every root, so this distinction is invisible. For the 9 above it is the difference between calling a tenth stretch "beginner" and calling it what it is. Ranking on what is drawn would invert the tenth shells specifically — they are the *narrowest* things in the library on screen.
 
 Once the rendering bug is fixed the two numbers converge for all 72 and this decision costs nothing. It is written down so that the fix does not look like it invalidates the rule.
 
@@ -104,7 +113,7 @@ A 2-note `[0,7]` — root and fifth, the `C-G` shell — satisfies the rule (at 
 - 72 library entries. Beginner-eligible by note count and span alone: 28 (was 9 at a 3-note cap). The quality allowlist reduces this further; the exact figure is an implementation measurement, not a design input.
 - Triads never touch `VOICING_LIBRARY` — `generateVariants` produces them through its inversion path from `resolvedNotes`. Root position spans 7, first inversion 8, second 9: all beginner.
 - `maj7`, `dom7`, `sus4` and `sus2` already have beginner entries (2, 2, 1 and 1 respectively). `min7` has 2 as a side effect of the same shells, which is harmless.
-- Declared and drawn span agree for 68 of 72 entries.
+- Declared and drawn span agree for 63 of 72 entries at every root; 64 of 864 (entry, root) pairs disagree, spanning 9 entries.
 
 ## Constraints
 
@@ -128,6 +137,7 @@ A 2-note `[0,7]` — root and fifth, the `C-G` shell — satisfies the rule (at 
 ## Open items
 
 - [ ] Implementation plan and build
-- [ ] Octave fidelity for the 4 mis-drawn entries — its own change; see *Problem*. Once landed, declared and drawn span converge and decision *Span comes from `intervals`* becomes a statement about two equal numbers.
+- [ ] Reachability: six of the nine mis-drawn entries cannot be selected in the app at all (first-per-style dedup, and `inferStyle` never returning "Rootless Type B"). Its own change.
+- [x] Octave fidelity for the 9 mis-drawn entries — landed as #57; see *Problem*. Once landed, declared and drawn span converge and decision *Span comes from `intervals`* becomes a statement about two equal numbers.
 - [ ] Rendering for `spellingsFor` — decide on measured firing rates, with #50's `reason` grading as the natural consumer.
 - [ ] Whether `min7` belongs in the core set. It has beginner shells today by accident of sharing the maj7/dom7 shell shapes; nobody has decided whether a beginner is offered a minor 7th.
