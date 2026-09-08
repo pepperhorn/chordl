@@ -34,3 +34,4 @@ export {
 } from "./experience.js";
 export type { ExperienceLevel, VoicingSelection } from "./experience.js";
 export { spellingsFor } from "./spellings.js";
+export { diatonicStep } from "./diatonic-step.js";

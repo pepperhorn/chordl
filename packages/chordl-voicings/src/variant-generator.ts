@@ -4,39 +4,49 @@ import { VOICING_LIBRARY } from "./library.js";
 import { voicingPitchClasses, voicingOctaveOffsets, findVoicing } from "./query.js";
 import { normalizeToSharps } from "./spelling.js";
 import { levelForVoicing } from "./experience.js";
+import { diatonicStep } from "./diatonic-step.js";
 
 /**
  * Semitones from the root for a variant that has no declared placement.
  *
  * An inversion or algorithmic variant carries only ordered pitch classes, and
- * the renderer places them by stacking each note above the previous one. So
- * the span it will be drawn at is a function of that order, and this
- * reproduces the same walk — ranking a voicing by a placement other than the
- * one it is drawn at is the fault #57 fixed, and this is where it would come
- * back.
+ * the renderer places them by stacking each note above the previous one by
+ * diatonic LETTER (`ascendingOctaves` in `chordl-react`'s `diatonic-step`),
+ * bumping the octave whenever a note's letter fails to advance past the
+ * previous note's letter — not whenever its pitch fails to rise. A letter can
+ * repeat while the pitch still rises (C then C#), so a walk that bumps on
+ * pitch instead under-counts the octave the renderer actually draws, ranking
+ * the voicing at a placement it is never shown at — the fault #57 fixed, and
+ * this is where it came back: every inversion of a maj7 whose root's third
+ * resolves with a letter repeat (C#, D#, F#, G#, A#, Cb) was ranked at its
+ * pitch-walk span instead of its drawn span. See the `C#maj7` regression
+ * test in `experience.test.ts`.
  *
- * The renderer stacks on diatomic LETTER; this stacks on PITCH. They agree
- * for these variants because their notes come from `resolvedNotes`, which is
- * already ascending by pitch, so no letter can fail to advance without the
- * pitch also failing to advance. That is a property of the input, not a
- * property of the two rules, and it stops being true the moment a caller
- * hands this a set that is not pitch-ascending.
+ * So this reproduces the letter walk, not the pitch walk: `diatonicStep`
+ * decides when to bump the octave, and the resulting MIDI value is what
+ * turns into a semitone offset. `diatonicStep` is duplicated here rather than
+ * imported from `chordl-react` — this package must not depend on it, since
+ * `chordl-react` depends on this package — and the duplication is pinned by
+ * a test in `chordl-react`, the only package that depends on both, the way
+ * the experience ladder is pinned.
  */
 function semitonesFromStack(root: string, notes: string[]): number[] {
   const rootMidi = Note.midi(`${root}4`);
   if (rootMidi == null || notes.length === 0) return [];
-  let prev = -Infinity;
+  let prevStep = -Infinity;
   let octave = 4;
   const out: number[] = [];
   for (const n of notes) {
-    let midi = Note.midi(`${n}${octave}`);
-    if (midi == null) return [];
-    // Stack upward: raise by octaves until this note is above the last one.
-    while (midi <= prev) {
+    const step = diatonicStep(n);
+    if (step < 0) return [];
+    // Bump the octave whenever the letter fails to advance past the last
+    // note's letter — the same rule the renderer stacks by.
+    if (out.length > 0 && step <= prevStep) {
       octave++;
-      midi += 12;
     }
-    prev = midi;
+    const midi = Note.midi(`${n}${octave}`);
+    if (midi == null) return [];
+    prevStep = step;
     out.push(midi - rootMidi);
   }
   return out;

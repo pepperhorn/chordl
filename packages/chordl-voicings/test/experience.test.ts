@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { levelForVoicing, isCoreQuality } from "../src/experience.js";
 import { VOICING_LIBRARY } from "../src/library.js";
+import { generateVariants } from "../src/variant-generator.js";
 
 describe("isCoreQuality", () => {
   it("recognises the core set and its inversions", () => {
@@ -72,5 +73,30 @@ describe("levelForVoicing", () => {
   it("cannot make a three-note power chord beginner", () => {
     // Structural, not a choice: [0,7,12] spans exactly 12, one past the bound.
     expect(levelForVoicing([0, 7, 12])).not.toBe("beginner");
+  });
+});
+
+describe("generateVariants inversions rank by the letter-stacked span they draw", () => {
+  it("ranks a C#maj7 inversion by its drawn span, not its pitch-walk span", () => {
+    // C#maj7 resolves to C# F G# C — its major third (E#) is spelled F, and
+    // its major seventh (C##) is spelled C, so both the 2nd and 3rd
+    // resolvedNotes carry a letter that repeats on the way up (C then C#, F
+    // then... this inversion in particular starts on F and ends the octave
+    // on C then C#, both letter repeats). A pitch-only walk bumps the octave
+    // only when the pitch itself fails to rise, so it never notices the
+    // repeated letters and stacks this inversion into a single octave: pitch
+    // offsets [4, 7, 11, 12], span 8 — "beginner". The renderer, which
+    // stacks by letter, actually draws F4 G#4 C5 C#6 — offsets [4, 7, 11,
+    // 24], span 20, because the letter "C" repeats twice (F->G# is fine, but
+    // G#->C and C->C# both fail to advance the letter and each bumps an
+    // octave). This is the regression #57-shaped fix in `semitonesFromStack`
+    // is pinned against: rank by the drawn span, not the pitch-walk span.
+    const variants = generateVariants("C#", "maj7", ["C#", "F", "G#", "C"], 4);
+    const firstInversion = variants.find((v) => v.id === "inv-1");
+    expect(firstInversion).toBeDefined();
+    expect(firstInversion!.notes).toEqual(["F", "G#", "C", "C#"]);
+    // Not "beginner": the drawn span is 20, well past the beginner bound of 11.
+    expect(firstInversion!.level).not.toBe("beginner");
+    expect(firstInversion!.level).toBe("emerging");
   });
 });
