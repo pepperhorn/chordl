@@ -28,6 +28,16 @@ import { VoicingVariantToggle } from "../src/components/VoicingVariantToggle";
  * "ranks every inversion of a core seventh beginner" test) — so a beginner
  * request and an established request select the identical set and the counts
  * never differ.
+ *
+ * "C9 rootless style" is chosen for the widen-notice test for the same
+ * reason "C7#5#9" no longer works for it: "C7#5#9"'s three default variants
+ * (root position + two inversions) are all "established", so a beginner
+ * request widens to "established" and lands on all three of them — the
+ * widen changes nothing visible, and the notice is correctly suppressed for
+ * it now (see the "does not say so" test below). "C9 rootless style" forces
+ * slot A to "Rootless Type A" (established) ahead of two inversions
+ * (emerging), so a beginner request widens to "emerging" and lands on only
+ * those two of the three — a widen that actually excludes something.
  */
 describe("VoicingVariantToggle level filtering", () => {
   it("offers fewer variants at a lower rung", () => {
@@ -42,9 +52,19 @@ describe("VoicingVariantToggle level filtering", () => {
     expect(begCount).toBeLessThan(estCount);
   });
 
-  it("says so when the level had to widen", () => {
-    render(<VoicingVariantToggle chord="C7#5#9" level="beginner" />);
+  it("says so when the level had to widen and that actually excluded something", () => {
+    render(<VoicingVariantToggle chord="C9 rootless style" level="beginner" />);
     expect(screen.getByText(/no beginner voicing/i)).toBeTruthy();
+  });
+
+  it("does not say so when the widen left every variant visible", () => {
+    // C6 at the default "emerging" level: none of its default variants are
+    // "emerging" (they're "established"), so the request widens — but the
+    // widened set is all of them, identical to an unfiltered view. Narrating
+    // an invisible event is noise; see VoicingVariantToggle.tsx's
+    // `widenedVisibly` comment.
+    render(<VoicingVariantToggle chord="C6" level="emerging" />);
+    expect(screen.queryByText(/no emerging voicing/i)).toBeNull();
   });
 
   it("still shows a chord when no variant matches the rung", () => {

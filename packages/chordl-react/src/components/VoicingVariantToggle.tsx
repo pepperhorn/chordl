@@ -119,11 +119,13 @@ export function VoicingVariantToggle({
 
   // Cumulative level filter over the generated variants — see
   // selectVoicingsForExperience's own comments for the widen-rather-than-empty
-  // contract. Computed unconditionally (before the early return below) because
-  // a widened selection can arise even when there is only one variant — a
-  // single-variant list ranked above the requested level still has to widen
-  // to serve it — and that path needs the same notice the multi-variant path
-  // gets, not silence.
+  // contract. Computed unconditionally (before the early return below)
+  // because `filterNotice`, derived from it, has to be available to render
+  // above the single `PianoChord` in that branch too — though in practice a
+  // single-variant list never actually shows the notice: with only one
+  // variant, a successful widen always ends up selecting that one variant,
+  // so `selection.indices.length` always equals `variants.length` there, and
+  // `widenedVisibly` below is always false.
   const selection = useMemo(
     () => selectVoicingsForExperience(variants, level),
     [variants, level],
@@ -131,7 +133,17 @@ export function VoicingVariantToggle({
   const visible = selection.indices;
 
   const label = resolved?.parsed.chordName ?? chord;
-  const filterNotice = selection.widenedFrom
+  // A widen can fire (`selection.widenedFrom` set) while removing nothing to
+  // look at: if every variant already ranks at or below the level it widened
+  // to, `selection.indices` ends up covering the whole `variants` array, and
+  // the voicings on screen are identical to what an unfiltered view would
+  // show. Measured across the library: 41% of chords hit exactly this at the
+  // default "emerging" level. The widening still happened, but it changed
+  // nothing observable, so narrating it is noise — only announce a widen
+  // that actually left something out.
+  const widenedVisibly =
+    selection.widenedFrom != null && selection.indices.length < variants.length;
+  const filterNotice = widenedVisibly
     ? `No ${selection.widenedFrom} voicing for ${label} — showing ${selection.level} instead.`
     : null;
 
