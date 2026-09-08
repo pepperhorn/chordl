@@ -21,6 +21,19 @@ export type BoardItemKind = "chord" | "text";
 export const BOARD_ITEM_KINDS: readonly BoardItemKind[] = ["chord", "text"];
 
 /**
+ * Values `BoardItem.level` accepts on import. Duplicated from chordl-guitar's
+ * `ExperienceLevel` rather than imported, for the same reason `instrument` is
+ * a bare string: the board carries no runtime dependency on that package's
+ * union. Unlike `instrument`, which degrades to an instrument-config lookup
+ * that already has to handle "not in the table", nothing downstream checks
+ * `level` before using it — `LevelControl` renders it straight into a radio
+ * `checked` comparison and `selectForExperience` interpolates it into a
+ * user-facing string, so an unvalidated value here is not a graceful
+ * fallback, it is a broken control and a nonsense message.
+ */
+export const BOARD_EXPERIENCE_LEVELS: readonly string[] = ["beginner", "emerging", "established"];
+
+/**
  * Prefixes an `icon` id may carry: `music:` for notation glyphs, `obj:` for
  * object icons. Shared with the icon module so the registry and the import
  * validator cannot drift apart.
@@ -92,11 +105,15 @@ export interface BoardItem {
   /**
    * Difficulty filter on a chord's alternate shapes — "can I play this yet".
    * Typed loosely (a bare string), like `instrument`, so the board carries no
-   * runtime dependency on chordl-guitar's `ExperienceLevel` union; an unknown
-   * value falls back to the consuming panel's default. Unlike
-   * `instrument`/`position`, stored regardless of `display`: only the guitar
-   * renderer reads it today, but a piano voicing is expected to in a later
-   * PR, and a card saved before that lands should not need a migration.
+   * runtime dependency on chordl-guitar's `ExperienceLevel` union — but
+   * unlike `instrument`, an unknown value is rejected outright at import
+   * (`parseLevel` in io.ts checks it against `BOARD_EXPERIENCE_LEVELS`)
+   * rather than left for a consumer to fall back on, because nothing
+   * downstream actually does: it reaches a radio group's `checked` check and
+   * a user-facing message unguarded. Unlike `instrument`/`position`, stored
+   * regardless of `display`: only the guitar renderer reads it today, but a
+   * piano voicing is expected to in a later PR, and a card saved before that
+   * lands should not need a migration.
    */
   level?: string;
   /** Icon id (e.g. `"music:trebleClef"`) shown above the text. Text cards only. */

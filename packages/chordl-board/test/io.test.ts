@@ -116,7 +116,12 @@ describe("board JSON round-trip", () => {
     ]);
   });
 
-  it("drops a non-string or empty level", async () => {
+  it("drops a non-string, empty, or unrecognised level", async () => {
+    // Unlike `instrument`, an unrecognised `level` string is not a graceful
+    // fallback for some consuming panel to catch — nothing downstream checks
+    // it before use, so a value like "expert" would reach `LevelControl` with
+    // no radio checked and `selectForExperience` with a nonsense value baked
+    // into its "showing X instead" message.
     const json = JSON.stringify({
       schema: "chordl.board/v1",
       exportedAt: "2026-08-12T00:00:00.000Z",
@@ -125,9 +130,11 @@ describe("board JSON round-trip", () => {
         { id: "a", nl: "Cmaj7", level: "" },
         { id: "b", nl: "Dm7", level: 42 },
         { id: "c", nl: "G7", level: null },
+        { id: "d", nl: "Am", level: "expert" },
       ],
     });
     expect(importBoardJson(json).items.map((i) => i.level)).toEqual([
+      undefined,
       undefined,
       undefined,
       undefined,
