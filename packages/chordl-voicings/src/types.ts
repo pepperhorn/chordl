@@ -1,3 +1,5 @@
+import type { ExperienceLevel } from "./experience.js";
+
 export type VoicingEra =
   | "Bebop"
   | "Cool"
@@ -117,4 +119,15 @@ export interface VoicingVariant {
   octaveOffsets?: number[];
   handHints?: Hand[];            // Per-note hand assignments from library
   source: "library" | "inversion" | "algorithmic";
+  /**
+   * How hard this exact voicing is to play, per `levelForVoicing`.
+   *
+   * Computed by `generateVariants` at the point each variant is built,
+   * because that is the last place the variant's source (library entry vs.
+   * inversion/algorithmic stack) is still known — see that function's
+   * comments. Absent means "not ranked" (an older persisted variant, or a
+   * caller that built a `VoicingVariant` by hand); `selectVoicingsForExperience`
+   * treats a missing level as "established", the rung that matches everything.
+   */
+  level?: ExperienceLevel;
 }

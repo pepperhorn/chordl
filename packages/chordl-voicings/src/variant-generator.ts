@@ -1,7 +1,46 @@
+import { Note } from "tonal";
 import type { VoicingVariant, VoicingQuality, VoicingEntry, Hand } from "./types.js";
 import { VOICING_LIBRARY } from "./library.js";
 import { voicingPitchClasses, voicingOctaveOffsets, findVoicing } from "./query.js";
 import { normalizeToSharps } from "./spelling.js";
+import { levelForVoicing } from "./experience.js";
+
+/**
+ * Semitones from the root for a variant that has no declared placement.
+ *
+ * An inversion or algorithmic variant carries only ordered pitch classes, and
+ * the renderer places them by stacking each note above the previous one. So
+ * the span it will be drawn at is a function of that order, and this
+ * reproduces the same walk — ranking a voicing by a placement other than the
+ * one it is drawn at is the fault #57 fixed, and this is where it would come
+ * back.
+ *
+ * The renderer stacks on diatomic LETTER; this stacks on PITCH. They agree
+ * for these variants because their notes come from `resolvedNotes`, which is
+ * already ascending by pitch, so no letter can fail to advance without the
+ * pitch also failing to advance. That is a property of the input, not a
+ * property of the two rules, and it stops being true the moment a caller
+ * hands this a set that is not pitch-ascending.
+ */
+function semitonesFromStack(root: string, notes: string[]): number[] {
+  const rootMidi = Note.midi(`${root}4`);
+  if (rootMidi == null || notes.length === 0) return [];
+  let prev = -Infinity;
+  let octave = 4;
+  const out: number[] = [];
+  for (const n of notes) {
+    let midi = Note.midi(`${n}${octave}`);
+    if (midi == null) return [];
+    // Stack upward: raise by octaves until this note is above the last one.
+    while (midi <= prev) {
+      octave++;
+      midi += 12;
+    }
+    prev = midi;
+    out.push(midi - rootMidi);
+  }
+  return out;
+}
 
 /** Check if the lowest note (first in array) is the root/tonic. */
 function isRootPosition(notes: string[], root: string): boolean {
@@ -68,6 +107,9 @@ export function generateVariants(
       octaveOffsets: voicingOctaveOffsets(root, slotAEntry),
       handHints: slotAEntry.hands,
       source: "library",
+      // Library variant: its entry declares where every note sits, so rank
+      // on that declared placement, not on where the notes happen to fall.
+      level: levelForVoicing(slotAEntry.intervals),
     });
   } else {
     const defaultNotes = [...resolvedNotes];
@@ -80,6 +122,9 @@ export function generateVariants(
       label,
       notes: defaultNotes,
       source: "inversion",
+      // No declared placement — rank on where the renderer will actually
+      // stack these notes.
+      level: levelForVoicing(semitonesFromStack(root, defaultNotes)),
     });
   }
 
@@ -95,6 +140,7 @@ export function generateVariants(
       label: INVERSION_LABELS[inv - 1] ?? `${inv}th inv`,
       notes: rotated,
       source: "inversion",
+      level: levelForVoicing(semitonesFromStack(root, rotated)),
     });
   }
 
@@ -120,6 +166,7 @@ export function generateVariants(
         octaveOffsets: voicingOctaveOffsets(root, entry),
         handHints: entry.hands,
         source: "library",
+        level: levelForVoicing(entry.intervals),
       });
     }
   }
@@ -134,6 +181,7 @@ export function generateVariants(
       label: "Open voicing",
       notes: open,
       source: "algorithmic",
+      level: levelForVoicing(semitonesFromStack(root, open)),
     });
 
     // Drop 2 style: move 2nd-from-top note to the bottom
@@ -145,6 +193,7 @@ export function generateVariants(
       label: "Drop 2",
       notes: drop2,
       source: "algorithmic",
+      level: levelForVoicing(semitonesFromStack(root, drop2)),
     });
   }
 
@@ -157,6 +206,7 @@ export function generateVariants(
       label: "Simplified",
       notes: simplified,
       source: "algorithmic",
+      level: levelForVoicing(semitonesFromStack(root, simplified)),
     });
   }
 

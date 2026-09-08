@@ -115,3 +115,63 @@ export function levelForVoicing(semitones: number[]): ExperienceLevel {
   const beyond = [...own].filter((pc) => pc !== NATURAL_NINTH && !defining.has(pc));
   return beyond.length === 0 ? "emerging" : "established";
 }
+
+import type { VoicingVariant } from "./types.js";
+
+export interface VoicingSelection {
+  /** Indices into the input array, in input order. Never empty when input is non-empty. */
+  indices: number[];
+  /** The level actually served — differs from the request when it widened. */
+  level: ExperienceLevel;
+  /** The level originally asked for, when it had to widen. Absent otherwise. */
+  widenedFrom?: ExperienceLevel;
+}
+
+/**
+ * Filter variants by level, and relax rather than show nothing.
+ *
+ * The contract is `chordl-guitar`'s `selectForExperience`, verbatim, because
+ * two frames answering the same question must answer it the same way.
+ * Matching is CUMULATIVE — `established` matches everything, `emerging`
+ * matches beginner + emerging — since the level asks "can I play this yet",
+ * and an established player can obviously play a root-position triad.
+ *
+ * Emptiness is the common case here, not an edge case: most qualities have no
+ * beginner voicing at all, and that is the correct answer rather than a gap.
+ * So widening is the normal path for a beginner request on anything exotic,
+ * and it reports itself — a filter that silently ignores itself is worse than
+ * one that says it could not be honoured.
+ *
+ * There is no shape-class refinement on this side, so the guitar version's
+ * "drop the refinement first" step has nothing to do and is absent.
+ */
+export function selectVoicingsForExperience(
+  variants: VoicingVariant[],
+  level: ExperienceLevel,
+): VoicingSelection {
+  if (variants.length === 0) return { indices: [], level };
+  const rank = (l: ExperienceLevel) => EXPERIENCE_LADDER.indexOf(l);
+  // An unranked variant is treated as established: it is the rung that
+  // matches everything, so an unknown voicing is never wrongly offered to a
+  // beginner, only wrongly withheld — the safe direction of the two.
+  const levelOf = (v: VoicingVariant): ExperienceLevel => v.level ?? "established";
+  const at = (l: ExperienceLevel) =>
+    variants.map((_, i) => i).filter((i) => rank(levelOf(variants[i])) <= rank(l));
+
+  const exact = at(level);
+  if (exact.length > 0) return { indices: exact, level };
+
+  const start = EXPERIENCE_LADDER.indexOf(level);
+  for (let i = start + 1; i < EXPERIENCE_LADDER.length; i++) {
+    const wider = at(EXPERIENCE_LADDER[i]);
+    if (wider.length > 0) {
+      return { indices: wider, level: EXPERIENCE_LADDER[i], widenedFrom: level };
+    }
+  }
+  // Unreachable: cumulative matching means `at("established")` matches every
+  // variant, and the guard above guarantees there is at least one.
+  throw new Error(
+    "selectVoicingsForExperience: unreachable — cumulative matching " +
+      "guarantees the widening loop returns by \"established\"",
+  );
+}
