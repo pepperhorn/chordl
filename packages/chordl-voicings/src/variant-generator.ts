@@ -1,6 +1,6 @@
 import type { VoicingVariant, VoicingQuality, VoicingEntry, Hand } from "./types.js";
 import { VOICING_LIBRARY } from "./library.js";
-import { voicingPitchClasses, findVoicing } from "./query.js";
+import { voicingPitchClasses, voicingOctaveOffsets, findVoicing } from "./query.js";
 import { normalizeToSharps } from "./spelling.js";
 
 /** Check if the lowest note (first in array) is the root/tonic. */
@@ -65,6 +65,7 @@ export function generateVariants(
       id: slotAEntry.id,
       label: slotAEntry.tags.style,
       notes,
+      octaveOffsets: voicingOctaveOffsets(root, slotAEntry),
       handHints: slotAEntry.hands,
       source: "library",
     });
@@ -116,6 +117,7 @@ export function generateVariants(
         id: entry.id,
         label: style,
         notes,
+        octaveOffsets: voicingOctaveOffsets(root, entry),
         handHints: entry.hands,
         source: "library",
       });

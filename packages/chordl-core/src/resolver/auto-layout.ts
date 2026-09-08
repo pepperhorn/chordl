@@ -30,6 +30,17 @@ export interface LayoutOptions {
   startingNote?: string;
   spanFrom?: string;
   spanTo?: string;
+  /**
+   * Whole octaves above the first note, one per note, when the caller knows
+   * where the voicing really sits.
+   *
+   * Without it the notes are read as an ascending stack — each note that fails
+   * to rise wraps into the next octave — which is the only thing bare pitch
+   * classes can support. A library voicing declares its octaves, and a
+   * declared tenth needs a window two octaves wide where the stack rule would
+   * size one for a third and crop the top note off the keyboard.
+   */
+  octaveOffsets?: number[];
 }
 
 export interface LayoutResult {
@@ -86,7 +97,8 @@ export function calculateLayout(
   notes: string[],
   options: LayoutOptions = {}
 ): LayoutResult {
-  const { padding = 1, startingNote, spanFrom, spanTo } = options;
+  const { padding = 1, startingNote, spanFrom, spanTo, octaveOffsets } = options;
+  const hasOffsets = octaveOffsets != null && octaveOffsets.length === notes.length;
 
   // Explicit starting note: anchor the keyboard there
   if (startingNote) {
@@ -103,9 +115,15 @@ export function calculateLayout(
       // the previous wraps into the next octave (matches voicing rotation).
       const anchorWhiteIdx = WHITE_NOTE_ORDER.indexOf(anchorKey);
       const indices: number[] = [];
-      for (const w of whiteKeys) {
-        let idx = WHITE_NOTE_ORDER.indexOf(w);
-        if (indices.length === 0) {
+      for (let i = 0; i < whiteKeys.length; i++) {
+        let idx = WHITE_NOTE_ORDER.indexOf(whiteKeys[i]);
+        if (hasOffsets) {
+          // A declared placement: seven white keys to the octave, counted from
+          // the first note, whose own octave is the frame.
+          idx += 7 * octaveOffsets![i];
+          if (i === 0) while (idx < anchorWhiteIdx) idx += 7;
+          else idx += indices[0] - WHITE_NOTE_ORDER.indexOf(whiteKeys[0]);
+        } else if (indices.length === 0) {
           // First note: place relative to anchor (must be >= anchor)
           while (idx < anchorWhiteIdx) idx += 7;
         } else {
@@ -161,17 +179,21 @@ export function calculateLayout(
   // the previous one (in white-key index) wraps into the next octave.
   const whiteKeys = notes.map(nearestWhiteKey);
   const ascending: number[] = [];
-  for (const w of whiteKeys) {
-    let idx = WHITE_NOTE_ORDER.indexOf(w);
-    if (ascending.length > 0) {
+  for (let i = 0; i < whiteKeys.length; i++) {
+    let idx = WHITE_NOTE_ORDER.indexOf(whiteKeys[i]);
+    if (hasOffsets) {
+      // A declared placement, so no wrapping is inferred: the offsets already
+      // say which octave each note is in, seven white keys apart.
+      idx += 7 * octaveOffsets![i];
+    } else if (ascending.length > 0) {
       const lastIdx = ascending[ascending.length - 1];
       while (idx <= lastIdx) idx += 7;
     }
     ascending.push(idx);
   }
 
-  const minAsc = ascending[0];
-  const maxAsc = ascending[ascending.length - 1];
+  const minAsc = Math.min(...ascending);
+  const maxAsc = Math.max(...ascending);
 
   let startIdx = minAsc - padding;
   let endIdx = maxAsc + padding;

@@ -11,7 +11,7 @@ import {
   FLAT_TO_SHARP, WHITE_NOTE_ORDER, PC_SEMITONES,
 } from "@pepperhorn/chordl-core";
 import type { ProgressionChord } from "@pepperhorn/chordl-core";
-import { findVoicing, voicingPitchClasses, mapToVoicingQuality, realizeVoicingFull } from "@pepperhorn/chordl-voicings";
+import { findVoicing, voicingPitchClasses, voicingOctaveOffsets, mapToVoicingQuality, realizeVoicingFull } from "@pepperhorn/chordl-voicings";
 import type { Hand as VoicingHand } from "@pepperhorn/chordl-voicings";
 import { ChordGroup } from "./ChordGroup";
 import { CardHeading, CardFooter } from "./CardHeading";
@@ -81,6 +81,15 @@ function describeAvailableDegrees(root: string, notes: string[]): string {
 function isChordProps(props: ChordProps | KeyboardProps): props is ChordProps {
   return "chord" in props;
 }
+
+/**
+ * Widest playable hand span (max ~19 semitones = octave + fifth, plus
+ * headroom): a voicing wider than this from its bass note gets a note folded
+ * down an octave rather than drawn as an unplayable stretch. Exported so
+ * tests can assert against the real value instead of a copied literal that
+ * could drift out of sync with it.
+ */
+export const MAX_SPAN_SEMITONES = 28;
 
 export function PianoChord(props: ChordProps | KeyboardProps) {
   if (!isChordProps(props)) {
@@ -457,6 +466,21 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
 
   let { notes } = resolved;
   let voicingHandHints: VoicingHand[] | undefined;
+  /**
+   * Where the library says each note sits, in whole octaves above the first.
+   *
+   * A library entry's intervals place its notes; the pitch classes below are
+   * that placement with the octaves thrown away. Reading them back off the
+   * note letters — bump an octave whenever the letter fails to rise — draws
+   * whatever the letters happen to imply, which for a "tenth" shell is the
+   * major third inside it. So the octaves travel alongside the classes, and
+   * every view that places a note prefers them.
+   *
+   * Only the library path has them. A chord's own notes, an inversion and the
+   * algorithmic shapes carry no octave information at all — their ordered
+   * pitch classes *are* the voicing — and they keep the ascending-stack rule.
+   */
+  let voicingOffsets: number[] | undefined;
 
   // If a style hint is present, try the voicing library for richer voicings
   if (parsed.styleHint) {
@@ -467,6 +491,7 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
         const pitchClasses = voicingPitchClasses(resolved.root, voicing);
         if (pitchClasses.length > 0) {
           notes = pitchClasses;
+          voicingOffsets = voicingOctaveOffsets(resolved.root, voicing);
           voicingHandHints = voicing.hands;
         }
       }
@@ -516,6 +541,10 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
     }
     if (idx > 0) {
       notes = [...notes.slice(idx), ...notes.slice(0, idx)];
+      // A rotation asks for a different bottom note, which is a different
+      // placement from the one the library declared. Nothing is left to
+      // preserve, so the ascending stack takes over again.
+      voicingOffsets = undefined;
     }
   }
 
@@ -528,6 +557,15 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
     }
     expanded.push(oneOctave[0]); // final tonic
     notes = expanded;
+    // The arpeggio repeats the shape across octaves; the declared placement
+    // describes one statement of it and no longer indexes this list. This is
+    // currently belt-and-suspenders rather than load-bearing: `notes.length`
+    // has already grown past `voicingOffsets.length` by the time this runs,
+    // so every `hasDeclaredOffsets` check downstream would reject the stale
+    // offsets on its own (measured: 0 of 4547 rendered rows depend on this
+    // line). Kept because it is correct, and because it stops meaning the
+    // same thing the moment the lengths could ever match again by accident.
+    voicingOffsets = undefined;
   }
 
   // Compute degree labels for chords (jazz roman numerals).
@@ -594,8 +632,7 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
 
   // Helper: compute octave-qualified notes from pitch classes and a base octave.
   // After initial ascending assignment, folds notes down to keep the voicing
-  // within a playable hand span (max ~19 semitones = octave + fifth).
-  const MAX_SPAN_SEMITONES = 28;
+  // within a playable hand span — see MAX_SPAN_SEMITONES above.
 
   /**
    * Assign ascending octaves *without* touching spelling — this feeds the staff,
@@ -607,9 +644,16 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
    * `norm.replace("#", "")` trick, which only strips sharps — "Bb" survives it
    * intact, is not a white note, and would index -1 on every flat.
    */
-  const computeOctaveQualified = (pitchClasses: string[], baseOctave: number): string[] => {
-    // Step 1: naive ascending octave assignment
-    const octaves = ascendingOctaves(pitchClasses, baseOctave);
+  const computeOctaveQualified = (
+    pitchClasses: string[],
+    baseOctave: number,
+    offsets?: number[],
+  ): string[] => {
+    // Step 1: octave assignment. A declared placement wins — the ascending
+    // walk is what a caller falls back on when nothing knows better.
+    const octaves = offsets && offsets.length === pitchClasses.length
+      ? offsets.map((o) => baseOctave + o)
+      : ascendingOctaves(pitchClasses, baseOctave);
     const assigned = pitchClasses.map((n, i) => ({ name: n, octave: octaves[i] }));
 
     // Step 2: compact — fold notes down an octave if span exceeds playable
@@ -835,11 +879,22 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
   // keep original note names for display (e.g. "Bb" not "A#").
   const keyboardNotes = notes.map(normalizeNote);
 
+  // A declared placement only still applies if it is index-parallel to the
+  // final `notes` — a rotation or an arpeggio expansion already cleared
+  // `voicingOffsets` above when they changed what `notes` holds, but this is
+  // the single check every consumer below shares, matching `auto-layout.ts`'s
+  // own `hasOffsets`.
+  const hasDeclaredOffsets = voicingOffsets != null && voicingOffsets.length === notes.length;
+
   const layout = calculateLayout(keyboardNotes, {
     padding: layoutPadding,
     startingNote,
     spanFrom: parsed.spanFrom,
     spanTo: parsed.spanTo,
+    // A declared tenth needs a window wide enough to hold it. Left to the
+    // ascending-stack rule the layout sizes the third instead and the top
+    // note falls off the right-hand edge of the keyboard.
+    octaveOffsets: hasDeclaredOffsets ? voicingOffsets : undefined,
   });
 
   const chordShift = parsed.chordOctaveShift ?? 0;
@@ -864,15 +919,27 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
     // ones the staff assigns or "Both" draws two different voicings.
     const whiteIndices = notes.map(diatonicStep);
 
+    // The offsets term is currently inert on its own: a declared placement
+    // whose octaves are all 0 doesn't occur in the library today, and by the
+    // time an arpeggio or rotation would desync `voicingOffsets` from
+    // `notes`, `hasDeclaredOffsets` above already reads false. Measured: 0 of
+    // 4547 rendered rows depend on this term rather than on `chordOctave` or
+    // the wrap check. Kept and guarded correctly regardless, since a future
+    // declared placement of all-zero offsets is otherwise valid input.
     const needsOctaveQual = layout.chordOctave > 0 ||
+      (hasDeclaredOffsets && voicingOffsets!.some((o) => o !== 0)) ||
       whiteIndices.some((idx, i) => i > 0 && idx <= whiteIndices[i - 1]);
 
     if (needsOctaveQual) {
-      // Step 1: naive ascending octave assignment — the same walk the staff
-      // runs, over the same spellings, so the two views cannot disagree.
-      // Without the shift: these octaves index keys on the keyboard, and the
-      // keyboard no longer moves. The shift lives in the labels and the staff.
-      const octaves = ascendingOctaves(notes, Math.max(layout.chordOctave, 0));
+      // Step 1: octave assignment — the same rule the staff runs, over the
+      // same spellings and the same declared placement, so the two views
+      // cannot disagree. Without the shift: these octaves index keys on the
+      // keyboard, and the keyboard no longer moves. The shift lives in the
+      // labels and the staff.
+      const base = Math.max(layout.chordOctave, 0);
+      const octaves = hasDeclaredOffsets
+        ? voicingOffsets!.map((o) => base + o)
+        : ascendingOctaves(notes, base);
       const assigned = keyboardNotes.map((n, i) => ({ note: n, octave: octaves[i] }));
 
       // Step 2: compact — fold notes down if span exceeds playable range
@@ -997,7 +1064,7 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
   });
 
   // Octave-qualified notes for staff notation — use absolute octave (4), not keyboard-relative
-  const staffOctaveNotes = computeOctaveQualified(notes, 4 + chordShift);
+  const staffOctaveNotes = computeOctaveQualified(notes, 4 + chordShift, hasDeclaredOffsets ? voicingOffsets : undefined);
 
   currentNotes = notes;
   if (display === "staff") {
