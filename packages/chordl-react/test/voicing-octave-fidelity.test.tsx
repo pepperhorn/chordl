@@ -109,7 +109,12 @@ describe("nothing else moves", () => {
       "shell-min7-tenth",
       "spread-madd9",
     ]);
-    expect(VOICING_LIBRARY.length - moved.length).toBe(63);
+    // 64, not 63: the piano experience-levels plan's Task 3 added
+    // "power-5-shell" ([0,7]) to VOICING_LIBRARY, a genuinely new entry
+    // whose declared placement matches the ascending stack (root+fifth, no
+    // octave surprise), so it lands in "everything else" rather than in the
+    // `moved` list above.
+    expect(VOICING_LIBRARY.length - moved.length).toBe(64);
   });
 
   // No test for "the other 63 entries draw exactly as the stack drew them":

@@ -10,8 +10,9 @@ import {
 import {
   generateVariants,
   mapToVoicingQuality,
+  selectVoicingsForExperience,
 } from "@pepperhorn/chordl-voicings";
-import type { VoicingVariant } from "@pepperhorn/chordl-voicings";
+import type { VoicingVariant, ExperienceLevel } from "@pepperhorn/chordl-voicings";
 import { exportSingleZip, exportAllZip, downloadBlob } from "../audio/zip-export";
 import type { ZipVariant } from "../audio/zip-export";
 
@@ -33,6 +34,14 @@ export interface VoicingVariantToggleProps {
   title?: string;
   subheading?: string;
   footerText?: string;
+  /**
+   * Difficulty filter on the generated variants — "can I play this yet".
+   * Mirrors `GuitarChordPanel`'s `level` prop: this component draws no
+   * control of its own for it, the host owns the value (`dev/App.tsx`'s level
+   * radios, for one), and it defaults to "established" so an embedder that
+   * doesn't pass it sees today's unfiltered behaviour.
+   */
+  level?: ExperienceLevel;
 }
 
 const LABELS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -52,6 +61,7 @@ export function VoicingVariantToggle({
   title,
   subheading,
   footerText,
+  level = "established",
 }: VoicingVariantToggleProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [totalCount, setTotalCount] = useState(3);
@@ -107,29 +117,66 @@ export function VoicingVariantToggle({
     setTotalCount(3);
   }
 
-  // If we couldn't resolve or only have 1 variant, just render PianoChord directly
+  // Cumulative level filter over the generated variants — see
+  // selectVoicingsForExperience's own comments for the widen-rather-than-empty
+  // contract. Computed unconditionally (before the early return below) because
+  // a widened selection can arise even when there is only one variant — a
+  // single-variant list ranked above the requested level still has to widen
+  // to serve it — and that path needs the same notice the multi-variant path
+  // gets, not silence.
+  const selection = useMemo(
+    () => selectVoicingsForExperience(variants, level),
+    [variants, level],
+  );
+  const visible = selection.indices;
+
+  const label = resolved?.parsed.chordName ?? chord;
+  const filterNotice = selection.widenedFrom
+    ? `No ${selection.widenedFrom} voicing for ${label} — showing ${selection.level} instead.`
+    : null;
+
+  // If we couldn't resolve or only have 1 variant, just render PianoChord
+  // directly — but still surface the widening notice above it. `resolved` is
+  // guaranteed non-null whenever `variants.length` is 1 (an empty `variants`
+  // list, the `!resolved` case, always fails `selectVoicingsForExperience`'s
+  // own `variants.length === 0` guard before setting `widenedFrom`), so
+  // `label` above is safe to use here too.
   if (!resolved || variants.length <= 1) {
     return (
-      <PianoChord
-        chord={chord}
-        format={format}
-        theme={theme}
-        highlightColor={highlightColor}
-        scale={scale}
-        display={display}
-        uiTheme={uiTheme}
-        title={title}
-        subheading={subheading}
-        footerText={footerText}
-        onVariation={onVariation}
-        renderVariationExtras={renderVariationExtras}
-        voicingId="default"
-        chordIndex={chordIndex ?? 0}
-      />
+      <div className="voicing-variant-toggle voicing-variant-toggle-single" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.5rem" }}>
+        {filterNotice && (
+          <div className="voicing-variant-notice" style={{ textAlign: "center", color: "var(--text-muted)", fontSize: "0.8rem" }}>
+            {filterNotice}
+          </div>
+        )}
+        <PianoChord
+          chord={chord}
+          format={format}
+          theme={theme}
+          highlightColor={highlightColor}
+          scale={scale}
+          display={display}
+          uiTheme={uiTheme}
+          title={title}
+          subheading={subheading}
+          footerText={footerText}
+          onVariation={onVariation}
+          renderVariationExtras={renderVariationExtras}
+          voicingId="default"
+          chordIndex={chordIndex ?? 0}
+        />
+      </div>
     );
   }
 
-  const active = variants[Math.min(activeIndex, variants.length - 1)];
+  // The displayed variant's index into the full `variants` array. Indices
+  // stay indices into the full list (never a pre-filtered slice) so a click
+  // on visible variant "B" always reports the same number regardless of
+  // which level is active — the same discipline `GuitarChordPanel` follows
+  // for its position toggle.
+  const rawActive = Math.min(activeIndex, variants.length - 1);
+  const activeIdx = visible.includes(rawActive) ? rawActive : visible[0] ?? rawActive;
+  const active = variants[activeIdx];
 
   // Extract display modifiers from the original prompt so all variants
   // inherit them (midi note names, fingering, note name size, etc.).
@@ -189,8 +236,11 @@ export function VoicingVariantToggle({
   }, [resolved]);
 
   // Build the chord string for the active variant, preserving display modifiers.
+  // Gated on `activeIdx`, not the raw `activeIndex` state: the level filter
+  // can push the displayed variant off index 0 even while the click-state
+  // itself is still sitting at 0 (nothing has been clicked yet).
   let chordString = chord;
-  if (activeIndex > 0) {
+  if (activeIdx > 0) {
     const baseChord = resolved.parsed.chordName ?? chord;
     if (active.source === "inversion") {
       // Use "starting on X" instead of inversion number to avoid
@@ -223,7 +273,7 @@ export function VoicingVariantToggle({
         const zipVariants: ZipVariant[] = variants.map((v, i) => ({
           label: v.label,
           notes: v.notes,
-          svgElement: i === activeIndex ? getSvgElement() : null,
+          svgElement: i === activeIdx ? getSvgElement() : null,
         }));
         const blob = await exportAllZip(chordName, zipVariants);
         downloadBlob(blob, `${chordName.replace(/[^a-zA-Z0-9]/g, "_")}_all.zip`);
@@ -233,7 +283,7 @@ export function VoicingVariantToggle({
     } finally {
       onExportStatus?.("idle");
     }
-  }, [resolved, active, activeIndex, variants, getSvgElement, onExportStatus]);
+  }, [resolved, active, activeIdx, variants, getSvgElement, onExportStatus]);
 
   return (
     <div className="voicing-variant-toggle" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.75rem" }}>
@@ -252,23 +302,35 @@ export function VoicingVariantToggle({
           footerText={footerText}
           onVariation={onVariation}
           renderVariationExtras={renderVariationExtras}
-          voicingId={variants[activeIndex]?.label ?? "default"}
+          voicingId={variants[activeIdx]?.label ?? "default"}
           chordIndex={chordIndex ?? 0}
         />
       </div>
 
-      {/* Variant toggle row */}
+      {filterNotice && (
+        <div className="voicing-variant-notice" style={{ textAlign: "center", color: "var(--text-muted)", fontSize: "0.8rem" }}>
+          {filterNotice}
+        </div>
+      )}
+
+      {/* Variant toggle row. Iterates `visible` (indices into the full
+          `variants` array the level filter selected) rather than `variants`
+          itself, so a level that excludes some variants shrinks the row
+          without renumbering the ones still in it relative to their
+          underlying index — the click handler still reports that index. */}
       <div className="variant-toggle-row" style={{
         display: "flex",
         alignItems: "flex-start",
         gap: 6,
         justifyContent: "center",
       }}>
-        {variants.map((v, i) => (
+        {visible.map((i, shown) => {
+          const v = variants[i];
+          return (
           <button
             key={v.id}
             className="variant-pill"
-            data-active={i === activeIndex}
+            data-active={i === activeIdx}
             onClick={() => setActiveIndex(i)}
             style={{
               display: "flex",
@@ -276,20 +338,20 @@ export function VoicingVariantToggle({
               alignItems: "center",
               gap: 3,
               padding: "12px 22px 10px",
-              border: i === activeIndex ? "1px solid transparent" : "1px solid var(--btn-border)",
+              border: i === activeIdx ? "1px solid transparent" : "1px solid var(--btn-border)",
               borderRadius: 10,
-              background: i === activeIndex ? "var(--pill-active-bg)" : "var(--pill-bg)",
-              color: i === activeIndex ? "var(--pill-active-text)" : "var(--text-muted)",
-              boxShadow: i === activeIndex ? "0 1px 6px var(--pill-active-shadow)" : "none",
+              background: i === activeIdx ? "var(--pill-active-bg)" : "var(--pill-bg)",
+              color: i === activeIdx ? "var(--pill-active-text)" : "var(--text-muted)",
+              boxShadow: i === activeIdx ? "0 1px 6px var(--pill-active-shadow)" : "none",
               cursor: "pointer",
               fontFamily: "inherit",
               fontSize: "1.2rem",
-              fontWeight: i === activeIndex ? 600 : 500,
+              fontWeight: i === activeIdx ? 600 : 500,
               transition: "all 0.2s ease",
               minWidth: 64,
             }}
           >
-            <span>{LABELS[i]}</span>
+            <span>{LABELS[shown]}</span>
             <span className="variant-pill-label" style={{
               fontSize: "0.78rem",
               fontWeight: 400,
@@ -302,7 +364,8 @@ export function VoicingVariantToggle({
               {v.label}
             </span>
           </button>
-        ))}
+          );
+        })}
 
         {/* + button — hide when all variants exhausted */}
         {variants.length >= totalCount && <button
