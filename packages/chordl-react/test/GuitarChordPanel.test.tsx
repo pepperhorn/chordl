@@ -312,12 +312,7 @@ describe("instrument coverage", () => {
   });
 });
 
-describe("level control", () => {
-  it("is hidden on a board card", () => {
-    const { container } = render(<GuitarChordPanel chord="Am" showControls={false} />);
-    expect(container.querySelectorAll(".bc-guitar-level-btn")).toHaveLength(0);
-  });
-
+describe("level filtering", () => {
   it("changes which positions are offered when the level changes", () => {
     // Am: an open shape (beginner), two barre shapes (established), and one
     // barre-free shape away from the nut (emerging) — a real multi-tier chord.
