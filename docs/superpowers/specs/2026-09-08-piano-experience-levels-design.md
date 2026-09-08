@@ -45,6 +45,8 @@ A voicing is **beginner** when all of:
 
 It is **emerging** when every pitch class is either one of the chord's own defining tones — at any octave, so a doubling is free — or a natural 9th. Note count and span are unbounded at this rung.
 
+"Defining tones" means the root, third, fifth and seventh, and nothing else. The implementation makes this precise: a voicing is established when its pitch-class set contains 1, 5 or 9, or contains two members of any one of the tertian families (`[3,4]`, `[6,7,8]`, `[10,11]`). So a 6th, an 11th and a diminished seventh all read as tensions rather than as chord tones, and `C6`, `Cdim7`, `Cadd11` and `C7sus4` are established. That was considered and kept: a sixth and an eleventh are colours beyond the basic triad-and-seventh vocabulary, and admitting them would have meant deciding, from semitones alone, whether a 9 is a chord's own sixth or a thirteenth over a seventh — a distinction `levelForVoicing` has no way to make, since it never sees the chord's identity.
+
 Otherwise it is **established**.
 
 Two consequences worth stating, because both look like bugs and are not:

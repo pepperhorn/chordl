@@ -663,6 +663,21 @@ const addedToneAndPower: VoicingEntry[] = [
 
   // --- 5 / no3 (1 5) ---
   {
+    id: "power-5-shell",
+    name: "Power Chord (shell)",
+    quality: "5",
+    // Root and fifth, nothing else. The 3-note form [0,7,12] spans exactly a
+    // twelfth — the two pitch classes are 5 and 7 semitones apart, so any
+    // three octave-transposed picks span two gaps summing to 12 — which puts
+    // every 3-note spelling one semitone past the beginner bound. Two notes
+    // is not a compromise here; it is the only shape that can be beginner.
+    // Placed before power-5 (below): findVoicing/generateVariants keep only
+    // the first entry per (quality, style), and both are style Shell, so a
+    // second position would make this one unreachable.
+    intervals: [0, 7],
+    tags: { era: "Modal", style: "Shell" },
+  },
+  {
     id: "power-5",
     name: "Power Chord (5)",
     quality: "5",

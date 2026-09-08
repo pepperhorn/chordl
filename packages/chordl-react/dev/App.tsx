@@ -1436,6 +1436,7 @@ export function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExpo
               chord={(octaveShift === 0 ? input : `${input} chord ${octaveShift > 0 ? "up" : "down"} ${Math.abs(octaveShift)} octave${Math.abs(octaveShift) > 1 ? "s" : ""}`) + detailsModifiers}
               theme={theme} format={keyFormat} scale={scale} display={displayMode}
               highlightColor={theme === "simple" ? highlightColor : undefined} uiTheme={uiTheme}
+              level={level}
               title={title || undefined}
               subheading={subheading || undefined}
               footerText={footerText || undefined}

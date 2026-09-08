@@ -5,9 +5,9 @@ import { InteractiveInput } from "../dev/App";
 /**
  * Coverage for the guitar experience-level radio group that moved into the
  * annotations row (previously GuitarChordPanel's own pill toggle, deleted in
- * this branch). Nothing exercised it directly before: `LevelControl` had no
- * test of its own, and the panel-level tests only drive the `level` prop by
- * hand.
+ * #56, already on main before this branch). Nothing exercised it directly
+ * before: `LevelControl` had no test of its own, and the panel-level tests
+ * only drive the `level` prop by hand.
  */
 
 function levelRadio(container: HTMLElement, label: "Beginner" | "Emerging" | "Established") {
@@ -86,6 +86,44 @@ describe("InteractiveInput level control", () => {
     fireEvent.click(levelRadio(container, "Established"));
     await waitFor(() => {
       expect(container.querySelectorAll(".bc-guitar-position-btn").length).toBe(4);
+    });
+  });
+
+  it("clicking a radio changes the piano voicings shown, in Keyboard mode too", async () => {
+    // Proves the control is no longer inert on the piano side (Task 6 of the
+    // piano-experience-levels plan) — until now this radio only ever drove
+    // GuitarChordPanel. Default display mode is already "keyboard", so no
+    // display toggling is needed here, unlike the guitar case above.
+    //
+    // "Cmaj7 rootless style" forces slot A to the Rootless Type A library
+    // entry (level emerging) ahead of two plain inversions of the resolved
+    // notes (level beginner — a core maj7 stays within the beginner span in
+    // every rotation). That mix is what makes Beginner narrower than
+    // Emerging/Established here; see VoicingVariantToggle.experience.test.tsx
+    // for why a plain chord name like "C7" would not do this (every rotation
+    // of a core-quality chord lands on the same rung).
+    const { container, getByPlaceholderText } = render(
+      <InteractiveInput uiTheme="light" showOptions={false} onToggleOptions={() => {}} />,
+    );
+    fireEvent.change(getByPlaceholderText(/tell me what chord/i), {
+      target: { value: "Cmaj7 rootless style" },
+    });
+
+    // Default level is "emerging" (see the first test above), which already
+    // matches all 3 generated variants (the library entry is itself emerging,
+    // and beginner matches cumulatively within it).
+    await waitFor(() => {
+      expect(container.querySelectorAll(".variant-pill").length).toBe(3);
+    });
+
+    fireEvent.click(levelRadio(container, "Beginner"));
+    await waitFor(() => {
+      expect(container.querySelectorAll(".variant-pill").length).toBe(2);
+    });
+
+    fireEvent.click(levelRadio(container, "Established"));
+    await waitFor(() => {
+      expect(container.querySelectorAll(".variant-pill").length).toBe(3);
     });
   });
 });

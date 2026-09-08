@@ -25,3 +25,13 @@ export type {
   RealizedNote,
   VoicingVariant,
 } from "./types.js";
+export {
+  levelForVoicing,
+  isCoreQuality,
+  selectVoicingsForExperience,
+  EXPERIENCE_LADDER,
+  CORE_TEMPLATES,
+} from "./experience.js";
+export type { ExperienceLevel, VoicingSelection } from "./experience.js";
+export { spellingsFor } from "./spellings.js";
+export { diatonicStep } from "./diatonic-step.js";
