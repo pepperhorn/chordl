@@ -1,4 +1,4 @@
-import { BOARD_CARD_SIZES, BOARD_DISPLAY_MODES, BOARD_ICON_PREFIXES, BOARD_ITEM_KINDS, isTextCard } from "./types.js";
+import { BOARD_CARD_SIZES, BOARD_DISPLAY_MODES, BOARD_EXPERIENCE_LEVELS, BOARD_ICON_PREFIXES, BOARD_ITEM_KINDS, isTextCard } from "./types.js";
 import type {
   BoardCardSize,
   BoardDisplayMode,
@@ -83,6 +83,15 @@ export async function exportBoardJson(state: BoardState): Promise<string> {
       if (it.size !== undefined) renderConfig.size = it.size;
       if (it.instrument !== undefined) renderConfig.instrument = it.instrument;
       if (it.position !== undefined) renderConfig.position = it.position;
+      // `level` is deliberately absent here, unlike every other field above
+      // it: today every card that reaches this point has `showControls={false}`
+      // in the renderer, which bypasses the level filter entirely, so `level`
+      // affects nothing about the drawn image and does not belong in a cache
+      // key. That stops being true the moment a renderer actually reads
+      // `level` (the piano voicing this field is stored for) — at that point
+      // the cache key for every existing card silently becomes wrong (two
+      // different levels of the same chord would collide on one cached
+      // image) unless this line is added then, not before.
       let cacheKey: string | undefined;
       try {
         // `nl` is optional on the type so a text card is constructible; a chord
@@ -122,6 +131,18 @@ function parseSize(value: unknown): BoardCardSize | undefined {
 
 function parseKind(value: unknown): BoardItemKind | undefined {
   return BOARD_ITEM_KINDS.includes(value as BoardItemKind) ? (value as BoardItemKind) : undefined;
+}
+
+/**
+ * Unlike `instrument`, an unrecognised `level` isn't left for a consuming
+ * panel to fall back on — nothing downstream actually does that: it reaches
+ * `LevelControl`'s `checked` comparison (no radio checked) and
+ * `selectForExperience`'s user-facing "showing X instead" string (a nonsense
+ * value in a sentence a player reads) unguarded. So it's validated here,
+ * against the same rungs chordl-guitar's `ExperienceLevel` defines.
+ */
+function parseLevel(value: unknown): string | undefined {
+  return typeof value === "string" && BOARD_EXPERIENCE_LEVELS.includes(value) ? value : undefined;
 }
 
 /** Only a real boolean: truthy-coercing `"false"` or `0` invents a layout. */
@@ -186,6 +207,7 @@ export function importBoardJson(text: string): BoardState {
       display: parseDisplayMode(raw.display),
       instrument: typeof raw.instrument === "string" && raw.instrument ? raw.instrument : undefined,
       position: parsePosition(raw.position),
+      level: parseLevel(raw.level),
       icon: parseIcon(raw.icon),
       image: parseImage(raw.image),
       size: parseSize(raw.size),

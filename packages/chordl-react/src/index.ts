@@ -25,8 +25,8 @@ export type { VerovioFont, RenderMeiOptions } from "./verovio";
 export type { GuitarChordProps } from "./components/GuitarChord";
 export { GuitarChordPanel } from "./components/GuitarChordPanel";
 export type { GuitarChordPanelProps } from "./components/GuitarChordPanel";
-/** Re-exported so consumers can name the type `GuitarChordPanelProps` uses. */
-export type { InstrumentId } from "@pepperhorn/chordl-guitar";
+/** Re-exported so consumers can name the types `GuitarChordPanelProps` uses. */
+export type { InstrumentId, ExperienceLevel } from "@pepperhorn/chordl-guitar";
 export type { ChordGroupProps } from "./components/ChordGroup";
 export type { ProgressionViewProps, GroupMode } from "./components/ProgressionView";
 

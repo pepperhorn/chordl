@@ -4,11 +4,11 @@
 
 ### Added
 
-- **Experience levels for guitar/ukulele shapes (`@pepperhorn/chordl-guitar`, `@pepperhorn/chordl-react`).** Every looked-up shape now carries a rung on a `beginner` → `emerging` → `established` ladder — "can I play this yet" — derived from its facts (open/barre/position) or, for top-3 voicings, from the shape itself. New in `chordl-guitar`: `EXPERIENCE_LADDER`, `levelForFacts`, `levelForTop3`, `selectForExperience` and `selectForResult` (cumulative level matching with shape-class refinement, relaxing one rung at a time rather than showing nothing), and a required `levels: ExperienceLevel[]` field on `GuitarChordResult` plus a required `level` on `StaticPreset`. `GuitarChordPanel` (`chordl-react`) gains `level`/`onLevelChange` props and a Beginner/Emerging/Established toggle next to the instrument switch, and a new `frets` prop lets a host request a wider fret window than the shape's own floor.
+- **Experience levels for guitar/ukulele shapes (`@pepperhorn/chordl-guitar`, `@pepperhorn/chordl-react`).** Every looked-up shape now carries a rung on a `beginner` → `emerging` → `established` ladder — "can I play this yet" — derived from its facts (open/barre/position) or, for top-3 voicings, from the shape itself. New in `chordl-guitar`: `EXPERIENCE_LADDER`, `levelForFacts`, `levelForTop3`, `selectForExperience` and `selectForResult` (cumulative level matching with shape-class refinement, relaxing one rung at a time rather than showing nothing), and a required `levels: ExperienceLevel[]` field on `GuitarChordResult` plus a required `level` on `StaticPreset`. `GuitarChordPanel` (`chordl-react`) gains a host-driven `level` prop — it draws no control of its own — and a new `frets` prop lets a host request a wider fret window than the shape's own floor. The demo app (`dev/App.tsx`) supplies the control: a Beginner/Emerging/Established radio group in the annotations row.
 
 ### Changed
 
-- **The "Hide barre shapes" switch is gone, replaced by the level toggle.** The one-off barre filter documented under the 2026-09-01 release no longer exists as a control; its job — offering an easier alternative shape rather than showing nothing — is now done more generally by the Beginner/Emerging/Established level toggle above, which also covers position-on-the-neck, not just barres.
+- **The "Hide barre shapes" switch is gone, replaced by the level control.** The one-off barre filter documented under the 2026-09-01 release no longer exists as a control; its job — offering an easier alternative shape rather than showing nothing — is now done more generally by the Beginner/Emerging/Established level control above, which also covers position-on-the-neck, not just barres.
 
 ## 2026-09-01 — first six-package release
 

@@ -469,6 +469,40 @@
 
       .annotation-option-group label { white-space: nowrap; }
 
+      /* Guitar experience-level radios, first in the annotations row. Reuses
+         .control-item/.control-label/.control-content (the same
+         label-over-content layout every other control in the row uses) so it
+         lines up with its row-mates in `.interactive-controls-line`, which is
+         `align-items: stretch` — `.control-content`'s `flex: 1` is what
+         vertically centres a control's content against a taller neighbour,
+         and a bespoke class here without it would sit high. The bespoke
+         classes below are only what a plain <fieldset>/<legend> need reset
+         (default border/margin/padding) plus the radio row's own gap and
+         font, not a parallel copy of the shared layout. */
+      .level-control {
+        margin: 0;
+        padding: 0;
+        border: 0;
+      }
+
+      .level-control-legend {
+        padding: 0;
+      }
+
+      .level-control-options {
+        gap: 10px;
+        font-size: 0.8rem;
+        color: var(--text-muted);
+      }
+
+      .level-control-options label {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        white-space: nowrap;
+        cursor: pointer;
+      }
+
       .fingering-values {
         display: flex;
         gap: 4px;

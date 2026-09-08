@@ -23,7 +23,14 @@ import {
 } from "@pepperhorn/chordl-board";
 import type { BoardDisplayMode, BoardItem } from "@pepperhorn/chordl-board";
 import type { StaffGlyphSet, ChordSheetData } from "../src";
-import type { InstrumentId, UIThemeMode } from "../src";
+// InstrumentId and ExperienceLevel come from chordl-guitar, but are named
+// here via ../src's re-export rather than importing that package directly —
+// the same reason GuitarChordPanelProps itself uses them: a consumer of this
+// file shouldn't need a dependency on chordl-guitar just to name its types.
+// `import type` erases entirely at build time regardless, so this costs
+// nothing towards keeping the guitar panel's lazy chunk (see above) out of
+// the main bundle.
+import type { ExperienceLevel, InstrumentId, UIThemeMode } from "../src";
 import { SHOW_HINTS, HINT_SPEED } from "../src/config";
 import { HINTS } from "./hints";
 import packageMetadata from "../package.json";
@@ -277,6 +284,47 @@ function AnnotationControl({
         )}
       </div>
     </div>
+  );
+}
+
+const LEVEL_OPTIONS: { value: ExperienceLevel; label: string }[] = [
+  { value: "beginner", label: "Beginner" },
+  { value: "emerging", label: "Emerging" },
+  { value: "established", label: "Established" },
+];
+
+/**
+ * Guitar experience-level radios, in the annotations control row alongside
+ * Note names / Degrees / Fingering. Not an `AnnotationControl`: those are
+ * on/off toggles with a size select, the wrong shape for a three-way choice,
+ * and — unlike its row-mates — this control is meaningful in both display
+ * modes (piano voicings will read it in a later PR), so it never greys out
+ * and takes no `disabled` prop.
+ */
+function LevelControl({
+  level,
+  onChange,
+}: {
+  level: ExperienceLevel;
+  onChange: (level: ExperienceLevel) => void;
+}) {
+  return (
+    <fieldset className="control-item level-control">
+      <legend className="control-label level-control-legend">Level</legend>
+      <div className="control-content level-control-options">
+        {LEVEL_OPTIONS.map((option) => (
+          <label key={option.value}>
+            <input
+              type="radio"
+              name="level"
+              checked={level === option.value}
+              onChange={() => onChange(option.value)}
+            />{" "}
+            {option.label}
+          </label>
+        ))}
+      </div>
+    </fieldset>
   );
 }
 
@@ -576,6 +624,10 @@ export function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExpo
   // "Add to board" can record the exact shape on screen.
   const [guitarInstrument, setGuitarInstrument] = useState<InstrumentId>("guitar");
   const [guitarPosition, setGuitarPosition] = useState(0);
+  // Experience level: the guitar panel used to draw its own beginner/emerging/
+  // established toggle; it now lives here, in the annotations control row, so
+  // it can eventually drive the piano voicing too.
+  const [level, setLevel] = useState<ExperienceLevel>("emerging");
 
   // Card text and annotation controls are separate from NL input. Annotation
   // toggles get serialized into the chord string passed downstream so existing
@@ -684,9 +736,15 @@ export function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExpo
       display: displayMode,
       instrument: isGuitar ? guitarInstrument : undefined,
       position: isGuitar ? guitarPosition : undefined,
+      // Unlike instrument/position, stored unconditionally rather than
+      // isGuitar-gated: it's meaningless to the keyboard/staff renderer today,
+      // but the piano voicing is expected to read it in a later PR, and a
+      // card made in Keyboard mode now shouldn't need a migration once that
+      // lands.
+      level,
     };
   }, [input, octaveShift, detailsModifiers, title, subheading, footerText,
-      displayMode, guitarInstrument, guitarPosition]);
+      displayMode, guitarInstrument, guitarPosition, level]);
 
   // A text card is text, and deliberately nothing else: no `nl`, no `display`,
   // no instrument. `updateItem` merges a patch, so a chord key that appeared
@@ -883,6 +941,15 @@ export function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExpo
     setDisplayMode(item.display ?? "keyboard");
     setGuitarInstrument((item.instrument as InstrumentId | undefined) ?? "guitar");
     setGuitarPosition(item.position ?? 0);
+    // A card with no stored level predates the level control entirely — it
+    // was drawn under no filter at all, at any display mode (piano cards will
+    // read this too, once they start filtering). Level matching is
+    // cumulative, so "established" matches every rung and is therefore
+    // exactly equivalent to "no filter" — unlike "emerging", which would
+    // exclude whatever this card's stored `position` actually is and drift
+    // the shape (and the persisted `position`) out from under the user the
+    // moment they open it to edit something else entirely.
+    setLevel((item.level as ExperienceLevel | undefined) ?? "established");
     setEditingItemId(item.id);
     setEditPulseKey((k) => k + 1);
     setInputPulsing(false);
@@ -1257,6 +1324,7 @@ export function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExpo
         </div>
         </div>
         <div className="interactive-controls-line interactive-controls-line-annotations">
+          <LevelControl level={level} onChange={setLevel} />
           <AnnotationControl
             label="Note names"
             active={showNoteNames}
@@ -1355,6 +1423,7 @@ export function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExpo
                 onInstrumentChange={setGuitarInstrument}
                 position={guitarPosition}
                 onPositionChange={setGuitarPosition}
+                level={level}
                 scale={scale}
                 uiTheme={uiTheme}
                 title={title || undefined}

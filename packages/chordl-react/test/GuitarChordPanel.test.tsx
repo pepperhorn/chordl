@@ -312,18 +312,16 @@ describe("instrument coverage", () => {
   });
 });
 
-describe("level control", () => {
-  it("is hidden on a board card", () => {
-    const { container } = render(<GuitarChordPanel chord="Am" showControls={false} />);
-    expect(container.querySelectorAll(".bc-guitar-level-btn")).toHaveLength(0);
-  });
-
+describe("level filtering", () => {
   it("changes which positions are offered when the level changes", () => {
     // Am: an open shape (beginner), two barre shapes (established), and one
     // barre-free shape away from the nut (emerging) — a real multi-tier chord.
-    const { container } = render(<GuitarChordPanel chord="Am" />);
+    // The panel no longer has its own level toggle — a host drives `level` —
+    // so this drives the prop directly, the way `dev/App.tsx`'s radio group
+    // now does.
+    const { container, rerender } = render(<GuitarChordPanel chord="Am" level="established" />);
     const established = positionButtons(container).length;
-    fireEvent.click(within(container).getByRole("button", { name: "Beginner" }));
+    rerender(<GuitarChordPanel chord="Am" level="beginner" />);
     const beginner = positionButtons(container).length;
     // Am has only one beginner-tier shape, so the toggle row (which needs >1
     // visible placement to appear at all) disappears entirely.
