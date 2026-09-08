@@ -28,6 +28,20 @@ export const EXPERIENCE_LADDER: ExperienceLevel[] = [
  * `min7` is deliberately absent. It has beginner shells today only by
  * accident of sharing the maj7/dom7 shell shapes, and whether a beginner is
  * offered a minor seventh is an open question — see the spec.
+ *
+ * Being in this list is necessary but not sufficient for a library entry to
+ * rank beginner: `isCoreQuality` only asks whether the pitch-class *set*
+ * matches, not whether the voicing sounds every tone in it. maj7, dom7 and
+ * sus4 are all here, yet not one library entry for any of them ranks
+ * beginner — every maj7/dom7/sus4 entry in `library.ts` is a shell, rootless,
+ * drop or spread voicing, and each of those deliberately omits or displaces
+ * some core tone (that is what makes it a shell rather than a close triad),
+ * so `isCoreQuality` correctly says no. A beginner still gets an easy
+ * root-position maj7/dom7/sus4 in the app — `generateVariants`' inversion
+ * path builds one from the close pitch classes directly and never touches
+ * this library, so it ranks beginner on its own stacked semitones instead.
+ * Measured: 2 of the library's 73 entries rank beginner (`close-sus2` and
+ * `power-5-shell`); see `experience-corpus.test.ts`.
  */
 export const CORE_TEMPLATES: number[][] = [
   [0, 4, 7],      // major
