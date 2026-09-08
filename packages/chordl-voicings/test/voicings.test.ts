@@ -776,10 +776,15 @@ describe("mapToVoicingQuality — root and fifth", () => {
     expect(mapToVoicingQuality("no3")).toBe("5");
   });
 
-  it("voices it as root, fifth and octave", () => {
+  it("voices it as root and fifth, the only beginner-eligible shape", () => {
+    // findVoicing/generateVariants keep only the first entry per
+    // (quality, style); power-5-shell is deliberately placed before power-5
+    // (both style Shell) so this two-note shell — the only 3-note-or-fewer
+    // voicing of "5" that fits inside the beginner span bound — is the one
+    // an app caller actually reaches. See the experience-ladder design.
     const v = findVoicing("5");
     expect(v).toBeTruthy();
-    expect(v!.intervals).toEqual([0, 7, 12]);
+    expect(v!.intervals).toEqual([0, 7]);
   });
 });
 

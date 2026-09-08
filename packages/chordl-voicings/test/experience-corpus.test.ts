@@ -11,7 +11,7 @@ describe("the library under the experience rule", () => {
     expect(counts.beginner + counts.emerging + counts.established).toBe(VOICING_LIBRARY.length);
     expect(counts).toMatchInlineSnapshot(`
       {
-        "beginner": 1,
+        "beginner": 2,
         "emerging": 40,
         "established": 31,
       }

@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { levelForVoicing, isCoreQuality } from "../src/experience.js";
+import { VOICING_LIBRARY } from "../src/library.js";
 
 describe("isCoreQuality", () => {
   it("recognises the core set and its inversions", () => {
@@ -59,5 +60,17 @@ describe("levelForVoicing", () => {
   it("puts a genuine alteration at established", () => {
     expect(levelForVoicing([0, 4, 10, 15])).toBe("established");  // #9 over a dom7
     expect(levelForVoicing([4, 10, 21, 25, 28])).toBe("established");
+  });
+
+  it("gives the power chord a beginner voicing", () => {
+    const shell = VOICING_LIBRARY.find((e) => e.id === "power-5-shell");
+    expect(shell).toBeDefined();
+    expect(shell!.intervals).toEqual([0, 7]);
+    expect(levelForVoicing(shell!.intervals)).toBe("beginner");
+  });
+
+  it("cannot make a three-note power chord beginner", () => {
+    // Structural, not a choice: [0,7,12] spans exactly 12, one past the bound.
+    expect(levelForVoicing([0, 7, 12])).not.toBe("beginner");
   });
 });
