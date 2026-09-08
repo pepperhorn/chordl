@@ -939,7 +939,15 @@ export function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExpo
     setDisplayMode(item.display ?? "keyboard");
     setGuitarInstrument((item.instrument as InstrumentId | undefined) ?? "guitar");
     setGuitarPosition(item.position ?? 0);
-    setLevel((item.level as ExperienceLevel | undefined) ?? "emerging");
+    // A card with no stored level predates the level control entirely — it
+    // was drawn under no filter at all, at any display mode (piano cards will
+    // read this too, once they start filtering). Level matching is
+    // cumulative, so "established" matches every rung and is therefore
+    // exactly equivalent to "no filter" — unlike "emerging", which would
+    // exclude whatever this card's stored `position` actually is and drift
+    // the shape (and the persisted `position`) out from under the user the
+    // moment they open it to edit something else entirely.
+    setLevel((item.level as ExperienceLevel | undefined) ?? "established");
     setEditingItemId(item.id);
     setEditPulseKey((k) => k + 1);
     setInputPulsing(false);
