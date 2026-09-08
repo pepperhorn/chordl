@@ -355,8 +355,11 @@ export function voicingPitchClasses(
  *
  * Octaves are counted the way MIDI counts them, incrementing at C, which is
  * also how the keyboard numbers its own octaves and how the staff reads a
- * note name. So the offsets can be added to any of the three views' base
- * octave and all three land in the same place.
+ * note name — the last of those holds only because `spellForKey` never
+ * emits `Cb` or `B#`, the two spellings where a note's letter and its pitch
+ * octave part ways (see the `lhBassNote` comment in `PianoChord.tsx`). So the
+ * offsets can be added to any of the three views' base octave and all three
+ * land in the same place.
  */
 export function voicingOctaveOffsets(
   root: string,

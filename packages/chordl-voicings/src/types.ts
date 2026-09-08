@@ -105,6 +105,14 @@ export interface VoicingVariant {
    * variants carry no octave information at all — their ordered pitch classes
    * *are* the voicing — so the field is absent and a renderer stacks them
    * ascending, as it always has.
+   *
+   * Nothing in this repo reads this field back off a `VoicingVariant` —
+   * `VoicingVariantToggle` (`chordl-react`) rebuilds a chord string from the
+   * chosen variant and lets `PianoChord` re-resolve it, picking offsets up
+   * from `voicingOctaveOffsets` there instead. It is populated here as an
+   * affordance for external consumers of this published package who build
+   * their own renderer from a `VoicingVariant` directly; don't go looking for
+   * an internal reader of it.
    */
   octaveOffsets?: number[];
   handHints?: Hand[];            // Per-note hand assignments from library
