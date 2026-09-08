@@ -11,7 +11,7 @@ import {
   FLAT_TO_SHARP, WHITE_NOTE_ORDER, PC_SEMITONES,
 } from "@pepperhorn/chordl-core";
 import type { ProgressionChord } from "@pepperhorn/chordl-core";
-import { findVoicing, voicingPitchClasses, mapToVoicingQuality, realizeVoicingFull } from "@pepperhorn/chordl-voicings";
+import { findVoicing, voicingPitchClasses, voicingOctaveOffsets, mapToVoicingQuality, realizeVoicingFull } from "@pepperhorn/chordl-voicings";
 import type { Hand as VoicingHand } from "@pepperhorn/chordl-voicings";
 import { ChordGroup } from "./ChordGroup";
 import { CardHeading, CardFooter } from "./CardHeading";
@@ -457,6 +457,21 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
 
   let { notes } = resolved;
   let voicingHandHints: VoicingHand[] | undefined;
+  /**
+   * Where the library says each note sits, in whole octaves above the first.
+   *
+   * A library entry's intervals place its notes; the pitch classes below are
+   * that placement with the octaves thrown away. Reading them back off the
+   * note letters — bump an octave whenever the letter fails to rise — draws
+   * whatever the letters happen to imply, which for a "tenth" shell is the
+   * major third inside it. So the octaves travel alongside the classes, and
+   * every view that places a note prefers them.
+   *
+   * Only the library path has them. A chord's own notes, an inversion and the
+   * algorithmic shapes carry no octave information at all — their ordered
+   * pitch classes *are* the voicing — and they keep the ascending-stack rule.
+   */
+  let voicingOffsets: number[] | undefined;
 
   // If a style hint is present, try the voicing library for richer voicings
   if (parsed.styleHint) {
@@ -467,6 +482,7 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
         const pitchClasses = voicingPitchClasses(resolved.root, voicing);
         if (pitchClasses.length > 0) {
           notes = pitchClasses;
+          voicingOffsets = voicingOctaveOffsets(resolved.root, voicing);
           voicingHandHints = voicing.hands;
         }
       }
@@ -516,6 +532,10 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
     }
     if (idx > 0) {
       notes = [...notes.slice(idx), ...notes.slice(0, idx)];
+      // A rotation asks for a different bottom note, which is a different
+      // placement from the one the library declared. Nothing is left to
+      // preserve, so the ascending stack takes over again.
+      voicingOffsets = undefined;
     }
   }
 
@@ -528,6 +548,9 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
     }
     expanded.push(oneOctave[0]); // final tonic
     notes = expanded;
+    // The arpeggio repeats the shape across octaves; the declared placement
+    // describes one statement of it and no longer indexes this list.
+    voicingOffsets = undefined;
   }
 
   // Compute degree labels for chords (jazz roman numerals).
@@ -607,9 +630,16 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
    * `norm.replace("#", "")` trick, which only strips sharps — "Bb" survives it
    * intact, is not a white note, and would index -1 on every flat.
    */
-  const computeOctaveQualified = (pitchClasses: string[], baseOctave: number): string[] => {
-    // Step 1: naive ascending octave assignment
-    const octaves = ascendingOctaves(pitchClasses, baseOctave);
+  const computeOctaveQualified = (
+    pitchClasses: string[],
+    baseOctave: number,
+    offsets?: number[],
+  ): string[] => {
+    // Step 1: octave assignment. A declared placement wins — the ascending
+    // walk is what a caller falls back on when nothing knows better.
+    const octaves = offsets && offsets.length === pitchClasses.length
+      ? offsets.map((o) => baseOctave + o)
+      : ascendingOctaves(pitchClasses, baseOctave);
     const assigned = pitchClasses.map((n, i) => ({ name: n, octave: octaves[i] }));
 
     // Step 2: compact — fold notes down an octave if span exceeds playable
@@ -840,6 +870,10 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
     startingNote,
     spanFrom: parsed.spanFrom,
     spanTo: parsed.spanTo,
+    // A declared tenth needs a window wide enough to hold it. Left to the
+    // ascending-stack rule the layout sizes the third instead and the top
+    // note falls off the right-hand edge of the keyboard.
+    octaveOffsets: voicingOffsets,
   });
 
   const chordShift = parsed.chordOctaveShift ?? 0;
@@ -865,14 +899,19 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
     const whiteIndices = notes.map(diatonicStep);
 
     const needsOctaveQual = layout.chordOctave > 0 ||
+      (voicingOffsets?.some((o) => o !== 0) ?? false) ||
       whiteIndices.some((idx, i) => i > 0 && idx <= whiteIndices[i - 1]);
 
     if (needsOctaveQual) {
-      // Step 1: naive ascending octave assignment — the same walk the staff
-      // runs, over the same spellings, so the two views cannot disagree.
-      // Without the shift: these octaves index keys on the keyboard, and the
-      // keyboard no longer moves. The shift lives in the labels and the staff.
-      const octaves = ascendingOctaves(notes, Math.max(layout.chordOctave, 0));
+      // Step 1: octave assignment — the same rule the staff runs, over the
+      // same spellings and the same declared placement, so the two views
+      // cannot disagree. Without the shift: these octaves index keys on the
+      // keyboard, and the keyboard no longer moves. The shift lives in the
+      // labels and the staff.
+      const base = Math.max(layout.chordOctave, 0);
+      const octaves = voicingOffsets && voicingOffsets.length === notes.length
+        ? voicingOffsets.map((o) => base + o)
+        : ascendingOctaves(notes, base);
       const assigned = keyboardNotes.map((n, i) => ({ note: n, octave: octaves[i] }));
 
       // Step 2: compact — fold notes down if span exceeds playable range
@@ -997,7 +1036,7 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
   });
 
   // Octave-qualified notes for staff notation — use absolute octave (4), not keyboard-relative
-  const staffOctaveNotes = computeOctaveQualified(notes, 4 + chordShift);
+  const staffOctaveNotes = computeOctaveQualified(notes, 4 + chordShift, voicingOffsets);
 
   currentNotes = notes;
   if (display === "staff") {
