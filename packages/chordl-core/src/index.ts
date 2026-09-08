@@ -2,7 +2,7 @@
 export type {
   Format, TextSize, NoteNameMode, WhiteNote, NoteName, ColorTheme,
   ParsedChordRequest, KeyDescriptor, HandBracket, NotesGroup,
-  DisplayMode, DisplayDefaults, ChordData, SectionData, ChordSheetData,
+  DisplayMode, DisplayDefaults, ChordData, SectionData, ChordSheetData, PlaybackInstrument,
 } from "./types.js";
 
 export { computeKeyboard, computeSvgDimensions } from "./engine/keyboard-layout.js";
@@ -79,7 +79,12 @@ export { processChordRequest } from "./pipeline.js";
 export type { ChordRequest, ChordResult } from "./pipeline.js";
 
 // ChordSheet
-export { resolveDefaults, chordRef, SYSTEM_DEFAULTS } from "./chord-sheet/defaults.js";
+export {
+  resolveDefaults, chordRef, SYSTEM_DEFAULTS,
+  MIN_ARPEGGIO_BPM, MAX_ARPEGGIO_BPM, DEFAULT_ARPEGGIO_BPM,
+  DEFAULT_PLAYBACK_HIGHLIGHT_COLOR, isPlaybackColor,
+  normalizeArpeggioBpm, normalizePlaybackHighlightColor,
+} from "./chord-sheet/defaults.js";
 export { CHORD_SHEET_SCHEMA_VERSION, validateVersion } from "./chord-sheet/schema.js";
 export { encodeChordSheet, decodeChordSheet } from "./chord-sheet/codec.js";
 

@@ -13,7 +13,11 @@ vi.mock("../src/verovio", () => ({
     // NO width/height. The mock has to match, or the component's sizing path
     // is never the one production takes.
     return Promise.resolve(
-      `<svg viewBox="0 0 140 120" overflow="visible"><g class="staff"></g></svg>`,
+      `<svg viewBox="0 0 140 120" overflow="visible"><g class="staff">` +
+      `<g id="chordl-playback-note-0" class="note"><path /></g>` +
+      `<g id="chordl-playback-note-1" class="note"><path /></g>` +
+      `<g id="chordl-playback-note-2" class="note"><path /></g>` +
+      `</g></svg>`,
     );
   },
 }));
@@ -61,6 +65,16 @@ describe("StaffNotation (verovio)", () => {
     const svg = container.querySelector("svg.bc-staff");
     expect(svg?.getAttribute("aria-label")).toBe("Staff notation: Cmaj7");
   });
+
+  it("paints the active engraved note by playback index", async () => {
+    const { container } = render(
+      <StaffNotation notes={["C", "E", "G"]} activePlaybackIndices={[1]} playbackHighlightColor="#ff0088" />,
+    );
+    await waitFor(() => {
+      expect(container.querySelector("#chordl-playback-note-1")?.classList.contains("bc-staff-note-active")).toBe(true);
+    });
+    expect(container.querySelector("svg.bc-staff")?.getAttribute("style")).toContain("#ff0088");
+  });
 });
 
 describe("buildMei", () => {
@@ -90,6 +104,12 @@ describe("buildMei", () => {
     const { mei } = buildMei([], { octaveQualifiedNotes: ["C:4", "E:4", "G:4"] });
     expect(mei).toContain('oct="4"');
     expect((mei.match(/<note /g) ?? []).length).toBe(3);
+  });
+
+  it("gives engraved notes stable playback ids", () => {
+    const { mei } = buildMei(["C", "E", "G"], { rhOctave: 4 });
+    expect(mei).toContain('xml:id="chordl-playback-note-0"');
+    expect(mei).toContain('xml:id="chordl-playback-note-2"');
   });
 
   it("chooses bass clef when notes sit low", () => {

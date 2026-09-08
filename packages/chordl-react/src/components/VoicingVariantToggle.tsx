@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useCallback } from "react";
-import type { DisplayMode, OnVariation, RenderVariationExtras } from "../types";
+import type { DisplayMode, OnVariation, RenderVariationExtras, PlaybackSpecSnapshot } from "../types";
 import type { UIThemeMode } from "../config";
 import { PianoChord } from "./PianoChord";
 import {
@@ -42,6 +42,9 @@ export interface VoicingVariantToggleProps {
    * doesn't pass it sees today's unfiltered behaviour.
    */
   level?: ExperienceLevel;
+  arpeggioBpm?: number;
+  playbackHighlightColor?: string;
+  onPlaybackSpecChange?: (spec: PlaybackSpecSnapshot) => void;
 }
 
 const LABELS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -62,6 +65,9 @@ export function VoicingVariantToggle({
   subheading,
   footerText,
   level = "established",
+  arpeggioBpm,
+  playbackHighlightColor,
+  onPlaybackSpecChange,
 }: VoicingVariantToggleProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [totalCount, setTotalCount] = useState(3);
@@ -132,7 +138,6 @@ export function VoicingVariantToggle({
   );
   const visible = selection.indices;
 
-  const label = resolved?.parsed.chordName ?? chord;
   // A widen can fire (`selection.widenedFrom` set) while removing nothing to
   // look at: if every variant already ranks at or below the level it widened
   // to, `selection.indices` ends up covering the whole `variants` array, and
@@ -144,7 +149,7 @@ export function VoicingVariantToggle({
   const widenedVisibly =
     selection.widenedFrom != null && selection.indices.length < variants.length;
   const filterNotice = widenedVisibly
-    ? `No ${selection.widenedFrom} voicing for ${label} — showing ${selection.level} instead.`
+    ? `No ${selection.widenedFrom} voicings, but you can try some of these more advanced spellings …`
     : null;
 
   // If we couldn't resolve or only have 1 variant, just render PianoChord
@@ -152,7 +157,6 @@ export function VoicingVariantToggle({
   // guaranteed non-null whenever `variants.length` is 1 (an empty `variants`
   // list, the `!resolved` case, always fails `selectVoicingsForExperience`'s
   // own `variants.length === 0` guard before setting `widenedFrom`), so
-  // `label` above is safe to use here too.
   if (!resolved || variants.length <= 1) {
     return (
       <div className="voicing-variant-toggle voicing-variant-toggle-single" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.5rem" }}>
@@ -172,6 +176,9 @@ export function VoicingVariantToggle({
           title={title}
           subheading={subheading}
           footerText={footerText}
+          arpeggioBpm={arpeggioBpm}
+          playbackHighlightColor={playbackHighlightColor}
+          onPlaybackSpecChange={onPlaybackSpecChange}
           onVariation={onVariation}
           renderVariationExtras={renderVariationExtras}
           voicingId="default"
@@ -312,6 +319,9 @@ export function VoicingVariantToggle({
           title={title}
           subheading={subheading}
           footerText={footerText}
+          arpeggioBpm={arpeggioBpm}
+          playbackHighlightColor={playbackHighlightColor}
+          onPlaybackSpecChange={onPlaybackSpecChange}
           onVariation={onVariation}
           renderVariationExtras={renderVariationExtras}
           voicingId={variants[activeIdx]?.label ?? "default"}

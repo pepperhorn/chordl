@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { SVGuitarChord } from "svguitar";
 import type { Chord, ChordSettings } from "svguitar";
+import { DEFAULT_PLAYBACK_HIGHLIGHT_COLOR } from "@pepperhorn/chordl-core";
 import { useUITheme } from "../ui-theme";
 
 export interface GuitarChordProps {
@@ -14,6 +15,11 @@ export interface GuitarChordProps {
   scale?: number;
   className?: string;
   style?: CSSProperties;
+  /** Active physical string, zero-based in low-to-high instrument order. */
+  activeString?: number;
+  /** Active physical strings; used by block playback to paint the full voicing. */
+  activeStrings?: number[];
+  playbackHighlightColor?: string;
 }
 
 let keyCounter = 0;
@@ -50,7 +56,11 @@ export function GuitarChord({
   scale = 1,
   className,
   style,
+  activeString,
+  activeStrings,
+  playbackHighlightColor = DEFAULT_PLAYBACK_HIGHLIGHT_COLOR,
 }: GuitarChordProps) {
+  const resolvedActiveStrings = activeStrings ?? (activeString === undefined ? [] : [activeString]);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [painted, setPainted] = useState(false);
   const { tokens: ui } = useUITheme();
@@ -123,18 +133,35 @@ export function GuitarChord({
   return (
     <div
       className={`bc-guitar-chord ${className ?? ""}`.trim()}
+      data-active-strings={resolvedActiveStrings.join(" ")}
       style={{
         position: "relative",
         width: "100%",
         maxWidth: 260 * scale,
         minHeight: painted ? undefined : 160 * scale,
         ...style,
+        ["--bc-playback-highlight" as string]: playbackHighlightColor,
       }}
     >
       <style>{`
         @keyframes bc-render-loading-pulse {
           0%, 100% { opacity: 0.25; transform: translateY(0); }
           50% { opacity: 1; transform: translateY(-2px); }
+        }
+        @keyframes bc-guitar-note-pulse {
+          from { filter: drop-shadow(0 0 1px var(--bc-playback-highlight)); }
+          to { filter: drop-shadow(0 0 7px var(--bc-playback-highlight)); }
+        }
+        ${Array.from({ length: 8 }, (_, index) => `
+          .bc-guitar-chord[data-active-strings~="${index}"] .bc-playback-string-${index} {
+            fill: var(--bc-playback-highlight) !important;
+            stroke: var(--bc-playback-highlight) !important;
+            opacity: 1 !important;
+            animation: bc-guitar-note-pulse 0.35s ease-out infinite alternate;
+          }
+        `).join("")}
+        @media (prefers-reduced-motion: reduce) {
+          .bc-guitar-chord [class*="bc-playback-string-"] { animation: none !important; }
         }
       `}</style>
       <div ref={containerRef} className="bc-guitar-chord__canvas" />

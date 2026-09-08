@@ -138,6 +138,7 @@ function BoardCardContent({
         instrument={item.instrument as InstrumentId | undefined}
         position={item.position}
         showControls={false}
+        showPlayback={false}
         // A fretboard is a tall, narrow graphic and caps at 260*scale, so at the
         // board's scale it floats small beside a keyboard that fills its card.
         // Render it larger so the two land at comparable optical widths.

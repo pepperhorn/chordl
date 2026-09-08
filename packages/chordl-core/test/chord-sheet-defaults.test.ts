@@ -44,6 +44,26 @@ describe("resolveDefaults", () => {
     expect(result.scale).toBe(0.8);       // not clobbered
     expect(result.padding).toBe(3);
   });
+
+  it("resolves playback settings chord then section then sheet then system", () => {
+    expect(resolveDefaults().arpeggioBpm).toBe(120);
+    expect(resolveDefaults().playbackHighlightColor).toBe("#f59e0b");
+    const resolved = resolveDefaults(
+      { arpeggioBpm: 90, playbackHighlightColor: "#123456" },
+      { arpeggioBpm: 140 },
+      { playbackHighlightColor: "#abcdef" },
+    );
+    expect(resolved.arpeggioBpm).toBe(140);
+    expect(resolved.playbackHighlightColor).toBe("#abcdef");
+  });
+
+  it("falls back for invalid playback settings", () => {
+    const resolved = resolveDefaults(
+      { arpeggioBpm: 0, playbackHighlightColor: "red" },
+    );
+    expect(resolved.arpeggioBpm).toBe(120);
+    expect(resolved.playbackHighlightColor).toBe("#f59e0b");
+  });
 });
 
 describe("chordRef", () => {

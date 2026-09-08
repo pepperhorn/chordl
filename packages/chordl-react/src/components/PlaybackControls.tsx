@@ -1,10 +1,13 @@
-import { useState, useCallback } from "react";
-import { playBlock, playArpeggiated, toAscendingNotes } from "../audio/playback";
+import { useState, useCallback, useEffect, useMemo } from "react";
+import { noteToMidi, toAscendingNotes } from "../audio/playback";
+import { usePlaybackTimeline } from "../audio/usePlaybackTimeline";
+import type { PlaybackInstrument } from "@pepperhorn/chordl-core";
+import { DEFAULT_ARPEGGIO_BPM } from "@pepperhorn/chordl-core";
+import type { PlaybackSpecSnapshot } from "../types";
 import { downloadMidi } from "@pepperhorn/chordl-core";
 import { downloadSvg, downloadPng } from "../audio/svg-export";
 import { copyDottlClip } from "../audio/dottl-export";
 import { useUITheme } from "../ui-theme";
-import { arpeggioDelayMs } from "../config";
 
 interface PlaybackControlsProps {
   notes: string[];
@@ -17,6 +20,10 @@ interface PlaybackControlsProps {
   chordName: string;
   x: number;
   y: number;
+  arpeggioBpm?: number;
+  instrument?: PlaybackInstrument;
+  onActiveChange?: (indices: number[]) => void;
+  onPlaybackSpecChange?: (spec: PlaybackSpecSnapshot) => void;
 }
 
 const ICON_SIZE = 16;
@@ -24,9 +31,15 @@ const BTN_SIZE = 22;
 const GAP = 4;
 const SECTION_GAP = 10;
 
-export function PlaybackControls({ notes, lhNotes, rhOctave, lhOctave, chordName, x, y }: PlaybackControlsProps) {
+export function PlaybackControls({
+  notes, lhNotes, rhOctave, lhOctave, chordName, x, y,
+  arpeggioBpm = DEFAULT_ARPEGGIO_BPM,
+  instrument = "acoustic_grand_piano",
+  onActiveChange,
+  onPlaybackSpecChange,
+}: PlaybackControlsProps) {
   const { tokens: ui } = useUITheme();
-  const [playing, setPlaying] = useState<"block" | "arp" | null>(null);
+  const { play, playing } = usePlaybackTimeline(onActiveChange);
 
   const lhCount = lhNotes?.length ?? 0;
   const lhOct = lhOctave ?? 2;
@@ -35,36 +48,31 @@ export function PlaybackControls({ notes, lhNotes, rhOctave, lhOctave, chordName
   const cleanNotes = notes.map((n) => n.replace(/:.*$/, ""));
   // Build playable notes: assign ascending octaves per hand so notes rise properly
   // e.g. G#, B, E with base octave 4 → G#4, B4, E5 (not E4)
-  const playableNotes = (() => {
+  const playableNotes = useMemo(() => {
     if (lhCount > 0) {
       const lhPCs = cleanNotes.slice(0, lhCount);
       const rhPCs = cleanNotes.slice(lhCount);
       return [...toAscendingNotes(lhPCs, lhOct), ...toAscendingNotes(rhPCs, rhOct)];
     }
     return toAscendingNotes(cleanNotes, rhOct);
-  })();
+  }, [cleanNotes.join("|"), lhCount, lhOct, rhOct]);
+
+  useEffect(() => {
+    onPlaybackSpecChange?.({
+      notes: playableNotes.map(noteToMidi),
+      instrument,
+    });
+  }, [instrument, onPlaybackSpecChange, playableNotes]);
 
   const handleBlock = useCallback(async () => {
     if (playing) return;
-    setPlaying("block");
-    try {
-      await playBlock(playableNotes);
-      setTimeout(() => setPlaying(null), 1500);
-    } catch {
-      setPlaying(null);
-    }
-  }, [playableNotes, playing]);
+    await play(playableNotes, { mode: "block", instrument, bpm: arpeggioBpm });
+  }, [arpeggioBpm, instrument, play, playableNotes, playing]);
 
   const handleArp = useCallback(async () => {
     if (playing) return;
-    setPlaying("arp");
-    try {
-      await playArpeggiated(playableNotes, 4, arpeggioDelayMs());
-      setTimeout(() => setPlaying(null), 1500);
-    } catch {
-      setPlaying(null);
-    }
-  }, [playableNotes, playing]);
+    await play(playableNotes, { mode: "arpeggio", instrument, bpm: arpeggioBpm });
+  }, [arpeggioBpm, instrument, play, playableNotes, playing]);
 
   const handleMidi = useCallback(() => {
     downloadMidi(notes, chordName, rhOct, lhNotes, lhOct);
@@ -191,7 +199,7 @@ export function PlaybackControls({ notes, lhNotes, rhOctave, lhOctave, chordName
       {/* Arpeggiate button */}
       {renderBtn(
         x + BTN_SIZE + GAP,
-        playing === "arp" ? ui.playbackActive : ui.playbackBg,
+        playing === "arpeggio" ? ui.playbackActive : ui.playbackBg,
         handleArp,
         "Play arpeggiated",
         btnStyle,
@@ -199,7 +207,7 @@ export function PlaybackControls({ notes, lhNotes, rhOctave, lhOctave, chordName
           <path d="M8,14 C6,11 10,9 8,7 C6,5 10,3 8,1" stroke={ui.iconFill} strokeWidth="1.8" fill="none" strokeLinecap="round" />
           <polygon points="5,3 8,0 11,3" fill={ui.iconFill} />
         </g>,
-        playing === "arp",
+        playing === "arpeggio",
       )}
 
       {/* MIDI download button */}
