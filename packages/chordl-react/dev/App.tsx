@@ -23,12 +23,14 @@ import {
 } from "@pepperhorn/chordl-board";
 import type { BoardDisplayMode, BoardItem } from "@pepperhorn/chordl-board";
 import type { StaffGlyphSet, ChordSheetData } from "../src";
-import type { InstrumentId, UIThemeMode } from "../src";
-// Type-only: the guitar panel itself is lazy-loaded (see above) to keep
-// svguitar out of the main bundle, and `import type` erases entirely at
-// build time, so naming the level control's type here doesn't pull the
-// guitar package's runtime code into this chunk.
-import type { ExperienceLevel } from "@pepperhorn/chordl-guitar";
+// InstrumentId and ExperienceLevel come from chordl-guitar, but are named
+// here via ../src's re-export rather than importing that package directly —
+// the same reason GuitarChordPanelProps itself uses them: a consumer of this
+// file shouldn't need a dependency on chordl-guitar just to name its types.
+// `import type` erases entirely at build time regardless, so this costs
+// nothing towards keeping the guitar panel's lazy chunk (see above) out of
+// the main bundle.
+import type { ExperienceLevel, InstrumentId, UIThemeMode } from "../src";
 import { SHOW_HINTS, HINT_SPEED } from "../src/config";
 import { HINTS } from "./hints";
 import packageMetadata from "../package.json";
