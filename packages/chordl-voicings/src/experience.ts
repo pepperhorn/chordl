@@ -1,3 +1,5 @@
+import type { VoicingVariant } from "./types.js";
+
 /**
  * How hard a voicing is to play, as the three rungs `chordl-guitar` already
  * uses. Duplicated from that package rather than shared: `chordl-guitar`
@@ -72,9 +74,13 @@ const NATURAL_NINTH = 2;
 /**
  * The chromatic variants that occupy the same tertian slot. A chord has at
  * most one third, one fifth and one seventh — it cannot be minor and major at
- * the same time — so when two members of the same family both sound, only
- * one of them is *the* chord's tone for that slot and the other is a genuine
- * alteration, not a second copy of the same thing.
+ * the same time — so if two members of one family both sound, one of them is
+ * necessarily a genuine alteration on top of the chord's own tone for that
+ * slot, not a second copy of it: `[0,4,10,15]`, a real #9 over a dom7, has
+ * both a b3 (pc 3, the altered ninth) and a natural 3 (pc 4, the chord's own
+ * third) — two members of the third family — which is what makes it
+ * established, full stop, regardless of which one a listener would call
+ * "the" third.
  *
  * The root (pc 0) needs no family: nothing else stands in for it.
  */
@@ -83,11 +89,6 @@ const DEGREE_FAMILIES: number[][] = [
   [6, 7, 8],  // fifth: diminished, perfect, augmented
   [10, 11],   // seventh: minor or major
 ];
-
-/** The lowest raw offset at which `pc` sounds, among possibly-negative or
- * spread offsets. Used to decide which family member "got there first". */
-const lowestOffsetOf = (semitones: number[], pc: number): number =>
-  Math.min(...semitones.filter((s) => ((s % 12) + 12) % 12 === pc));
 
 /**
  * @param semitones - Offsets from the root, which may be negative (drop
@@ -104,33 +105,23 @@ export function levelForVoicing(semitones: number[]): ExperienceLevel {
   }
 
   // Emerging admits the chord's own defining tones at any octave — a doubling
-  // is free — plus a natural 9th. "Defining" is decided per tertian slot, not
-  // per pitch class: when both a b3 and a natural 3 sound (as in a genuine
-  // #9 over a dominant, where pc 3 is really the altered ninth, not a second
-  // third), the slot goes to whichever one sounds lowest in the voicing, and
-  // the other is a tension. Without this, `[0,4,10,15]` (a real #9, pc 3
-  // arriving only after the major third pc 4 has already claimed the third
-  // slot) is indistinguishable from `[0,7,14,15]` (spread-madd9, where pc 3
-  // *is* the chord's own minor third, and 15 is just that same b3 an octave
-  // up) — both reduce to the same raw "pc 3 present" fact, and only looking
-  // at which slot got there first tells them apart.
+  // is free — plus a natural 9th, and nothing past that. A pitch class that
+  // sits in none of the three tertian families and isn't the root or the
+  // natural 9th (pc 1, 5 or 9) is never a chord's own tone under any
+  // spelling, so its presence alone is a tension that pushes the voicing to
+  // established. And within a single family, having two members present is
+  // itself the established condition — see the comment on `DEGREE_FAMILIES` —
+  // independent of which member "the chord's tone" actually is, so there is
+  // nothing left to decide once both are known to sound.
   const own = pcSet(semitones);
-  const defining = new Set<number>();
-  if (own.has(0)) defining.add(0);
-  for (const family of DEGREE_FAMILIES) {
-    const present = family.filter((pc) => own.has(pc));
-    if (present.length === 0) continue;
-    const winner = present.reduce((best, pc) =>
-      lowestOffsetOf(semitones, pc) < lowestOffsetOf(semitones, best) ? pc : best,
-    );
-    defining.add(winner);
-  }
-
-  const beyond = [...own].filter((pc) => pc !== NATURAL_NINTH && !defining.has(pc));
-  return beyond.length === 0 ? "emerging" : "established";
+  const isBareTension = (pc: number): boolean =>
+    pc !== 0 && pc !== NATURAL_NINTH && !DEGREE_FAMILIES.some((family) => family.includes(pc));
+  const hasBareTension = [...own].some(isBareTension);
+  const hasFamilyClash = DEGREE_FAMILIES.some(
+    (family) => family.filter((pc) => own.has(pc)).length >= 2,
+  );
+  return hasBareTension || hasFamilyClash ? "established" : "emerging";
 }
-
-import type { VoicingVariant } from "./types.js";
 
 export interface VoicingSelection {
   /** Indices into the input array, in input order. Never empty when input is non-empty. */
