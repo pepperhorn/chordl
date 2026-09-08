@@ -76,6 +76,59 @@ describe("levelForVoicing", () => {
   });
 });
 
+describe("generateVariants attaches a level to library-sourced variants", () => {
+  // Spec's Testing item 3: "a library entry ranks on its `intervals`, an
+  // inversion variant on its stacked pitch classes." Nothing exercised the
+  // library side of that split — deleting both `level:
+  // levelForVoicing(entry.intervals)` assignments in variant-generator.ts
+  // (the slot-A path and the by-style-loop path) left every existing test
+  // green, because an unranked variant falls back to "established" in
+  // `selectVoicingsForExperience` and the pill counts happened to match.
+  // These two assertions each depend on one of those two call sites, so
+  // deleting either one breaks a `.level` here from a concrete rung to
+  // `undefined`.
+  it("carries a level, computed from the entry's declared intervals, on both the slot-A and by-style library paths", () => {
+    // styleHint "Shell" puts shell-dom7-r7 in slot A (variant-generator.ts:112)
+    // and leaves shell-dom7-r3 — same style, so it fills the "Shell" slot in
+    // the by-style loop (variant-generator.ts:169) since only the exact
+    // slot-A id is excluded from that loop, not its whole style.
+    const variants = generateVariants("C", "dom7", ["C", "E", "G", "Bb"], 9, {
+      styleHint: "Shell",
+    });
+
+    const slotA = variants.find((v) => v.id === "shell-dom7-r7");
+    const byStyle = variants.find((v) => v.id === "shell-dom7-r3");
+    expect(slotA).toBeDefined();
+    expect(byStyle).toBeDefined();
+
+    const slotAEntry = VOICING_LIBRARY.find((e) => e.id === "shell-dom7-r7")!;
+    const byStyleEntry = VOICING_LIBRARY.find((e) => e.id === "shell-dom7-r3")!;
+    expect(slotA!.level).toBe(levelForVoicing(slotAEntry.intervals));
+    expect(byStyle!.level).toBe(levelForVoicing(byStyleEntry.intervals));
+  });
+
+  it("ranks shell-maj7-tenth on its declared tenth, not the span its two pitch classes would draw restacked", () => {
+    // shell-maj7-tenth is unreachable through generateVariants itself: the
+    // one-per-style dedup in the by-style loop always keeps shell-maj7-r7,
+    // the first "Shell"-style maj7 entry in the library. So test
+    // levelForVoicing directly on the entry — exactly what generateVariants
+    // calls it on for every library-sourced variant, per its own comment at
+    // variant-generator.ts:110-112.
+    //
+    // Its declared interval is [0, 16] — a root and a tenth. Reduced to bare
+    // pitch classes and restacked the way an inversion variant is (see
+    // `voicingOctaveOffsets`'s comment on this same entry), the two notes
+    // collapse to [0, 4] — root to a major third a full octave lower. Both
+    // happen to land on "emerging" here — neither is a core triad/seventh
+    // shape, so the beginner span bound never comes into play for either —
+    // but the value actually passed is the declared one, not the
+    // restacked one, and that is what the wiring test above pins.
+    const entry = VOICING_LIBRARY.find((e) => e.id === "shell-maj7-tenth")!;
+    expect(entry.intervals).toEqual([0, 16]);
+    expect(levelForVoicing(entry.intervals)).toBe("emerging");
+  });
+});
+
 describe("generateVariants inversions rank by the letter-stacked span they draw", () => {
   it("ranks a C#maj7 inversion by its drawn span, not its pitch-walk span", () => {
     // C#maj7 resolves to C# F G# C — its major third (E#) is spelled F, and
