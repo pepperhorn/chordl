@@ -104,10 +104,19 @@ function BoardCardContent({
   item,
   scale,
   uiTheme,
+  activePlaybackIndices,
 }: {
   item: BoardItem;
   scale?: number;
   uiTheme?: UIThemeMode;
+  /**
+   * Notes of this card's voicing that are sounding right now, by position in
+   * the card's own playback order. Undefined means "nothing sounding", which
+   * is also what an unplayed card gets — the renderers fall back to their own
+   * internal playback state when it is absent, so a card the board is not
+   * driving still highlights normally when a user plays it directly.
+   */
+  activePlaybackIndices?: number[];
 }) {
   if (isTextCard(item)) {
     return <BoardCardText item={item} uiTheme={uiTheme} />;
@@ -150,6 +159,12 @@ function BoardCardContent({
         title={item.title}
         subheading={item.subheading}
         footerText={item.footerText}
+        // `activePlaybackIndices` is deliberately not forwarded here.
+        // GuitarChordPanel highlights by *string* (`activeStrings`, an index
+        // per course on the fretboard) and takes no note-index prop at all, so
+        // there is nothing to hand it: mapping notes to strings needs the
+        // position's own string mapping, which lives in chordl-guitar. Until
+        // the panel exposes that seam, a guitar card plays without lighting up.
       />
     );
   }
@@ -166,6 +181,7 @@ function BoardCardContent({
       scale={scale}
       uiTheme={uiTheme}
       showPlayback={false}
+      activePlaybackIndices={activePlaybackIndices}
     />
   );
 }
@@ -469,6 +485,16 @@ export interface ChordBoardProps {
   uiTheme?: UIThemeMode;
   /** Render scale forwarded to each card's PianoChord. */
   scale?: number;
+  /**
+   * Which notes are sounding, per card: `{ [item.id]: indices }`, where each
+   * index is a position in that card's playback order. A player passes this
+   * while a chord rings so the card lights the notes it is playing.
+   *
+   * Keyed by id rather than by position because a board reorders — an
+   * index-keyed map would light whichever card had moved into the slot. Cards
+   * absent from the map, and text cards, are left alone.
+   */
+  activePlaybackIndices?: Record<string, number[]>;
   /** Highlights the card currently being edited (persistent blue ring). */
   editingId?: string | null;
   /** Increment to retrigger the edit-pulse animation on `editingId`. */
@@ -580,6 +606,7 @@ export function ChordBoard({
   onNew,
   uiTheme,
   scale = 0.6,
+  activePlaybackIndices,
   editingId,
   editPulseKey,
   className,
@@ -1264,6 +1291,7 @@ export function ChordBoard({
                     item={item}
                     scale={(scale ?? 1) * BOARD_CARD_SIZE_FACTORS[item.size ?? "rg"]}
                     uiTheme={uiTheme}
+                    activePlaybackIndices={activePlaybackIndices?.[item.id]}
                   />
                 </CardErrorBoundary>
               </div>
