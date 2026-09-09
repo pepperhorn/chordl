@@ -37,13 +37,23 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
     return <PianoKeyboard {...props} />;
   }
 
-  const { chord, format, theme: themeProp, highlightColor, padding, scale: scaleProp, display = "keyboard", uiTheme, showPlayback = true, showChordName, title, subheading, footerText, className, style, arpeggioBpm, playbackHighlightColor, onPlaybackSpecChange } =
+  const { chord, format, theme: themeProp, highlightColor, padding, scale: scaleProp, display = "keyboard", uiTheme, showPlayback = true, showChordName, title, subheading, footerText, className, style, arpeggioBpm, playbackHighlightColor, onPlaybackSpecChange, activePlaybackIndices: controlledActiveIndices } =
     props;
   const { onVariation, renderVariationExtras, voicingId = "default", chordIndex = 0 } = props;
   const uiCtx = resolveUITheme(uiTheme);
 
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [bothActivePlaybackIndices, setBothActivePlaybackIndices] = useState<number[]>([]);
+  /**
+   * Controlled value wins, internal state is the fallback — the same idiom as
+   * `PianoKeyboard`/`StaffNotation`, one level up. `bothActivePlaybackIndices`
+   * is the internal state here: in "both" mode the keyboard owns the transport
+   * and the staff mirrors it, so a host driving the pair replaces that link
+   * rather than racing it. A lone keyboard gets `undefined` when uncontrolled
+   * and keeps highlighting from its own playback state.
+   */
+  const keyboardActiveIndices = controlledActiveIndices
+    ?? (display === "both" ? bothActivePlaybackIndices : undefined);
   const lastReportedRef = useRef<string>("");
   const playbackSpecRef = useRef<import("../types").PlaybackSpecSnapshot | null>(null);
   const reportPlaybackSpec = useCallback((spec: import("../types").PlaybackSpecSnapshot) => {
@@ -192,6 +202,7 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
           arpeggioBpm={arpeggioBpm}
           playbackHighlightColor={playbackHighlightColor}
           onPlaybackSpecChange={reportPlaybackSpec}
+          activePlaybackIndices={controlledActiveIndices}
         />
       </UIThemeProvider>
         </div>
@@ -360,6 +371,7 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
               arpeggioBpm={arpeggioBpm}
               playbackHighlightColor={playbackHighlightColor}
               onPlaybackSpecChange={reportPlaybackSpec}
+              activePlaybackIndices={controlledActiveIndices}
               showNoteNames={parsed.showNoteNames}
               noteNameSize={parsed.noteNameSize}
               degreeSize={parsed.degreeSize}
@@ -587,7 +599,7 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
         showPlayback={opts?.showPlayback ?? showPlayback}
         arpeggioBpm={arpeggioBpm}
         playbackHighlightColor={playbackHighlightColor}
-        activePlaybackIndices={opts?.activePlaybackIndices}
+        activePlaybackIndices={controlledActiveIndices ?? opts?.activePlaybackIndices}
         onPlaybackSpecChange={reportPlaybackSpec}
         className={className}
         style={style}
@@ -797,7 +809,7 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
         arpeggioBpm={arpeggioBpm}
         playbackHighlightColor={playbackHighlightColor}
         onPlaybackSpecChange={reportPlaybackSpec}
-        activePlaybackIndices={display === "both" ? bothActivePlaybackIndices : undefined}
+        activePlaybackIndices={keyboardActiveIndices}
         onPlaybackActiveChange={display === "both" ? setBothActivePlaybackIndices : undefined}
         title={title}
         subheading={subheading}
@@ -1063,7 +1075,7 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
       arpeggioBpm={arpeggioBpm}
       playbackHighlightColor={playbackHighlightColor}
       onPlaybackSpecChange={reportPlaybackSpec}
-      activePlaybackIndices={display === "both" ? bothActivePlaybackIndices : undefined}
+      activePlaybackIndices={keyboardActiveIndices}
       onPlaybackActiveChange={display === "both" ? setBothActivePlaybackIndices : undefined}
       style={style}
     />

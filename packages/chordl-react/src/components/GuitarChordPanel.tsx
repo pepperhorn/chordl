@@ -8,7 +8,7 @@ import {
   selectForResult,
   positionToSoundingStrings,
 } from "@pepperhorn/chordl-guitar";
-import type { InstrumentId, ExperienceLevel } from "@pepperhorn/chordl-guitar";
+import type { InstrumentId, ExperienceLevel, SoundingString } from "@pepperhorn/chordl-guitar";
 import type { UIThemeMode } from "../config";
 import { resolveUITheme, UIThemeProvider } from "../ui-theme";
 import { GuitarChord } from "./GuitarChord";
@@ -74,6 +74,15 @@ export interface GuitarChordPanelProps {
   showPlayback?: boolean;
   arpeggioBpm?: number;
   playbackHighlightColor?: string;
+  /**
+   * Controlled active note indices — positions in this frame's own playback
+   * order, i.e. into the `notes` array reported by `onPlaybackSpecChange`
+   * (sounding strings only, low to high). The panel maps them onto the
+   * physical strings the fretboard paints, so a host that owns the timeline
+   * (a board playing its cards) does not need the string mapping itself.
+   * Absent it, the panel's own playback controls drive the highlight.
+   */
+  activePlaybackIndices?: number[];
   onPlaybackSpecChange?: (spec: PlaybackSpecSnapshot) => void;
 }
 
@@ -135,6 +144,26 @@ function decorateForPlayback(chord: Chord, frets: number[], barres: number[], st
 }
 
 /**
+ * Note indices → physical string indices.
+ *
+ * A frame's playback order is its sounding strings low to high, so a note
+ * index is a position in `soundingStrings` and the string it lights is that
+ * entry's `stringIndex`. Muted strings are absent from `soundingStrings`, so
+ * the two are not the same numbering — open C starts on physical string 1.
+ *
+ * Shared by the panel's own playback controls and by a host driving
+ * `activePlaybackIndices`, so the two cannot drift apart. Indices with no
+ * sounding string (a host over-counting the voicing) drop out rather than
+ * painting string 0.
+ */
+function stringsForNoteIndices(indices: number[], sounding: SoundingString[]): number[] {
+  return indices.flatMap((index) => {
+    const physicalString = sounding[index]?.stringIndex;
+    return physicalString === undefined ? [] : [physicalString];
+  });
+}
+
+/**
  * Guitar view for a chord: resolves the chord label, looks up its shapes, and
  * renders the selected fret position with an A/B/C toggle for the alternate
  * placements. Chord-only (scales / note lists fall back to a hint).
@@ -158,10 +187,11 @@ export function GuitarChordPanel({
   showPlayback,
   arpeggioBpm,
   playbackHighlightColor = DEFAULT_PLAYBACK_HIGHLIGHT_COLOR,
+  activePlaybackIndices: controlledActiveIndices,
   onPlaybackSpecChange,
 }: GuitarChordPanelProps) {
   const resolvedShowPlayback = showPlayback ?? showControls;
-  const [activeStrings, setActiveStrings] = useState<number[]>([]);
+  const [internalActiveStrings, setInternalActiveStrings] = useState<number[]>([]);
   const uiCtx = resolveUITheme(uiTheme);
   const muted = uiCtx.tokens.textMuted ?? "#888";
   const text = uiCtx.tokens.text ?? "#111";
@@ -338,6 +368,11 @@ export function GuitarChordPanel({
     return positionToSoundingStrings(result.positions[displayedIdx], cfg.openMidi);
   }, [cfg.openMidi, displayedIdx, result]);
   const soundingMidis = soundingStrings.map(({ midi }) => midi);
+  // Controlled value wins, the panel's own playback state is the fallback —
+  // the same idiom as `PianoKeyboard`/`StaffNotation`.
+  const activeStrings = controlledActiveIndices
+    ? stringsForNoteIndices(controlledActiveIndices, soundingStrings)
+    : internalActiveStrings;
   const playbackInstrument = resolved === "ukulele" ? "ukulele" : "electric_guitar_clean";
   const playbackDiagram = useMemo(() => {
     if (!placements || !result) return null;
@@ -472,10 +507,7 @@ export function GuitarChordPanel({
             arpeggioBpm={arpeggioBpm}
             instrument={playbackInstrument}
             onActiveChange={(indices) => {
-              setActiveStrings(indices.flatMap((index) => {
-                const physicalString = soundingStrings[index]?.stringIndex;
-                return physicalString === undefined ? [] : [physicalString];
-              }));
+              setInternalActiveStrings(stringsForNoteIndices(indices, soundingStrings));
             }}
           />
         )}

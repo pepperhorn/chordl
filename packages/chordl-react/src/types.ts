@@ -124,6 +124,14 @@ export interface ChordProps {
   showPlayback?: boolean;
   arpeggioBpm?: number;
   playbackHighlightColor?: string;
+  /**
+   * Controlled active note indices — positions in this chord's own playback
+   * order (the `notes` array reported by `onPlaybackSpecChange`). A host that
+   * owns the timeline (a board playing its cards) drives every renderer this
+   * component puts on screen from one clock. Absent it, the component's own
+   * playback drives its highlighting as before.
+   */
+  activePlaybackIndices?: number[];
   onPlaybackSpecChange?: (spec: PlaybackSpecSnapshot) => void;
   /** Title above the keyboard. Defaults to the resolved chord/scale name. */
   title?: string;
