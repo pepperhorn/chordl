@@ -6,9 +6,15 @@ import type { BoardItem, BoardCardSize } from "../src";
 const card = (id: string, size?: BoardCardSize, breakAfter = false): BoardItem =>
   ({ id, nl: "C", size, breakAfter });
 
-const sizeBtn = (container: HTMLElement, id: string, size: BoardCardSize) =>
-  container.querySelector<HTMLButtonElement>(
-    `[data-board-id="${id}"] .chordl-board-action-size--${size}`,
+/**
+ * The size controls moved out of the card into the floating toolbar, which
+ * exists only for the selected card — so every test here selects first, and
+ * the query is scoped to the toolbar's own `data-toolbar-for` rather than to a
+ * card that no longer contains any buttons.
+ */
+const sizeBtn = (id: string, size: BoardCardSize) =>
+  document.body.querySelector<HTMLButtonElement>(
+    `.chordl-board-card-toolbar[data-toolbar-for="${id}"] .chordl-board-action-size--${size}`,
   )!;
 
 const spanOf = (container: HTMLElement, id: string) =>
@@ -25,31 +31,47 @@ const spanOf = (container: HTMLElement, id: string) =>
  */
 describe("card size", () => {
   it("offers every size on a card", () => {
-    const { container } = render(<ChordBoard items={[card("a")]} onResize={() => {}} />);
-    const labels = [...container.querySelectorAll(".chordl-board-action-size")].map((b) => b.textContent);
+    render(
+      <ChordBoard items={[card("a")]} selectedId="a" onResize={() => {}} />,
+    );
+    const labels = [...document.body.querySelectorAll(".chordl-board-action-size")].map((b) => b.textContent);
     expect(labels).toEqual([...BOARD_CARD_SIZES]);
   });
 
   it("omits the control when the host wires no handler", () => {
-    const { container } = render(<ChordBoard items={[card("a")]} />);
-    expect(container.querySelector(".chordl-board-action-size")).toBeNull();
+    // Selected, so the toolbar is up and the absence is the missing handler
+    // rather than the missing toolbar.
+    render(<ChordBoard items={[card("a")]} selectedId="a" />);
+    expect(document.body.querySelector(".chordl-board-card-toolbar")).toBeTruthy();
+    expect(document.body.querySelector(".chordl-board-action-size")).toBeNull();
+  });
+
+  it("offers them only for the card that is selected", () => {
+    render(
+      <ChordBoard items={[card("a"), card("b")]} selectedId="a" onResize={() => {}} />,
+    );
+    expect(sizeBtn("a", "lg")).toBeTruthy();
+    expect(sizeBtn("b", "lg")).toBeFalsy();
   });
 
   it("marks the card's current size, defaulting to rg", () => {
-    const { container } = render(
-      <ChordBoard items={[card("a"), card("b", "xl")]} meta={{ columns: 4 }} onResize={() => {}} />,
+    const items = [card("a"), card("b", "xl")];
+    const { rerender } = render(
+      <ChordBoard items={items} meta={{ columns: 4 }} selectedId="a" onResize={() => {}} />,
     );
-    expect(sizeBtn(container, "a", "rg").getAttribute("aria-pressed")).toBe("true");
-    expect(sizeBtn(container, "b", "xl").getAttribute("aria-pressed")).toBe("true");
-    expect(sizeBtn(container, "b", "rg").getAttribute("aria-pressed")).toBe("false");
+    expect(sizeBtn("a", "rg").getAttribute("aria-pressed")).toBe("true");
+
+    rerender(<ChordBoard items={items} meta={{ columns: 4 }} selectedId="b" onResize={() => {}} />);
+    expect(sizeBtn("b", "xl").getAttribute("aria-pressed")).toBe("true");
+    expect(sizeBtn("b", "rg").getAttribute("aria-pressed")).toBe("false");
   });
 
   it("reports the size the user picked", () => {
     const onResize = vi.fn();
-    const { container } = render(
-      <ChordBoard items={[card("a")]} meta={{ columns: 4 }} onResize={onResize} />,
+    render(
+      <ChordBoard items={[card("a")]} meta={{ columns: 4 }} selectedId="a" onResize={onResize} />,
     );
-    fireEvent.click(sizeBtn(container, "a", "lg"));
+    fireEvent.click(sizeBtn("a", "lg"));
     expect(onResize).toHaveBeenCalledWith("a", "lg");
   });
 
@@ -70,41 +92,45 @@ describe("card size", () => {
     // Three regular cards already fill three of four columns, so the fourth
     // card can be sm, md or rg — never lg, xl or 2xl.
     const items = [card("a"), card("b"), card("c"), card("d")];
-    const { container } = render(<ChordBoard items={items} meta={{ columns: 4 }} onResize={() => {}} />);
+    render(
+      <ChordBoard items={items} meta={{ columns: 4 }} selectedId="d" onResize={() => {}} />,
+    );
 
     for (const size of ["sm", "md", "rg"] as const) {
-      expect(sizeBtn(container, "d", size).disabled, size).toBe(false);
+      expect(sizeBtn("d", size).disabled, size).toBe(false);
     }
     for (const size of ["lg", "xl", "2xl"] as const) {
-      expect(sizeBtn(container, "d", size).disabled, size).toBe(true);
+      expect(sizeBtn("d", size).disabled, size).toBe(true);
     }
   });
 
   it("offers a size that exactly fills what the row has left", () => {
-    const { container } = render(
-      <ChordBoard items={[card("a"), card("b", undefined, true)]} meta={{ columns: 4 }} onResize={() => {}} />,
+    render(
+      <ChordBoard items={[card("a"), card("b", undefined, true)]} meta={{ columns: 4 }} selectedId="a" onResize={() => {}} />,
     );
     // One neighbour on a four-column row, so this card can take the other
     // three — 2xl exactly fills what is left.
-    expect(sizeBtn(container, "a", "xl").disabled).toBe(false);
-    expect(sizeBtn(container, "a", "2xl").disabled).toBe(false);
+    expect(sizeBtn("a", "xl").disabled).toBe(false);
+    expect(sizeBtn("a", "2xl").disabled).toBe(false);
   });
 
   it("never disables the size a card already is", () => {
     // A board narrowed to 2 columns cannot hold a 2xl card, but one already
     // set to 2xl must still show which size it is.
-    const { container } = render(
-      <ChordBoard items={[card("a", "2xl")]} meta={{ columns: 2 }} onResize={() => {}} />,
+    render(
+      <ChordBoard items={[card("a", "2xl")]} meta={{ columns: 2 }} selectedId="a" onResize={() => {}} />,
     );
-    expect(sizeBtn(container, "a", "2xl").disabled).toBe(false);
-    expect(sizeBtn(container, "a", "2xl").getAttribute("aria-pressed")).toBe("true");
+    expect(sizeBtn("a", "2xl").disabled).toBe(false);
+    expect(sizeBtn("a", "2xl").getAttribute("aria-pressed")).toBe("true");
   });
 
   it("offers every size when the board has no column count", () => {
     // Without columns there is no row budget to overflow.
-    const { container } = render(<ChordBoard items={[card("a")]} onResize={() => {}} />);
+    render(
+      <ChordBoard items={[card("a")]} selectedId="a" onResize={() => {}} />,
+    );
     for (const size of BOARD_CARD_SIZES) {
-      expect(sizeBtn(container, "a", size).disabled, size).toBe(false);
+      expect(sizeBtn("a", size).disabled, size).toBe(false);
     }
   });
 

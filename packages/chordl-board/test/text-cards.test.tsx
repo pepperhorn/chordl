@@ -191,21 +191,34 @@ describe("line breaks", () => {
     expect(boundaryTripped(container)).toBe(false);
   });
 
+  /**
+   * The action row is one floating toolbar for whichever card is selected, so
+   * there is one break toggle on the board rather than one per card — it has to
+   * read back the *selected* card's state each time the selection moves.
+   */
   it("toggles the break from the card action row", () => {
     const onToggleBreak = vi.fn();
     const items = [chord("a", "C"), { ...chord("b", "Am"), breakAfter: true }];
-    const { container } = render(<ChordBoard items={items} onToggleBreak={onToggleBreak} />);
+    const { rerender } = render(
+      <ChordBoard items={items} selectedId="a" onToggleBreak={onToggleBreak} />,
+    );
 
-    const buttons = container.querySelectorAll(".chordl-board-action-break");
-    expect(buttons).toHaveLength(2);
+    const breakBtn = () => document.body.querySelectorAll(".chordl-board-action-break");
+    expect(breakBtn()).toHaveLength(1);
 
     // The toggle has to read as on/off, or a break — which is invisible by
     // design — cannot be seen at all.
-    expect(buttons[0].getAttribute("aria-pressed")).toBe("false");
-    expect(buttons[1].getAttribute("aria-pressed")).toBe("true");
-    expect(buttons[1].classList.contains("chordl-board-action-break--on")).toBe(true);
+    expect(breakBtn()[0].getAttribute("aria-pressed")).toBe("false");
+    expect(breakBtn()[0].classList.contains("chordl-board-action-break--on")).toBe(false);
 
-    fireEvent.click(buttons[0]);
+    fireEvent.click(breakBtn()[0]);
     expect(onToggleBreak).toHaveBeenCalledWith("a");
+
+    rerender(<ChordBoard items={items} selectedId="b" onToggleBreak={onToggleBreak} />);
+    expect(breakBtn()[0].getAttribute("aria-pressed")).toBe("true");
+    expect(breakBtn()[0].classList.contains("chordl-board-action-break--on")).toBe(true);
+
+    fireEvent.click(breakBtn()[0]);
+    expect(onToggleBreak).toHaveBeenLastCalledWith("b");
   });
 });
