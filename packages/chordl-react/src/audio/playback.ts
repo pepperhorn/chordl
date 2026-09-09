@@ -1,6 +1,7 @@
 import type { Soundfont } from "smplr";
 import type { PlaybackInstrument } from "@pepperhorn/chordl-core";
 import { DEFAULT_ARPEGGIO_BPM, normalizeArpeggioBpm } from "@pepperhorn/chordl-core";
+import { diatonicStep } from "../diatonic-step";
 
 export type PlaybackMode = "block" | "arpeggio";
 
@@ -80,35 +81,63 @@ async function ensureInstrument(instrument: PlaybackInstrument): Promise<Playbac
   return guarded;
 }
 
-const PC_SEMITONES: Record<string, number> = {
-  C: 0, "C#": 1, Db: 1, D: 2, "D#": 3, Eb: 3,
-  E: 4, Fb: 4, "E#": 5, F: 5, "F#": 6, Gb: 6, G: 7,
-  "G#": 8, Ab: 8, A: 9, "A#": 10, Bb: 10, B: 11, Cb: 11, "B#": 0,
+const LETTER_SEMITONES: Record<string, number> = {
+  C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11,
 };
+
+/**
+ * Semitone offset of a note name's accidentals: "#" is +1, "b" is -1, and a
+ * bare letter is 0. Read off the letter rather than looked up in a table of
+ * pitch classes, because a table loses which *letter* the note is spelled
+ * with — and the octave number belongs to the letter, not to the pitch. Cb4
+ * is the B below middle C (MIDI 59); a "Cb → 11" table reads it as B4 (71),
+ * an octave above where the staff engraves the same note. Same for B#.
+ */
+function accidentalOffset(accidentals: string): number {
+  let offset = 0;
+  for (const character of accidentals) {
+    if (character === "#") offset += 1;
+    else if (character === "b") offset -= 1;
+  }
+  return offset;
+}
 
 export function noteToMidi(note: string | number): number {
   if (typeof note === "number") return note;
-  const match = note.match(/^([A-G](?:#|b)?)(-?\d+)$/);
+  const match = note.match(/^([A-Ga-g])([#b]*)(-?\d+)$/);
   if (!match) throw new Error(`Cannot play note '${note}' without an octave`);
-  const pc = PC_SEMITONES[match[1]];
-  if (pc === undefined) throw new Error(`Unknown note '${note}'`);
-  return (Number(match[2]) + 1) * 12 + pc;
+  const letter = LETTER_SEMITONES[match[1].toUpperCase()];
+  if (letter === undefined) throw new Error(`Unknown note '${note}'`);
+  return (Number(match[3]) + 1) * 12 + letter + accidentalOffset(match[2]);
 }
 
 export function arpeggioDelayMs(bpm: number = DEFAULT_ARPEGGIO_BPM): number {
   return 60000 / (normalizeArpeggioBpm(bpm) * 4);
 }
 
-/** Assign rising octaves to pitch classes in voicing order. */
+/**
+ * Assign rising octaves to pitch classes in voicing order.
+ *
+ * The ascent is measured on the **diatonic step** — the note's letter — which
+ * is the rule the staff engraver and the keyboard already use
+ * (`ascendingOctaves`, `assignOctaves`). It used to step on the semitone here
+ * and only here, so the two rules parted company on any chromatic pair: given
+ * C, G#, Ab the staff drew 60/68/68 (Ab's letter A rises past G, so it stays
+ * in the octave) while playback sounded 60/68/80 (Ab's semitone 8 does not
+ * rise past G#'s 8, so it bumped).
+ *
+ * A name that already carries an octave is passed through untouched — the
+ * callers that resolve pitches properly hand this function finished work.
+ */
 export function toAscendingNotes(notes: string[], baseOctave: number = 4): string[] {
   let octave = baseOctave;
-  let prevSemitone = -1;
+  let prevStep = -1;
   return notes.map((note) => {
     if (/-?\d+$/.test(note)) return note;
-    const semitone = PC_SEMITONES[note];
-    if (semitone == null) return `${note}${octave}`;
-    if (prevSemitone >= 0 && semitone <= prevSemitone) octave++;
-    prevSemitone = semitone;
+    const step = diatonicStep(note);
+    if (step < 0) return `${note}${octave}`;
+    if (prevStep >= 0 && step <= prevStep) octave++;
+    prevStep = step;
     return `${note}${octave}`;
   });
 }
@@ -154,8 +183,11 @@ export async function startPlayback(
     options.bpm,
     options.duration,
   );
+  // Sound the MIDI number this module resolved, not the name it came from:
+  // the sampler parses names with its own spelling rules, and the whole point
+  // of the chain above is that one resolution reaches every consumer.
   const stops = events.map((event) => player.start({
-    note: event.note,
+    note: event.midi,
     time: event.time,
     duration: event.duration,
   }));

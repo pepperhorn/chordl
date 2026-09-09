@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useMemo } from "react";
+import { Note } from "tonal";
 import { noteToMidi, toAscendingNotes } from "../audio/playback";
 import { usePlaybackTimeline } from "../audio/usePlaybackTimeline";
 import type { PlaybackInstrument } from "@pepperhorn/chordl-core";
@@ -10,12 +11,32 @@ import { copyDottlClip } from "../audio/dottl-export";
 import { useUITheme } from "../ui-theme";
 
 interface PlaybackControlsProps {
+  /**
+   * The notes to sound, in voicing order. Prefer names that already carry
+   * their octave ("C4", "Bb3") — those pass through untouched, which is how
+   * the staff and the keyboard guarantee the button sounds what they drew.
+   * Bare pitch classes are stacked upward from the octaves below, and that
+   * fallback can only ever guess at a placement the caller already knows.
+   */
   notes: string[];
-  /** Left-hand bass notes (for MIDI export with separate clefs). */
+  /**
+   * The left hand's notes, which **must be the leading entries of `notes`**,
+   * in the same order.
+   *
+   * Only the *count* is read. It splits `notes` positionally — into the two
+   * MIDI-export tracks and for the per-hand octave fallback — so left-hand
+   * entries that sit anywhere but the front of `notes` are not rejected, they
+   * simply send the wrong notes to the wrong hand. `["C","E","G"]` with
+   * `lhNotes={["G"]}` exports C on the left-hand track, not G.
+   *
+   * Positional is deliberate: matching by name deleted every copy of a doubled
+   * note, which is how a slash chord lost the right hand's octave of its own
+   * bass note.
+   */
   lhNotes?: string[];
-  /** Right-hand playback octave (default 4). */
+  /** Octave to stack bare right-hand pitch classes from (default 3). */
   rhOctave?: number;
-  /** Left-hand bass playback octave (default 3). */
+  /** Octave to stack bare left-hand pitch classes from (default 2). */
   lhOctave?: number;
   chordName: string;
   x: number;
@@ -57,6 +78,23 @@ export function PlaybackControls({
     return toAscendingNotes(cleanNotes, rhOct);
   }, [cleanNotes.join("|"), lhCount, lhOct, rhOct]);
 
+  // Dev-only: the hands split by position, so a caller whose `lhNotes` are not
+  // the leading entries of `notes` gets silently wrong-handed output. Compared
+  // by chroma, since the two props may spell the same pitch differently (the
+  // keyboard sharpens, the staff keeps the chord's own flats).
+  useEffect(() => {
+    if (!import.meta.env.DEV || lhCount === 0) return;
+    const chroma = (n: string) => Note.chroma(n.replace(/:.*$/, "").replace(/-?\d+$/, ""));
+    const leading = cleanNotes.slice(0, lhCount).map(chroma);
+    if (lhNotes!.map(chroma).some((c, i) => c !== leading[i])) {
+      console.warn(
+        `[chordl] lhNotes must be the leading entries of notes — got lhNotes=[${lhNotes!.join(", ")}] ` +
+        `against notes=[${cleanNotes.join(", ")}]. The hands split by position, so the left-hand ` +
+        `track will carry [${cleanNotes.slice(0, lhCount).join(", ")}] instead.`,
+      );
+    }
+  }, [cleanNotes.join("|"), lhNotes?.join("|"), lhCount]);
+
   useEffect(() => {
     onPlaybackSpecChange?.({
       notes: playableNotes.map(noteToMidi),
@@ -74,9 +112,13 @@ export function PlaybackControls({
     await play(playableNotes, { mode: "arpeggio", instrument, bpm: arpeggioBpm });
   }, [arpeggioBpm, instrument, play, playableNotes, playing]);
 
+  // The exported file is a third rendering of the same chord, so it gets the
+  // same resolved pitches the speaker does — not the raw prop with the hands
+  // re-split by name, which wrote a slash chord's bass note into both tracks
+  // and put the right hand at a default octave unrelated to the engraving.
   const handleMidi = useCallback(() => {
-    downloadMidi(notes, chordName, rhOct, lhNotes, lhOct);
-  }, [notes, chordName, rhOct, lhNotes, lhOct]);
+    downloadMidi(playableNotes, chordName, rhOct, playableNotes.slice(0, lhCount), lhOct);
+  }, [playableNotes, chordName, rhOct, lhCount, lhOct]);
 
   const findParentSvg = useCallback((e: React.MouseEvent) => {
     return (e.currentTarget as SVGElement).closest("svg") as SVGSVGElement | null;

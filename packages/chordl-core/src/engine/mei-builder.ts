@@ -14,6 +14,16 @@
  */
 
 export interface MeiBuildOptions {
+  /**
+   * The notes the left hand plays, which land on the bass staff of a grand
+   * staff. **These must be the leading entries of `notes`** (and of
+   * `octaveQualifiedNotes`, when that is given), in the same order.
+   *
+   * With `octaveQualifiedNotes`, only the *count* is read: the hands split
+   * positionally, `all.slice(0, lhNotes.length)`. Passing left-hand entries
+   * that are not the leading ones therefore does not error — it silently
+   * engraves and sounds the wrong notes on the wrong hand.
+   */
   lhNotes?: string[];
   rhOctave?: number;
   lhOctave?: number;
@@ -25,6 +35,16 @@ export interface MeiBuildOptions {
 export interface MeiBuildResult {
   mei: string;
   staffMode: "treble" | "bass" | "grand";
+  /**
+   * The pitches the MEI actually carries, in playback-index order, spelled
+   * with an absolute octave ("C4", "Bb3", "Cb4").
+   *
+   * This is the single resolution of the chord. Every other view of it — the
+   * play button, the MIDI names under the keys, the exported MIDI file — reads
+   * this rather than re-deriving octaves from bare pitch classes with a rule
+   * of its own, which is what let the staff and the speaker disagree.
+   */
+  playbackNotes: string[];
 }
 
 const DIATONIC_INDEX: Record<string, number> = {
@@ -46,6 +66,11 @@ function toPitched(note: string, octave: number, playbackIndex = 0): PitchedNote
   const letter = note.charAt(0).toUpperCase();
   const accid = note.includes("#") ? "s" : note.slice(1).includes("b") ? "f" : null;
   return { letter, accid, octave, playbackIndex };
+}
+
+/** "C4", "Bb3", "Cb4" — the spelling the staff engraves, with its octave. */
+function pitchName(n: PitchedNote): string {
+  return `${n.letter}${n.accid === "s" ? "#" : n.accid === "f" ? "b" : ""}${n.octave}`;
 }
 
 function noteToMidi(n: PitchedNote): number {
@@ -95,9 +120,7 @@ function layerXml(notes: PitchedNote[]): string {
 export function buildMei(notes: string[], options: MeiBuildOptions = {}): MeiBuildResult {
   const { lhNotes, rhOctave = 4, lhOctave = 3, octaveQualifiedNotes } = options;
   const hasExplicitSplit = Boolean(lhNotes && lhNotes.length > 0);
-  // Membership by chroma (pitch class mod 12) so "Bb" and "A#" match regardless
-  // of spelling — the octave-qualified path may hand us either.
-  const lhChroma = new Set((lhNotes ?? []).map((n) => chromaOf(toPitched(n, 0))));
+  const lhCount = lhNotes?.length ?? 0;
 
   let all: PitchedNote[];
   let lhResolved: PitchedNote[];
@@ -105,12 +128,28 @@ export function buildMei(notes: string[], options: MeiBuildOptions = {}): MeiBui
 
   if (octaveQualifiedNotes) {
     all = parseOctaveQualified(octaveQualifiedNotes);
-    // Split by pitch class membership in lhNotes (octave-qualified path
-    // carries LH+RH together, LH first — same as computeStaffLayout).
-    lhResolved = all.filter((n) => lhChroma.has(chromaOf(n)));
-    rhResolved = all.filter((n) => !lhChroma.has(chromaOf(n)));
+    // The octave-qualified list carries LH+RH together, LH first, so the hands
+    // split by position. Splitting by pitch class instead put every note that
+    // merely *shared a chroma* with a left-hand note onto the bass staff: a
+    // C/G chord's own G, two octaves above the bass, was engraved down beside
+    // the bass note it was doubling.
+    lhResolved = all.slice(0, lhCount);
+    rhResolved = all.slice(lhCount);
   } else {
-    const rhInput = lhNotes ? notes.filter((n) => !lhNotes.includes(n)) : notes;
+    // Claim each left-hand note once rather than filtering out every note that
+    // matches one by name — the same rule `generateMidiFile` uses. Filtering by
+    // membership deletes an octave doubling outright: a C/G chord's own G, the
+    // one the right hand plays above the bass, shares its name with the bass
+    // note and vanished from both the engraving and the sound.
+    const unclaimed = [...(lhNotes ?? [])];
+    const rhInput = lhNotes
+      ? notes.filter((n) => {
+          const at = unclaimed.indexOf(n);
+          if (at === -1) return true;
+          unclaimed.splice(at, 1);
+          return false;
+        })
+      : notes;
     lhResolved = assignOctaves(lhNotes ?? [], lhOctave);
     rhResolved = assignOctaves(rhInput, rhOctave, lhResolved.length);
     all = [...lhResolved, ...rhResolved];
@@ -159,11 +198,9 @@ export function buildMei(notes: string[], options: MeiBuildOptions = {}): MeiBui
     `<section><measure n="1" right="invis">${staves}</measure></section>` +
     `</score></mdiv></body></music></mei>`;
 
-  return { mei, staffMode };
-}
+  const playbackNotes = [...all]
+    .sort((a, b) => a.playbackIndex - b.playbackIndex)
+    .map(pitchName);
 
-function chromaOf(n: PitchedNote): number {
-  const base = CHROMATIC_BASE[n.letter] ?? 0;
-  const acc = n.accid === "s" ? 1 : n.accid === "f" ? -1 : 0;
-  return ((base + acc) % 12 + 12) % 12;
+  return { mei, staffMode, playbackNotes };
 }

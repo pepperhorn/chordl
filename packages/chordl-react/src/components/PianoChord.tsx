@@ -710,13 +710,34 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
     const octaveGap = 1 + (parsed.chordOctaveShift ?? 0) - (parsed.bassOctaveShift ?? 0);
     // 7 white keys = 1 octave; clamp to 0 so negative gaps don't produce negative offsets
     const rhOctaveOffset = Math.max(octaveGap, 0) * 7;
-    const rhOffsets = notes.map((n) => {
+
+    // How many octaves above the right hand's base each RH note sits.
+    //
+    // The seed places the *first* note relative to the bass: above the bass
+    // letter (and so before the next C) it stays in the base octave, otherwise
+    // it has wrapped past C and takes the one above. Everything after it walks
+    // up with `ascendingOctaves`, the same diatonic rule the rest of the
+    // codebase uses.
+    //
+    // Applying the bass comparison to every note independently — which is what
+    // this did — is positional-blind: each repeat of a chord tone answers the
+    // same question the same way, so `C E G C E G C` piled three octaves of
+    // arpeggio into one and `Am7 over D` drew its E and G below the C they
+    // follow. The walk is what makes repeats climb.
+    const rhOctaveSteps = notes.length === 0 ? [] : ascendingOctaves(
+      notes,
+      WHITE_NOTE_ORDER.indexOf(normalizeNote(notes[0]).replace("#", "") as WhiteNote) > lhWhiteIdx
+        ? 0
+        : 1,
+    );
+
+    const rhOffsets = notes.map((n, i) => {
       const norm = normalizeNote(n);
       const whiteKey = norm.replace("#", "") as WhiteNote;
       const whiteIdx = WHITE_NOTE_ORDER.indexOf(whiteKey);
-      let offset = whiteIdx - lhWhiteIdx;
-      if (offset <= 0) offset += 7; // wrap within octave
-      return offset + rhOctaveOffset;
+      // White keys from the bass note up to this one: the letter distance plus
+      // seven per octave of gap and of climb.
+      return (whiteIdx - lhWhiteIdx) + 7 * rhOctaveSteps[i] + rhOctaveOffset;
     });
     const maxRhOffset = Math.max(...rhOffsets);
 
@@ -743,16 +764,9 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
     const rhBaseOctave = lhOctave + Math.max(octaveGap, 0);
 
     const lhHighlights = [`${lhNorm}:${lhOctave}`];
-    const rhHighlights = notes.map((n) => {
-      const norm = normalizeNote(n);
-      const whiteKey = norm.replace("#", "") as WhiteNote;
-      const whiteIdx = WHITE_NOTE_ORDER.indexOf(whiteKey);
-      // Notes above LH in pitch class order (before the next C) are in rhBaseOctave;
-      // notes at or below LH (wrapped past C) are in rhBaseOctave + 1
-      const isAboveLhBeforeC = whiteIdx > lhWhiteIdx;
-      const noteOctave = isAboveLhBeforeC ? rhBaseOctave : rhBaseOctave + 1;
-      return `${norm}:${noteOctave}`;
-    });
+    // `rhOctaveSteps` above places the first note relative to the bass and then
+    // climbs; the keyboard and the staff differ only in what they count from.
+    const rhHighlights = notes.map((n, i) => `${normalizeNote(n)}:${rhBaseOctave + rhOctaveSteps[i]}`);
     const allHighlights = [...lhHighlights, ...rhHighlights];
 
     // Real-octave-qualified notes for staff notation
@@ -760,21 +774,13 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
     const realLhOctave = 3 + (parsed.bassOctaveShift ?? 0);
     const realRhBaseOctave = realLhOctave + Math.max(octaveGap, 0);
     // The staff engraves the spelling it is handed, so emit the chord's own
-    // names — the sharpened ones are the keyboard's business. The octave
-    // arithmetic deliberately still runs on the normalised names, so no note
-    // moves: Bb and A# are the same pitch in the same octave, and the resolver
-    // does not produce the Cb/B# spellings where letter and pitch octave part.
+    // names — the sharpened ones are the keyboard's business. The octaves are
+    // the keyboard's `rhOctaveSteps`, counted from the real base instead of the
+    // drawn window's, so the two views cannot place a note differently.
     const lhStaffName = parsed.bassNote ?? lhBassNote;
     const staffOctaveNotesBass = [
       `${lhStaffName}:${realLhOctave}`,
-      ...notes.map((n) => {
-        const norm = normalizeNote(n);
-        const whiteKey = norm.replace("#", "") as WhiteNote;
-        const whiteIdx = WHITE_NOTE_ORDER.indexOf(whiteKey);
-        const isAboveLhBeforeC = whiteIdx > lhWhiteIdx;
-        const noteOctave = isAboveLhBeforeC ? realRhBaseOctave : realRhBaseOctave + 1;
-        return `${n}:${noteOctave}`;
-      }),
+      ...notes.map((n, i) => `${n}:${realRhBaseOctave + rhOctaveSteps[i]}`),
     ];
 
     // Find key indices for bracket annotations
@@ -802,9 +808,15 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
       { label: "R.H.", keyIndices: rhKeyIndices },
     ];
 
-    // Playback octaves: LH default 2, RH default 3 (so root ≈ C4 middle C)
-    const lhPlaybackOctave = 2 + (parsed.bassOctaveShift ?? 0);
-    const rhPlaybackOctave = 3 + (parsed.chordOctaveShift ?? 0);
+    // Playback reads the staff's own octaves — `staffOctaveNotesBass` above —
+    // so the button sounds the chord that is drawn. These two are the
+    // fallbacks a bare pitch class would land on, and they are kept equal to
+    // the real octaves for the same reason: nothing may re-derive a placement
+    // the engraver has already made. Left at 2/3 they put the right hand two
+    // octaves below the notes on the staff beside them.
+    const lhPlaybackOctave = realLhOctave;
+    const rhPlaybackOctave = realRhBaseOctave;
+    const bassPlaybackNotes = staffOctaveNotesBass.map((n) => n.replace(":", ""));
 
     // Fingering for bass-note path: LH gets bass, RH gets chord
     const lhBassFinger = autoFingering([lhBassNote], "lh");
@@ -822,7 +834,7 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
         displayNoteNames={[lhBassNote, ...notes]}
         clipLeft={lhClipLeft}
         clipRight={lhClipRight}
-        allNotes={[lhBassNote, ...notes]}
+        allNotes={bassPlaybackNotes}
         lhNotes={[lhBassNote]}
         lhOctave={lhPlaybackOctave}
         rhOctave={rhPlaybackOctave}
@@ -837,7 +849,10 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
         noteNameSize={parsed.noteNameSize}
         degreeSize={parsed.degreeSize}
         noteNameMode={parsed.noteNameMode}
-        midiBaseOctave={lhPlaybackOctave + 1}
+        // The keyboard numbers its octaves from the drawn window; `lhOctave`
+        // is where the bass note fell inside it. Anchoring on that puts every
+        // MIDI label at the octave the staff engraves it at.
+        midiBaseOctave={realLhOctave - lhOctave}
         fingering={bassResolvedFingering}
         fingeringSize={parsed.fingeringSize}
         showPlayback={showPlayback}
@@ -1059,13 +1074,29 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
     }
   }
 
+  /*
+   * The one resolution of this chord, in real MIDI octaves. The staff engraves
+   * it, the play button sounds it, and the MIDI names under the keys report
+   * it — so the three cannot describe different chords.
+   *
+   * `highlightKeys` carries the *keyboard's* octaves, which are numbered from
+   * the drawn window rather than from the chord: a C triad's window starts on
+   * the B below it, so C lands in the window's octave 1 and the keys were
+   * labelled C5-E5-G5 (and played there) while the staff engraved C4-E4-G4.
+   * `windowOffset` is that difference, and subtracting it re-anchors the
+   * labels on the chord.
+   */
+  const staffOctaveNotes = computeOctaveQualified(notes, 4 + chordShift, hasDeclaredOffsets ? voicingOffsets : undefined);
+  const staffPlaybackNotes = staffOctaveNotes.map((n) => n.replace(":", ""));
+  const windowOffset = Math.max(layout.chordOctave, 0);
+
   const keyboard = (
     <PianoKeyboard
       format={resolvedFormat}
       size={kbSize}
       startFrom={layout.startFrom as WhiteNote}
       highlightKeys={highlightKeys}
-      allNotes={chordMidiValues.map((midi) => Note.fromMidi(midi))}
+      allNotes={staffPlaybackNotes}
       displayNoteNames={notes}
       clipLeft={layout.clipLeft}
       clipRight={layout.clipRight}
@@ -1082,7 +1113,7 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
       degreeSize={parsed.degreeSize}
       noteNameMode={parsed.noteNameMode}
       // Carries the shift the keys no longer do: same keys, named an octave up.
-      midiBaseOctave={4 + chordShift}
+      midiBaseOctave={4 + chordShift - windowOffset}
       fingering={resolvedFingering}
       fingeringSize={parsed.fingeringSize}
       degreeLabels={chordDegreeLabels}
@@ -1105,9 +1136,6 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
   const bareKeyboard = cloneElement(keyboard, {
     title: undefined, subheading: undefined, footerText: undefined, showChordName: false,
   });
-
-  // Octave-qualified notes for staff notation — use absolute octave (4), not keyboard-relative
-  const staffOctaveNotes = computeOctaveQualified(notes, 4 + chordShift, hasDeclaredOffsets ? voicingOffsets : undefined);
 
   currentNotes = notes;
   if (display === "staff") {
