@@ -121,6 +121,18 @@ export interface BoardItem {
    * lands should not need a migration.
    */
   level?: string;
+  /**
+   * Opaque id of a hosted chord bundle for this card.
+   *
+   * Reserved, not used: nothing reads it today. Stored now for the same reason
+   * `level` above is stored regardless of `display` — a board is exported to a
+   * JSON file the user keeps, so a field added after those files exist forces
+   * a migration on them. Validated on import all the same (`parseBundleId` in
+   * io.ts), since it is a token an untrusted file supplies and a future reader
+   * will put it in a URL. What a bundle actually contains is deliberately not
+   * decided here.
+   */
+  bundleId?: string;
   /** Ordered MIDI pitches for the exact voicing captured in the editor. */
   playbackNotes?: number[];
   playbackInstrument?: string;

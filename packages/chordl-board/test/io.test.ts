@@ -412,3 +412,33 @@ describe("importBoardJson — board meta", () => {
     expect(meta.columns).toBeUndefined();
   });
 });
+
+describe("bundleId", () => {
+  it("survives an export/import round trip", async () => {
+    const state = board([{ id: "a", kind: "chord" as const, nl: "C", bundleId: "cdl-a1b2c3" }]);
+    const back = importBoardJson(await exportBoardJson(state));
+    expect(back.items[0].bundleId).toBe("cdl-a1b2c3");
+  });
+
+  it("drops a value that is not a URL-safe token", () => {
+    const raw = JSON.stringify({
+      schema: BOARD_SCHEMA,
+      items: [{ id: "a", kind: "chord", nl: "C", bundleId: "not a token/../etc" }],
+      meta: {},
+    });
+    expect(importBoardJson(raw).items[0].bundleId).toBeUndefined();
+  });
+
+  /** The 64-char cap is part of the rule, so an over-long token is junk too. */
+  it("drops an empty or over-long token", () => {
+    const withId = (bundleId: unknown) => JSON.stringify({
+      schema: BOARD_SCHEMA,
+      items: [{ id: "a", kind: "chord", nl: "C", bundleId }],
+      meta: {},
+    });
+    expect(importBoardJson(withId("")).items[0].bundleId).toBeUndefined();
+    expect(importBoardJson(withId("a".repeat(65))).items[0].bundleId).toBeUndefined();
+    expect(importBoardJson(withId(42)).items[0].bundleId).toBeUndefined();
+    expect(importBoardJson(withId("a".repeat(64))).items[0].bundleId).toBe("a".repeat(64));
+  });
+});
