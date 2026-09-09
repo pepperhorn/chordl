@@ -33,7 +33,7 @@ export type { ProgressionViewProps, GroupMode } from "./components/ProgressionVi
 // ─── Browser-only modules (local) ──────────────────────────────────────────
 export {
   playBlock, playArpeggiated, startPlayback, buildPlaybackEvents,
-  noteToMidi, toAscendingNotes,
+  noteToMidi, toAscendingNotes, preloadInstruments,
 } from "./audio/playback";
 export type {
   PlaybackMode, PlaybackEvent, PlaybackController, StartPlaybackOptions,

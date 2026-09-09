@@ -144,6 +144,29 @@ function parseLevel(value: unknown): string | undefined {
   return typeof value === "string" && BOARD_EXPERIENCE_LEVELS.includes(value) ? value : undefined;
 }
 
+/**
+ * A bundle id is opaque to this package, so there is nothing to check it
+ * against — only its shape. The rule is URL-safe unreserved characters
+ * (RFC 3986) capped at 64: nothing reads the field yet, but the first reader
+ * will put it in a path or a query string, and letting an untrusted file
+ * smuggle a `/`, a `?` or a `..` through to that point is how a reserved
+ * field becomes a traversal. Rejected outright rather than escaped later,
+ * because "later" is a place this validator cannot see.
+ *
+ * `.` is an unreserved character, so the character class alone admitted `.`
+ * and `..` — the two strings the docblock names, made entirely of legal
+ * characters, and the exact pair that turn a `join(base, id)` into a
+ * traversal. Hence the leading guard: an id has to be a name, and an all-dots
+ * token is a path instruction rather than a name. A dot *within* a name is
+ * still a name (`cdl.v2`, `.hidden`), and stays allowed — with `/` already
+ * excluded, an embedded `..` cannot be a path segment.
+ */
+function parseBundleId(value: unknown): string | undefined {
+  return typeof value === "string" && /^(?!\.+$)[A-Za-z0-9._~-]{1,64}$/.test(value)
+    ? value
+    : undefined;
+}
+
 function parsePlaybackNotes(value: unknown): number[] | undefined {
   if (!Array.isArray(value) || value.length === 0) return undefined;
   return value.every((note) => typeof note === "number" && Number.isInteger(note) && note >= 0 && note <= 127)
@@ -238,6 +261,7 @@ export function importBoardJson(text: string): BoardState {
       playbackInstrument: parsePlaybackInstrument(raw.playbackInstrument),
       arpeggioBpm: parseArpeggioBpm(raw.arpeggioBpm),
       playbackHighlightColor: parsePlaybackHighlightColor(raw.playbackHighlightColor),
+      bundleId: parseBundleId(raw.bundleId),
       icon: parseIcon(raw.icon),
       image: parseImage(raw.image),
       size: parseSize(raw.size),

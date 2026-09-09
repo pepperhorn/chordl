@@ -28,6 +28,7 @@
     "react-dom": ">=18.0.0"
   },
   "dependencies": {
+    "@pepperhorn/chordl-core": "workspace:*",
     "@pepperhorn/chordl-react": "workspace:*",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.2.1"

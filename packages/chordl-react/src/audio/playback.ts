@@ -81,6 +81,26 @@ async function ensureInstrument(instrument: PlaybackInstrument): Promise<Playbac
   return guarded;
 }
 
+/**
+ * Warm a set of patches before they are needed.
+ *
+ * `ensureInstrument` already de-duplicates in flight, so this is only a public
+ * door onto it. It never rejects: a preload is an optimisation, and a failed
+ * one must not take down the caller that asked for it — the real
+ * `startPlayback` will surface the failure if the patch is actually used.
+ */
+export async function preloadInstruments(
+  // Not `instruments`: that is the module-level cache this function fills, and
+  // shadowing it here reads as though the parameter were that map.
+  wanted: readonly PlaybackInstrument[],
+): Promise<void> {
+  await Promise.all(
+    [...new Set(wanted)].map((instrument) =>
+      ensureInstrument(instrument).catch(() => undefined),
+    ),
+  );
+}
+
 const LETTER_SEMITONES: Record<string, number> = {
   C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11,
 };

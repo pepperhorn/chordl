@@ -17,6 +17,9 @@ importers:
 
   packages/chordl-board:
     dependencies:
+      '@pepperhorn/chordl-core':
+        specifier: workspace:*
+        version: link:../chordl-core
       '@pepperhorn/chordl-react':
         specifier: workspace:*
         version: link:../chordl-react

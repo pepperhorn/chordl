@@ -4,6 +4,7 @@ import { PianoChord, GuitarChordPanel, CardHeading, CardFooter, resolveUITheme }
 import type { InstrumentId, UIThemeMode } from "@pepperhorn/chordl-react";
 import type { BoardCardSize, BoardItem, BoardMeta, BoardState, StorageAdapter } from "./types.js";
 import { BOARD_CARD_SIZES, BOARD_CARD_SIZE_FACTORS, isTextCard, MAX_COLUMNS } from "./types.js";
+import { GRID_TRACKS, computeRowSpans, sizeFits } from "./layout.js";
 import { BoardIcon } from "./icons.js";
 import { CardToolbar, CARD_TOOLBAR_CSS } from "./CardToolbar.js";
 import type { MeasureToolbar } from "./CardToolbar.js";
@@ -99,14 +100,23 @@ function BoardCardText({ item, uiTheme }: { item: BoardItem; uiTheme?: UIThemeMo
  * panel with its toggles off, so a board card shows the exact shape that was
  * chosen in the editor, not a picker.
  */
-function BoardCardContent({
+export function BoardCardContent({
   item,
   scale,
   uiTheme,
+  activePlaybackIndices,
 }: {
   item: BoardItem;
   scale?: number;
   uiTheme?: UIThemeMode;
+  /**
+   * Notes of this card's voicing that are sounding right now, by position in
+   * the card's own playback order. Undefined means "nothing sounding", which
+   * is also what an unplayed card gets — the renderers fall back to their own
+   * internal playback state when it is absent, so a card the board is not
+   * driving still highlights normally when a user plays it directly.
+   */
+  activePlaybackIndices?: number[];
 }) {
   if (isTextCard(item)) {
     return <BoardCardText item={item} uiTheme={uiTheme} />;
@@ -149,6 +159,12 @@ function BoardCardContent({
         title={item.title}
         subheading={item.subheading}
         footerText={item.footerText}
+        activePlaybackIndices={activePlaybackIndices}
+        // The colour this card was saved with. Stored and validated per card,
+        // so a board that plays has to honour it; the renderers already own
+        // the fallback, which is why an unset value is passed through as
+        // undefined rather than defaulted here.
+        playbackHighlightColor={item.playbackHighlightColor}
       />
     );
   }
@@ -165,6 +181,8 @@ function BoardCardContent({
       scale={scale}
       uiTheme={uiTheme}
       showPlayback={false}
+      activePlaybackIndices={activePlaybackIndices}
+      playbackHighlightColor={item.playbackHighlightColor}
     />
   );
 }
@@ -173,6 +191,73 @@ const DRAG_GLOW = "rgba(56, 189, 248, 0.55)";
 const DRAG_GLOW_SOFT = "rgba(56, 189, 248, 0.35)";
 const EDIT_BORDER = "rgba(56, 189, 248, 0.7)";
 const SELECT_BORDER = "rgba(56, 189, 248, 0.85)";
+
+/**
+ * The board's own chrome: the title and subtitle a board is headed with.
+ *
+ * Its own constant because two components draw a board — `ChordBoard` while it
+ * is being edited, `BoardPlayer` while it is being played — and play mode
+ * *replaces* the editing board rather than sitting beside it. A board that
+ * changed typeface the moment you pressed Play would say the mode had changed
+ * the document, which is the one thing it must not say. Shared rather than
+ * copied: a second copy of a type scale drifts the first time either side is
+ * touched, and the drift only shows up when someone puts the two on screen
+ * one after the other.
+ */
+export const BOARD_CHROME_CSS = `
+.chordl-board-title { margin: 0; font-size: 1.75rem; font-weight: 600; color: #111; font-family: Poppins, system-ui, sans-serif; line-height: 1.2; }
+.chordl-board-subtitle { margin: 4px 0 0 0; font-size: 1.05rem; font-weight: 400; color: #555; font-family: Poppins, system-ui, sans-serif; }
+`;
+
+/**
+ * The paper a board is printed on — the panel behind title, grid and footer.
+ * Shared with `BoardPlayer` for the same reason as `BOARD_CHROME_CSS`: it is
+ * the board's own surface, not a decoration either mode owns.
+ */
+export const BOARD_PANEL_STYLE: CSSProperties = {
+  background: "#fff",
+  padding: 16,
+  borderRadius: 12,
+};
+
+/** A board's heading. Renders nothing when the board is untitled. */
+export function BoardHeading({ meta, className }: { meta?: BoardMeta; className?: string }) {
+  if (!meta?.title && !meta?.subtitle) return null;
+  return (
+    <div
+      className={`chordl-board-heading ${className ?? ""}`.trim()}
+      style={{ textAlign: "center", marginBottom: 16 }}
+    >
+      {meta.title && <h1 className="chordl-board-title">{meta.title}</h1>}
+      {meta.subtitle && <h3 className="chordl-board-subtitle">{meta.subtitle}</h3>}
+    </div>
+  );
+}
+
+/**
+ * A board's footer line. Inline-styled rather than classed like the heading
+ * because nothing else needs to reach it, but shared all the same so the two
+ * modes cannot disagree about what a footer looks like.
+ */
+export function BoardFooter({ meta, className }: { meta?: BoardMeta; className?: string }) {
+  if (!meta?.footer) return null;
+  return (
+    <div
+      className={`chordl-board-footer ${className ?? ""}`.trim()}
+      style={{
+        textAlign: "center",
+        marginTop: 20,
+        fontSize: "0.95rem",
+        color: "#555",
+        fontFamily: "Poppins, system-ui, sans-serif",
+        fontStyle: "italic",
+        whiteSpace: "pre-wrap",
+      }}
+    >
+      {meta.footer}
+    </div>
+  );
+}
 
 const BOARD_STYLES = `
 @keyframes chordl-board-edit-pulse {
@@ -209,8 +294,7 @@ ${CARD_TOOLBAR_CSS}
   animation: none !important;
   transition: none !important;
 }
-.chordl-board-title { margin: 0; font-size: 1.75rem; font-weight: 600; color: #111; font-family: Poppins, system-ui, sans-serif; line-height: 1.2; }
-.chordl-board-subtitle { margin: 4px 0 0 0; font-size: 1.05rem; font-weight: 400; color: #555; font-family: Poppins, system-ui, sans-serif; }
+${BOARD_CHROME_CSS}
 `;
 
 /**
@@ -218,8 +302,11 @@ ${CARD_TOOLBAR_CSS}
  * clipboard strip. A chord card is its chord; a text card has no `nl` at all,
  * so its title is the next best handle and "text card" the last resort. Never
  * empty: these strings exist so a user can tell one card from another.
+ *
+ * Exported alongside `CardErrorBoundary` so a card that fails to draw is named
+ * the same way in both modes.
  */
-function cardLabel(item: BoardItem): string {
+export function cardLabel(item: BoardItem): string {
   return item.nl ?? item.title ?? (isTextCard(item) ? "text card" : "card");
 }
 
@@ -227,8 +314,15 @@ function cardLabel(item: BoardItem): string {
  * Per-card error boundary — a card whose chord string fails to render shows
  * an inline message instead of unmounting the whole board (and app).
  * Keyed by the card's nl string upstream so edits re-attempt the render.
+ *
+ * Exported for `BoardPlayer`, which draws the same cards from the same
+ * `BoardCardContent` and so inherits the same hazard: `PianoChord` throws
+ * *during render* for a chord it refuses to draw, and a throw out of render
+ * with no boundary above it unmounts the entire React root — the whole page
+ * goes white on pressing Play. Deliberately absent from the package index,
+ * like `BoardCardContent`: internal, and not a props contract we want to owe.
  */
-class CardErrorBoundary extends Component<
+export class CardErrorBoundary extends Component<
   { children: ReactNode; label: string },
   { error: string | null }
 > {
@@ -418,18 +512,6 @@ export function useChordBoard(opts?: {
 
 // ── Stateless renderer ────────────────────────────────────────────
 
-/**
- * Track count for the fixed-column grid.
- *
- * Every card width has to land on a whole track, at every column count the
- * board offers (1–4) and every card size (½, ¾, 1, 1½, 2 and 3 columns) — and
- * so does *half* the width left over at the end of a row, which is what centres
- * a short row exactly. 480 is the smallest count that satisfies all three:
- * `480 · size / columns` and `240 · size / columns` are whole for every pair.
- */
-const GRID_TRACKS = 480;
-
-
 /** Half the 12px gutter, carried by each card. See `columnGap: 0` below. */
 const CARD_GUTTER = 6;
 
@@ -480,6 +562,16 @@ export interface ChordBoardProps {
   uiTheme?: UIThemeMode;
   /** Render scale forwarded to each card's PianoChord. */
   scale?: number;
+  /**
+   * Which notes are sounding, per card: `{ [item.id]: indices }`, where each
+   * index is a position in that card's playback order. A player passes this
+   * while a chord rings so the card lights the notes it is playing.
+   *
+   * Keyed by id rather than by position because a board reorders — an
+   * index-keyed map would light whichever card had moved into the slot. Cards
+   * absent from the map, and text cards, are left alone.
+   */
+  activePlaybackIndices?: Record<string, number[]>;
   /** Highlights the card currently being edited (persistent blue ring). */
   editingId?: string | null;
   /** Increment to retrigger the edit-pulse animation on `editingId`. */
@@ -591,6 +683,7 @@ export function ChordBoard({
   onNew,
   uiTheme,
   scale = 0.6,
+  activePlaybackIndices,
   editingId,
   editPulseKey,
   className,
@@ -839,53 +932,14 @@ export function ChordBoard({
       }
     : { display: "flex", flexWrap: "wrap", gap: 12, alignItems: "flex-start", justifyContent: "center" };
 
-  /**
-   * Where each card sits on the track grid, and how big it draws.
-   *
-   * A row holds one board-width of cards. Sizes make cards wider, so a row is
-   * packed by width rather than by count: cards join the current row until the
-   * next one would not fit, and a break ends a row wherever it falls. Whatever
-   * width is left over is split evenly either side, so a row that does not fill
-   * the board is centred rather than hugging the left edge.
+  /*
+   * Row packing lives in ./layout.js so BoardPlayer can draw the same grid
+   * from the same maths. Only the grid layout packs rows; the wrapping one
+   * lets the browser place cards, so it has no spans to compute.
    */
-  const trackWidth = (item: BoardItem) =>
-    (GRID_TRACKS * BOARD_CARD_SIZE_FACTORS[item.size ?? "rg"]) / (columns as number);
-
-  const spans: number[] = [];
-  const rowStarts: Record<number, number> = {};
-  /** Tracks used by every card sharing a row with this one, itself excluded. */
-  const rowOthers: number[] = [];
-  if (useGrid) {
-    let rowStart = 0;
-    let used = 0;
-    const closeRow = (endIndex: number) => {
-      const leftover = GRID_TRACKS - used;
-      if (leftover > 0) rowStarts[rowStart] = leftover / 2 + 1;
-      for (let j = rowStart; j <= endIndex; j++) rowOthers[j] = used - spans[j];
-      rowStart = endIndex + 1;
-      used = 0;
-    };
-
-    for (let i = 0; i < items.length; i++) {
-      spans[i] = Math.min(trackWidth(items[i]), GRID_TRACKS);
-      // A card too wide for what is left starts the row it fits in.
-      if (used > 0 && used + spans[i] > GRID_TRACKS) closeRow(i - 1);
-      used += spans[i];
-      if (items[i].breakAfter || used >= GRID_TRACKS || i === items.length - 1) closeRow(i);
-    }
-  }
-
-  /**
-   * A size is offered only if the card's row can hold it. Growing past the row
-   * would push a neighbour onto the next line — a size control that silently
-   * reflowed the board is not a size control, so the ones that do not fit are
-   * shown greyed instead.
-   */
-  const sizeFits = (index: number, factor: number): boolean => {
-    if (!useGrid) return true;
-    const width = (GRID_TRACKS * factor) / (columns as number);
-    return width <= GRID_TRACKS && (rowOthers[index] ?? 0) + width <= GRID_TRACKS;
-  };
+  const { spans, rowStarts, rowOthers } = useGrid
+    ? computeRowSpans(items, columns as number)
+    : { spans: [] as number[], rowStarts: {} as Record<number, number>, rowOthers: [] as number[] };
 
   /**
    * A `breakAfter` card is followed by this: a rendered sibling that fills the
@@ -1175,19 +1229,14 @@ export function ChordBoard({
       <div
         ref={exportRef}
         className={`chordl-board-export${isExporting ? " chordl-board-export--capturing" : ""}`}
-        style={{ background: "#fff", padding: 16, borderRadius: 12 }}
+        style={BOARD_PANEL_STYLE}
         onClick={(e) => {
           // Clicks that don't land inside a card clear the selection.
           if ((e.target as HTMLElement).closest("[data-board-id]")) return;
           onClearSelection?.();
         }}
       >
-        {(safeMeta.title || safeMeta.subtitle) && (
-          <div style={{ textAlign: "center", marginBottom: 16 }}>
-            {safeMeta.title && <h1 className="chordl-board-title">{safeMeta.title}</h1>}
-            {safeMeta.subtitle && <h3 className="chordl-board-subtitle">{safeMeta.subtitle}</h3>}
-          </div>
-        )}
+        <BoardHeading meta={safeMeta} />
 
       <div style={gridStyle}>
         {items.length === 0 && (
@@ -1314,6 +1363,7 @@ export function ChordBoard({
                     item={item}
                     scale={(scale ?? 1) * BOARD_CARD_SIZE_FACTORS[item.size ?? "rg"]}
                     uiTheme={uiTheme}
+                    activePlaybackIndices={activePlaybackIndices?.[item.id]}
                   />
                 </CardErrorBoundary>
               </div>
@@ -1325,19 +1375,7 @@ export function ChordBoard({
         })}
       </div>
 
-        {safeMeta.footer && (
-          <div style={{
-            textAlign: "center",
-            marginTop: 20,
-            fontSize: "0.95rem",
-            color: "#555",
-            fontFamily: "Poppins, system-ui, sans-serif",
-            fontStyle: "italic",
-            whiteSpace: "pre-wrap",
-          }}>
-            {safeMeta.footer}
-          </div>
-        )}
+        <BoardFooter meta={safeMeta} />
       </div>
 
       {/* The per-card controls, out of the card and anchored to it.
@@ -1385,7 +1423,9 @@ export function ChordBoard({
             >
               {BOARD_CARD_SIZES.map((size) => {
                 const current = (selectedItem.size ?? "rg") === size;
-                const fits = sizeFits(selectedIndex, BOARD_CARD_SIZE_FACTORS[size]);
+                // Without a grid there are no rows to overflow, so every size fits.
+                const fits = !useGrid
+                  || sizeFits(rowOthers, selectedIndex, BOARD_CARD_SIZE_FACTORS[size], columns as number);
                 return (
                   <button
                     key={size}
