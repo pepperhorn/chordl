@@ -19,6 +19,7 @@ import { composeChordDetails, composeOctaveShift, splitChordDetails } from "../s
 import type { TextSize, NoteNameMode } from "@pepperhorn/chordl-core";
 import {
   ChordBoard,
+  BoardPlayer,
   useChordBoard,
   localStorageAdapter,
   isTextCard,
@@ -783,6 +784,12 @@ export function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExpo
   const [editPulseKey, setEditPulseKey] = useState(0);
   const [inputPulsing, setInputPulsing] = useState(false);
   const [listenOpen, setListenOpen] = useState(false);
+  /**
+   * Play mode for the board: BoardPlayer replaces ChordBoard while it is on,
+   * rather than sitting beside it — the two draw the same grid, and showing
+   * both would be two boards claiming to be the board.
+   */
+  const [boardPlaying, setBoardPlaying] = useState(false);
   const [followOpen, setFollowOpen] = useState(false);
 
   // Serialize form annotation state to NL modifiers appended to the chord
@@ -1639,6 +1646,27 @@ export function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExpo
                 ▶ Follow along
               </button>
             )}
+            {board.items.length >= 1 && (
+              <button
+                className="btn-board-play"
+                onClick={() => setBoardPlaying((on) => !on)}
+                aria-pressed={boardPlaying}
+                style={{
+                  padding: "8px 18px",
+                  fontSize: "0.85rem",
+                  fontWeight: 500,
+                  fontFamily: "inherit",
+                  border: "1px solid var(--btn-border)",
+                  borderRadius: 20,
+                  background: boardPlaying ? "var(--accent)" : "var(--pill-bg)",
+                  color: boardPlaying ? "#fff" : "var(--text)",
+                  cursor: "pointer",
+                }}
+                title="Walk the board's chords with the arrow keys and hear each one"
+              >
+                {boardPlaying ? "■ Stop" : "▶ Play"}
+              </button>
+            )}
           </div>
           {storageWarning && (
             // Non-blocking on purpose: the board still works, it just is not
@@ -1667,6 +1695,25 @@ export function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExpo
               </button>
             </div>
           )}
+          {boardPlaying ? (
+            /*
+             * Play mode replaces the editing board rather than sitting beside
+             * it: both draw the same grid from the same layout maths, so two
+             * on screen at once would be two boards claiming to be the board.
+             * `canShowMore` is off — the detail overlay is a later sub-project
+             * and there is nothing behind the affordance to open yet.
+             */
+            <BoardPlayer
+              className="board-player-dev"
+              items={board.items}
+              meta={board.meta}
+              playing={boardPlaying}
+              onPlayingChange={setBoardPlaying}
+              canShowMore={false}
+              uiTheme={uiTheme}
+              scale={0.5}
+            />
+          ) : (
           <ChordBoard
             items={board.items}
             meta={board.meta}
@@ -1711,6 +1758,7 @@ export function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExpo
             editingId={editingItemId}
             editPulseKey={editPulseKey}
           />
+          )}
         </div>
       )}
 
