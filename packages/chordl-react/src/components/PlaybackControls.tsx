@@ -10,12 +10,23 @@ import { copyDottlClip } from "../audio/dottl-export";
 import { useUITheme } from "../ui-theme";
 
 interface PlaybackControlsProps {
+  /**
+   * The notes to sound, in voicing order. Prefer names that already carry
+   * their octave ("C4", "Bb3") — those pass through untouched, which is how
+   * the staff and the keyboard guarantee the button sounds what they drew.
+   * Bare pitch classes are stacked upward from the octaves below, and that
+   * fallback can only ever guess at a placement the caller already knows.
+   */
   notes: string[];
-  /** Left-hand bass notes (for MIDI export with separate clefs). */
+  /**
+   * Which leading entries of `notes` belong to the left hand. Only the count
+   * is read: it splits `notes` for the two MIDI-export tracks and for the
+   * per-hand octave fallback.
+   */
   lhNotes?: string[];
-  /** Right-hand playback octave (default 4). */
+  /** Octave to stack bare right-hand pitch classes from (default 3). */
   rhOctave?: number;
-  /** Left-hand bass playback octave (default 3). */
+  /** Octave to stack bare left-hand pitch classes from (default 2). */
   lhOctave?: number;
   chordName: string;
   x: number;
@@ -74,9 +85,13 @@ export function PlaybackControls({
     await play(playableNotes, { mode: "arpeggio", instrument, bpm: arpeggioBpm });
   }, [arpeggioBpm, instrument, play, playableNotes, playing]);
 
+  // The exported file is a third rendering of the same chord, so it gets the
+  // same resolved pitches the speaker does — not the raw prop with the hands
+  // re-split by name, which wrote a slash chord's bass note into both tracks
+  // and put the right hand at a default octave unrelated to the engraving.
   const handleMidi = useCallback(() => {
-    downloadMidi(notes, chordName, rhOct, lhNotes, lhOct);
-  }, [notes, chordName, rhOct, lhNotes, lhOct]);
+    downloadMidi(playableNotes, chordName, rhOct, playableNotes.slice(0, lhCount), lhOct);
+  }, [playableNotes, chordName, rhOct, lhCount, lhOct]);
 
   const findParentSvg = useCallback((e: React.MouseEvent) => {
     return (e.currentTarget as SVGElement).closest("svg") as SVGSVGElement | null;

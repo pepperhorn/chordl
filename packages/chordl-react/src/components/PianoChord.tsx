@@ -802,9 +802,15 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
       { label: "R.H.", keyIndices: rhKeyIndices },
     ];
 
-    // Playback octaves: LH default 2, RH default 3 (so root ≈ C4 middle C)
-    const lhPlaybackOctave = 2 + (parsed.bassOctaveShift ?? 0);
-    const rhPlaybackOctave = 3 + (parsed.chordOctaveShift ?? 0);
+    // Playback reads the staff's own octaves — `staffOctaveNotesBass` above —
+    // so the button sounds the chord that is drawn. These two are the
+    // fallbacks a bare pitch class would land on, and they are kept equal to
+    // the real octaves for the same reason: nothing may re-derive a placement
+    // the engraver has already made. Left at 2/3 they put the right hand two
+    // octaves below the notes on the staff beside them.
+    const lhPlaybackOctave = realLhOctave;
+    const rhPlaybackOctave = realRhBaseOctave;
+    const bassPlaybackNotes = staffOctaveNotesBass.map((n) => n.replace(":", ""));
 
     // Fingering for bass-note path: LH gets bass, RH gets chord
     const lhBassFinger = autoFingering([lhBassNote], "lh");
@@ -822,7 +828,7 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
         displayNoteNames={[lhBassNote, ...notes]}
         clipLeft={lhClipLeft}
         clipRight={lhClipRight}
-        allNotes={[lhBassNote, ...notes]}
+        allNotes={bassPlaybackNotes}
         lhNotes={[lhBassNote]}
         lhOctave={lhPlaybackOctave}
         rhOctave={rhPlaybackOctave}
@@ -837,7 +843,10 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
         noteNameSize={parsed.noteNameSize}
         degreeSize={parsed.degreeSize}
         noteNameMode={parsed.noteNameMode}
-        midiBaseOctave={lhPlaybackOctave + 1}
+        // The keyboard numbers its octaves from the drawn window; `lhOctave`
+        // is where the bass note fell inside it. Anchoring on that puts every
+        // MIDI label at the octave the staff engraves it at.
+        midiBaseOctave={realLhOctave - lhOctave}
         fingering={bassResolvedFingering}
         fingeringSize={parsed.fingeringSize}
         showPlayback={showPlayback}
@@ -1059,13 +1068,29 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
     }
   }
 
+  /*
+   * The one resolution of this chord, in real MIDI octaves. The staff engraves
+   * it, the play button sounds it, and the MIDI names under the keys report
+   * it — so the three cannot describe different chords.
+   *
+   * `highlightKeys` carries the *keyboard's* octaves, which are numbered from
+   * the drawn window rather than from the chord: a C triad's window starts on
+   * the B below it, so C lands in the window's octave 1 and the keys were
+   * labelled C5-E5-G5 (and played there) while the staff engraved C4-E4-G4.
+   * `windowOffset` is that difference, and subtracting it re-anchors the
+   * labels on the chord.
+   */
+  const staffOctaveNotes = computeOctaveQualified(notes, 4 + chordShift, hasDeclaredOffsets ? voicingOffsets : undefined);
+  const staffPlaybackNotes = staffOctaveNotes.map((n) => n.replace(":", ""));
+  const windowOffset = Math.max(layout.chordOctave, 0);
+
   const keyboard = (
     <PianoKeyboard
       format={resolvedFormat}
       size={kbSize}
       startFrom={layout.startFrom as WhiteNote}
       highlightKeys={highlightKeys}
-      allNotes={chordMidiValues.map((midi) => Note.fromMidi(midi))}
+      allNotes={staffPlaybackNotes}
       displayNoteNames={notes}
       clipLeft={layout.clipLeft}
       clipRight={layout.clipRight}
@@ -1082,7 +1107,7 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
       degreeSize={parsed.degreeSize}
       noteNameMode={parsed.noteNameMode}
       // Carries the shift the keys no longer do: same keys, named an octave up.
-      midiBaseOctave={4 + chordShift}
+      midiBaseOctave={4 + chordShift - windowOffset}
       fingering={resolvedFingering}
       fingeringSize={parsed.fingeringSize}
       degreeLabels={chordDegreeLabels}
@@ -1105,9 +1130,6 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
   const bareKeyboard = cloneElement(keyboard, {
     title: undefined, subheading: undefined, footerText: undefined, showChordName: false,
   });
-
-  // Octave-qualified notes for staff notation — use absolute octave (4), not keyboard-relative
-  const staffOctaveNotes = computeOctaveQualified(notes, 4 + chordShift, hasDeclaredOffsets ? voicingOffsets : undefined);
 
   currentNotes = notes;
   if (display === "staff") {

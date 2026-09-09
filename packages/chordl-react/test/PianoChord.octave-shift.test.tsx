@@ -52,13 +52,20 @@ describe("chord octave shift", () => {
   it("still names the shifted octave on the keys", () => {
     // The shift has to stay visible somewhere the keyboard itself can show it.
     // MIDI note names are that place: same keys, an octave higher in name.
+    //
+    // The literals are C4/C5 rather than C5/C6 because the labels used to be
+    // numbered from the drawn keyboard window instead of from the chord. A C
+    // triad's window opens on the B below it, so C fell in the window's octave
+    // 1 and an unshifted Cmaj7 was labelled C5 while the staff beside it
+    // engraved C4. The relationship this test is really about — shifted names
+    // one octave above unshifted — is unchanged.
     const plain = render(<PianoChord chord="Cmaj7 with midi note names" />);
     const shifted = render(
       <PianoChord chord="Cmaj7 with midi note names chord up 1 octave" />,
     );
 
-    expect(plain.container.textContent).toContain("C5");
-    expect(shifted.container.textContent).toContain("C6");
-    expect(shifted.container.textContent).not.toContain("C5");
+    expect(plain.container.textContent).toContain("C4");
+    expect(shifted.container.textContent).toContain("C5");
+    expect(shifted.container.textContent).not.toContain("C4");
   });
 });

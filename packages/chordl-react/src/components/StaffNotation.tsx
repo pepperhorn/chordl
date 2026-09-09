@@ -84,11 +84,18 @@ export function StaffNotation({
   const { tokens: ui } = useUITheme();
   const font = fontFor(glyphs);
 
-  const mei = useMemo(
-    () => buildMei(notes, { lhNotes, rhOctave, lhOctave, octaveQualifiedNotes }).mei,
+  // One resolution of the chord, shared. `playbackNotes` are the very pitches
+  // the MEI carries, so the play button, the MIDI export and the engraving
+  // cannot describe different chords — whatever the engraver decided is what
+  // sounds. Handing `PlaybackControls` bare pitch classes to re-octave was
+  // what let a bare `<StaffNotation notes={["C","E","G"]} />` draw C4-E4-G4
+  // and play C3-E3-G3.
+  const built = useMemo(
+    () => buildMei(notes, { lhNotes, rhOctave, lhOctave, octaveQualifiedNotes }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [notes.join(","), lhNotes?.join(","), rhOctave, lhOctave, octaveQualifiedNotes?.join(",")],
   );
+  const mei = built.mei;
 
   const [staffSvg, setStaffSvg] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
@@ -207,7 +214,7 @@ export function StaffNotation({
       {controlsH > 0 && (
         <g data-controls="">
           <PlaybackControls
-            notes={(octaveQualifiedNotes ?? notes).map((note) => note.replace(":", ""))}
+            notes={built.playbackNotes}
             lhNotes={lhNotes}
             rhOctave={rhOctave}
             lhOctave={lhOctave}

@@ -127,8 +127,16 @@ export function generateMidiFile(options: MidiChordOptions): Uint8Array {
     // Format 1: separate LH (bass clef) and RH (treble clef) tracks
     const lhOctave = lhOctaveOpt ?? 3;
     const rhOctave = octave;
-    const lhSet = new Set(lhNotes);
-    const rhNotes = notes.filter((n) => !lhSet.has(n));
+    // Remove each left-hand note once, rather than filtering out every note
+    // that matches one by name: an octave doubling (a C/G chord's G bass under
+    // the chord's own G) would otherwise lose the right hand's copy too.
+    const unclaimed = [...lhNotes];
+    const rhNotes = notes.filter((n) => {
+      const at = unclaimed.indexOf(n);
+      if (at === -1) return true;
+      unclaimed.splice(at, 1);
+      return false;
+    });
 
     const lhMidi = lhNotes.map((n) => noteToMidi(n, lhOctave)).filter((m): m is number => m != null);
     const rhMidi = rhNotes.map((n) => noteToMidi(n, rhOctave)).filter((m): m is number => m != null);
