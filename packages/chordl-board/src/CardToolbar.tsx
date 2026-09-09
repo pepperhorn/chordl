@@ -90,6 +90,11 @@ export const domMeasureToolbar: MeasureToolbar = (card, toolbar) => {
  * the viewport; a card near the bottom of a long board is otherwise handed a
  * toolbar sitting on top of the card underneath it. When neither side has room
  * (a card taller than the window), below wins and the clamp keeps it on screen.
+ *
+ * Both axes are clamped. Vertically it only ever bites in that no-room case:
+ * `below` on a card taller than the window would otherwise put the toolbar past
+ * the bottom edge, and a selected card whose eleven controls are all off screen
+ * is a card with no controls at all.
  */
 export function placeCardToolbar(m: ToolbarMeasurements): ToolbarPosition | null {
   const { card, toolbar, viewport } = m;
@@ -100,6 +105,15 @@ export function placeCardToolbar(m: ToolbarMeasurements): ToolbarPosition | null
   const fitsBelow = belowTop + toolbar.height <= viewport.height - TOOLBAR_MARGIN;
   const fitsAbove = aboveTop >= TOOLBAR_MARGIN;
   const placement: ToolbarPlacement = fitsBelow || !fitsAbove ? "below" : "above";
+
+  // Same shape as the horizontal clamp below: Math.max last, so a toolbar
+  // taller than the viewport pins to the top margin rather than being pushed
+  // off the top by a negative maximum.
+  const rawTop = placement === "below" ? belowTop : aboveTop;
+  const top = Math.max(
+    TOOLBAR_MARGIN,
+    Math.min(rawTop, viewport.height - TOOLBAR_MARGIN - toolbar.height),
+  );
 
   const centre = card.left + card.width / 2;
   // Math.max last, so a toolbar wider than the viewport pins to the left margin
@@ -116,7 +130,7 @@ export function placeCardToolbar(m: ToolbarMeasurements): ToolbarPosition | null
     Math.min(centre - left, Math.max(TOOLBAR_CARET, toolbar.width - TOOLBAR_CARET)),
   );
 
-  return { top: placement === "below" ? belowTop : aboveTop, left, placement, caretLeft };
+  return { top, left, placement, caretLeft };
 }
 
 const samePosition = (a: ToolbarPosition | null, b: ToolbarPosition | null) =>
@@ -136,10 +150,75 @@ export const CARD_TOOLBAR_CSS = `
 .chordl-board-card-toolbar { animation: chordl-board-toolbar-in 0.12s ease-out; }
 .chordl-board-card-toolbar button:hover:not(:disabled) { background: rgba(56,189,248,0.14); }
 .chordl-board-card-toolbar button:focus-visible { outline: 2px solid rgba(56,189,248,0.9); outline-offset: 1px; }
-/* Focused only when the toolbar hands focus back on dismissal — a ring there
-   would be a selection ring the board already draws, twice. */
+/* No ring for a plain focus() — that is the toolbar handing focus back on
+   dismissal, and the board already draws a selection ring around that card.
+   A keyboard user arriving by Tab gets one, because nothing else says where
+   they are before they have pressed Enter. */
 .chordl-board-card:focus { outline: none; }
+.chordl-board-card:focus-visible { outline: 2px solid rgba(56,189,248,0.9); outline-offset: 2px; }
 `;
+
+/**
+ * The one signal every modal already publishes, and the only one that reaches
+ * across a portal: `aria-modal="true"`. The board's own new-board dialog, the
+ * host's listen and follow-along overlays, and anything a consumer builds to
+ * the ARIA pattern all carry it.
+ */
+const MODAL_SELECTOR = '[aria-modal="true"]';
+
+const modalIsOpen = () =>
+  typeof document !== "undefined" && document.querySelector(MODAL_SELECTOR) !== null;
+
+/**
+ * Whether anything in the document currently claims to be modal.
+ *
+ * Two sources, because modals arrive two ways. The layout effect runs on every
+ * render and so catches a modal the board renders itself, synchronously, in the
+ * commit that opened it — the toolbar never paints a frame over the backdrop.
+ * The mutation observer catches the rest: a host overlay opened from a control
+ * that has nothing to do with the board, which re-renders neither.
+ */
+function useModalOpen(): boolean {
+  const [open, setOpen] = useState(modalIsOpen);
+
+  const check = useCallback(() => {
+    setOpen((prev) => {
+      const now = modalIsOpen();
+      return prev === now ? prev : now;
+    });
+  }, []);
+
+  useLayoutEffect(check);
+
+  useEffect(() => {
+    if (typeof MutationObserver === "undefined" || typeof document === "undefined") return;
+    const observer = new MutationObserver(check);
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["aria-modal"],
+    });
+    return () => observer.disconnect();
+  }, [check]);
+
+  return open;
+}
+
+/**
+ * The anchor and everything it sits inside, up to the board root.
+ *
+ * A neighbour growing changes no rect the card owns — but it does change the
+ * height of whatever contains them both, and that is what moves the card.
+ */
+function anchorChain(anchor: HTMLElement): HTMLElement[] {
+  const chain: HTMLElement[] = [];
+  for (let el: HTMLElement | null = anchor; el; el = el.parentElement) {
+    chain.push(el);
+    if (el.classList.contains("chordl-board") || el === document.body) break;
+  }
+  return chain;
+}
 
 export interface CardToolbarProps {
   /** Card the toolbar belongs to. Changing it re-anchors and re-measures. */
@@ -166,6 +245,7 @@ export function CardToolbar({
 }: CardToolbarProps) {
   const ref = useRef<HTMLDivElement | null>(null);
   const [pos, setPos] = useState<ToolbarPosition | null>(null);
+  const modalOpen = useModalOpen();
 
   // Read through a ref so swapping the measurement function does not tear down
   // the scroll/resize listeners below.
@@ -193,7 +273,7 @@ export function CardToolbar({
 
   useLayoutEffect(() => {
     reposition();
-  }, [reposition, children]);
+  }, [reposition, children, modalOpen]);
 
   /**
    * And again after paint. React attaches a parent's ref *after* its children's
@@ -204,7 +284,7 @@ export function CardToolbar({
    */
   useEffect(() => {
     reposition();
-  }, [reposition]);
+  }, [reposition, modalOpen]);
 
   useEffect(() => {
     const onChange = () => reposition();
@@ -215,12 +295,20 @@ export function CardToolbar({
 
     // The card's own geometry changes under the toolbar — picking a size is the
     // obvious one, and it resizes the very thing the toolbar is pinned to.
+    //
+    // Its ancestors are watched as well, because a ResizeObserver fires on size
+    // and the anchor also *moves*: a lazily-loaded diagram on the row above
+    // finishes and grows, and this row shifts down. Nothing about the card
+    // changed, nothing scrolled, and the board did not re-render — but the grid
+    // that holds them both got taller, and that is observable. A handful of
+    // elements, versus a rAF loop that would run forever for a card that
+    // usually never moves.
     // Guarded because jsdom ships no ResizeObserver.
     let observer: ResizeObserver | undefined;
     if (typeof ResizeObserver !== "undefined") {
       observer = new ResizeObserver(onChange);
       const anchor = resolveAnchor(anchorId);
-      if (anchor) observer.observe(anchor);
+      if (anchor) for (const el of anchorChain(anchor)) observer.observe(el);
       if (ref.current) observer.observe(ref.current);
     }
     return () => {
@@ -228,7 +316,7 @@ export function CardToolbar({
       window.removeEventListener("scroll", onChange, true);
       observer?.disconnect();
     };
-  }, [anchorId, reposition, resolveAnchor]);
+  }, [anchorId, reposition, resolveAnchor, modalOpen]);
 
   /**
    * One tab stop, the ARIA toolbar pattern: Tab reaches the toolbar, arrows
@@ -294,6 +382,27 @@ export function CardToolbar({
       if (anchor?.isConnected) anchor.focus();
     };
   }, []);
+
+  /*
+   * Two ways to have no toolbar.
+   *
+   * A modal is up. The toolbar cannot win this on z-index and the
+   * fix is not to try: portalled to <body> its 40 competes with the host root's
+   * own z-index — 1, in the dev host — and beats the whole subtree beneath it,
+   * dialog and backdrop included. Portalling one level in does not help either,
+   * because the dialog is inside the very transformed subtree the toolbar has
+   * to escape, so it would still be painting over a stacking context it left.
+   * Every alternative ends in a number fight the toolbar either always wins or
+   * always loses. Standing down is the behaviour a modal is asking for anyway:
+   * "nothing outside me is clickable". Unmounting makes that literal — nothing
+   * to paint over the backdrop, nothing to tab into behind it — and it costs
+   * only a re-measure when the modal closes.
+   *
+   * There is no document. `createPortal` needs one, and a consumer
+   * server-rendering a board with a card already selected would otherwise get a
+   * ReferenceError out of a published component.
+   */
+  if (modalOpen || typeof document === "undefined") return null;
 
   const style: CSSProperties = {
     position: "fixed",

@@ -35,11 +35,11 @@ describe("card action row", () => {
 
   it("fits every control on one row rather than wrapping into height", () => {
     const { container } = render(<ChordBoard items={items} selectedId="a" onResize={() => {}} />);
-    expect(actionsRow(container).style.flexWrap).toBe("nowrap");
+    expect(actionsRow().style.flexWrap).toBe("nowrap");
   });
 
   it("has no controls at all until a card is selected", () => {
-    const { container } = render(<ChordBoard items={items} onResize={() => {}} />);
+    render(<ChordBoard items={items} onResize={() => {}} />);
     expect(document.body.querySelector(".chordl-board-actions")).toBeNull();
   });
 
@@ -48,7 +48,7 @@ describe("card action row", () => {
    * same job in one click. One control named for what it does replaces both.
    */
   it("offers duplicate in place of copy and repeat", () => {
-    const { container } = render(
+    render(
       <ChordBoard items={items} selectedId="a" onDuplicate={() => {}} />,
     );
     expect(labels()).toEqual(["edit", "duplicate", "cut", "break", "delete"]);
@@ -56,7 +56,7 @@ describe("card action row", () => {
 
   it("duplicates the card the control belongs to", () => {
     const onDuplicate = vi.fn();
-    const { container, rerender } = render(
+    const { rerender } = render(
       <ChordBoard items={items} selectedId="a" onDuplicate={onDuplicate} />,
     );
     fireEvent.click(document.body.querySelector(".chordl-board-action-duplicate")!);
@@ -135,7 +135,7 @@ describe("deselecting a card", () => {
 
   it("keeps a click on the action row off the card's own handler", () => {
     const onSelect = vi.fn();
-    const { container } = render(
+    render(
       <ChordBoard items={items} selectedId="a" onSelect={onSelect} onDelete={() => {}} />,
     );
     fireEvent.click(document.body.querySelector(".chordl-board-action-delete")!);
@@ -149,7 +149,7 @@ describe("deselecting a card", () => {
    */
   it("keeps a click on the action row from clearing the selection", () => {
     const onClearSelection = vi.fn();
-    const { container } = render(
+    render(
       <ChordBoard items={items} selectedId="a" onClearSelection={onClearSelection} onDelete={() => {}} />,
     );
     fireEvent.click(document.body.querySelector(".chordl-board-action-delete")!);

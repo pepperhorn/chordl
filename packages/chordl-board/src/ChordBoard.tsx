@@ -1221,10 +1221,15 @@ export function ChordBoard({
               <div
                 data-board-id={item.id}
                 data-selected={isSelected ? "true" : "false"}
-                // Focusable only programmatically: dismissing the toolbar hands
-                // focus back here rather than dropping it on <body>, and a card
-                // is not a control, so it takes no tab stop of its own.
-                tabIndex={-1}
+                // A real tab stop. The per-card controls used to live inside
+                // the card in DOM order, so Tab walked straight into them —
+                // `opacity: 0` hid them without taking them out of the tab
+                // order. They float now, and a keyboard user reaches them by
+                // reaching the card first: Tab here, Enter or Space to select,
+                // and the toolbar (one tab stop of its own, arrow-key
+                // navigable) is what comes next. It is also where the toolbar
+                // hands focus back on dismissal.
+                tabIndex={0}
                 className={cardClass}
                 style={{
                   ...cardStyle,
@@ -1244,6 +1249,17 @@ export function ChordBoard({
                 // the only way out of a selection is the strip of board
                 // background around the grid, which a full board barely has.
                 onClick={() => onSelect?.(isSelected ? null : item.id)}
+                // The keyboard's half of that click, with the same toggle: a
+                // second Enter deselects, exactly as a second click does, so
+                // Escape is a shortcut rather than the only way back out.
+                // Space is preventDefault'd because on a focusable div it
+                // scrolls the page.
+                onKeyDown={(e) => {
+                  if (e.target !== e.currentTarget) return;
+                  if (e.key !== "Enter" && e.key !== " ") return;
+                  e.preventDefault();
+                  onSelect?.(isSelected ? null : item.id);
+                }}
                 onDragStart={(e) => {
                   if (armedDragId !== item.id) {
                     e.preventDefault();

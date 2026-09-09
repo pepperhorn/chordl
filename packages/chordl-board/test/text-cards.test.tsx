@@ -199,7 +199,7 @@ describe("line breaks", () => {
   it("toggles the break from the card action row", () => {
     const onToggleBreak = vi.fn();
     const items = [chord("a", "C"), { ...chord("b", "Am"), breakAfter: true }];
-    const { container, rerender } = render(
+    const { rerender } = render(
       <ChordBoard items={items} selectedId="a" onToggleBreak={onToggleBreak} />,
     );
 
