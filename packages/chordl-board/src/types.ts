@@ -32,6 +32,11 @@ export const BOARD_ITEM_KINDS: readonly BoardItemKind[] = ["chord", "text"];
  * fallback, it is a broken control and a nonsense message.
  */
 export const BOARD_EXPERIENCE_LEVELS: readonly string[] = ["beginner", "emerging", "established"];
+export const BOARD_PLAYBACK_INSTRUMENTS: readonly string[] = [
+  "acoustic_grand_piano",
+  "electric_guitar_clean",
+  "ukulele",
+];
 
 /**
  * Prefixes an `icon` id may carry: `music:` for notation glyphs, `obj:` for
@@ -116,6 +121,11 @@ export interface BoardItem {
    * lands should not need a migration.
    */
   level?: string;
+  /** Ordered MIDI pitches for the exact voicing captured in the editor. */
+  playbackNotes?: number[];
+  playbackInstrument?: string;
+  arpeggioBpm?: number;
+  playbackHighlightColor?: string;
   /** Icon id (e.g. `"music:trebleClef"`) shown above the text. Text cards only. */
   icon?: string;
   /**

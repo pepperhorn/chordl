@@ -1,5 +1,5 @@
-import { useEffect, useRef, type ReactNode } from "react";
-import type { Format, ColorTheme, WhiteNote, DisplayMode, TextSize, NoteNameMode, OnVariation, RenderVariationExtras, VariationContext } from "../types";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import type { Format, ColorTheme, WhiteNote, DisplayMode, TextSize, NoteNameMode, OnVariation, RenderVariationExtras, VariationContext, PlaybackSpecSnapshot } from "../types";
 import { PianoKeyboard } from "./PianoKeyboard";
 import { ascendingOctaves } from "../diatonic-step";
 import { StaffNotation } from "./StaffNotation";
@@ -21,6 +21,9 @@ export interface ChordGroupProps {
   noteNameSize?: TextSize;
   showFingering?: boolean;
   fingeringSize?: TextSize;
+  arpeggioBpm?: number;
+  playbackHighlightColor?: string;
+  onPlaybackSpecChange?: (spec: PlaybackSpecSnapshot) => void;
   onVariation?: OnVariation;
   renderVariationExtras?: RenderVariationExtras;
 }
@@ -50,10 +53,14 @@ export function ChordGroup({
   noteNameSize,
   showFingering,
   fingeringSize,
+  arpeggioBpm,
+  playbackHighlightColor,
+  onPlaybackSpecChange,
   onVariation,
   renderVariationExtras,
 }: ChordGroupProps) {
   const { tokens: ui } = useUITheme();
+  const [activePlaybackByChord, setActivePlaybackByChord] = useState<Record<number, number[]>>({});
   // Calculate all layouts, then use the max size for uniform keyboards
   const layouts = chords.map((chord) => calculateLayout(chord.notes, { padding: 1 }));
   const uniformSize = Math.max(...layouts.map((l) => l.size), 8);
@@ -104,6 +111,9 @@ export function ChordGroup({
                 chordLabel={chord.symbol}
                 showPlayback={showPlayback}
                 scale={scale}
+                arpeggioBpm={arpeggioBpm}
+                playbackHighlightColor={playbackHighlightColor}
+                onPlaybackSpecChange={onPlaybackSpecChange}
               />
             ) : display === "both" ? (
               <div className="bc-display-both" style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
@@ -112,6 +122,8 @@ export function ChordGroup({
                   chordLabel={chord.symbol}
                   showPlayback={false}
                   scale={scale}
+                  playbackHighlightColor={playbackHighlightColor}
+                  activePlaybackIndices={activePlaybackByChord[i] ?? []}
                 />
                 <PianoKeyboard
                   format={format}
@@ -129,6 +141,13 @@ export function ChordGroup({
                   displayNoteNames={chord.notes}
                   fingering={showFingering ? autoFingering(chord.notes) : undefined}
                   fingeringSize={fingeringSize}
+                  arpeggioBpm={arpeggioBpm}
+                  playbackHighlightColor={playbackHighlightColor}
+                  onPlaybackSpecChange={onPlaybackSpecChange}
+                  activePlaybackIndices={activePlaybackByChord[i] ?? []}
+                  onPlaybackActiveChange={(indices) => {
+                    setActivePlaybackByChord((current) => ({ ...current, [i]: indices }));
+                  }}
                 />
               </div>
             ) : (
@@ -148,6 +167,9 @@ export function ChordGroup({
                 displayNoteNames={chord.notes}
                 fingering={showFingering ? autoFingering(chord.notes) : undefined}
                 fingeringSize={fingeringSize}
+                arpeggioBpm={arpeggioBpm}
+                playbackHighlightColor={playbackHighlightColor}
+                onPlaybackSpecChange={onPlaybackSpecChange}
               />
             )}
             {chord.voicingStyle && (

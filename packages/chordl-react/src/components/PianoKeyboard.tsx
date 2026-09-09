@@ -1,10 +1,12 @@
 import type { KeyboardProps, HandBracket, TextSize, NoteNameMode } from "../types";
+import { useState } from "react";
 import {
   computeKeyboard, computeSvgDimensions,
   mapHighlights, normalizeNote,
   WHITE_KEY_RY, BLACK_KEY_RY,
   WHITE_KEY_WIDTH, BLACK_KEY_WIDTH,
   DEFAULT_WHITE_FILL, DEFAULT_BLACK_FILL, DEFAULT_STROKE_WIDTH,
+  DEFAULT_PLAYBACK_HIGHLIGHT_COLOR,
   resolveTheme,
 } from "@pepperhorn/chordl-core";
 import { SHOW_NOTE_NAMES } from "../config";
@@ -86,15 +88,16 @@ function matchHighlightsToKeys(
   displayNoteNames: (string | undefined)[] | undefined,
   noteNameMode: NoteNameMode = "pitch-class",
   midiBaseOctave: number = 4,
-): Array<{ x: number; width: number; note: string; index: number }> {
-  const highlighted: Array<{ x: number; width: number; note: string; index: number }> = [];
+): Array<{ x: number; width: number; note: string; index: number; keyIndex: number }> {
+  const highlighted: Array<{ x: number; width: number; note: string; index: number; keyIndex: number }> = [];
   const remaining = highlightKeys.map((h, i) => {
     const colonIdx = h.indexOf(":");
     const note = colonIdx !== -1 ? normalizeNote(h.slice(0, colonIdx)) : normalizeNote(h);
     return { note, idx: i, matched: false };
   });
 
-  for (const key of keys) {
+  for (let keyIndex = 0; keyIndex < keys.length; keyIndex++) {
+    const key = keys[keyIndex];
     const keyNote = normalizeNote(key.note);
     const matchIdx = remaining.findIndex((h) => {
       if (h.matched || h.note !== keyNote) return false;
@@ -116,6 +119,7 @@ function matchHighlightsToKeys(
         width: key.isBlack ? BLACK_KEY_WIDTH : WHITE_KEY_WIDTH,
         note: displayName,
         index: remaining[matchIdx].idx,
+        keyIndex,
       });
     }
   }
@@ -156,7 +160,14 @@ export function PianoKeyboard({
   footerText,
   className,
   style,
+  arpeggioBpm,
+  playbackHighlightColor = DEFAULT_PLAYBACK_HIGHLIGHT_COLOR,
+  activePlaybackIndices,
+  onPlaybackActiveChange,
+  onPlaybackSpecChange,
 }: KeyboardProps) {
+  const [internalActivePlaybackIndices, setInternalActivePlaybackIndices] = useState<number[]>([]);
+  const visibleActivePlaybackIndices = activePlaybackIndices ?? internalActivePlaybackIndices;
   const parentCtx = useUITheme();
   const ctx = uiTheme ? resolveUITheme(uiTheme) : parentCtx;
   const uiTokens = ctx.tokens;
@@ -195,6 +206,28 @@ export function PianoKeyboard({
   const height = keyboardHeight + controlsHeight + bracketsHeight;
   const keysOffsetY = controlsHeight;
 
+  // Playback notes and painted highlights are normally index-parallel, but
+  // `allNotes` can include a separate LH group. Match occurrences by pitch so
+  // doubled notes still target distinct keys rather than the first match.
+  const playbackNotes = allNotes ?? highlightKeys;
+  const unusedHighlights = highlightKeys.map((value, index) => ({
+    pitch: normalizeNote(value.replace(/:.*$/, "").replace(/-?\d+$/, "")),
+    index,
+    used: false,
+  }));
+  const playbackToHighlight = playbackNotes.map((value) => {
+    const pitch = normalizeNote(value.replace(/:.*$/, "").replace(/-?\d+$/, ""));
+    const match = unusedHighlights.find((candidate) => !candidate.used && candidate.pitch === pitch);
+    if (!match) return -1;
+    match.used = true;
+    return match.index;
+  });
+  const paintTargets = matchHighlightsToKeys(keys, highlightKeys, undefined, "pitch-class", midiBaseOctave);
+  const activeHighlights = new Set(visibleActivePlaybackIndices.map((index) => playbackToHighlight[index]));
+  const activeKeyIndices = new Set(
+    paintTargets.filter((target) => activeHighlights.has(target.index)).map((target) => target.keyIndex),
+  );
+
   const whiteKeys = keys
     .map((k, i) => ({ key: k, fill: fills[i], index: i }))
     .filter(({ key }) => !key.isBlack);
@@ -225,6 +258,12 @@ export function PianoKeyboard({
             chordName={chordLabel ?? highlightKeys.join("-")}
             x={controlsX}
             y={controlsY}
+            arpeggioBpm={arpeggioBpm}
+            onActiveChange={(indices) => {
+              setInternalActivePlaybackIndices(indices);
+              onPlaybackActiveChange?.(indices);
+            }}
+            onPlaybackSpecChange={onPlaybackSpecChange}
           />
         </g>
       )}
@@ -244,6 +283,13 @@ export function PianoKeyboard({
         </defs>
       )}
       <g transform={`translate(0, ${keysOffsetY})`}>
+        <style>{`
+          .bc-playback-note-active { animation: bc-playback-note-pulse 0.35s ease-out infinite alternate; }
+          @keyframes bc-playback-note-pulse { from { opacity: 0.38; } to { opacity: 0.82; } }
+          @media (prefers-reduced-motion: reduce) {
+            .bc-playback-note-active { animation: none; opacity: 0.68; }
+          }
+        `}</style>
         <g clipPath={(clipLeft || clipRight) && whiteKeys.length > 0 ? `url(#kb-clip-${vbX}-${keysOffsetY})` : undefined}>
           {whiteKeys.map(({ key, fill, index }) => (
             <rect
@@ -259,6 +305,17 @@ export function PianoKeyboard({
               strokeWidth={DEFAULT_STROKE_WIDTH}
             />
           ))}
+          {whiteKeys.filter(({ index }) => activeKeyIndices.has(index)).map(({ key, index }) => (
+            <rect
+              key={`white-active-${index}`}
+              className="bc-playback-note-active"
+              data-playback-key={index}
+              x={key.x} y={key.y} width={key.width} height={key.height}
+              rx={WHITE_KEY_RY} ry={WHITE_KEY_RY}
+              fill={playbackHighlightColor}
+              pointerEvents="none"
+            />
+          ))}
           {blackKeys.map(({ key, fill, index }) => (
             <rect
               key={`black-${index}`}
@@ -271,6 +328,17 @@ export function PianoKeyboard({
               fill={fill}
               stroke={keyStroke}
               strokeWidth={DEFAULT_STROKE_WIDTH}
+            />
+          ))}
+          {blackKeys.filter(({ index }) => activeKeyIndices.has(index)).map(({ key, index }) => (
+            <rect
+              key={`black-active-${index}`}
+              className="bc-playback-note-active"
+              data-playback-key={index}
+              x={key.x} y={key.y} width={key.width} height={key.height}
+              rx={BLACK_KEY_RY} ry={BLACK_KEY_RY}
+              fill={playbackHighlightColor}
+              pointerEvents="none"
             />
           ))}
         </g>

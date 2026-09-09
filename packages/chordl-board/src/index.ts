@@ -8,7 +8,7 @@ export type {
   BoardState,
   StorageAdapter,
 } from "./types.js";
-export { BOARD_CARD_SIZES, BOARD_CARD_SIZE_FACTORS, BOARD_DISPLAY_MODES, BOARD_EXPERIENCE_LEVELS, BOARD_ICON_PREFIXES, BOARD_ITEM_KINDS, isTextCard } from "./types.js";
+export { BOARD_CARD_SIZES, BOARD_CARD_SIZE_FACTORS, BOARD_DISPLAY_MODES, BOARD_EXPERIENCE_LEVELS, BOARD_ICON_PREFIXES, BOARD_ITEM_KINDS, BOARD_PLAYBACK_INSTRUMENTS, isTextCard } from "./types.js";
 export { localStorageAdapter, memoryStorageAdapter } from "./storage.js";
 export type { LocalStorageAdapterOptions } from "./storage.js";
 export { exportBoardJson, importBoardJson, computeCacheKey } from "./io.js";

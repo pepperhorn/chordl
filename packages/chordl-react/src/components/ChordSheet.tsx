@@ -247,6 +247,8 @@ function ChordRenderer({
       highlightColor={resolved.highlightColor}
       padding={resolved.padding}
       scale={resolved.scale}
+      arpeggioBpm={resolved.arpeggioBpm}
+      playbackHighlightColor={resolved.playbackHighlightColor}
       display={resolved.display}
       uiTheme={uiTheme as any}
       onVariation={onVariation}

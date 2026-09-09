@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { positionToMidi, rootPitchClass } from "../src/pitch";
+import { positionToMidi, positionToSoundingStrings, rootPitchClass } from "../src/pitch";
 import { INSTRUMENTS } from "../src/instruments";
 
 describe("positionToMidi", () => {
@@ -37,6 +37,22 @@ describe("positionToMidi", () => {
   it("returns an empty array for an all-muted position", () => {
     const pos = { frets: [-1, -1, -1, -1, -1, -1], fingers: [0, 0, 0, 0, 0, 0], baseFret: 1, barres: [] };
     expect(positionToMidi(pos, guitar)).toEqual([]);
+  });
+
+  it("retains physical string indices for visual playback targets", () => {
+    const pos = {
+      frets: [-1, 3, 2, 0, 1, 0],
+      fingers: [0, 3, 2, 0, 1, 0],
+      baseFret: 1,
+      barres: [],
+    };
+    expect(positionToSoundingStrings(pos, guitar)).toEqual([
+      { stringIndex: 1, midi: 48 },
+      { stringIndex: 2, midi: 52 },
+      { stringIndex: 3, midi: 55 },
+      { stringIndex: 4, midi: 60 },
+      { stringIndex: 5, midi: 64 },
+    ]);
   });
 });
 

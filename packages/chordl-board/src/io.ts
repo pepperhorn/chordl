@@ -1,4 +1,4 @@
-import { BOARD_CARD_SIZES, BOARD_DISPLAY_MODES, BOARD_EXPERIENCE_LEVELS, BOARD_ICON_PREFIXES, BOARD_ITEM_KINDS, MAX_COLUMNS, isTextCard } from "./types.js";
+import { BOARD_CARD_SIZES, BOARD_DISPLAY_MODES, BOARD_EXPERIENCE_LEVELS, BOARD_ICON_PREFIXES, BOARD_ITEM_KINDS, BOARD_PLAYBACK_INSTRUMENTS, MAX_COLUMNS, isTextCard } from "./types.js";
 import type {
   BoardCardSize,
   BoardDisplayMode,
@@ -16,14 +16,13 @@ export interface BoardItemJsonV1 extends BoardItem {
 }
 
 /**
- * Schema `exportBoardJson` writes. v2 is the first version that can carry text
- * cards (`kind`, `icon`, `image`, `breakAfter`); a v1 reader rejects those
- * items one by one with no way to explain why, so the version says so up front.
+ * Schema `exportBoardJson` writes. v3 is the first version that preserves an
+ * exact playable voicing and its playback presentation settings.
  */
-export const BOARD_SCHEMA = "chordl.board/v2";
+export const BOARD_SCHEMA = "chordl.board/v3";
 
 /** Schemas `importBoardJson` accepts. v1 boards are chord-only and still read. */
-export const READABLE_BOARD_SCHEMAS = ["chordl.board/v1", "chordl.board/v2"] as const;
+export const READABLE_BOARD_SCHEMAS = ["chordl.board/v1", "chordl.board/v2", "chordl.board/v3"] as const;
 
 export type BoardSchema = (typeof READABLE_BOARD_SCHEMAS)[number];
 
@@ -145,6 +144,31 @@ function parseLevel(value: unknown): string | undefined {
   return typeof value === "string" && BOARD_EXPERIENCE_LEVELS.includes(value) ? value : undefined;
 }
 
+function parsePlaybackNotes(value: unknown): number[] | undefined {
+  if (!Array.isArray(value) || value.length === 0) return undefined;
+  return value.every((note) => typeof note === "number" && Number.isInteger(note) && note >= 0 && note <= 127)
+    ? [...value]
+    : undefined;
+}
+
+function parsePlaybackInstrument(value: unknown): string | undefined {
+  return typeof value === "string" && BOARD_PLAYBACK_INSTRUMENTS.includes(value)
+    ? value
+    : undefined;
+}
+
+function parseArpeggioBpm(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isInteger(value) && value >= 40 && value <= 300
+    ? value
+    : undefined;
+}
+
+function parsePlaybackHighlightColor(value: unknown): string | undefined {
+  return typeof value === "string" && /^#[0-9a-f]{3,4}(?:[0-9a-f]{3,4})?$/i.test(value)
+    ? value
+    : undefined;
+}
+
 /** Only a real boolean: truthy-coercing `"false"` or `0` invents a layout. */
 function parseBreakAfter(value: unknown): boolean | undefined {
   return typeof value === "boolean" ? value : undefined;
@@ -210,6 +234,10 @@ export function importBoardJson(text: string): BoardState {
       instrument: typeof raw.instrument === "string" && raw.instrument ? raw.instrument : undefined,
       position: parsePosition(raw.position),
       level: parseLevel(raw.level),
+      playbackNotes: parsePlaybackNotes(raw.playbackNotes),
+      playbackInstrument: parsePlaybackInstrument(raw.playbackInstrument),
+      arpeggioBpm: parseArpeggioBpm(raw.arpeggioBpm),
+      playbackHighlightColor: parsePlaybackHighlightColor(raw.playbackHighlightColor),
       icon: parseIcon(raw.icon),
       image: parseImage(raw.image),
       size: parseSize(raw.size),

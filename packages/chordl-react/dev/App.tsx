@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo, lazy, Suspense } from "react";
+import React, { useState, useRef, useEffect, useMemo, useCallback, lazy, Suspense } from "react";
 import { createRoot } from "react-dom/client";
 import { PianoKeyboard, PianoChord, VoicingVariantToggle, ChordQualityPicker, StaffNotation, ChordSheet, ProgressionView, ListenOverlay, FollowAlongOverlay, isProgressionRequest, parseProgressionRequest, resolveProgressionRequest, BRAVURA_GLYPHS, PETALUMA_GLYPHS, setDefaultGlyphs, encodeChordSheet, decodeChordSheet } from "../src";
 
@@ -7,7 +7,14 @@ import { PianoKeyboard, PianoChord, VoicingVariantToggle, ChordQualityPicker, St
 const GuitarChordPanel = lazy(() =>
   import("../src/components/GuitarChordPanel").then((m) => ({ default: m.GuitarChordPanel })),
 );
-import { parseChordDescription, resolveChord } from "@pepperhorn/chordl-core";
+import {
+  DEFAULT_ARPEGGIO_BPM,
+  DEFAULT_PLAYBACK_HIGHLIGHT_COLOR,
+  MAX_ARPEGGIO_BPM,
+  MIN_ARPEGGIO_BPM,
+  parseChordDescription,
+  resolveChord,
+} from "@pepperhorn/chordl-core";
 import { composeChordDetails, composeOctaveShift, splitChordDetails } from "../src/editor/chordDetails";
 import type { TextSize, NoteNameMode } from "@pepperhorn/chordl-core";
 import {
@@ -22,7 +29,7 @@ import {
   IMAGE_BUDGET_CHARS,
 } from "@pepperhorn/chordl-board";
 import type { BoardDisplayMode, BoardItem } from "@pepperhorn/chordl-board";
-import type { StaffGlyphSet, ChordSheetData } from "../src";
+import type { StaffGlyphSet, ChordSheetData, PlaybackSpecSnapshot } from "../src";
 // InstrumentId and ExperienceLevel come from chordl-guitar, but are named
 // here via ../src's re-export rather than importing that package directly —
 // the same reason GuitarChordPanelProps itself uses them: a consumer of this
@@ -616,6 +623,9 @@ export function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExpo
   const [displayMode, setDisplayMode] = useState<DisplayMode>("keyboard");
   const [scale, setScale] = useState(0.7);
   const [highlightColor, setHighlightColor] = useState("#a0c6e8");
+  const [arpeggioBpm, setArpeggioBpm] = useState(DEFAULT_ARPEGGIO_BPM);
+  const [playbackHighlightColor, setPlaybackHighlightColor] = useState(DEFAULT_PLAYBACK_HIGHLIGHT_COLOR);
+  const [playbackSpec, setPlaybackSpec] = useState<PlaybackSpecSnapshot | null>(null);
   const [octaveShift, setOctaveShift] = useState(0);
   const [notationFont, setNotationFont] = useState<"bravura" | "petaluma">("bravura");
   const [error, setError] = useState<string | null>(null);
@@ -686,6 +696,13 @@ export function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExpo
   const [fingeringSize, setFingeringSize] = useState<TextSize>("lg");
 
   const isProg = isProgressionRequest(input);
+  const handlePlaybackSpecChange = useCallback((next: PlaybackSpecSnapshot) => {
+    setPlaybackSpec((previous) => previous
+      && previous.instrument === next.instrument
+      && previous.notes.join(",") === next.notes.join(",")
+        ? previous
+        : next);
+  }, []);
 
   // Resolve note count for dynamic fingering cells.
   const noteCount = useMemo(() => {
@@ -781,9 +798,14 @@ export function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExpo
       // card made in Keyboard mode now shouldn't need a migration once that
       // lands.
       level,
+      playbackNotes: playbackSpec?.notes,
+      playbackInstrument: playbackSpec?.instrument,
+      arpeggioBpm,
+      playbackHighlightColor,
     };
   }, [input, octaveShift, detailsModifiers, title, subheading, footerText,
-      displayMode, guitarInstrument, guitarPosition, pianoVariantNl, level]);
+      displayMode, guitarInstrument, guitarPosition, pianoVariantNl, level,
+      playbackSpec, arpeggioBpm, playbackHighlightColor]);
 
   // A text card is text, and deliberately nothing else: no `nl`, no `display`,
   // no instrument. `updateItem` merges a patch, so a chord key that appeared
@@ -991,6 +1013,12 @@ export function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExpo
     // the shape (and the persisted `position`) out from under the user the
     // moment they open it to edit something else entirely.
     setLevel((item.level as ExperienceLevel | undefined) ?? "established");
+    setArpeggioBpm(item.arpeggioBpm ?? DEFAULT_ARPEGGIO_BPM);
+    setPlaybackHighlightColor(item.playbackHighlightColor ?? DEFAULT_PLAYBACK_HIGHLIGHT_COLOR);
+    setPlaybackSpec(item.playbackNotes && item.playbackInstrument ? {
+      notes: item.playbackNotes,
+      instrument: item.playbackInstrument as PlaybackSpecSnapshot["instrument"],
+    } : null);
     setEditingItemId(item.id);
     setEditPulseKey((k) => k + 1);
     setInputPulsing(false);
@@ -1294,6 +1322,43 @@ export function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExpo
             </div>
           </div>
         )}
+        <div className="control-item playback-speed-control">
+          <label className="control-label" htmlFor="arpeggio-bpm">Arpeggio speed</label>
+          <div className="control-content">
+            <div className="size-slider-group" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <input
+                id="arpeggio-bpm"
+                type="range"
+                min={MIN_ARPEGGIO_BPM}
+                max={MAX_ARPEGGIO_BPM}
+                step={1}
+                value={arpeggioBpm}
+                onChange={(event) => setArpeggioBpm(Number(event.target.value))}
+                aria-valuetext={`${arpeggioBpm} BPM`}
+                style={{ width: 100, accentColor: "var(--accent)", cursor: "pointer" }}
+              />
+              <output
+                htmlFor="arpeggio-bpm"
+                style={{ fontSize: "0.8rem", fontWeight: 500, color: "var(--pill-active-text)", minWidth: 62 }}
+              >
+                {arpeggioBpm} BPM
+              </output>
+            </div>
+          </div>
+        </div>
+        <div className="control-item playback-color-control">
+          <label className="control-label" htmlFor="playback-highlight-color">Played note</label>
+          <div className="control-content">
+            <input
+              id="playback-highlight-color"
+              type="color"
+              value={playbackHighlightColor}
+              onChange={(event) => setPlaybackHighlightColor(event.target.value)}
+              aria-label="Played note highlight color"
+              style={{ width: 32, height: 32, border: "none", borderRadius: 8, cursor: "pointer", background: "transparent", padding: 0 }}
+            />
+          </div>
+        </div>
         <DisplayToggle value={displayMode} onChange={setDisplayMode} />
         {(displayMode === "staff" || displayMode === "both") && (
           <PillGroup
@@ -1470,6 +1535,9 @@ export function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExpo
                 title={title || undefined}
                 subheading={subheading || undefined}
                 footerText={footerText || undefined}
+                arpeggioBpm={arpeggioBpm}
+                playbackHighlightColor={playbackHighlightColor}
+                onPlaybackSpecChange={handlePlaybackSpecChange}
               />
             </Suspense>
           ) : (
@@ -1482,6 +1550,9 @@ export function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExpo
               subheading={subheading || undefined}
               footerText={footerText || undefined}
               onVariantChange={setPianoVariantNl}
+              arpeggioBpm={arpeggioBpm}
+              playbackHighlightColor={playbackHighlightColor}
+              onPlaybackSpecChange={handlePlaybackSpecChange}
               onExportStatus={onExportStatus}
             />
           )}

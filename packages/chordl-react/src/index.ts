@@ -31,7 +31,13 @@ export type { ChordGroupProps } from "./components/ChordGroup";
 export type { ProgressionViewProps, GroupMode } from "./components/ProgressionView";
 
 // ─── Browser-only modules (local) ──────────────────────────────────────────
-export { playBlock, playArpeggiated } from "./audio/playback";
+export {
+  playBlock, playArpeggiated, startPlayback, buildPlaybackEvents,
+  noteToMidi, toAscendingNotes,
+} from "./audio/playback";
+export type {
+  PlaybackMode, PlaybackEvent, PlaybackController, StartPlaybackOptions,
+} from "./audio/playback";
 export { downloadSvg, downloadPng, prepareExportClone } from "./audio/svg-export";
 
 // ─── UI theme (local — React context) ──────────────────────────────────────
@@ -40,7 +46,7 @@ export { SHOW_NOTE_NAMES, ARPEGGIO_BPM, arpeggioDelayMs, LIGHT_THEME, DARK_THEME
 export type { UIThemeMode, UIThemeTokens } from "./config";
 
 // ─── React-specific types (local) ──────────────────────────────────────────
-export type { KeyboardProps, ChordProps, PianoChordProps, DisplayMode, ChordSheetProps, DisplayDefaults, ChordData, SectionData, ChordSheetData, VariationContext, RenderVariationExtras, OnVariation } from "./types";
+export type { KeyboardProps, ChordProps, PianoChordProps, DisplayMode, ChordSheetProps, DisplayDefaults, ChordData, SectionData, ChordSheetData, VariationContext, RenderVariationExtras, OnVariation, PlaybackSpecSnapshot, PlaybackInstrument } from "./types";
 
 // ─── Re-export everything from @pepperhorn/chordl-core for backwards compat ─────
 export {
@@ -79,6 +85,9 @@ export {
   ENABLE_CHORD_LOGGING, MAX_EXAMPLES,
   // ChordSheet
   resolveDefaults, chordRef, SYSTEM_DEFAULTS,
+  MIN_ARPEGGIO_BPM, MAX_ARPEGGIO_BPM, DEFAULT_ARPEGGIO_BPM,
+  DEFAULT_PLAYBACK_HIGHLIGHT_COLOR, isPlaybackColor,
+  normalizeArpeggioBpm, normalizePlaybackHighlightColor,
   CHORD_SHEET_SCHEMA_VERSION, validateVersion,
   encodeChordSheet, decodeChordSheet,
 } from "@pepperhorn/chordl-core";

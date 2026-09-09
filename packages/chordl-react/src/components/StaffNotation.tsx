@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
-import { buildMei } from "@pepperhorn/chordl-core";
+import { buildMei, DEFAULT_PLAYBACK_HIGHLIGHT_COLOR } from "@pepperhorn/chordl-core";
 import type { StaffGlyphSet } from "@pepperhorn/chordl-core";
 import { PlaybackControls } from "./PlaybackControls";
 import { useUITheme } from "../ui-theme";
 import { renderMeiToSvg } from "../verovio";
 import type { VerovioFont } from "../verovio";
 import { getDefaultGlyphs } from "@pepperhorn/chordl-core";
+import type { PlaybackSpecSnapshot } from "../types";
 
 export interface StaffNotationProps {
   notes: string[];
@@ -26,6 +27,12 @@ export interface StaffNotationProps {
   showLabel?: boolean;
   scale?: number;
   showPlayback?: boolean;
+  arpeggioBpm?: number;
+  playbackHighlightColor?: string;
+  /** Controlled active note indices, shared with a keyboard in `both` mode. */
+  activePlaybackIndices?: number[];
+  onPlaybackActiveChange?: (indices: number[]) => void;
+  onPlaybackSpecChange?: (spec: PlaybackSpecSnapshot) => void;
   /** Which SMuFL font to engrave with. `name` selects the Verovio font
    *  (Bravura / Petaluma); defaults to the app-wide glyph selection. */
   glyphs?: StaffGlyphSet;
@@ -66,7 +73,14 @@ export function StaffNotation({
   glyphs,
   className,
   style,
+  arpeggioBpm,
+  playbackHighlightColor = DEFAULT_PLAYBACK_HIGHLIGHT_COLOR,
+  activePlaybackIndices,
+  onPlaybackActiveChange,
+  onPlaybackSpecChange,
 }: StaffNotationProps) {
+  const [internalActiveIndices, setInternalActiveIndices] = useState<number[]>([]);
+  const visibleActiveIndices = activePlaybackIndices ?? internalActiveIndices;
   const { tokens: ui } = useUITheme();
   const font = fontFor(glyphs);
 
@@ -142,6 +156,21 @@ export function StaffNotation({
     }
   }, [staffSvg, totalWidth, engHeight]);
 
+  // Verovio preserves the MEI xml:id on each engraved note. Toggle a class on
+  // those stable targets so staff paint follows the same index timeline as the
+  // keyboard, even when grand-staff engraving reorders RH before LH in the DOM.
+  useEffect(() => {
+    const g = nestRef.current;
+    if (!g) return;
+    g.querySelectorAll(".bc-staff-note-active").forEach((note) => {
+      note.classList.remove("bc-staff-note-active");
+    });
+    visibleActiveIndices.forEach((index) => {
+      g.querySelector(`[id="chordl-playback-note-${index}"]`)
+        ?.classList.add("bc-staff-note-active");
+    });
+  }, [staffSvg, visibleActiveIndices]);
+
   const staffColor = ui.text ?? "#333";
   const controlsX = totalWidth - CONTROLS_WIDTH + 4;
   const loading = staffSvg === null && !failed;
@@ -153,20 +182,44 @@ export function StaffNotation({
       className={`bc-staff ${className ?? ""}`.trim()}
       // Verovio glyphs use `currentColor`; set it to the theme text color so
       // the engraving stays visible in dark mode (not left to CSS inheritance).
-      style={{ width: "100%", maxWidth: totalWidth * 1.6, color: staffColor, ...style }}
+      style={{
+        width: "100%",
+        maxWidth: totalWidth * 1.6,
+        color: staffColor,
+        ["--bc-playback-highlight" as string]: playbackHighlightColor,
+        ...style,
+      }}
       role="img"
       aria-label={chordLabel ? `Staff notation: ${chordLabel}` : "Staff notation"}
     >
+      <style>{`
+        .bc-staff-note-active { animation: bc-staff-note-pulse 0.35s ease-out infinite alternate; }
+        .bc-staff-note-active path,
+        .bc-staff-note-active use { fill: var(--bc-playback-highlight) !important; stroke: var(--bc-playback-highlight) !important; }
+        @keyframes bc-staff-note-pulse {
+          from { filter: drop-shadow(0 0 1px var(--bc-playback-highlight)); }
+          to { filter: drop-shadow(0 0 5px var(--bc-playback-highlight)); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .bc-staff-note-active { animation: none !important; }
+        }
+      `}</style>
       {controlsH > 0 && (
         <g data-controls="">
           <PlaybackControls
-            notes={notes}
+            notes={(octaveQualifiedNotes ?? notes).map((note) => note.replace(":", ""))}
             lhNotes={lhNotes}
             rhOctave={rhOctave}
             lhOctave={lhOctave}
             chordName={chordLabel ?? notes.join("-")}
             x={controlsX}
             y={4}
+            arpeggioBpm={arpeggioBpm}
+            onActiveChange={(indices) => {
+              setInternalActiveIndices(indices);
+              onPlaybackActiveChange?.(indices);
+            }}
+            onPlaybackSpecChange={onPlaybackSpecChange}
           />
         </g>
       )}

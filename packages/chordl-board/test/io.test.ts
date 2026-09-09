@@ -61,6 +61,31 @@ describe("board JSON round-trip", () => {
     expect(back.items.map((i) => i.level)).toEqual(["beginner", "established"]);
   });
 
+  it("preserves an exact playback snapshot and presentation settings", async () => {
+    const state = board([{
+      id: "a",
+      nl: "Cmaj7",
+      playbackNotes: [48, 52, 55, 59],
+      playbackInstrument: "electric_guitar_clean",
+      arpeggioBpm: 96,
+      playbackHighlightColor: "#ff8800",
+    }]);
+    const back = importBoardJson(await exportBoardJson(state));
+    expect(back.items[0]).toMatchObject(state.items[0]);
+  });
+
+  it("drops malformed playback fields at import", () => {
+    const back = importBoardJson(rawBoard([{
+      id: "a", nl: "C", playbackNotes: [60, 128],
+      playbackInstrument: "remote_sf2", arpeggioBpm: 0,
+      playbackHighlightColor: "url(javascript:alert(1))",
+    }], "chordl.board/v3"));
+    expect(back.items[0].playbackNotes).toBeUndefined();
+    expect(back.items[0].playbackInstrument).toBeUndefined();
+    expect(back.items[0].arpeggioBpm).toBeUndefined();
+    expect(back.items[0].playbackHighlightColor).toBeUndefined();
+  });
+
   it("leaves the new fields undefined on a legacy card", async () => {
     const state = board([{ id: "a", nl: "Cmaj7" }]);
     const back = importBoardJson(await exportBoardJson(state));
@@ -318,10 +343,10 @@ describe("render cache key", () => {
 });
 
 describe("schema versioning", () => {
-  it("writes v2 — the first version that can carry a text card", async () => {
+  it("writes v3 — the first version that preserves playback snapshots", async () => {
     const json = JSON.parse(await exportBoardJson(board([{ id: "a", nl: "Cmaj7" }])));
-    expect(json.schema).toBe("chordl.board/v2");
-    expect(BOARD_SCHEMA).toBe("chordl.board/v2");
+    expect(json.schema).toBe("chordl.board/v3");
+    expect(BOARD_SCHEMA).toBe("chordl.board/v3");
   });
 
   it("still reads a v1 board written before text cards existed", () => {
@@ -348,7 +373,7 @@ describe("schema versioning", () => {
   });
 
   it("rejects a newer schema by saying a newer chordl is needed", () => {
-    expect(() => importBoardJson(rawBoard([], "chordl.board/v3"))).toThrow(/newer chordl/);
+    expect(() => importBoardJson(rawBoard([], "chordl.board/v4"))).toThrow(/newer chordl/);
   });
 
   it("round-trips its own export", async () => {

@@ -1,5 +1,28 @@
 import type { DisplayDefaults } from "../types.js";
 
+export const MIN_ARPEGGIO_BPM = 40;
+export const MAX_ARPEGGIO_BPM = 300;
+export const DEFAULT_ARPEGGIO_BPM = 120;
+export const DEFAULT_PLAYBACK_HIGHLIGHT_COLOR = "#f59e0b";
+
+export function isPlaybackColor(value: unknown): value is string {
+  return typeof value === "string"
+    && /^#[0-9a-f]{3,4}(?:[0-9a-f]{3,4})?$/i.test(value);
+}
+
+export function normalizeArpeggioBpm(value: unknown): number {
+  return typeof value === "number"
+    && Number.isInteger(value)
+    && value >= MIN_ARPEGGIO_BPM
+    && value <= MAX_ARPEGGIO_BPM
+      ? value
+      : DEFAULT_ARPEGGIO_BPM;
+}
+
+export function normalizePlaybackHighlightColor(value: unknown): string {
+  return isPlaybackColor(value) ? value : DEFAULT_PLAYBACK_HIGHLIGHT_COLOR;
+}
+
 /** System-level defaults when nothing is specified. */
 export const SYSTEM_DEFAULTS: Required<DisplayDefaults> = {
   display: "keyboard",
@@ -14,6 +37,8 @@ export const SYSTEM_DEFAULTS: Required<DisplayDefaults> = {
   noteNameMode: "pitch-class",
   showFingering: false,
   fingeringSize: "base",
+  arpeggioBpm: DEFAULT_ARPEGGIO_BPM,
+  playbackHighlightColor: DEFAULT_PLAYBACK_HIGHLIGHT_COLOR,
 };
 
 /**
@@ -25,12 +50,15 @@ export function resolveDefaults(
   section?: DisplayDefaults,
   chord?: Partial<DisplayDefaults>,
 ): Required<DisplayDefaults> {
-  return {
+  const resolved = {
     ...SYSTEM_DEFAULTS,
     ...(sheet ? stripUndefined(sheet) : {}),
     ...(section ? stripUndefined(section) : {}),
     ...(chord ? stripUndefined(chord) : {}),
   } as Required<DisplayDefaults>;
+  resolved.arpeggioBpm = normalizeArpeggioBpm(resolved.arpeggioBpm);
+  resolved.playbackHighlightColor = normalizePlaybackHighlightColor(resolved.playbackHighlightColor);
+  return resolved;
 }
 
 /** Remove keys whose value is undefined so they don't overwrite lower layers. */

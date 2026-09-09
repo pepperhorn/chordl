@@ -25,7 +25,8 @@ export {
 export type { StaticPreset } from "./staticPresets.js";
 export type { Top3Source } from "./top3Generated.js";
 
-export { positionToMidi, rootPitchClass } from "./pitch.js";
+export { positionToMidi, positionToSoundingStrings, rootPitchClass } from "./pitch.js";
+export type { SoundingString } from "./pitch.js";
 
 export { toDbSuffix, splitLabel } from "./chordNames.js";
 

@@ -1,17 +1,21 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
-import { parseChordDescription } from "@pepperhorn/chordl-core";
+import { DEFAULT_PLAYBACK_HIGHLIGHT_COLOR, parseChordDescription } from "@pepperhorn/chordl-core";
 import {
   lookupGuitarChord,
   INSTRUMENTS,
   rootPitchClass,
   selectForResult,
+  positionToSoundingStrings,
 } from "@pepperhorn/chordl-guitar";
 import type { InstrumentId, ExperienceLevel } from "@pepperhorn/chordl-guitar";
 import type { UIThemeMode } from "../config";
 import { resolveUITheme, UIThemeProvider } from "../ui-theme";
 import { GuitarChord } from "./GuitarChord";
 import { CardHeading, CardFooter } from "./CardHeading";
+import { GuitarPlaybackControls } from "./GuitarPlaybackControls";
+import type { PlaybackSpecSnapshot } from "../types";
+import type { Chord } from "svguitar";
 
 export interface GuitarChordPanelProps {
   /** NL chord string (same input the piano view takes). */
@@ -63,6 +67,14 @@ export interface GuitarChordPanelProps {
   footerText?: string;
   className?: string;
   style?: CSSProperties;
+  /**
+   * Show chord/strum playback. Defaults to the value of `showControls`, so a
+   * legacy static panel stays static unless playback is explicitly enabled.
+   */
+  showPlayback?: boolean;
+  arpeggioBpm?: number;
+  playbackHighlightColor?: string;
+  onPlaybackSpecChange?: (spec: PlaybackSpecSnapshot) => void;
 }
 
 const POSITION_LABELS = "ABCDEFGH";
@@ -90,6 +102,38 @@ const MIN_FRET_WINDOW = 4;
  */
 const INSTRUMENT_ORDER: InstrumentId[] = ["guitar", "guitar-top3", "ukulele"];
 
+/** Add stable per-string SVG targets without changing the static diagram. */
+function decorateForPlayback(chord: Chord, frets: number[], barres: number[], strings: number): Chord {
+  const fingers = chord.fingers.map((finger) => {
+    const [stringNumber, fret, label] = finger;
+    const stringIndex = strings - stringNumber;
+    if (frets[stringIndex] === -1) return finger;
+    const existing = typeof label === "object" && label !== null ? label : {};
+    const text = typeof label === "string" ? label : existing.text;
+    return [stringNumber, fret, {
+      ...existing,
+      ...(text !== undefined ? { text } : {}),
+      className: `${existing.className ?? ""} bc-playback-string-${stringIndex}`.trim(),
+    }] as typeof finger;
+  });
+  // svguitar represents a barre as one shape. Invisible finger targets make
+  // each sounding string/barre intersection independently highlightable.
+  frets.forEach((fret, stringIndex) => {
+    if (fret <= 0 || !barres.includes(fret)) return;
+    fingers.push([
+      strings - stringIndex,
+      fret,
+      {
+        text: "",
+        color: "rgba(0,0,0,0)",
+        strokeColor: "rgba(0,0,0,0)",
+        className: `bc-playback-string-${stringIndex} bc-playback-barre-target`,
+      },
+    ]);
+  });
+  return { ...chord, fingers };
+}
+
 /**
  * Guitar view for a chord: resolves the chord label, looks up its shapes, and
  * renders the selected fret position with an A/B/C toggle for the alternate
@@ -111,7 +155,13 @@ export function GuitarChordPanel({
   footerText,
   className,
   style,
+  showPlayback,
+  arpeggioBpm,
+  playbackHighlightColor = DEFAULT_PLAYBACK_HIGHLIGHT_COLOR,
+  onPlaybackSpecChange,
 }: GuitarChordPanelProps) {
+  const resolvedShowPlayback = showPlayback ?? showControls;
+  const [activeStrings, setActiveStrings] = useState<number[]>([]);
   const uiCtx = resolveUITheme(uiTheme);
   const muted = uiCtx.tokens.textMuted ?? "#888";
   const text = uiCtx.tokens.text ?? "#111";
@@ -283,6 +333,23 @@ export function GuitarChordPanel({
     onPositionChange?.(displayedIdx);
   }, [displayedIdx, active, onPositionChange]);
 
+  const soundingStrings = useMemo(() => {
+    if (!result || displayedIdx === undefined) return [];
+    return positionToSoundingStrings(result.positions[displayedIdx], cfg.openMidi);
+  }, [cfg.openMidi, displayedIdx, result]);
+  const soundingMidis = soundingStrings.map(({ midi }) => midi);
+  const playbackInstrument = resolved === "ukulele" ? "ukulele" : "electric_guitar_clean";
+  const playbackDiagram = useMemo(() => {
+    if (!placements || !result) return null;
+    const position = result.positions[placements.idx];
+    return decorateForPlayback(placements.diagram, position.frets, position.barres, cfg.strings);
+  }, [cfg.strings, placements, result]);
+
+  useEffect(() => {
+    if (soundingMidis.length === 0) return;
+    onPlaybackSpecChange?.({ notes: soundingMidis, instrument: playbackInstrument });
+  }, [onPlaybackSpecChange, playbackInstrument, soundingMidis.join(",")]);
+
   const notice = (msg: string) => (
     <UIThemeProvider value={uiCtx}>
       <div className={`bc-guitar-panel bc-guitar-notice ${className ?? ""}`.trim()}
@@ -391,11 +458,27 @@ export function GuitarChordPanel({
         )}
 
         <GuitarChord
-          chord={diagram}
+          chord={playbackDiagram ?? diagram}
           scale={scale}
           frets={Math.max(frets ?? minFrets, minFrets)}
           settings={guitarSettings}
+          activeStrings={activeStrings}
+          playbackHighlightColor={playbackHighlightColor}
         />
+
+        {resolvedShowPlayback && soundingStrings.length > 0 && (
+          <GuitarPlaybackControls
+            notes={soundingMidis}
+            arpeggioBpm={arpeggioBpm}
+            instrument={playbackInstrument}
+            onActiveChange={(indices) => {
+              setActiveStrings(indices.flatMap((index) => {
+                const physicalString = soundingStrings[index]?.stringIndex;
+                return physicalString === undefined ? [] : [physicalString];
+              }));
+            }}
+          />
+        )}
 
         {/* Alternate placements. Labelled by visible order so the row reads
             A/B/C even when the level filter has removed shapes
