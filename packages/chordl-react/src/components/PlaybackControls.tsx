@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useMemo } from "react";
+import { Note } from "tonal";
 import { noteToMidi, toAscendingNotes } from "../audio/playback";
 import { usePlaybackTimeline } from "../audio/usePlaybackTimeline";
 import type { PlaybackInstrument } from "@pepperhorn/chordl-core";
@@ -19,9 +20,18 @@ interface PlaybackControlsProps {
    */
   notes: string[];
   /**
-   * Which leading entries of `notes` belong to the left hand. Only the count
-   * is read: it splits `notes` for the two MIDI-export tracks and for the
-   * per-hand octave fallback.
+   * The left hand's notes, which **must be the leading entries of `notes`**,
+   * in the same order.
+   *
+   * Only the *count* is read. It splits `notes` positionally — into the two
+   * MIDI-export tracks and for the per-hand octave fallback — so left-hand
+   * entries that sit anywhere but the front of `notes` are not rejected, they
+   * simply send the wrong notes to the wrong hand. `["C","E","G"]` with
+   * `lhNotes={["G"]}` exports C on the left-hand track, not G.
+   *
+   * Positional is deliberate: matching by name deleted every copy of a doubled
+   * note, which is how a slash chord lost the right hand's octave of its own
+   * bass note.
    */
   lhNotes?: string[];
   /** Octave to stack bare right-hand pitch classes from (default 3). */
@@ -67,6 +77,23 @@ export function PlaybackControls({
     }
     return toAscendingNotes(cleanNotes, rhOct);
   }, [cleanNotes.join("|"), lhCount, lhOct, rhOct]);
+
+  // Dev-only: the hands split by position, so a caller whose `lhNotes` are not
+  // the leading entries of `notes` gets silently wrong-handed output. Compared
+  // by chroma, since the two props may spell the same pitch differently (the
+  // keyboard sharpens, the staff keeps the chord's own flats).
+  useEffect(() => {
+    if (!import.meta.env.DEV || lhCount === 0) return;
+    const chroma = (n: string) => Note.chroma(n.replace(/:.*$/, "").replace(/-?\d+$/, ""));
+    const leading = cleanNotes.slice(0, lhCount).map(chroma);
+    if (lhNotes!.map(chroma).some((c, i) => c !== leading[i])) {
+      console.warn(
+        `[chordl] lhNotes must be the leading entries of notes — got lhNotes=[${lhNotes!.join(", ")}] ` +
+        `against notes=[${cleanNotes.join(", ")}]. The hands split by position, so the left-hand ` +
+        `track will carry [${cleanNotes.slice(0, lhCount).join(", ")}] instead.`,
+      );
+    }
+  }, [cleanNotes.join("|"), lhNotes?.join("|"), lhCount]);
 
   useEffect(() => {
     onPlaybackSpecChange?.({

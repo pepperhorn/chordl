@@ -14,6 +14,16 @@
  */
 
 export interface MeiBuildOptions {
+  /**
+   * The notes the left hand plays, which land on the bass staff of a grand
+   * staff. **These must be the leading entries of `notes`** (and of
+   * `octaveQualifiedNotes`, when that is given), in the same order.
+   *
+   * With `octaveQualifiedNotes`, only the *count* is read: the hands split
+   * positionally, `all.slice(0, lhNotes.length)`. Passing left-hand entries
+   * that are not the leading ones therefore does not error — it silently
+   * engraves and sounds the wrong notes on the wrong hand.
+   */
   lhNotes?: string[];
   rhOctave?: number;
   lhOctave?: number;
@@ -126,7 +136,20 @@ export function buildMei(notes: string[], options: MeiBuildOptions = {}): MeiBui
     lhResolved = all.slice(0, lhCount);
     rhResolved = all.slice(lhCount);
   } else {
-    const rhInput = lhNotes ? notes.filter((n) => !lhNotes.includes(n)) : notes;
+    // Claim each left-hand note once rather than filtering out every note that
+    // matches one by name — the same rule `generateMidiFile` uses. Filtering by
+    // membership deletes an octave doubling outright: a C/G chord's own G, the
+    // one the right hand plays above the bass, shares its name with the bass
+    // note and vanished from both the engraving and the sound.
+    const unclaimed = [...(lhNotes ?? [])];
+    const rhInput = lhNotes
+      ? notes.filter((n) => {
+          const at = unclaimed.indexOf(n);
+          if (at === -1) return true;
+          unclaimed.splice(at, 1);
+          return false;
+        })
+      : notes;
     lhResolved = assignOctaves(lhNotes ?? [], lhOctave);
     rhResolved = assignOctaves(rhInput, rhOctave, lhResolved.length);
     all = [...lhResolved, ...rhResolved];

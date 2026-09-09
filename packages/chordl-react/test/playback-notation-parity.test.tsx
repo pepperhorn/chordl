@@ -28,6 +28,7 @@ vi.mock("../src/verovio", () => ({
 
 import { PianoChord } from "../src/components/PianoChord";
 import { StaffNotation } from "../src/components/StaffNotation";
+import { PianoKeyboard } from "../src/components/PianoKeyboard";
 import type { PlaybackSpecSnapshot } from "../src/types";
 
 /** Every engraved note, in playback-index order, as a MIDI number. */
@@ -241,4 +242,101 @@ describe("the downloaded MIDI file carries the engraved pitches", () => {
       expect(new Uint8Array(captured[0])).toEqual(expected);
     });
   }
+});
+
+/**
+ * A note the left hand already holds must not disappear from the right hand.
+ *
+ * `buildMei`'s bare-pitch-class branch split the hands with
+ * `notes.filter((n) => !lhNotes.includes(n))`, which removes *every* copy of a
+ * doubled note rather than the one the left hand claimed. `midi-export` had the
+ * same bug and was fixed by claiming each left-hand note once; now that the
+ * engraving drives the speaker, the missing note is audible as well as invisible.
+ */
+describe("a doubled note survives the hand split", () => {
+  it("keeps the chord's own G when the bass note is also a G", async () => {
+    const specs: PlaybackSpecSnapshot[] = [];
+    render(
+      <StaffNotation
+        notes={["G", "C", "E", "G", "B"]}
+        lhNotes={["G"]}
+        lhOctave={2}
+        rhOctave={4}
+        onPlaybackSpecChange={(s) => specs.push(s)}
+      />,
+    );
+    await waitFor(() => expect(rendered.length).toBeGreaterThan(0));
+    await waitFor(() => expect(specs.length).toBeGreaterThan(0));
+
+    const mei = rendered[rendered.length - 1];
+    // G2 under C4-E4-G4-B4: five notes in, five notes out.
+    expect(engravedMidi(mei)).toEqual([43, 60, 64, 67, 71]);
+    expect(specs[specs.length - 1].notes).toEqual(engravedMidi(mei));
+
+    // The bass G stays on the bass staff; the chord's own G stays on the treble.
+    const staves = engravedStaves(mei);
+    expect([staves[0], staves[1], staves[2], staves[3], staves[4]])
+      .toEqual([2, 1, 1, 1, 1]);
+  });
+});
+
+/**
+ * A slash chord's right hand has to keep climbing when the arpeggio repeats a
+ * chord tone. The per-note "is this letter above the bass letter?" rule is
+ * positional-blind: every C in `C E G C E G C` answers the same question the
+ * same way, so all three landed in one octave and a two-octave arpeggio became
+ * the same three pitches three times over — flat on the staff and, once the
+ * staff started driving the speaker, flat in playback too.
+ */
+describe("a multi-octave slash-chord arpeggio ascends", () => {
+  for (const [octaves, span] of [[2, 24], [3, 36]] as const) {
+    it(`climbs ${octaves} octaves for "C over G arpeggiated over ${octaves} octaves"`, async () => {
+      const { mei, played } = await renderCard(
+        `C over G arpeggiated over ${octaves} octaves`, "staff",
+      );
+      const engraved = engravedMidi(mei);
+      expect(played).toEqual(engraved);
+
+      // Index 0 is the bass note; the right hand is everything after it and
+      // must rise at every step, never repeat a pitch.
+      const rh = engraved.slice(1);
+      expect(rh.length).toBe(octaves * 3 + 1);
+      for (let i = 1; i < rh.length; i++) {
+        expect(rh[i]).toBeGreaterThan(rh[i - 1]);
+      }
+      expect(rh[rh.length - 1] - rh[0]).toBe(span);
+    });
+  }
+
+  it("leaves a single-octave slash chord where it was", async () => {
+    const { mei, played } = await renderCard("C over G", "staff");
+    expect(played).toEqual(engravedMidi(mei));
+    expect(midiNames(engravedMidi(mei))).toEqual(["G3", "C5", "E5", "G5"]);
+  });
+});
+
+/**
+ * The hands split by *position* now, not by name — that is what stopped a
+ * doubled note being deleted from the right hand. The cost is that `lhNotes`
+ * is only a count, so a caller who passes left-hand notes that are not the
+ * leading entries of `notes` gets silently wrong-handed output rather than an
+ * error. `PianoKeyboard` is public API, so the narrowed contract is documented
+ * on the prop and, in dev builds, said out loud.
+ */
+describe("the left hand must lead", () => {
+  it("warns when lhNotes are not the leading entries of the notes", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(<PianoKeyboard highlightKeys={["C", "E", "G"]} lhNotes={["G"]} showPlayback />);
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining("lhNotes must be the leading entries of notes"),
+    );
+    warn.mockRestore();
+  });
+
+  it("stays quiet when they are", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(<PianoKeyboard highlightKeys={["G", "C", "E"]} lhNotes={["G"]} showPlayback />);
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
 });

@@ -710,13 +710,34 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
     const octaveGap = 1 + (parsed.chordOctaveShift ?? 0) - (parsed.bassOctaveShift ?? 0);
     // 7 white keys = 1 octave; clamp to 0 so negative gaps don't produce negative offsets
     const rhOctaveOffset = Math.max(octaveGap, 0) * 7;
-    const rhOffsets = notes.map((n) => {
+
+    // How many octaves above the right hand's base each RH note sits.
+    //
+    // The seed places the *first* note relative to the bass: above the bass
+    // letter (and so before the next C) it stays in the base octave, otherwise
+    // it has wrapped past C and takes the one above. Everything after it walks
+    // up with `ascendingOctaves`, the same diatonic rule the rest of the
+    // codebase uses.
+    //
+    // Applying the bass comparison to every note independently — which is what
+    // this did — is positional-blind: each repeat of a chord tone answers the
+    // same question the same way, so `C E G C E G C` piled three octaves of
+    // arpeggio into one and `Am7 over D` drew its E and G below the C they
+    // follow. The walk is what makes repeats climb.
+    const rhOctaveSteps = notes.length === 0 ? [] : ascendingOctaves(
+      notes,
+      WHITE_NOTE_ORDER.indexOf(normalizeNote(notes[0]).replace("#", "") as WhiteNote) > lhWhiteIdx
+        ? 0
+        : 1,
+    );
+
+    const rhOffsets = notes.map((n, i) => {
       const norm = normalizeNote(n);
       const whiteKey = norm.replace("#", "") as WhiteNote;
       const whiteIdx = WHITE_NOTE_ORDER.indexOf(whiteKey);
-      let offset = whiteIdx - lhWhiteIdx;
-      if (offset <= 0) offset += 7; // wrap within octave
-      return offset + rhOctaveOffset;
+      // White keys from the bass note up to this one: the letter distance plus
+      // seven per octave of gap and of climb.
+      return (whiteIdx - lhWhiteIdx) + 7 * rhOctaveSteps[i] + rhOctaveOffset;
     });
     const maxRhOffset = Math.max(...rhOffsets);
 
@@ -743,16 +764,9 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
     const rhBaseOctave = lhOctave + Math.max(octaveGap, 0);
 
     const lhHighlights = [`${lhNorm}:${lhOctave}`];
-    const rhHighlights = notes.map((n) => {
-      const norm = normalizeNote(n);
-      const whiteKey = norm.replace("#", "") as WhiteNote;
-      const whiteIdx = WHITE_NOTE_ORDER.indexOf(whiteKey);
-      // Notes above LH in pitch class order (before the next C) are in rhBaseOctave;
-      // notes at or below LH (wrapped past C) are in rhBaseOctave + 1
-      const isAboveLhBeforeC = whiteIdx > lhWhiteIdx;
-      const noteOctave = isAboveLhBeforeC ? rhBaseOctave : rhBaseOctave + 1;
-      return `${norm}:${noteOctave}`;
-    });
+    // `rhOctaveSteps` above places the first note relative to the bass and then
+    // climbs; the keyboard and the staff differ only in what they count from.
+    const rhHighlights = notes.map((n, i) => `${normalizeNote(n)}:${rhBaseOctave + rhOctaveSteps[i]}`);
     const allHighlights = [...lhHighlights, ...rhHighlights];
 
     // Real-octave-qualified notes for staff notation
@@ -760,21 +774,13 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
     const realLhOctave = 3 + (parsed.bassOctaveShift ?? 0);
     const realRhBaseOctave = realLhOctave + Math.max(octaveGap, 0);
     // The staff engraves the spelling it is handed, so emit the chord's own
-    // names — the sharpened ones are the keyboard's business. The octave
-    // arithmetic deliberately still runs on the normalised names, so no note
-    // moves: Bb and A# are the same pitch in the same octave, and the resolver
-    // does not produce the Cb/B# spellings where letter and pitch octave part.
+    // names — the sharpened ones are the keyboard's business. The octaves are
+    // the keyboard's `rhOctaveSteps`, counted from the real base instead of the
+    // drawn window's, so the two views cannot place a note differently.
     const lhStaffName = parsed.bassNote ?? lhBassNote;
     const staffOctaveNotesBass = [
       `${lhStaffName}:${realLhOctave}`,
-      ...notes.map((n) => {
-        const norm = normalizeNote(n);
-        const whiteKey = norm.replace("#", "") as WhiteNote;
-        const whiteIdx = WHITE_NOTE_ORDER.indexOf(whiteKey);
-        const isAboveLhBeforeC = whiteIdx > lhWhiteIdx;
-        const noteOctave = isAboveLhBeforeC ? realRhBaseOctave : realRhBaseOctave + 1;
-        return `${n}:${noteOctave}`;
-      }),
+      ...notes.map((n, i) => `${n}:${realRhBaseOctave + rhOctaveSteps[i]}`),
     ];
 
     // Find key indices for bracket annotations

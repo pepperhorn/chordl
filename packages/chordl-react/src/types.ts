@@ -21,7 +21,15 @@ export interface KeyboardProps {
   highlightKeys?: NoteName[];
   /** All notes for playback (e.g. LH bass + RH chord). Falls back to highlightKeys. */
   allNotes?: NoteName[];
-  /** Left-hand bass notes (for MIDI export with separate clefs). */
+  /**
+   * Left-hand bass notes (for MIDI export with separate clefs), which **must
+   * be the leading entries of `allNotes`** (or of `highlightKeys` when
+   * `allNotes` is omitted), in the same order.
+   *
+   * Only the count is read — the hands split by position, not by name — so
+   * `highlightKeys={["C","E","G"]} lhNotes={["G"]}` does not error, it exports
+   * C on the left-hand track. Pass the bass note first.
+   */
   lhNotes?: NoteName[];
   /** Right-hand playback octave (default 4). */
   rhOctave?: number;
