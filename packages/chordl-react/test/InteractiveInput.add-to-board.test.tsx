@@ -43,6 +43,14 @@ const pills = (c: HTMLElement) =>
 const addToBoard = (c: HTMLElement) =>
   c.querySelector<HTMLButtonElement>("button.btn-add-to-board")!;
 
+/** The "edit" affordance on the nth board card. */
+const editCard = (c: HTMLElement, n: number) =>
+  [...c.querySelectorAll<HTMLButtonElement>("button.chordl-board-action-edit")][n];
+
+/** The "Done" control, which only exists while a card is being edited. */
+const doneEditing = (c: HTMLElement) =>
+  c.querySelector<HTMLButtonElement>("button.btn-stop-editing")!;
+
 describe("InteractiveInput + Add to board — piano voicing", () => {
   beforeEach(() => {
     // The board hydrates from storage on mount, so a board left behind by the
@@ -105,6 +113,97 @@ describe("InteractiveInput + Add to board — piano voicing", () => {
       const nl = lastCard().nl ?? "";
       expect(nl).toMatch(/starting on/);
       expect(nl).toMatch(/chord up 1 octave/);
+    });
+  });
+});
+
+/**
+ * `pianoVariantNl` names a voicing *of the chord in the box*, so it has to die
+ * with any change to that box — including the two changes the form makes on
+ * its own. Both of these were live: the report only re-fires when the toggle
+ * has a reason to, and neither of these gives it one.
+ */
+describe("InteractiveInput — a reported voicing does not outlive the chord box", () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it("does not rewrite a card's chord when it is opened for editing", async () => {
+    const { container } = render(
+      <InteractiveInput uiTheme="light" showOptions={false} onToggleOptions={() => {}} />,
+    );
+    fireEvent.change(chordBox(container), { target: { value: "C" } });
+    await waitFor(() => expect(pills(container).length).toBeGreaterThan(1));
+
+    // A plain card first, so the card and the box hold the same chord text.
+    fireEvent.click(addToBoard(container));
+    await waitFor(() => expect(lastCard().nl).toBe("C"));
+
+    // Then a variant, which is only ever a preview until something saves it.
+    fireEvent.click(pills(container)[1]);
+    await waitFor(() => expect(pills(container)[1].dataset.active).toBe("true"));
+
+    // Opening the card for editing puts its own chord back in the box — the
+    // same text, so nothing about the toggle changes and nothing re-reports.
+    // The live-edit mirror then writes the form onto the card immediately.
+    fireEvent.click(editCard(container, 0));
+
+    await waitFor(() => expect(doneEditing(container)).toBeTruthy());
+    expect(storedCards()[0].nl).toBe("C");
+  });
+
+  it("does not carry the finished chord into the next card after Done", async () => {
+    const { container } = render(
+      <InteractiveInput uiTheme="light" showOptions={false} onToggleOptions={() => {}} />,
+    );
+    fireEvent.change(chordBox(container), { target: { value: "C" } });
+    await waitFor(() => expect(pills(container).length).toBeGreaterThan(1));
+    fireEvent.click(pills(container)[1]);
+
+    fireEvent.click(addToBoard(container));
+    await waitFor(() => expect(lastCard().nl).toMatch(/starting on/));
+
+    fireEvent.click(editCard(container, 0));
+    await waitFor(() => expect(doneEditing(container)).toBeTruthy());
+
+    // "Done" empties the box. With nothing in it there is no toggle on screen
+    // to report anything, so a stale report would simply stand.
+    fireEvent.click(doneEditing(container));
+    await waitFor(() => expect(chordBox(container).value).toBe(""));
+
+    fireEvent.click(addToBoard(container));
+
+    await waitFor(() => expect(storedCards().length).toBe(2));
+    expect(lastCard().nl).toBe("");
+  });
+});
+
+/**
+ * The variant string used to be rebuilt from the parsed chord name plus a
+ * hand-kept list of clauses to re-emit, so any clause not on the list was
+ * dropped by the click. Harmless while it only fed the preview; permanent, and
+ * unrecoverable on re-edit, once the click writes it to a card.
+ */
+describe("InteractiveInput + Add to board — clauses survive the pill click", () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it("keeps a clause the old rebuild never knew about", async () => {
+    const { container } = render(
+      <InteractiveInput uiTheme="light" showOptions={false} onToggleOptions={() => {}} />,
+    );
+    fireEvent.change(chordBox(container), { target: { value: "C 2 octaves" } });
+
+    await waitFor(() => expect(pills(container).length).toBeGreaterThan(1));
+    fireEvent.click(pills(container)[1]);
+
+    fireEvent.click(addToBoard(container));
+
+    await waitFor(() => {
+      const nl = lastCard().nl ?? "";
+      expect(nl).toMatch(/starting on/);
+      expect(nl).toMatch(/2 octaves/);
     });
   });
 });

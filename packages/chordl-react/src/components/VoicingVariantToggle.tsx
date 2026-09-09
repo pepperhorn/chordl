@@ -5,6 +5,7 @@ import { PianoChord } from "./PianoChord";
 import {
   parseChordDescription,
   resolveChord,
+  stripVoicingClauses,
   FLAT_TO_SHARP,
 } from "@pepperhorn/chordl-core";
 import {
@@ -13,11 +14,6 @@ import {
   selectVoicingsForExperience,
 } from "@pepperhorn/chordl-voicings";
 import type { VoicingVariant, ExperienceLevel } from "@pepperhorn/chordl-voicings";
-// The editor owns the wording of the octave clause, and the variant rebuild
-// below has to re-emit it byte-for-byte or a shifted chord comes back unshifted.
-// A direct import of the leaf module (it pulls in nothing but core types), so
-// no cycle between `components` and `editor`.
-import { composeOctaveShift } from "../editor/chordDetails";
 import { exportSingleZip, exportAllZip, downloadBlob } from "../audio/zip-export";
 import type { ZipVariant } from "../audio/zip-export";
 
@@ -48,8 +44,9 @@ export interface VoicingVariantToggleProps {
    */
   level?: ExperienceLevel;
   /**
-   * Called with the chord string of the voicing currently on screen — the one
-   * this component rebuilds for the active variant, modifiers and all.
+   * Called with the chord string of the voicing currently on screen — the
+   * `chord` given to this component with the active variant's clause swapped
+   * in, everything else the user typed left alone.
    *
    * The selection is private state, so without this a host can watch the right
    * voicing being drawn and still have no way to name it: `dev/App.tsx`'s
@@ -169,84 +166,40 @@ export function VoicingVariantToggle({
   const activeIdx = visible.includes(rawActive) ? rawActive : visible[0] ?? rawActive;
   const active = variants[activeIdx];
 
-  // Extract display modifiers from the original prompt so all variants
-  // inherit them (midi note names, fingering, note name size, etc.).
-  const displayModifiers = useMemo(() => {
-    if (!resolved) return "";
-    const parts: string[] = [];
-    const p = resolved.parsed;
-    /*
-     * "degree" is degree-only: no name row at all. Emitting the literal "note
-     * names" for every non-midi mode turned that card into a plain pitch-class
-     * one on the first variant click. The degrees clause has to be written down
-     * too, or the degree row and its size are dropped by the same rebuild.
-     */
-    const mode = p.noteNameMode ?? "pitch-class";
-    const wantsDegrees =
-      mode === "degree" || mode === "pitch-class+degree" || mode === "midi+degree";
-    if (p.showNoteNames && mode !== "degree") {
-      if (mode === "midi" || mode === "midi+degree") {
-        parts.push("midi note names");
-      } else {
-        parts.push("note names");
-      }
-      // Write the size down whenever the card has one, base included: the
-      // renderer's fallback is `degreeSize ?? noteNameSize` defaulting to lg,
-      // so leaving base off does not mean base — it means lg, and the row
-      // grew on the first pill click.
-      if (p.noteNameSize) {
-        parts.push(`in ${p.noteNameSize}`);
-      }
-    }
-    if (wantsDegrees) {
-      // The explicit "in <size>" form: the bare-size form carries a negative
-      // lookahead so it can't swallow a following note-names shape, and there
-      // is no reason to go near that hazard here.
-      parts.push(p.degreeSize ? `degrees in ${p.degreeSize}` : "degrees");
-    }
-    if (p.customFingering) {
-      parts.push(`custom fingering "${p.customFingering.join(",")}"`);;
-    } else if (p.autoFingering) {
-      parts.push("with fingering");
-    } else if (p.fingering) {
-      parts.push(`fingering ${p.fingering.join("-")}`);
-    }
-    if (p.fingeringSize && p.fingeringSize !== "base") {
-      parts.push(`fingering in ${p.fingeringSize}`);
-    }
-    if (p.colorTheme) {
-      parts.push(p.colorTheme);
-    }
-    if (p.scale != null) {
-      parts.push(`size ${Math.round(p.scale * 100)}`);
-    }
-    if (p.showHeading) {
-      parts.push("heading");
-    }
-    return parts.length > 0 ? " " + parts.join(" ") : "";
-  }, [resolved]);
-
-  // Build the chord string for the active variant, preserving display modifiers.
+  // The chord string for the active variant.
+  //
+  // Surgery on the string the host gave us, not a rebuild from the parsed
+  // chord name. `chord` is already the complete request — every clause the
+  // user typed, in their own words — so replacing just the clause this variant
+  // actually changes keeps the rest by construction. The rebuild it replaces
+  // re-emitted a hand-kept list of clauses instead, and silently dropped
+  // everything not on the list: "2 octaves", the bass note and its octave,
+  // span, padding. That was survivable while the string only fed the preview;
+  // once `onVariantChange` puts it on a saved card it is permanent and
+  // unrecoverable on re-edit. (The same hand-kept list had already cost a
+  // dropped degrees clause and a mangled fingering size — see
+  // `stripVoicingClauses`, which owns the parser's own spelling of the
+  // clauses being replaced.)
+  //
   // Gated on `activeIdx`, not the raw `activeIndex` state: the level filter
   // can push the displayed variant off index 0 even while the click-state
   // itself is still sitting at 0 (nothing has been clicked yet).
   const chordString = useMemo(() => {
     if (!resolved || activeIdx <= 0) return chord;
-    const baseChord = resolved.parsed.chordName ?? chord;
-    // `chordName` is the bare chord — every other clause the user wrote was
-    // parsed off it, the octave shift included. Anything the rebuild does not
-    // write back is therefore lost, so re-emit the shift in the editor's own
-    // wording rather than a second spelling of it here.
-    const octave = composeOctaveShift(resolved.parsed.chordOctaveShift ?? 0);
     if (active.source === "inversion") {
-      // Use "starting on X" instead of inversion number to avoid
-      // mismatch when the input already has a starting note rotation
-      return `${baseChord} starting on ${active.notes[0]}${octave}${displayModifiers}`;
-    } else if (active.source === "library") {
-      return `${baseChord} ${active.label} style${octave}${displayModifiers}`;
+      // "starting on X" rather than an inversion number: the input may already
+      // carry a rotation, and two rotations do not compose.
+      return `${stripVoicingClauses(chord)} starting on ${active.notes[0]}`;
     }
-    return `${baseChord}${octave}${displayModifiers}`;
-  }, [resolved, activeIdx, active, chord, displayModifiers]);
+    if (active.source === "library") {
+      return `${stripVoicingClauses(chord)} ${active.label} style`;
+    }
+    // Algorithmic variants (open, drop 2, simplified) have no clause that
+    // names them, so there is nothing to replace — the string stays exactly
+    // as typed. It does not draw the algorithmic shape, but neither did the
+    // rebuild, which drew the plain chord *and* threw the user's clauses away.
+    return chord;
+  }, [resolved, activeIdx, active, chord]);
 
   // Report the string upward. Value-guarded rather than fired on every render:
   // a host that passes an inline callback hands us a new identity each render,
