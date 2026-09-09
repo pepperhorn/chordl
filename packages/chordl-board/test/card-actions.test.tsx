@@ -5,27 +5,42 @@ import type { BoardItem } from "../src";
 
 const items: BoardItem[] = [{ id: "a", nl: "C" }, { id: "b", nl: "Am" }];
 
-const actionsRow = (container: HTMLElement) =>
-  container.querySelector<HTMLElement>(".chordl-board-actions")!;
+/*
+ * The toolbar portals to <body>, so it is a sibling of Testing Library's
+ * container rather than inside it — any `transform` on an ancestor (the host
+ * app's fade-in wrapper has one) captures `position: fixed`, so it cannot stay
+ * in the board's own tree. Queries for it go through the document.
+ */
+const actionsRow = () =>
+  document.body.querySelector<HTMLElement>(".chordl-board-actions")!;
 
-const labels = (container: HTMLElement) =>
-  Array.from(actionsRow(container).querySelectorAll("button")).map((b) => b.textContent);
+const labels = () =>
+  Array.from(actionsRow().querySelectorAll("button")).map((b) => b.textContent);
 
 /**
- * Six controls in a row is wider than a card at small scales or in a
- * many-column layout, and a non-wrapping flex row does not shrink to fit — it
- * spills past the card border. Wrapping keeps them inside; centring keeps the
- * short second row from hanging off one edge.
+ * These controls used to sit inside the card, revealed on hover or selection.
+ * Eleven of them do not fit across a card: the wrapping row that kept them
+ * inside the border turned the overflow into height instead, and at four
+ * columns it was 191px of a 287px `sm` card. They live in one floating toolbar
+ * now, which exists only while a card is selected — so getting at a card's
+ * controls is select first, then act.
  */
 describe("card action row", () => {
-  it("wraps its controls instead of overflowing the card", () => {
-    const row = actionsRow(render(<ChordBoard items={items} />).container);
-    expect(row.style.flexWrap).toBe("wrap");
+  it("leaves the card itself with nothing but its diagram", () => {
+    const { container } = render(<ChordBoard items={items} selectedId="a" onResize={() => {}} />);
+    const card = container.querySelector('[data-board-id="a"]')!;
+    expect(card.querySelector(".chordl-board-actions")).toBeNull();
+    expect(card.querySelectorAll("button")).toHaveLength(0);
   });
 
-  it("centres them, so a wrapped row is not lopsided", () => {
-    const row = actionsRow(render(<ChordBoard items={items} />).container);
-    expect(row.style.justifyContent).toBe("center");
+  it("fits every control on one row rather than wrapping into height", () => {
+    const { container } = render(<ChordBoard items={items} selectedId="a" onResize={() => {}} />);
+    expect(actionsRow(container).style.flexWrap).toBe("nowrap");
+  });
+
+  it("has no controls at all until a card is selected", () => {
+    const { container } = render(<ChordBoard items={items} onResize={() => {}} />);
+    expect(document.body.querySelector(".chordl-board-actions")).toBeNull();
   });
 
   /**
@@ -33,15 +48,25 @@ describe("card action row", () => {
    * same job in one click. One control named for what it does replaces both.
    */
   it("offers duplicate in place of copy and repeat", () => {
-    const { container } = render(<ChordBoard items={items} onDuplicate={() => {}} />);
-    expect(labels(container)).toEqual(["edit", "duplicate", "cut", "break", "delete"]);
+    const { container } = render(
+      <ChordBoard items={items} selectedId="a" onDuplicate={() => {}} />,
+    );
+    expect(labels()).toEqual(["edit", "duplicate", "cut", "break", "delete"]);
   });
 
   it("duplicates the card the control belongs to", () => {
     const onDuplicate = vi.fn();
-    const { container } = render(<ChordBoard items={items} onDuplicate={onDuplicate} />);
-    fireEvent.click(container.querySelector(".chordl-board-action-duplicate")!);
+    const { container, rerender } = render(
+      <ChordBoard items={items} selectedId="a" onDuplicate={onDuplicate} />,
+    );
+    fireEvent.click(document.body.querySelector(".chordl-board-action-duplicate")!);
     expect(onDuplicate).toHaveBeenCalledWith("a");
+
+    // The toolbar is shared now, so "the card it belongs to" is a live binding
+    // rather than a card that owns its own copy of the button.
+    rerender(<ChordBoard items={items} selectedId="b" onDuplicate={onDuplicate} />);
+    fireEvent.click(document.body.querySelector(".chordl-board-action-duplicate")!);
+    expect(onDuplicate).toHaveBeenLastCalledWith("b");
   });
 });
 
@@ -113,7 +138,21 @@ describe("deselecting a card", () => {
     const { container } = render(
       <ChordBoard items={items} selectedId="a" onSelect={onSelect} onDelete={() => {}} />,
     );
-    fireEvent.click(container.querySelector(".chordl-board-action-delete")!);
+    fireEvent.click(document.body.querySelector(".chordl-board-action-delete")!);
     expect(onSelect).not.toHaveBeenCalled();
+  });
+
+  /**
+   * The toolbar sits outside the export root, whose click handler is what
+   * clears a selection for clicks that miss a card. Acting on the selected card
+   * must not be read as a click away from it.
+   */
+  it("keeps a click on the action row from clearing the selection", () => {
+    const onClearSelection = vi.fn();
+    const { container } = render(
+      <ChordBoard items={items} selectedId="a" onClearSelection={onClearSelection} onDelete={() => {}} />,
+    );
+    fireEvent.click(document.body.querySelector(".chordl-board-action-delete")!);
+    expect(onClearSelection).not.toHaveBeenCalled();
   });
 });

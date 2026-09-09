@@ -1,5 +1,14 @@
 export { ChordBoard, useChordBoard, newId } from "./ChordBoard.js";
 export type { ChordBoardProps } from "./ChordBoard.js";
+export { CardToolbar, placeCardToolbar, domMeasureToolbar, TOOLBAR_GAP, TOOLBAR_MARGIN, TOOLBAR_CARET } from "./CardToolbar.js";
+export type {
+  CardToolbarProps,
+  MeasureToolbar,
+  ToolbarMeasurements,
+  ToolbarPlacement,
+  ToolbarPosition,
+  ToolbarRect,
+} from "./CardToolbar.js";
 export type {
   BoardDisplayMode,
   BoardItem,

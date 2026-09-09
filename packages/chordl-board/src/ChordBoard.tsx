@@ -5,6 +5,8 @@ import type { InstrumentId, UIThemeMode } from "@pepperhorn/chordl-react";
 import type { BoardCardSize, BoardItem, BoardMeta, BoardState, StorageAdapter } from "./types.js";
 import { BOARD_CARD_SIZES, BOARD_CARD_SIZE_FACTORS, isTextCard, MAX_COLUMNS } from "./types.js";
 import { BoardIcon } from "./icons.js";
+import { CardToolbar, CARD_TOOLBAR_CSS } from "./CardToolbar.js";
+import type { MeasureToolbar } from "./CardToolbar.js";
 import { localStorageAdapter } from "./storage.js";
 import { exportBoardJson, importBoardJson } from "./io.js";
 import html2canvas from "html2canvas";
@@ -186,9 +188,7 @@ const BOARD_STYLES = `
 .chordl-board-handle { color: rgba(0,0,0,0.4); transition: color 0.15s ease, transform 0.15s ease; cursor: grab; }
 .chordl-board-handle:hover { color: rgba(56, 189, 248, 0.95); transform: scale(1.15); }
 .chordl-board-handle:active { cursor: grabbing; }
-.chordl-board-actions { transition: opacity 0.15s ease; opacity: 0; }
-.chordl-board-card:hover .chordl-board-actions,
-.chordl-board-card[data-selected="true"] .chordl-board-actions { opacity: 1; }
+${CARD_TOOLBAR_CSS}
 /* ── Capture styling ──────────────────────────────────────────────────────
    A card is styled for two different jobs. Editing chrome — the selection
    ring, the edit ring, the drag glow, the pulse — exists to tell you what
@@ -461,6 +461,12 @@ export interface ChordBoardProps {
   onResize?: (id: string, size: BoardCardSize) => void;
   /** Called with a card id to select it, or null when the user deselects. */
   onSelect?: (id: string | null) => void;
+  /**
+   * Seam for the floating toolbar's measurements. The default reads the live
+   * layout; a test hands over numbers instead, because jsdom reports zeroes for
+   * every rect and placement is the whole behaviour under test.
+   */
+  measureToolbar?: MeasureToolbar;
   onClearSelection?: () => void;
   /** Called with the parsed BoardState when a user imports JSON. */
   onImport?: (state: BoardState) => void;
@@ -579,6 +585,7 @@ export function ChordBoard({
   selectedId,
   onResize,
   onSelect,
+  measureToolbar,
   onClearSelection,
   onImport,
   onNew,
@@ -601,6 +608,23 @@ export function ChordBoard({
   const [armedDragId, setArmedDragId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const importInputId = useId();
+  const boardRef = useRef<HTMLDivElement | null>(null);
+
+  /**
+   * The DOM node the floating toolbar anchors to.
+   *
+   * A scan rather than a selector: card ids come off imported JSON, so they are
+   * not safe to interpolate into `querySelector`, and `CSS.escape` is not
+   * everywhere. A ref map is the other option, and costs a fresh ref callback
+   * per card per render for a node only one card at a time ever needs.
+   */
+  const resolveAnchor = useCallback(
+    (id: string) =>
+      Array.from(boardRef.current?.querySelectorAll<HTMLElement>("[data-board-id]") ?? []).find(
+        (el) => el.dataset.boardId === id,
+      ) ?? null,
+    [],
+  );
 
   const safeMeta: BoardMeta = meta ?? {};
   const patchMeta = (patch: Partial<BoardMeta>) => onMetaChange?.(patch);
@@ -742,6 +766,14 @@ export function ChordBoard({
   }, [editPulseKey, editingId]);
 
   const isExporting = exporting !== null;
+
+  /**
+   * The card the floating toolbar is anchored to. `findIndex` rather than
+   * `find` because the size controls are gated on where the card sits in its
+   * row, and that is what `sizeFits` is indexed by.
+   */
+  const selectedIndex = selectedId ? items.findIndex((it) => it.id === selectedId) : -1;
+  const selectedItem = selectedIndex >= 0 ? items[selectedIndex] : null;
 
   const columns = safeMeta.columns;
   /*
@@ -931,7 +963,7 @@ export function ChordBoard({
   };
 
   return (
-    <div className={`chordl-board ${className ?? ""}`.trim()} style={style}>
+    <div ref={boardRef} className={`chordl-board ${className ?? ""}`.trim()} style={style}>
       <style>{BOARD_STYLES}</style>
 
       {confirmNew && (
@@ -1189,6 +1221,10 @@ export function ChordBoard({
               <div
                 data-board-id={item.id}
                 data-selected={isSelected ? "true" : "false"}
+                // Focusable only programmatically: dismissing the toolbar hands
+                // focus back here rather than dropping it on <body>, and a card
+                // is not a control, so it takes no tab stop of its own.
+                tabIndex={-1}
                 className={cardClass}
                 style={{
                   ...cardStyle,
@@ -1264,86 +1300,6 @@ export function ChordBoard({
                     uiTheme={uiTheme}
                   />
                 </CardErrorBoundary>
-                {!isExporting && (
-                  <div
-                    className="chordl-board-actions"
-                    style={{
-                      display: "flex",
-                      // Six controls are wider than a card at small scales and
-                      // in a many-column layout. A flex row without this does
-                      // not shrink to fit — it spills past the card border.
-                      flexWrap: "wrap",
-                      // Centred rather than right-aligned: once the row can
-                      // wrap, a short second line hanging off one edge reads as
-                      // a mistake.
-                      justifyContent: "center",
-                      gap: 4,
-                      marginTop: 2,
-                      borderTop: "1px solid var(--btn-border, #eee)",
-                      paddingTop: 6,
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <button className="chordl-board-action-edit" style={iconBtnStyle} onClick={() => onEdit?.(item)} title="Edit">edit</button>
-                    {/* One control, not two. "copy" put a card on a clipboard
-                        the user then had to paste, and "repeat" did the whole
-                        job in a click — so the clipboard round-trip was a
-                        longer road to the same card. */}
-                    <button className="chordl-board-action-duplicate" style={iconBtnStyle} onClick={() => onDuplicate?.(item.id)} title="Duplicate">duplicate</button>
-                    <button className="chordl-board-action-cut" style={iconBtnStyle} onClick={() => onCut?.(item.id)} title="Cut">cut</button>
-                    {/* The only card state in this row with a value to read back,
-                        so it has to look different when on — a break is invisible
-                        otherwise, and an invisible toggle gets pressed twice. */}
-                    <button
-                      className={`chordl-board-action-break${item.breakAfter ? " chordl-board-action-break--on" : ""}`}
-                      style={item.breakAfter ? activeIconBtnStyle : iconBtnStyle}
-                      aria-pressed={item.breakAfter ? "true" : "false"}
-                      onClick={() => onToggleBreak?.(item.id)}
-                      title={item.breakAfter ? "Break after this card (on)" : "Break after this card"}
-                    >
-                      break
-                    </button>
-                    <button className="chordl-board-action-delete" style={iconBtnStyle} onClick={() => onDelete?.(item.id)} title="Delete">delete</button>
-                    {onResize && (
-                      <div
-                        className="chordl-board-sizes"
-                        role="group"
-                        aria-label="Card size"
-                        style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 2, width: "100%" }}
-                      >
-                        {BOARD_CARD_SIZES.map((size) => {
-                          const current = (item.size ?? "rg") === size;
-                          const fits = sizeFits(index, BOARD_CARD_SIZE_FACTORS[size]);
-                          return (
-                            <button
-                              key={size}
-                              type="button"
-                              className={`chordl-board-action-size chordl-board-action-size--${size}${current ? " chordl-board-action-size--on" : ""}`}
-                              style={{
-                                ...(current ? activeIconBtnStyle : iconBtnStyle),
-                                padding: "2px 5px",
-                                // Greyed, not hidden: which sizes exist should
-                                // not change with where a card happens to sit.
-                                opacity: fits || current ? 1 : 0.35,
-                                cursor: fits && !current ? "pointer" : "default",
-                              }}
-                              aria-pressed={current ? "true" : "false"}
-                              disabled={!fits && !current}
-                              onClick={() => onResize(item.id, size)}
-                              title={
-                                current ? `Size ${size} (current)`
-                                : fits ? `Size ${size}`
-                                : `${size} is wider than the room left on this row`
-                              }
-                            >
-                              {size}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                )}
               </div>
               {item.breakAfter && (
                 <div className="chordl-board-break" data-break-after={item.id} aria-hidden="true" style={breakStyle} />
@@ -1367,6 +1323,83 @@ export function ChordBoard({
           </div>
         )}
       </div>
+
+      {/* The per-card controls, out of the card and anchored to it.
+          Eleven of them inside a card was 191px of a 287px `sm` card at four
+          columns — the card became a control panel with a diagram on top, and
+          card heights went ragged with however many controls happened to wrap.
+
+          Rendered outside `.chordl-board-export` *and* gated on `!isExporting`:
+          html2canvas captures that subtree, so being outside it is already the
+          guarantee, and the gate means the toolbar is not even mounted while a
+          capture runs. Either alone would do; a stray toolbar in the middle of
+          someone's PNG is worth both. */}
+      {!isExporting && selectedItem && (
+        <CardToolbar
+          anchorId={selectedItem.id}
+          resolveAnchor={resolveAnchor}
+          measure={measureToolbar}
+          label={`Card actions: ${cardLabel(selectedItem)}`}
+        >
+          <button className="chordl-board-action-edit" style={iconBtnStyle} onClick={() => onEdit?.(selectedItem)} title="Edit">edit</button>
+          {/* One control, not two. "copy" put a card on a clipboard the user
+              then had to paste, and "repeat" did the whole job in a click — so
+              the clipboard round-trip was a longer road to the same card. */}
+          <button className="chordl-board-action-duplicate" style={iconBtnStyle} onClick={() => onDuplicate?.(selectedItem.id)} title="Duplicate">duplicate</button>
+          <button className="chordl-board-action-cut" style={iconBtnStyle} onClick={() => onCut?.(selectedItem.id)} title="Cut">cut</button>
+          {/* The only card state in this row with a value to read back, so it
+              has to look different when on — a break is invisible otherwise,
+              and an invisible toggle gets pressed twice. */}
+          <button
+            className={`chordl-board-action-break${selectedItem.breakAfter ? " chordl-board-action-break--on" : ""}`}
+            style={selectedItem.breakAfter ? activeIconBtnStyle : iconBtnStyle}
+            aria-pressed={selectedItem.breakAfter ? "true" : "false"}
+            onClick={() => onToggleBreak?.(selectedItem.id)}
+            title={selectedItem.breakAfter ? "Break after this card (on)" : "Break after this card"}
+          >
+            break
+          </button>
+          <button className="chordl-board-action-delete" style={iconBtnStyle} onClick={() => onDelete?.(selectedItem.id)} title="Delete">delete</button>
+          {onResize && (
+            <div
+              className="chordl-board-sizes"
+              role="group"
+              aria-label="Card size"
+              style={{ display: "flex", flexWrap: "nowrap", alignItems: "center", gap: 2, marginLeft: 2, paddingLeft: 6, borderLeft: "1px solid var(--btn-border, #eee)" }}
+            >
+              {BOARD_CARD_SIZES.map((size) => {
+                const current = (selectedItem.size ?? "rg") === size;
+                const fits = sizeFits(selectedIndex, BOARD_CARD_SIZE_FACTORS[size]);
+                return (
+                  <button
+                    key={size}
+                    type="button"
+                    className={`chordl-board-action-size chordl-board-action-size--${size}${current ? " chordl-board-action-size--on" : ""}`}
+                    style={{
+                      ...(current ? activeIconBtnStyle : iconBtnStyle),
+                      padding: "2px 5px",
+                      // Greyed, not hidden: which sizes exist should not change
+                      // with where a card happens to sit.
+                      opacity: fits || current ? 1 : 0.35,
+                      cursor: fits && !current ? "pointer" : "default",
+                    }}
+                    aria-pressed={current ? "true" : "false"}
+                    disabled={!fits && !current}
+                    onClick={() => onResize(selectedItem.id, size)}
+                    title={
+                      current ? `Size ${size} (current)`
+                      : fits ? `Size ${size}`
+                      : `${size} is wider than the room left on this row`
+                    }
+                  >
+                    {size}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </CardToolbar>
+      )}
 
       {clipboard && (
         <div className="chordl-board-clipboard" style={{

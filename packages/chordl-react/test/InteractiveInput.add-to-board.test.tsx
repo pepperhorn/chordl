@@ -43,9 +43,20 @@ const pills = (c: HTMLElement) =>
 const addToBoard = (c: HTMLElement) =>
   c.querySelector<HTMLButtonElement>("button.btn-add-to-board")!;
 
-/** The "edit" affordance on the nth board card. */
-const editCard = (c: HTMLElement, n: number) =>
-  [...c.querySelectorAll<HTMLButtonElement>("button.chordl-board-action-edit")][n];
+/**
+ * Opens the nth board card for editing.
+ *
+ * Two steps now: the per-card controls left the card for a single floating
+ * toolbar that only exists while a card is selected, so there is one "edit"
+ * button on the board rather than one per card, and getting to it means
+ * selecting the card first. The toolbar portals to <body> — anything that
+ * captures `position: fixed` on the way down would misplace it — so it is
+ * looked up on the document, not inside the render container.
+ */
+const editCard = (c: HTMLElement, n: number) => {
+  fireEvent.click([...c.querySelectorAll<HTMLElement>("[data-board-id]")][n]);
+  return document.body.querySelector<HTMLButtonElement>("button.chordl-board-action-edit")!;
+};
 
 /** The "Done" control, which only exists while a card is being edited. */
 const doneEditing = (c: HTMLElement) =>

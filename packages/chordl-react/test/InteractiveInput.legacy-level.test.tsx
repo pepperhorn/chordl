@@ -34,12 +34,16 @@ describe("editing a legacy guitar card with no stored level", () => {
     );
 
     // Board hydration from storage happens in an effect after mount.
-    const editButton = await waitFor(() => {
-      const btn = container.querySelector(".chordl-board-action-edit");
-      if (!btn) throw new Error("board not hydrated yet");
-      return btn as HTMLButtonElement;
+    const card = await waitFor(() => {
+      const el = container.querySelector("[data-board-id]");
+      if (!el) throw new Error("board not hydrated yet");
+      return el as HTMLElement;
     });
-    fireEvent.click(editButton);
+    // The per-card controls live in a floating toolbar that only exists while a
+    // card is selected, so opening one for editing is select, then edit. The
+    // toolbar portals to <body>, so it is not inside the render container.
+    fireEvent.click(card);
+    fireEvent.click(document.body.querySelector(".chordl-board-action-edit") as HTMLButtonElement);
 
     // Wait for the lazy-loaded guitar panel to mount.
     await waitFor(() => {
