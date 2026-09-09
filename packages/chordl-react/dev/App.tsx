@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback, lazy, Suspense } from "react";
 import { createRoot } from "react-dom/client";
-import { PianoKeyboard, PianoChord, VoicingVariantToggle, ChordQualityPicker, StaffNotation, ChordSheet, ProgressionView, ListenOverlay, FollowAlongOverlay, isProgressionRequest, parseProgressionRequest, resolveProgressionRequest, BRAVURA_GLYPHS, PETALUMA_GLYPHS, setDefaultGlyphs, encodeChordSheet, decodeChordSheet } from "../src";
+import { PianoKeyboard, PianoChord, VoicingVariantToggle, ChordQualityPicker, StaffNotation, ChordSheet, ProgressionView, ListenOverlay, FollowAlongOverlay, isProgressionRequest, parseProgressionRequest, resolveProgressionRequest, BRAVURA_GLYPHS, PETALUMA_GLYPHS, setDefaultGlyphs, encodeChordSheet, decodeChordSheet, prefetchVerovio, prefetchVerovioWhenIdle } from "../src";
 
 // Guitar view pulls in svguitar + the chords-db shape library (~200KB); load it
 // lazily so it only ships when the user actually switches to the Guitar display.
@@ -103,13 +103,22 @@ function DisplayToggle({ value, onChange }: { value: DisplayMode; onChange: (v: 
   const idx = DISPLAY_MODES.findIndex((m) => m.value === value);
   const next = () => onChange(DISPLAY_MODES[(idx + 1) % DISPLAY_MODES.length].value);
   const current = DISPLAY_MODES[idx];
+  // This button is the only route to the notation views, so a pointer arriving
+  // on it is the strongest signal we get that the Verovio chunk is about to be
+  // needed — and the only warm-up a data-saver or 2g visitor gets at all, since
+  // the background arm skips those. Idempotent, so it costs nothing when the
+  // idle warm-up already ran.
+  const warmNotation = () => { void prefetchVerovio(); };
 
   return (
     <div className="control-item">
       <span className="control-label">Display</span>
       <div className="control-content">
         <button
+          className="btn-display-toggle"
           onClick={next}
+          onPointerEnter={warmNotation}
+          onFocus={warmNotation}
           style={{
             display: "inline-flex",
             alignItems: "center",
@@ -739,6 +748,30 @@ export function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExpo
     ),
   }), []);
   const board = useChordBoard({ storage: boardStorage });
+
+  // Warm the notation engine before the user asks for it. Nothing imports
+  // Verovio until a staff first mounts, so the first switch to a notation view
+  // used to pay for the whole ~7 MB WASM chunk (2.6 MB gzipped, plus 765 KB of
+  // font zips) inside the engraving — 13 s on a cold deployed cache, which
+  // reads as a stuck loading animation.
+  //
+  // Two situations, two urgencies. A view that already shows a staff has that
+  // download on its critical path regardless, so it starts immediately. Anyone
+  // else gets a background warm-up the connection is allowed to veto: most
+  // visitors never leave the keyboard view, and spending a metered visitor's
+  // data — plus a main-thread WASM instantiation — on a page they may never
+  // open is not a free bet to place for them. The Display toggle's own
+  // pointer/focus warm-up covers whoever reaches for notation first.
+  const needsStaffNow = displayMode === "staff" || displayMode === "both"
+    || board.items.some((it) => it.display === "staff" || it.display === "both");
+  useEffect(() => {
+    if (needsStaffNow) {
+      void prefetchVerovio();
+      return;
+    }
+    return prefetchVerovioWhenIdle();
+  }, [needsStaffNow]);
+
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   // What the editor is currently editing. The chord fields and the text fields
   // are different shapes written through the same form, so this decides which.

@@ -5,6 +5,10 @@ import { PianoChord } from "../src/components/PianoChord";
 // Capture the MEI the component builds, without loading the WASM toolkit.
 const rendered: string[] = [];
 vi.mock("../src/verovio", () => ({
+  // The engine is warm in these tests: their renders resolve instantly, so
+  // the slow-load path never applies. Stubbed so a future test that does hold
+  // a render open does not fail on a missing export rather than on its point.
+  isVerovioReady: () => true,
   renderMeiToSvg: (mei: string) => {
     rendered.push(mei);
     return Promise.resolve(`<svg viewBox="0 0 140 120"><g class="staff"></g></svg>`);

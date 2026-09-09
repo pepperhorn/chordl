@@ -17,6 +17,11 @@ interface Toolkit {
 }
 
 let toolkitPromise: Promise<Toolkit> | null = null;
+// Set once the cached attempt has actually resolved, and never cleared: the
+// toolkit is a module-level singleton, so "has Verovio finished loading?" is
+// answerable synchronously from here. `isVerovioReady` below is the only
+// reader; it exists so a caller can tell a genuine download from a queue.
+let toolkitReady = false;
 
 async function initToolkit(): Promise<Toolkit> {
   // `verovio/wasm` is the WASM module factory; `verovio/esm` the JS toolkit.
@@ -41,13 +46,104 @@ async function initToolkit(): Promise<Toolkit> {
 /** Lazily load (and cache) the Verovio toolkit with the bundled fonts registered. */
 export function getVerovioToolkit(): Promise<Toolkit> {
   if (!toolkitPromise) {
-    toolkitPromise = initToolkit().catch((err) => {
-      // Reset so a later call can retry after a transient import/WASM failure.
-      toolkitPromise = null;
-      throw err;
-    });
+    toolkitPromise = initToolkit().then(
+      (tk) => {
+        toolkitReady = true;
+        return tk;
+      },
+      (err) => {
+        // Reset so a later call can retry after a transient import/WASM failure.
+        toolkitPromise = null;
+        throw err;
+      },
+    );
   }
   return toolkitPromise;
+}
+
+/**
+ * Whether the toolkit is loaded *right now* — synchronous, side-effect free,
+ * and false while an attempt is still in flight.
+ *
+ * Engraving is serialized through this one toolkit on the main thread, so a
+ * board of twenty staff cards queues twenty ~100 ms engravings: the last cards
+ * wait seconds with nothing whatsoever left to download. Anything that wants to
+ * say "still downloading" has to ask this rather than time the wait.
+ */
+export function isVerovioReady(): boolean {
+  return toolkitReady;
+}
+
+/**
+ * Start loading the toolkit without waiting for it.
+ *
+ * Nothing pulls in the ~7 MB Verovio chunk until a staff first mounts, so a
+ * cold visitor who switches to notation view pays the whole download inside the
+ * first engraving — 13 s on a deployed cold cache, which reads as a hung
+ * loading animation. Calling this once after first paint moves that download
+ * off the critical path, so the first staff paints from an already-warm
+ * toolkit.
+ *
+ * Idempotent: it shares `getVerovioToolkit`'s cached promise, so it never
+ * starts a second initialisation and never changes what a later real render
+ * gets. Its rejection is swallowed — a background warm-up has no caller to
+ * catch it, and `getVerovioToolkit` already drops its cached promise on
+ * failure, so a later render still retries from scratch.
+ */
+export function prefetchVerovio(): Promise<void> {
+  return getVerovioToolkit().then(
+    () => undefined,
+    () => undefined,
+  );
+}
+
+/** The slice of the Network Information API we consult. Absent in Safari and
+ *  Firefox, so every field here is optional and absence means "no objection". */
+interface NetworkInformation {
+  saveData?: boolean;
+  effectiveType?: string;
+}
+
+/**
+ * Whether an *unrequested* background download is appropriate on this
+ * connection.
+ *
+ * Verovio is ~2.6 MB gzipped plus 765 KB of font zips, and most visitors never
+ * open a notation view — so a blanket warm-up spends a metered visitor's data
+ * on something they will not use. Absence of the API means go ahead: it ships
+ * only in Chromium, and treating "unknown" as "don't" would disable the
+ * warm-up for most of the web.
+ *
+ * This gates the background arm only. An explicit signal — a pointer on the
+ * Display toggle, or a view that already needs a staff — still loads Verovio;
+ * there the download is on the critical path either way.
+ */
+function shouldPrefetchInBackground(): boolean {
+  const conn = (navigator as Navigator & { connection?: NetworkInformation }).connection;
+  if (!conn) return true;
+  if (conn.saveData === true) return false;
+  return conn.effectiveType !== "slow-2g" && conn.effectiveType !== "2g";
+}
+
+/**
+ * Arm a background warm-up for when the browser next goes idle, unless the
+ * connection says not to. Returns a cancel function, so an effect can drop it
+ * on unmount.
+ *
+ * Idle-callback rather than an immediate call so the fetch and the WASM
+ * instantiation never compete with first paint; Safari only shipped
+ * `requestIdleCallback` recently, hence the timeout fallback.
+ */
+export function prefetchVerovioWhenIdle(): () => void {
+  if (typeof window === "undefined") return () => {};
+  if (!shouldPrefetchInBackground()) return () => {};
+  const warm = () => { void prefetchVerovio(); };
+  if (typeof window.requestIdleCallback === "function") {
+    const id = window.requestIdleCallback(warm, { timeout: 3000 });
+    return () => window.cancelIdleCallback?.(id);
+  }
+  const id = window.setTimeout(warm, 1200);
+  return () => window.clearTimeout(id);
 }
 
 export interface RenderMeiOptions {
@@ -61,7 +157,23 @@ export async function renderMeiToSvg(
   mei: string,
   { font = "Bravura", scale = 40 }: RenderMeiOptions = {},
 ): Promise<string> {
-  const tk = await getVerovioToolkit();
+  // One retry, and only around the toolkit: a background prefetch now starts
+  // the shared attempt ~1 s into every page load, so a staff that mounts inside
+  // that window can inherit a rejection it had no part in and — its effect deps
+  // never changing again — sit on "notation unavailable" for the life of the
+  // page. `getVerovioToolkit` has already dropped the failed promise by the
+  // time this catch runs, so the second call genuinely starts fresh.
+  //
+  // Deliberately not wrapped around the engraving below: a rejection from
+  // `loadData`/`renderToSVG` is bad MEI, not a transient download, and retrying
+  // it would just fail twice. Bounded to a single extra attempt, so a hard
+  // failure still surfaces instead of looping.
+  let tk: Toolkit;
+  try {
+    tk = await getVerovioToolkit();
+  } catch {
+    tk = await getVerovioToolkit();
+  }
   tk.setOptions({
     font,
     scale,

@@ -7,6 +7,10 @@ import { buildMei } from "@pepperhorn/chordl-core";
 // component's MEI construction + wrapper markup without loading the toolkit.
 const rendered: string[] = [];
 vi.mock("../src/verovio", () => ({
+  // The engine is warm in these tests: their renders resolve instantly, so
+  // the slow-load path never applies. Stubbed so a future test that does hold
+  // a render open does not fail on a missing export rather than on its point.
+  isVerovioReady: () => true,
   renderMeiToSvg: (mei: string) => {
     rendered.push(mei);
     // Verovio runs with `svgViewBox: true`, so its root carries a viewBox and
