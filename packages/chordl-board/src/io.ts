@@ -152,9 +152,19 @@ function parseLevel(value: unknown): string | undefined {
  * smuggle a `/`, a `?` or a `..` through to that point is how a reserved
  * field becomes a traversal. Rejected outright rather than escaped later,
  * because "later" is a place this validator cannot see.
+ *
+ * `.` is an unreserved character, so the character class alone admitted `.`
+ * and `..` — the two strings the docblock names, made entirely of legal
+ * characters, and the exact pair that turn a `join(base, id)` into a
+ * traversal. Hence the leading guard: an id has to be a name, and an all-dots
+ * token is a path instruction rather than a name. A dot *within* a name is
+ * still a name (`cdl.v2`, `.hidden`), and stays allowed — with `/` already
+ * excluded, an embedded `..` cannot be a path segment.
  */
 function parseBundleId(value: unknown): string | undefined {
-  return typeof value === "string" && /^[A-Za-z0-9._~-]{1,64}$/.test(value) ? value : undefined;
+  return typeof value === "string" && /^(?!\.+$)[A-Za-z0-9._~-]{1,64}$/.test(value)
+    ? value
+    : undefined;
 }
 
 function parsePlaybackNotes(value: unknown): number[] | undefined {

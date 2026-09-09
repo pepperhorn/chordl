@@ -8,17 +8,37 @@ import type { BoardItem } from "../src/types";
  * passes it down or drops it — so the renderer is mocked and the call
  * recorded, rather than asserting on pixels a stub would not draw anyway.
  */
-type Seen = { chord: string; display?: string; activePlaybackIndices?: number[] };
+type Seen = {
+  chord: string;
+  display?: string;
+  activePlaybackIndices?: number[];
+  playbackHighlightColor?: string;
+};
 const seen: Seen[] = [];
+const seenGuitar: Seen[] = [];
+
+type RendererProps = {
+  chord: string;
+  display?: string;
+  activePlaybackIndices?: number[];
+  playbackHighlightColor?: string;
+};
+const record = (into: Seen[]) => (props: RendererProps) => {
+  into.push({
+    chord: props.chord,
+    display: props.display,
+    activePlaybackIndices: props.activePlaybackIndices,
+    playbackHighlightColor: props.playbackHighlightColor,
+  });
+  return <div data-testid="chord" data-chord={props.chord} />;
+};
 
 vi.mock("@pepperhorn/chordl-react", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@pepperhorn/chordl-react")>();
   return {
     ...actual,
-    PianoChord: (props: { chord: string; display?: string; activePlaybackIndices?: number[] }) => {
-      seen.push({ chord: props.chord, display: props.display, activePlaybackIndices: props.activePlaybackIndices });
-      return <div data-testid="chord" data-chord={props.chord} />;
-    },
+    PianoChord: record(seen),
+    GuitarChordPanel: record(seenGuitar),
   };
 });
 
@@ -30,6 +50,7 @@ const chordCard = (id: string, display?: BoardItem["display"]): BoardItem =>
 describe("BoardCardContent playback highlighting", () => {
   beforeEach(() => {
     seen.length = 0;
+    seenGuitar.length = 0;
   });
 
   it("forwards activePlaybackIndices to the chord renderer", () => {
@@ -76,5 +97,40 @@ describe("BoardCardContent playback highlighting", () => {
     );
     expect(seen).toHaveLength(0);
     expect(container.textContent).toContain("Verse");
+  });
+
+  /**
+   * The colour a card was saved with.
+   *
+   * `playbackHighlightColor` is stored per card and validated on import, and
+   * both renderers already take it — the board card was simply not passing it
+   * on, which nothing could see while board cards never highlighted at all.
+   * Now that play mode lights them, a card ignoring it lights in the default
+   * colour instead of the one its owner chose.
+   */
+  it("forwards the card's own highlight colour to the keyboard renderer", () => {
+    render(
+      <ChordBoard
+        items={[{ id: "a", kind: "chord", nl: "Cmaj7", playbackHighlightColor: "#ff8800" }]}
+        activePlaybackIndices={{ a: [0] }}
+      />,
+    );
+    expect(seen[0]?.playbackHighlightColor).toBe("#ff8800");
+  });
+
+  it("forwards it to the guitar renderer too", () => {
+    render(
+      <ChordBoard
+        items={[{ id: "a", kind: "chord", nl: "Cmaj7", display: "guitar", playbackHighlightColor: "#ff8800" }]}
+        activePlaybackIndices={{ a: [0] }}
+      />,
+    );
+    expect(seenGuitar[0]?.playbackHighlightColor).toBe("#ff8800");
+  });
+
+  /** Unset stays unset, so each renderer keeps its own documented default. */
+  it("passes nothing when the card names no colour", () => {
+    render(<ChordBoard items={[chordCard("a")]} activePlaybackIndices={{ a: [0] }} />);
+    expect(seen[0]?.playbackHighlightColor).toBeUndefined();
   });
 });

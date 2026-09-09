@@ -2,7 +2,10 @@ import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, TouchEvent as ReactTouchEvent } from "react";
 import { startPlayback, preloadInstruments } from "@pepperhorn/chordl-react";
 import type { PlaybackController, UIThemeMode } from "@pepperhorn/chordl-react";
-import { BoardCardContent } from "./ChordBoard.js";
+import {
+  BoardCardContent, BoardFooter, BoardHeading, CardErrorBoundary, cardLabel,
+  BOARD_CHROME_CSS, BOARD_PANEL_STYLE,
+} from "./ChordBoard.js";
 import { GRID_TRACKS, computeRowSpans } from "./layout.js";
 import { resolveCardPlayback } from "./cardPlayback.js";
 import { BOARD_CARD_SIZE_FACTORS, MAX_COLUMNS, isTextCard } from "./types.js";
@@ -20,6 +23,15 @@ const CARD_GUTTER = 6;
  * diagonal is a scroll that drifted, not a swipe.
  */
 const SWIPE_THRESHOLD = 40;
+
+/**
+ * `ChordBoard`'s own default, restated here rather than exported-and-imported
+ * only because it is a prop default on a public interface and reads better in
+ * the signature. The two must not diverge: a consumer that omits `scale` sees
+ * both components, and at 1 against 0.6 every card jumps by ~1.7x the moment
+ * play mode opens.
+ */
+const DEFAULT_SCALE = 0.6;
 
 const CURSOR_RING = "rgba(56, 189, 248, 0.85)";
 const CURSOR_GLOW = "rgba(56, 189, 248, 0.35)";
@@ -49,6 +61,11 @@ const PLAYER_STYLES = `
   align-self: center;
 }
 .board-player-more:hover { color: inherit; background: rgba(56,189,248,0.12); }
+/* The board's own title/subtitle type, from the one place that defines it.
+   ChordBoard's <style> unmounts when play mode replaces it, so without this
+   the heading falls back to the browser's default h1/h3 — the board would
+   change typeface on being played. */
+${BOARD_CHROME_CSS}
 `;
 
 export interface BoardPlayerProps {
@@ -60,7 +77,11 @@ export interface BoardPlayerProps {
   items: BoardItem[];
   /** Board-level metadata: title/subtitle/footer/columns. */
   meta?: BoardMeta;
-  /** Render scale forwarded to each card's diagram. */
+  /**
+   * Render scale forwarded to each card's diagram. Defaults to `ChordBoard`'s
+   * own default, so a host that omits it on both gets one card size across the
+   * two modes rather than cards that jump on entering play mode.
+   */
   scale?: number;
   uiTheme?: UIThemeMode;
   /** Play mode is the host's state, so a page can put the toggle where it likes. */
@@ -97,8 +118,12 @@ function nextPlayable(items: BoardItem[], from: number, direction: 1 | -1): numb
  * A board you read and listen to rather than edit.
  *
  * The grid is `ChordBoard`'s, drawn from the same `computeRowSpans` maths and
- * the same `BoardCardContent`, so a board looks identical in both — play mode
- * is a different set of controls over one layout, not a second layout.
+ * the same `BoardCardContent`, on the same `BOARD_PANEL_STYLE` paper, under a
+ * heading and footer that are literally `ChordBoard`'s components styled by
+ * `BOARD_CHROME_CSS` — so a board looks identical in both. Play mode is a
+ * different set of controls over one layout, not a second layout, and every
+ * piece of that is shared rather than restated: a copy would be identical on
+ * the day it was written and wrong on the next one.
  *
  * A cursor walks the chord cards and each one sounds in its own patch. Every
  * move cancels the chord before it: holding an arrow down otherwise stacks a
@@ -108,7 +133,7 @@ function nextPlayable(items: BoardItem[], from: number, direction: 1 | -1): numb
 export function BoardPlayer({
   items,
   meta,
-  scale,
+  scale = DEFAULT_SCALE,
   uiTheme,
   playing,
   onPlayingChange,
@@ -158,7 +183,14 @@ export function BoardPlayer({
       instrument: playback.instrument,
       onActiveChange: (indices) => {
         if (tokenRef.current !== token) return;
-        setActive(indices.length ? indices : null);
+        // A card whose pitches did not come from its own drawing cannot be
+        // highlighted from them: on a legacy guitar card an index counts the
+        // piano stack, while the fretboard reads it as "the nth sounding
+        // string", so the lit string and the heard pitch disagree. The
+        // diagram is the half that looks authoritative, so it says nothing
+        // rather than something false. See `CardPlayback.indicesMatchDiagram`.
+        const lit = playback.indicesMatchDiagram && indices.length ? indices : null;
+        setActive(lit);
       },
     })
       .then((controller) => {
@@ -368,12 +400,11 @@ export function BoardPlayer({
     >
       <style>{PLAYER_STYLES}</style>
 
-      {(meta?.title || meta?.subtitle) && (
-        <div className="board-player-heading" style={{ textAlign: "center", marginBottom: 16 }}>
-          {meta.title && <h1 className="chordl-board-title">{meta.title}</h1>}
-          {meta.subtitle && <h3 className="chordl-board-subtitle">{meta.subtitle}</h3>}
-        </div>
-      )}
+      {/* The board's paper, heading and footer, all three of them ChordBoard's
+          own — the region play mode is showing is the same document, so it is
+          drawn by the same code rather than by a lookalike. */}
+      <div className="board-player-panel" style={BOARD_PANEL_STYLE}>
+      <BoardHeading meta={meta} className="board-player-heading" />
 
       <div className="board-player-grid" style={gridStyle}>
         {items.map((item, index) => {
@@ -402,14 +433,25 @@ export function BoardPlayer({
                   play(index);
                 }}
               >
-                <BoardCardContent
-                  item={item}
-                  scale={(scale ?? 1) * BOARD_CARD_SIZE_FACTORS[item.size ?? "rg"]}
-                  uiTheme={uiTheme}
-                  // Only the card that is sounding: every other card falls back
-                  // to its own renderer's state, which is "nothing lit".
-                  activePlaybackIndices={isCursor && active ? active : undefined}
-                />
+                {/* Every card, boundaried — exactly as ChordBoard does it, and
+                    for the same reason: `PianoChord` throws *during render*
+                    for a chord it refuses to draw ("C starting on the 7th"),
+                    and one such card with no boundary above it takes the whole
+                    React root down. Keyed on what is rendered, so a host that
+                    hands over a corrected board re-attempts the render. */}
+                <CardErrorBoundary
+                  key={`${item.kind ?? "chord"}|${item.nl ?? item.title ?? ""}|${item.display ?? "keyboard"}`}
+                  label={cardLabel(item)}
+                >
+                  <BoardCardContent
+                    item={item}
+                    scale={scale * BOARD_CARD_SIZE_FACTORS[item.size ?? "rg"]}
+                    uiTheme={uiTheme}
+                    // Only the card that is sounding: every other card falls
+                    // back to its own renderer's state, which is "nothing lit".
+                    activePlaybackIndices={isCursor && active ? active : undefined}
+                  />
+                </CardErrorBoundary>
                 {canShowMore && !isTextCard(item) && (
                   <button
                     type="button"
@@ -435,22 +477,8 @@ export function BoardPlayer({
         })}
       </div>
 
-      {meta?.footer && (
-        <div
-          className="board-player-footer"
-          style={{
-            textAlign: "center",
-            marginTop: 20,
-            fontSize: "0.95rem",
-            color: "#555",
-            fontFamily: "Poppins, system-ui, sans-serif",
-            fontStyle: "italic",
-            whiteSpace: "pre-wrap",
-          }}
-        >
-          {meta.footer}
-        </div>
-      )}
+      <BoardFooter meta={meta} className="board-player-footer" />
+      </div>
     </div>
   );
 }

@@ -8,7 +8,13 @@ const chord = (extra: Partial<BoardItem>): BoardItem =>
 describe("resolveCardPlayback", () => {
   it("prefers the stored pitches verbatim", () => {
     const out = resolveCardPlayback(chord({ playbackNotes: [60, 64, 67, 71], playbackInstrument: "electric_guitar_clean" }));
-    expect(out).toEqual({ midi: [60, 64, 67, 71], instrument: "electric_guitar_clean" });
+    expect(out).toEqual({
+      midi: [60, 64, 67, 71],
+      instrument: "electric_guitar_clean",
+      // A stored voicing is exactly what the card drew, so its positions index
+      // that drawing and a caller may highlight from them.
+      indicesMatchDiagram: true,
+    });
   });
 
   it("resolves a legacy card from its chord text", () => {
@@ -63,5 +69,50 @@ describe("resolveCardPlayback", () => {
 
   it("returns null for a chord card with no chord text", () => {
     expect(resolveCardPlayback({ id: "a", kind: "chord" })).toBeNull();
+  });
+
+  /**
+   * A bass degree the chord does not have.
+   *
+   * `PianoChord` throws over this exactly as it throws over a "starting on"
+   * degree it cannot find, so the card refuses to draw — and an unguarded
+   * resolve here made it the one card on a board you could hear but not see.
+   */
+  it("returns null when the chord has no bass degree to put underneath", () => {
+    expect(resolveCardPlayback(chord({ nl: "Cmaj7 with the 9th in the bass" }))).toBeNull();
+  });
+
+  it("still resolves a bass degree the chord does have", () => {
+    expect(resolveCardPlayback(chord({ nl: "Cmaj7 with the 3rd in the bass" }))).not.toBeNull();
+  });
+
+  /** A stored voicing skips the whole resolve, so the text cannot veto it. */
+  it("keeps a stored voicing even when the chord text names an absent degree", () => {
+    const out = resolveCardPlayback(chord({
+      nl: "Cmaj7 with the 9th in the bass",
+      playbackNotes: [60, 64, 67],
+    }));
+    expect(out!.midi).toEqual([60, 64, 67]);
+  });
+
+  /**
+   * Whether the indices may be used as a highlight. A legacy guitar card's
+   * pitches are the piano stack, while `GuitarChordPanel` reads an index as a
+   * position in the fretboard shape's sounding strings — different arrays, of
+   * different lengths, with no correspondence at all.
+   */
+  it("reports that a legacy guitar card's indices do not index its drawing", () => {
+    expect(resolveCardPlayback(chord({ display: "guitar" }))!.indicesMatchDiagram).toBe(false);
+  });
+
+  it("reports that a legacy keyboard card's do", () => {
+    expect(resolveCardPlayback(chord({}))!.indicesMatchDiagram).toBe(true);
+  });
+
+  /** A stored voicing is the fretboard's own pitches, so a guitar card with
+      one is highlightable like any other. */
+  it("reports that a stored guitar voicing does index its drawing", () => {
+    const out = resolveCardPlayback(chord({ display: "guitar", playbackNotes: [40, 47, 52] }));
+    expect(out!.indicesMatchDiagram).toBe(true);
   });
 });

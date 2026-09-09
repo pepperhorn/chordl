@@ -808,9 +808,18 @@ export function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExpo
    * modifier that would make this a browser shortcut. It is bound under exactly
    * the condition that shows the Play button, so the key can never do something
    * the button does not offer.
+   *
+   * It also stands down for anything covering the board. The two overlays are
+   * modals *over* it, so a `p` typed into one is not aimed at the board at
+   * all: entering play mode would swap the component behind the dialog and
+   * `BoardPlayer`'s focus effect would then pull focus straight out of the
+   * dialog the user is still using. Editing a text card is the same case
+   * without a backdrop — a panel the user is plainly in the middle of, whose
+   * non-input parts (the icon picker, its buttons) leave the bare letter live.
    */
   useEffect(() => {
     if (isProg || boardPlaying || board.items.length === 0) return;
+    if (listenOpen || followOpen || isEditingTextCard) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "p" && event.key !== "P") return;
       if (event.ctrlKey || event.metaKey || event.altKey) return;
@@ -823,7 +832,7 @@ export function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExpo
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [isProg, boardPlaying, board.items.length]);
+  }, [isProg, boardPlaying, board.items.length, listenOpen, followOpen, isEditingTextCard]);
 
   // Serialize form annotation state to NL modifiers appended to the chord
   // string. `splitChordDetails` is the inverse, and card editing depends on the

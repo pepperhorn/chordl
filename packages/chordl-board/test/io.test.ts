@@ -441,4 +441,26 @@ describe("bundleId", () => {
     expect(importBoardJson(withId(42)).items[0].bundleId).toBeUndefined();
     expect(importBoardJson(withId("a".repeat(64))).items[0].bundleId).toBe("a".repeat(64));
   });
+
+  /**
+   * The traversal segments themselves. `"not a token/../etc"` above is
+   * rejected on its spaces and its slash, so it never exercised the `..` the
+   * rule claims to stop — and `.` and `..` are made *entirely* of characters
+   * the unreserved-character class allows, so they sailed through. A field
+   * whose first reader will put it in a path has to reject the two strings
+   * that are a path instruction rather than a name.
+   */
+  it("drops the traversal segments, which are all-legal characters", () => {
+    const withId = (bundleId: unknown) => JSON.stringify({
+      schema: BOARD_SCHEMA,
+      items: [{ id: "a", kind: "chord", nl: "C", bundleId }],
+      meta: {},
+    });
+    expect(importBoardJson(withId(".")).items[0].bundleId).toBeUndefined();
+    expect(importBoardJson(withId("..")).items[0].bundleId).toBeUndefined();
+    expect(importBoardJson(withId("...")).items[0].bundleId).toBeUndefined();
+    // A dot inside a name is still a name: only an all-dots token is a path.
+    expect(importBoardJson(withId("cdl.v2")).items[0].bundleId).toBe("cdl.v2");
+    expect(importBoardJson(withId(".hidden")).items[0].bundleId).toBe(".hidden");
+  });
 });

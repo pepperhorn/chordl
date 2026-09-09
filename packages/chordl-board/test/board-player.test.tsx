@@ -20,6 +20,8 @@ const preloadInstruments = vi.fn(async () => {});
 /** What each card was handed, in render order. See the last two tests. */
 const lit: Array<number[] | undefined> = [];
 const litGuitar: Array<number[] | undefined> = [];
+/** Scales handed to each card, for the default-scale test. */
+const scales: Array<number | undefined> = [];
 
 vi.mock("@pepperhorn/chordl-react", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@pepperhorn/chordl-react")>();
@@ -31,8 +33,9 @@ vi.mock("@pepperhorn/chordl-react", async (importOriginal) => {
     // PianoChord's own business and has its own tests, so what this asserts is
     // that the right card was handed the right indices — which the real
     // component renders as SVG geometry rather than anything queryable.
-    PianoChord: (props: { chord: string; activePlaybackIndices?: number[] }) => {
+    PianoChord: (props: { chord: string; scale?: number; activePlaybackIndices?: number[] }) => {
       lit.push(props.activePlaybackIndices);
+      scales.push(props.scale);
       return <div data-testid="piano" data-chord={props.chord} />;
     },
     GuitarChordPanel: (props: { chord: string; activePlaybackIndices?: number[] }) => {
@@ -331,5 +334,76 @@ describe("BoardPlayer", () => {
     litGuitar.length = 0;
     fireEvent.keyDown(player(), { key: "ArrowRight" }); // onto the guitar card
     await waitFor(() => expect(litGuitar.at(-1)).toEqual([1]));
+  });
+
+  /**
+   * ...but only when the indices mean what the fretboard thinks they mean.
+   *
+   * A guitar card with no stored voicing is sounded off the *piano* stack
+   * `buildMei` derives — three or four pitches that have nothing to do with
+   * the five or six sounding strings of the shape on screen. The panel maps a
+   * note index onto `soundingStrings[index]`, so index 0 lights the lowest
+   * sounding string whatever pitch was actually heard: the highlight and the
+   * audio disagree, and the highlight is the half that looks authoritative.
+   * No highlight is the honest answer until the legacy path can derive its
+   * pitches from the frame.
+   */
+  it("does not light a guitar card whose pitches did not come from the fretboard", async () => {
+    startPlayback.mockImplementationOnce(async (
+      _notes: Array<string | number>,
+      options: { onActiveChange?: (indices: number[]) => void },
+    ) => {
+      options.onActiveChange?.([0]);
+      return controller;
+    });
+    const legacy: BoardItem[] = [
+      // No `playbackNotes`: a card saved before the editor stored them.
+      { id: "g", kind: "chord", nl: "G", display: "guitar" },
+    ];
+    litGuitar.length = 0;
+    render(<BoardPlayer items={legacy} playing onPlayingChange={noop} />);
+    // The card drew, so the assertion below is about what it was handed rather
+    // than about a card that never rendered. (With the highlight suppressed
+    // there is no second render to wait for: `active` stays null, and React
+    // bails out of a state update that changes nothing.)
+    expect(litGuitar.length).toBeGreaterThan(0);
+
+    fireEvent.keyDown(player(), { key: " " });
+    await waitFor(() => expect(startPlayback).toHaveBeenCalled());
+
+    expect(litGuitar.filter((indices) => indices !== undefined)).toEqual([]);
+  });
+
+  /**
+   * The suppression is the guitar's alone. A legacy *keyboard* card sounds the
+   * same ascending stack `PianoChord` draws, so its indices do line up, and
+   * turning its highlight off would be a regression dressed as a fix.
+   */
+  it("still lights a keyboard card with no stored voicing", async () => {
+    startPlayback.mockImplementationOnce(async (
+      _notes: Array<string | number>,
+      options: { onActiveChange?: (indices: number[]) => void },
+    ) => {
+      options.onActiveChange?.([0]);
+      return controller;
+    });
+    const legacy: BoardItem[] = [{ id: "k", kind: "chord", nl: "C", display: "keyboard" }];
+    render(<BoardPlayer items={legacy} playing onPlayingChange={noop} />);
+    lit.length = 0;
+    fireEvent.keyDown(player(), { key: " " });
+    await waitFor(() => expect(lit.at(-1)).toEqual([0]));
+  });
+
+  /**
+   * A consumer that omits `scale` must get the same card size it gets from
+   * `ChordBoard`, whose default is 0.6. At 1 the same board's cards jump ~1.7x
+   * the moment play mode opens — invisible in the dev app only because it
+   * passes an explicit scale to both.
+   */
+  it("defaults scale to the same value ChordBoard does", () => {
+    scales.length = 0;
+    render(<BoardPlayer items={[items[0]]} playing={false} onPlayingChange={noop} />);
+    // `rg` is the default size, whose factor is 1, so this is the raw default.
+    expect(scales[0]).toBeCloseTo(0.6);
   });
 });

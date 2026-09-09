@@ -92,6 +92,68 @@ describe("dev app — p enters play mode", () => {
     expect(player()).toBeNull();
   });
 
+  /**
+   * The overlays render *over* the board, so a `p` typed while one is up is
+   * not aimed at the board at all. Entering play mode behind a modal swaps the
+   * component underneath it, and `BoardPlayer`'s focus effect then pulls focus
+   * straight out of the open dialog — the user is left typing into a board
+   * they cannot see. The chord box is already excluded by tag name; a dialog
+   * is excluded by there being a dialog.
+   */
+  it("ignores p while the Listen overlay is open", async () => {
+    seedBoard();
+    renderApp();
+    await waitForBoard();
+
+    fireEvent.click(document.querySelector<HTMLButtonElement>(".listen-mic-btn")!);
+    await waitFor(() => expect(document.querySelector("[role='dialog']")).toBeTruthy());
+
+    fireEvent.keyDown(document, { key: "p" });
+
+    expect(player()).toBeNull();
+  });
+
+  it("ignores p while the Follow along overlay is open", async () => {
+    // Two cards: the Follow along button only appears from two up.
+    localStorage.setItem(BOARD_KEY, JSON.stringify({
+      items: [
+        { id: "a", kind: "chord", nl: "C", display: "keyboard" },
+        { id: "b", kind: "chord", nl: "G", display: "keyboard" },
+      ],
+      meta: {},
+    }));
+    renderApp();
+    await waitForBoard();
+
+    fireEvent.click(document.querySelector<HTMLButtonElement>(".btn-follow-along")!);
+    await waitFor(() => expect(document.querySelector("[role='dialog']")).toBeTruthy());
+
+    fireEvent.keyDown(document, { key: "p" });
+
+    expect(player()).toBeNull();
+  });
+
+  /**
+   * A text card's editor is a panel of text fields, but the `p` guard only
+   * stands down for the field that has focus — a click on the card's icon
+   * picker, or anywhere in the panel that is not an input, leaves the key live
+   * over a form the user is plainly in the middle of.
+   */
+  it("ignores p while a text card is being edited", async () => {
+    seedBoard();
+    renderApp();
+    await waitForBoard();
+
+    fireEvent.click(document.querySelector<HTMLButtonElement>(".chordl-board-add-text")!);
+    // The text-card editor has taken over the panel — "+ Add to board" only
+    // renders for a chord card, so its absence is the mode having changed.
+    await waitFor(() => expect(document.querySelector(".btn-add-to-board")).toBeNull());
+
+    fireEvent.keyDown(document, { key: "p" });
+
+    expect(player()).toBeNull();
+  });
+
   it("removes the listener on unmount", async () => {
     seedBoard();
     const add = vi.spyOn(document, "addEventListener");

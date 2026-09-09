@@ -160,6 +160,11 @@ export function BoardCardContent({
         subheading={item.subheading}
         footerText={item.footerText}
         activePlaybackIndices={activePlaybackIndices}
+        // The colour this card was saved with. Stored and validated per card,
+        // so a board that plays has to honour it; the renderers already own
+        // the fallback, which is why an unset value is passed through as
+        // undefined rather than defaulted here.
+        playbackHighlightColor={item.playbackHighlightColor}
       />
     );
   }
@@ -177,6 +182,7 @@ export function BoardCardContent({
       uiTheme={uiTheme}
       showPlayback={false}
       activePlaybackIndices={activePlaybackIndices}
+      playbackHighlightColor={item.playbackHighlightColor}
     />
   );
 }
@@ -185,6 +191,73 @@ const DRAG_GLOW = "rgba(56, 189, 248, 0.55)";
 const DRAG_GLOW_SOFT = "rgba(56, 189, 248, 0.35)";
 const EDIT_BORDER = "rgba(56, 189, 248, 0.7)";
 const SELECT_BORDER = "rgba(56, 189, 248, 0.85)";
+
+/**
+ * The board's own chrome: the title and subtitle a board is headed with.
+ *
+ * Its own constant because two components draw a board — `ChordBoard` while it
+ * is being edited, `BoardPlayer` while it is being played — and play mode
+ * *replaces* the editing board rather than sitting beside it. A board that
+ * changed typeface the moment you pressed Play would say the mode had changed
+ * the document, which is the one thing it must not say. Shared rather than
+ * copied: a second copy of a type scale drifts the first time either side is
+ * touched, and the drift only shows up when someone puts the two on screen
+ * one after the other.
+ */
+export const BOARD_CHROME_CSS = `
+.chordl-board-title { margin: 0; font-size: 1.75rem; font-weight: 600; color: #111; font-family: Poppins, system-ui, sans-serif; line-height: 1.2; }
+.chordl-board-subtitle { margin: 4px 0 0 0; font-size: 1.05rem; font-weight: 400; color: #555; font-family: Poppins, system-ui, sans-serif; }
+`;
+
+/**
+ * The paper a board is printed on — the panel behind title, grid and footer.
+ * Shared with `BoardPlayer` for the same reason as `BOARD_CHROME_CSS`: it is
+ * the board's own surface, not a decoration either mode owns.
+ */
+export const BOARD_PANEL_STYLE: CSSProperties = {
+  background: "#fff",
+  padding: 16,
+  borderRadius: 12,
+};
+
+/** A board's heading. Renders nothing when the board is untitled. */
+export function BoardHeading({ meta, className }: { meta?: BoardMeta; className?: string }) {
+  if (!meta?.title && !meta?.subtitle) return null;
+  return (
+    <div
+      className={`chordl-board-heading ${className ?? ""}`.trim()}
+      style={{ textAlign: "center", marginBottom: 16 }}
+    >
+      {meta.title && <h1 className="chordl-board-title">{meta.title}</h1>}
+      {meta.subtitle && <h3 className="chordl-board-subtitle">{meta.subtitle}</h3>}
+    </div>
+  );
+}
+
+/**
+ * A board's footer line. Inline-styled rather than classed like the heading
+ * because nothing else needs to reach it, but shared all the same so the two
+ * modes cannot disagree about what a footer looks like.
+ */
+export function BoardFooter({ meta, className }: { meta?: BoardMeta; className?: string }) {
+  if (!meta?.footer) return null;
+  return (
+    <div
+      className={`chordl-board-footer ${className ?? ""}`.trim()}
+      style={{
+        textAlign: "center",
+        marginTop: 20,
+        fontSize: "0.95rem",
+        color: "#555",
+        fontFamily: "Poppins, system-ui, sans-serif",
+        fontStyle: "italic",
+        whiteSpace: "pre-wrap",
+      }}
+    >
+      {meta.footer}
+    </div>
+  );
+}
 
 const BOARD_STYLES = `
 @keyframes chordl-board-edit-pulse {
@@ -221,8 +294,7 @@ ${CARD_TOOLBAR_CSS}
   animation: none !important;
   transition: none !important;
 }
-.chordl-board-title { margin: 0; font-size: 1.75rem; font-weight: 600; color: #111; font-family: Poppins, system-ui, sans-serif; line-height: 1.2; }
-.chordl-board-subtitle { margin: 4px 0 0 0; font-size: 1.05rem; font-weight: 400; color: #555; font-family: Poppins, system-ui, sans-serif; }
+${BOARD_CHROME_CSS}
 `;
 
 /**
@@ -230,8 +302,11 @@ ${CARD_TOOLBAR_CSS}
  * clipboard strip. A chord card is its chord; a text card has no `nl` at all,
  * so its title is the next best handle and "text card" the last resort. Never
  * empty: these strings exist so a user can tell one card from another.
+ *
+ * Exported alongside `CardErrorBoundary` so a card that fails to draw is named
+ * the same way in both modes.
  */
-function cardLabel(item: BoardItem): string {
+export function cardLabel(item: BoardItem): string {
   return item.nl ?? item.title ?? (isTextCard(item) ? "text card" : "card");
 }
 
@@ -239,8 +314,15 @@ function cardLabel(item: BoardItem): string {
  * Per-card error boundary — a card whose chord string fails to render shows
  * an inline message instead of unmounting the whole board (and app).
  * Keyed by the card's nl string upstream so edits re-attempt the render.
+ *
+ * Exported for `BoardPlayer`, which draws the same cards from the same
+ * `BoardCardContent` and so inherits the same hazard: `PianoChord` throws
+ * *during render* for a chord it refuses to draw, and a throw out of render
+ * with no boundary above it unmounts the entire React root — the whole page
+ * goes white on pressing Play. Deliberately absent from the package index,
+ * like `BoardCardContent`: internal, and not a props contract we want to owe.
  */
-class CardErrorBoundary extends Component<
+export class CardErrorBoundary extends Component<
   { children: ReactNode; label: string },
   { error: string | null }
 > {
@@ -1147,19 +1229,14 @@ export function ChordBoard({
       <div
         ref={exportRef}
         className={`chordl-board-export${isExporting ? " chordl-board-export--capturing" : ""}`}
-        style={{ background: "#fff", padding: 16, borderRadius: 12 }}
+        style={BOARD_PANEL_STYLE}
         onClick={(e) => {
           // Clicks that don't land inside a card clear the selection.
           if ((e.target as HTMLElement).closest("[data-board-id]")) return;
           onClearSelection?.();
         }}
       >
-        {(safeMeta.title || safeMeta.subtitle) && (
-          <div style={{ textAlign: "center", marginBottom: 16 }}>
-            {safeMeta.title && <h1 className="chordl-board-title">{safeMeta.title}</h1>}
-            {safeMeta.subtitle && <h3 className="chordl-board-subtitle">{safeMeta.subtitle}</h3>}
-          </div>
-        )}
+        <BoardHeading meta={safeMeta} />
 
       <div style={gridStyle}>
         {items.length === 0 && (
@@ -1298,19 +1375,7 @@ export function ChordBoard({
         })}
       </div>
 
-        {safeMeta.footer && (
-          <div style={{
-            textAlign: "center",
-            marginTop: 20,
-            fontSize: "0.95rem",
-            color: "#555",
-            fontFamily: "Poppins, system-ui, sans-serif",
-            fontStyle: "italic",
-            whiteSpace: "pre-wrap",
-          }}>
-            {safeMeta.footer}
-          </div>
-        )}
+        <BoardFooter meta={safeMeta} />
       </div>
 
       {/* The per-card controls, out of the card and anchored to it.
