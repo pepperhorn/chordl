@@ -121,6 +121,7 @@ export function BoardPlayer({
   /** Sounding notes of the card under the cursor, by position in its voicing. */
   const [active, setActive] = useState<number[] | null>(null);
   const controllerRef = useRef<PlaybackController | null>(null);
+  const rootRef = useRef<HTMLDivElement | null>(null);
   /**
    * Bumped by every cancel. `startPlayback` is async, so a chord started before
    * a move can still resolve after it — this is how such a controller learns it
@@ -219,6 +220,27 @@ export function BoardPlayer({
     void preloadInstruments([...new Set(wanted)]);
   }, [playing, items, cancelCurrent]);
 
+  /*
+   * Take the keyboard when play mode opens.
+   *
+   * Whatever turned play mode on keeps the focus — a host's Play button, say —
+   * so without this the player mounts deaf: every arrow key goes to the button
+   * and the cursor never moves, until the user guesses that a click or a Tab is
+   * the missing step. Grabbing focus is usually rude; here the user has just
+   * asked for a mode whose entire transport is arrow keys.
+   *
+   * Keyed on `playing` alone, so it fires on the way in and not on every
+   * render, and it stands down when the focus is already inside the player —
+   * once the mode is open the focus is the user's, and pulling it back to the
+   * root would undo a Tab they had just made.
+   */
+  useEffect(() => {
+    if (!playing) return;
+    const root = rootRef.current;
+    if (!root || root.contains(document.activeElement)) return;
+    root.focus();
+  }, [playing]);
+
   /* Nothing may go on sounding after the component is gone. */
   useEffect(() => () => cancelCurrent(), [cancelCurrent]);
 
@@ -229,6 +251,14 @@ export function BoardPlayer({
 
     if (event.key === "p" || event.key === "P") {
       event.preventDefault();
+      // This press is ours and stops here. A host has to listen for `p`
+      // somewhere outside the player to *enter* the mode — the player cannot
+      // hear its own entrance, because it is not mounted yet — and React
+      // flushes the state change, and that listener, synchronously inside this
+      // dispatch. Left to bubble, the press that just left play mode would be
+      // caught by the listener it had itself brought back, and the board would
+      // never leave.
+      event.stopPropagation();
       onPlayingChange(!playing);
       return;
     }
@@ -323,6 +353,7 @@ export function BoardPlayer({
 
   return (
     <div
+      ref={rootRef}
       className={`board-player ${className ?? ""}`.trim()}
       style={style}
       // A real tab stop: the transport is keyboard-first, so the board itself

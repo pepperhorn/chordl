@@ -115,6 +115,68 @@ describe("BoardPlayer", () => {
     expect(onPlayingChange).toHaveBeenCalledWith(true);
   });
 
+  /**
+   * The press that leaves play mode must not travel any further.
+   *
+   * A host has to listen for `p` somewhere outside the player to *enter* the
+   * mode — the player is not mounted to hear its own entrance. React flushes
+   * the state change, and the host's listener, synchronously inside this
+   * dispatch, so a `p` that kept bubbling would be caught by the listener its
+   * own handler had just brought back and put the board straight into play
+   * mode again. Which is exactly what it did.
+   */
+  it("keeps the p that leaves play mode from reaching the page", () => {
+    const onDocument = vi.fn();
+    document.addEventListener("keydown", onDocument);
+    try {
+      render(<BoardPlayer items={items} playing onPlayingChange={noop} />);
+      fireEvent.keyDown(player(), { key: "p", bubbles: true });
+      expect(onDocument).not.toHaveBeenCalled();
+    } finally {
+      document.removeEventListener("keydown", onDocument);
+    }
+  });
+
+  /**
+   * Entering play mode has to hand the board the keyboard.
+   *
+   * The transport is keyboard-first and the host's Play button keeps focus
+   * after the click, so without this the player mounts deaf: ArrowRight goes
+   * to the button, nothing moves, and the user has to guess that a click or a
+   * Tab is the missing step. Taking focus is right here precisely because the
+   * user asked for a mode whose whole purpose is arrow keys.
+   */
+  it("takes focus when play mode is entered", () => {
+    const { rerender } = render(
+      <BoardPlayer items={items} playing={false} onPlayingChange={noop} />,
+    );
+    expect(document.activeElement).not.toBe(player());
+
+    rerender(<BoardPlayer items={items} playing onPlayingChange={noop} />);
+
+    expect(document.activeElement).toBe(player());
+  });
+
+  /**
+   * ...and only on that transition. Focus is the user's once the mode is open:
+   * if they have tabbed to a card's "more" button, a re-render that pulled
+   * focus back to the root would undo the move they just made.
+   */
+  it("does not steal focus back on a later re-render", () => {
+    const { rerender } = render(
+      <BoardPlayer items={items} playing={false} onPlayingChange={noop} canShowMore />,
+    );
+    rerender(<BoardPlayer items={items} playing onPlayingChange={noop} canShowMore />);
+
+    const more = document.querySelector<HTMLButtonElement>(".board-player-more")!;
+    more.focus();
+    expect(document.activeElement).toBe(more);
+
+    rerender(<BoardPlayer items={items} playing onPlayingChange={noop} canShowMore scale={0.9} />);
+
+    expect(document.activeElement).toBe(more);
+  });
+
   it("draws the more affordance only when the host allows it", () => {
     const onShowMore = vi.fn();
     const { rerender } = render(<BoardPlayer items={items} playing onPlayingChange={noop} />);

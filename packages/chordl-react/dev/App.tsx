@@ -792,6 +792,39 @@ export function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExpo
   const [boardPlaying, setBoardPlaying] = useState(false);
   const [followOpen, setFollowOpen] = useState(false);
 
+  /**
+   * `p` enters play mode. `BoardPlayer` keeps its own `p` to leave it, and the
+   * two halves belong in different places on purpose — tidying them into one
+   * handler would break entering all over again.
+   *
+   * Entering decides *which component renders*, which only the host can do:
+   * while play mode is off `BoardPlayer` is not mounted, so it cannot possibly
+   * be listening for its own entrance. Leaving is the player's, because by then
+   * it is mounted and holds the focus, and the key arrives on it.
+   *
+   * A bare letter bound on the document sits over every text field on the page
+   * — the chord box, the board's title/subtitle/footer, the card text fields —
+   * so it stands down for anything the user could be typing into, and for any
+   * modifier that would make this a browser shortcut. It is bound under exactly
+   * the condition that shows the Play button, so the key can never do something
+   * the button does not offer.
+   */
+  useEffect(() => {
+    if (isProg || boardPlaying || board.items.length === 0) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "p" && event.key !== "P") return;
+      if (event.ctrlKey || event.metaKey || event.altKey) return;
+      const target = event.target as HTMLElement | null;
+      if (target?.isContentEditable) return;
+      const tag = target?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      event.preventDefault();
+      setBoardPlaying(true);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [isProg, boardPlaying, board.items.length]);
+
   // Serialize form annotation state to NL modifiers appended to the chord
   // string. `splitChordDetails` is the inverse, and card editing depends on the
   // two staying exactly that — hence one shared module rather than a regex here
