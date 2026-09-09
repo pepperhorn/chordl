@@ -50,6 +50,29 @@ export function getVerovioToolkit(): Promise<Toolkit> {
   return toolkitPromise;
 }
 
+/**
+ * Start loading the toolkit without waiting for it.
+ *
+ * Nothing pulls in the ~7 MB Verovio chunk until a staff first mounts, so a
+ * cold visitor who switches to notation view pays the whole download inside the
+ * first engraving — 13 s on a deployed cold cache, which reads as a hung
+ * loading animation. Calling this once after first paint moves that download
+ * off the critical path, so the first staff paints from an already-warm
+ * toolkit.
+ *
+ * Idempotent: it shares `getVerovioToolkit`'s cached promise, so it never
+ * starts a second initialisation and never changes what a later real render
+ * gets. Its rejection is swallowed — a background warm-up has no caller to
+ * catch it, and `getVerovioToolkit` already drops its cached promise on
+ * failure, so a later render still retries from scratch.
+ */
+export function prefetchVerovio(): Promise<void> {
+  return getVerovioToolkit().then(
+    () => undefined,
+    () => undefined,
+  );
+}
+
 export interface RenderMeiOptions {
   font?: VerovioFont;
   /** Verovio `scale` (percent). Larger = bigger engraving. */

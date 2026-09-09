@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback, lazy, Suspense } from "react";
 import { createRoot } from "react-dom/client";
-import { PianoKeyboard, PianoChord, VoicingVariantToggle, ChordQualityPicker, StaffNotation, ChordSheet, ProgressionView, ListenOverlay, FollowAlongOverlay, isProgressionRequest, parseProgressionRequest, resolveProgressionRequest, BRAVURA_GLYPHS, PETALUMA_GLYPHS, setDefaultGlyphs, encodeChordSheet, decodeChordSheet } from "../src";
+import { PianoKeyboard, PianoChord, VoicingVariantToggle, ChordQualityPicker, StaffNotation, ChordSheet, ProgressionView, ListenOverlay, FollowAlongOverlay, isProgressionRequest, parseProgressionRequest, resolveProgressionRequest, BRAVURA_GLYPHS, PETALUMA_GLYPHS, setDefaultGlyphs, encodeChordSheet, decodeChordSheet, prefetchVerovio } from "../src";
 
 // Guitar view pulls in svguitar + the chords-db shape library (~200KB); load it
 // lazily so it only ships when the user actually switches to the Guitar display.
@@ -103,13 +103,21 @@ function DisplayToggle({ value, onChange }: { value: DisplayMode; onChange: (v: 
   const idx = DISPLAY_MODES.findIndex((m) => m.value === value);
   const next = () => onChange(DISPLAY_MODES[(idx + 1) % DISPLAY_MODES.length].value);
   const current = DISPLAY_MODES[idx];
+  // This button is the only route to the notation views, so a pointer arriving
+  // on it is the strongest signal we get that the Verovio chunk is about to be
+  // needed. Idempotent and already warming from App's idle callback — this just
+  // covers the visitor who reaches for it before the browser goes idle.
+  const warmNotation = () => { void prefetchVerovio(); };
 
   return (
     <div className="control-item">
       <span className="control-label">Display</span>
       <div className="control-content">
         <button
+          className="btn-display-toggle"
           onClick={next}
+          onPointerEnter={warmNotation}
+          onFocus={warmNotation}
           style={{
             display: "inline-flex",
             alignItems: "center",
@@ -1915,6 +1923,24 @@ function App() {
   const [uiTheme, setUiTheme] = useState<UIThemeMode>("light");
   const [showOptions, setShowOptions] = useState(false);
   const [exportStatus, setExportStatus] = useState<"idle" | "preparing">("idle");
+
+  // Nothing imports Verovio until a staff first mounts, so the first switch to
+  // a notation view used to pay for the whole ~7 MB WASM chunk inside the
+  // engraving — 13 s on a cold deployed cache, which reads as a stuck loading
+  // animation. Warm it once the browser is idle instead: the download happens
+  // while the user is reading the keyboard, and the first staff paints from a
+  // ready toolkit. Idle-callback so it never competes with first paint;
+  // Safari only shipped requestIdleCallback recently, hence the timeout
+  // fallback.
+  React.useEffect(() => {
+    const warm = () => { void prefetchVerovio(); };
+    if (typeof window.requestIdleCallback === "function") {
+      const id = window.requestIdleCallback(warm, { timeout: 3000 });
+      return () => window.cancelIdleCallback?.(id);
+    }
+    const id = window.setTimeout(warm, 1200);
+    return () => window.clearTimeout(id);
+  }, []);
 
   // Sync theme attribute to <html> so body/::before pick up CSS variables
   React.useEffect(() => {

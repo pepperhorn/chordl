@@ -44,6 +44,17 @@ const CONTROLS_HEIGHT = 30;
 const CONTROLS_WIDTH = 170;
 const LABEL_HEIGHT = 18;
 
+/**
+ * How long a single uninterrupted wait may run before the dots explain
+ * themselves. A warm toolkit engraves in ~100 ms, so this never fires on the
+ * normal path; only the first-ever staff (which has to download the ~7 MB
+ * Verovio chunk) gets this far, and three silent dots are exactly what turns
+ * "slow" into "stuck" in a bug report.
+ */
+const SLOW_LOAD_LABEL_MS = 1500;
+const SLOW_LOAD_TITLE = "Loading notation engine";
+const SLOW_LOAD_SUBTITLE = "first time only";
+
 /** Map the app's SMuFL glyph set to a Verovio font name. */
 function fontFor(glyphs: StaffGlyphSet | undefined): VerovioFont {
   const name = (glyphs ?? getDefaultGlyphs()).name;
@@ -97,8 +108,15 @@ export function StaffNotation({
   );
   const mei = built.mei;
 
-  const [staffSvg, setStaffSvg] = useState<string | null>(null);
-  const [failed, setFailed] = useState(false);
+  // One render result, tagged with the request it answers. Storing the key
+  // alongside the markup is what lets the effect below stop blanking state on
+  // every run: a result for a superseded request simply stops matching, so the
+  // engraving on screen always belongs to the current mei/font/scale, while a
+  // request that is still in flight no longer has to announce itself by
+  // clearing state first.
+  const [result, setResult] = useState<
+    { key: string; svg: string | null; failed: boolean } | null
+  >(null);
   const nestRef = useRef<SVGGElement | null>(null);
   /** Last markup written into `nestRef`, so a size change alone doesn't re-parse it. */
   const injectedRef = useRef<string | null>(null);
@@ -114,17 +132,61 @@ export function StaffNotation({
   // Verovio scale is a percent; map the component's ~0.5 scale into its range.
   const verovioScale = Math.max(24, Math.round(scale * 80));
 
+  // Identifies the engraving these props ask for. Memoized because playback
+  // re-renders this component on every note, and `mei` is a few KB — rebuilding
+  // and re-comparing that string per frame is pure churn. Memoized it is also
+  // reference-equal, so the match below is a pointer compare.
+  const renderKey = useMemo(
+    () => `${font}|${verovioScale}|${mei}`,
+    [font, verovioScale, mei],
+  );
+
   useEffect(() => {
     let cancelled = false;
-    setFailed(false);
-    setStaffSvg(null);
     renderMeiToSvg(mei, { font, scale: verovioScale })
-      .then((svg) => { if (!cancelled) setStaffSvg(svg); })
-      // Clear the SVG on failure so a later retry of identical MEI still
-      // changes state and re-fires the injection effect below.
-      .catch(() => { if (!cancelled) { setStaffSvg(null); setFailed(true); } });
+      .then((svg) => {
+        if (cancelled) return;
+        // Same request, same markup: keep the object so the injection effect
+        // below isn't handed a new identity for markup already on screen.
+        setResult((prev) =>
+          prev && prev.key === renderKey && prev.svg === svg && !prev.failed
+            ? prev
+            : { key: renderKey, svg, failed: false },
+        );
+      })
+      // Recorded against the key rather than in a separate flag, so a later
+      // retry of identical MEI still changes state and re-fires the injection
+      // effect below — and so a failure can never be read as belonging to a
+      // different request.
+      .catch(() => {
+        if (!cancelled) setResult({ key: renderKey, svg: null, failed: true });
+      });
     return () => { cancelled = true; };
-  }, [mei, font, verovioScale]);
+  }, [mei, font, verovioScale, renderKey]);
+
+  // A result only counts for the request it was produced for. Anything else —
+  // a superseded chord, font or scale — reads as "still rendering", so no
+  // engraving is ever shown under props it does not match.
+  const current = result && result.key === renderKey ? result : null;
+  const staffSvg = current?.svg ?? null;
+  const failed = current?.failed ?? false;
+  const loading = staffSvg === null && !failed;
+
+  // Elapsed-wait clock for the label below. It deliberately keys off `loading`
+  // alone, not off the render request: a prop change while the toolkit is still
+  // downloading queues a new request against the *same* in-flight download, so
+  // restarting the timer would hide the explanation from precisely the user who
+  // waited longest. It resets only when a wait actually ends.
+  const [slowLoad, setSlowLoad] = useState(false);
+  useEffect(() => {
+    if (!loading) {
+      setSlowLoad(false);
+      return;
+    }
+    if (slowLoad) return;
+    const id = setTimeout(() => setSlowLoad(true), SLOW_LOAD_LABEL_MS);
+    return () => clearTimeout(id);
+  }, [loading, slowLoad]);
 
   const size = staffSvg ? parseSvgSize(staffSvg) : { width: 160, height: 120 };
   const labelDrawn = Boolean(chordLabel && showLabel);
@@ -180,7 +242,6 @@ export function StaffNotation({
 
   const staffColor = ui.text ?? "#333";
   const controlsX = totalWidth - CONTROLS_WIDTH + 4;
-  const loading = staffSvg === null && !failed;
 
   return (
     <svg
@@ -267,7 +328,10 @@ export function StaffNotation({
           key="loading"
           className="bc-render-loading bc-staff__loading"
           role="status"
-          aria-label="Rendering notation"
+          // Swapped only on the slow path, so the screen reader hears why the
+          // wait is long instead of a bare "Rendering notation" that never
+          // updates. The warm path keeps the original announcement.
+          aria-label={slowLoad ? `${SLOW_LOAD_TITLE} — ${SLOW_LOAD_SUBTITLE}` : "Rendering notation"}
           transform={`translate(${totalWidth / 2 - 14}, ${controlsH + labelH + Math.max(engHeight / 2, 14)})`}
           fill={ui.textMuted ?? "#888"}
         >
@@ -282,6 +346,25 @@ export function StaffNotation({
               />
             </circle>
           ))}
+          {slowLoad && (
+            // Two short lines rather than one long one: the staff box is only
+            // ~120px wide at its narrowest, and the outer <svg> would clip a
+            // single run of this text.
+            <text
+              className="bc-staff__loading-label"
+              x={14}
+              y={18}
+              textAnchor="middle"
+              fontSize={9}
+              fontWeight={500}
+              fill={ui.textMuted ?? "#888"}
+              fontFamily="Poppins, system-ui, sans-serif"
+              aria-hidden="true"
+            >
+              <tspan className="bc-staff__loading-label-title" x={14} dy={0}>{SLOW_LOAD_TITLE}</tspan>
+              <tspan className="bc-staff__loading-label-note" x={14} dy={11} opacity={0.75}>{SLOW_LOAD_SUBTITLE}</tspan>
+            </text>
+          )}
         </g>
       ) : (
         // Verovio's SVG is injected here imperatively (see effect above).
