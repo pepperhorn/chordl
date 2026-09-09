@@ -100,7 +100,7 @@ function BoardCardText({ item, uiTheme }: { item: BoardItem; uiTheme?: UIThemeMo
  * panel with its toggles off, so a board card shows the exact shape that was
  * chosen in the editor, not a picker.
  */
-function BoardCardContent({
+export function BoardCardContent({
   item,
   scale,
   uiTheme,
@@ -159,12 +159,7 @@ function BoardCardContent({
         title={item.title}
         subheading={item.subheading}
         footerText={item.footerText}
-        // `activePlaybackIndices` is deliberately not forwarded here.
-        // GuitarChordPanel highlights by *string* (`activeStrings`, an index
-        // per course on the fretboard) and takes no note-index prop at all, so
-        // there is nothing to hand it: mapping notes to strings needs the
-        // position's own string mapping, which lives in chordl-guitar. Until
-        // the panel exposes that seam, a guitar card plays without lighting up.
+        activePlaybackIndices={activePlaybackIndices}
       />
     );
   }

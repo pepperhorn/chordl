@@ -1,5 +1,12 @@
 export { ChordBoard, useChordBoard, newId } from "./ChordBoard.js";
 export type { ChordBoardProps } from "./ChordBoard.js";
+// `BoardCardContent` is exported from ChordBoard.tsx for BoardPlayer to share,
+// and deliberately not re-exported here: it is an internal renderer, and
+// putting it in the package's public surface would commit us to its props.
+export { BoardPlayer } from "./BoardPlayer.js";
+export type { BoardPlayerProps } from "./BoardPlayer.js";
+export { resolveCardPlayback } from "./cardPlayback.js";
+export type { CardPlayback } from "./cardPlayback.js";
 export { CardToolbar, placeCardToolbar, domMeasureToolbar, TOOLBAR_GAP, TOOLBAR_MARGIN, TOOLBAR_CARET } from "./CardToolbar.js";
 export type {
   CardToolbarProps,
