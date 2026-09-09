@@ -8,6 +8,10 @@ import { StaffNotation } from "../src/components/StaffNotation";
 // "engine is still downloading" window can be held open across fake timers.
 const pending: { resolve: (svg: string) => void }[] = [];
 let mode: "instant" | "held" = "instant";
+// Whether the toolkit itself has finished loading. A held render with a READY
+// toolkit is the board case: 20 cards queued through one main-thread engraver,
+// so a late card waits seconds with nothing left to download.
+let toolkitReady = false;
 
 const SVG =
   `<svg viewBox="0 0 140 120" overflow="visible"><g class="staff">` +
@@ -19,6 +23,7 @@ vi.mock("../src/verovio", () => ({
     mode === "instant"
       ? Promise.resolve(SVG)
       : new Promise<string>((resolve) => { pending.push({ resolve }); }),
+  isVerovioReady: () => toolkitReady,
 }));
 
 const LOADING = ".bc-staff__loading";
@@ -28,6 +33,7 @@ afterEach(() => {
   vi.useRealTimers();
   pending.length = 0;
   mode = "instant";
+  toolkitReady = false;
 });
 
 describe("slow-load label", () => {
@@ -59,10 +65,6 @@ describe("slow-load label", () => {
     expect(label).toBeTruthy();
     expect(label!.textContent).toMatch(/loading notation engine/i);
     expect(label!.textContent).toMatch(/first time only/i);
-    // The screen reader gets the same explanation, not just "Rendering".
-    expect(container.querySelector(LOADING)!.getAttribute("aria-label")).toMatch(
-      /loading notation engine/i,
-    );
   });
 
   it("clears the label once the engraving arrives", async () => {
@@ -106,5 +108,51 @@ describe("a prop change mid-load does not restart the wait", () => {
     // The stale engraving is not left on screen under the new chord's name.
     expect(container.querySelector(".bc-staff__engraving")).toBeNull();
     expect(container.querySelector(LOADING)).toBeTruthy();
+  });
+});
+
+describe("the label is about the download, not about the wait", () => {
+  it("stays away however long a warm engine takes", async () => {
+    // Nothing to download: this card is just queued behind others on the one
+    // main-thread toolkit. "first time only" would be a lie.
+    toolkitReady = true;
+    mode = "held";
+    vi.useFakeTimers();
+    const { container } = render(<StaffNotation notes={["C", "E", "G"]} />);
+
+    await act(async () => { vi.advanceTimersByTime(10_000); });
+    expect(container.querySelector(LOADING)).toBeTruthy();
+    expect(container.querySelector(SLOW_LABEL)).toBeNull();
+  });
+
+  it("still appears while the engine is genuinely still loading", async () => {
+    toolkitReady = false;
+    mode = "held";
+    vi.useFakeTimers();
+    const { container } = render(<StaffNotation notes={["C", "E", "G"]} />);
+
+    await act(async () => { vi.advanceTimersByTime(2_000); });
+    expect(container.querySelector(SLOW_LABEL)).toBeTruthy();
+  });
+});
+
+describe("the slow-load explanation reaches a screen reader", () => {
+  it("puts real text inside the live region", async () => {
+    mode = "held";
+    vi.useFakeTimers();
+    const { container } = render(<StaffNotation notes={["C", "E", "G"]} />);
+    await act(async () => { vi.advanceTimersByTime(2_000); });
+
+    const region = container.querySelector(LOADING)!;
+    const label = region.querySelector(SLOW_LABEL)!;
+    expect(label).toBeTruthy();
+    // A role="status" region announces content mutations, not aria-label
+    // changes on itself — so the text that appears has to be readable.
+    expect(label.getAttribute("aria-hidden")).toBeNull();
+    expect(label.closest('[role="status"]')).toBe(region);
+    // The two lines have to read as one sentence, not run together.
+    expect(region.textContent).toMatch(/Loading notation engine\s+first time only/i);
+    // The region's static name is unchanged; the content carries the news.
+    expect(region.getAttribute("aria-label")).toBe("Rendering notation");
   });
 });

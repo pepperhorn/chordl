@@ -4,7 +4,7 @@ import { buildMei, DEFAULT_PLAYBACK_HIGHLIGHT_COLOR } from "@pepperhorn/chordl-c
 import type { StaffGlyphSet } from "@pepperhorn/chordl-core";
 import { PlaybackControls } from "./PlaybackControls";
 import { useUITheme } from "../ui-theme";
-import { renderMeiToSvg } from "../verovio";
+import { renderMeiToSvg, isVerovioReady } from "../verovio";
 import type { VerovioFont } from "../verovio";
 import { getDefaultGlyphs } from "@pepperhorn/chordl-core";
 import type { PlaybackSpecSnapshot } from "../types";
@@ -46,10 +46,11 @@ const LABEL_HEIGHT = 18;
 
 /**
  * How long a single uninterrupted wait may run before the dots explain
- * themselves. A warm toolkit engraves in ~100 ms, so this never fires on the
- * normal path; only the first-ever staff (which has to download the ~7 MB
- * Verovio chunk) gets this far, and three silent dots are exactly what turns
- * "slow" into "stuck" in a bug report.
+ * themselves. Necessary but not sufficient: the explanation is only true while
+ * the engine is still downloading, so the toolkit is asked as well (see the
+ * effect below). The threshold stays so the label never flashes on a cold start
+ * that turns out to be quick — three silent dots are what turns "slow" into
+ * "stuck" in a bug report, but a message that appears and vanishes is worse.
  */
 const SLOW_LOAD_LABEL_MS = 1500;
 const SLOW_LOAD_TITLE = "Loading notation engine";
@@ -184,7 +185,14 @@ export function StaffNotation({
       return;
     }
     if (slowLoad) return;
-    const id = setTimeout(() => setSlowLoad(true), SLOW_LOAD_LABEL_MS);
+    const id = setTimeout(() => {
+      // Elapsed time alone would lie on a warm engine. A board renders one
+      // staff per card through a single main-thread toolkit, so past roughly
+      // the fifteenth card the wait is pure queue depth — nothing is being
+      // downloaded, and "first time only" on a warm-cache reload is exactly
+      // the false alarm this label was added to prevent.
+      if (!isVerovioReady()) setSlowLoad(true);
+    }, SLOW_LOAD_LABEL_MS);
     return () => clearTimeout(id);
   }, [loading, slowLoad]);
 
@@ -328,10 +336,11 @@ export function StaffNotation({
           key="loading"
           className="bc-render-loading bc-staff__loading"
           role="status"
-          // Swapped only on the slow path, so the screen reader hears why the
-          // wait is long instead of a bare "Rendering notation" that never
-          // updates. The warm path keeps the original announcement.
-          aria-label={slowLoad ? `${SLOW_LOAD_TITLE} — ${SLOW_LOAD_SUBTITLE}` : "Rendering notation"}
+          // A live region announces content *mutations*; NVDA, JAWS and
+          // VoiceOver all ignore an aria-label swapped on the region itself.
+          // So this name stays put and the slow-path explanation below is real
+          // text inside the region, which is what actually gets announced.
+          aria-label="Rendering notation"
           transform={`translate(${totalWidth / 2 - 14}, ${controlsH + labelH + Math.max(engHeight / 2, 14)})`}
           fill={ui.textMuted ?? "#888"}
         >
@@ -359,9 +368,12 @@ export function StaffNotation({
               fontWeight={500}
               fill={ui.textMuted ?? "#888"}
               fontFamily="Poppins, system-ui, sans-serif"
-              aria-hidden="true"
             >
-              <tspan className="bc-staff__loading-label-title" x={14} dy={0}>{SLOW_LOAD_TITLE}</tspan>
+              {/* Trailing space so the two lines read as one sentence when a
+                  screen reader concatenates the region's text rather than
+                  pausing between nodes. It renders as a single trailing space
+                  on a centred 9px line — about a pixel of drift, invisible. */}
+              <tspan className="bc-staff__loading-label-title" x={14} dy={0}>{`${SLOW_LOAD_TITLE} `}</tspan>
               <tspan className="bc-staff__loading-label-note" x={14} dy={11} opacity={0.75}>{SLOW_LOAD_SUBTITLE}</tspan>
             </text>
           )}

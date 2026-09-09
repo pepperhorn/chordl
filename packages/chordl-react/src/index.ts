@@ -20,7 +20,7 @@ export { useFollowAlong } from "./follow/useFollowAlong";
 export type { UseFollowAlongOptions, FollowAlongState, FollowStatus, FollowListener } from "./follow/useFollowAlong";
 export { sequenceFromChords, normalizeToDetectorSymbol, pageCount } from "./follow/sequenceFromChords";
 export { GuitarChord } from "./components/GuitarChord";
-export { renderMeiToSvg, getVerovioToolkit, prefetchVerovio } from "./verovio";
+export { renderMeiToSvg, getVerovioToolkit, prefetchVerovio, prefetchVerovioWhenIdle, isVerovioReady } from "./verovio";
 export type { VerovioFont, RenderMeiOptions } from "./verovio";
 export type { GuitarChordProps } from "./components/GuitarChord";
 export { GuitarChordPanel } from "./components/GuitarChordPanel";
