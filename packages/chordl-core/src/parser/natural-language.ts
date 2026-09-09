@@ -92,10 +92,51 @@ const OVER_BASS_NOTE_RE =
   /\bover\s+([A-Ga-g][#b]?)(?:\s|$)/i;
 
 // "in the style of Bill Evans" / "like McCoy Tyner" / "bebop style"
+//
+// The trailing clause boundary is a capture group ($2) rather than a bare
+// non-capturing one so that `stripVoicingClauses` can put it back: the match
+// swallows the word that ends the style phrase ("with", "spanning", …), which
+// is harmless when the leftovers are only mined for a chord name, but
+// destructive when the stripped string is handed back to this same parser.
 const STYLE_RE =
-  /(?:(?:in\s+)?(?:the\s+)?style\s+of\s+|like\s+|a\s+la\s+)([\w\s]+?)(?:\s*$|\s*,|\s+(?:starting|spanning|with|compact|exact))/i;
+  /(?:(?:in\s+)?(?:the\s+)?style\s+of\s+|like\s+|a\s+la\s+)([\w\s]+?)(\s*$|\s*,|\s+(?:starting|spanning|with|compact|exact))/i;
 const STYLE_KEYWORD_RE =
   /\b(bebop|basie|nestico|ellington|modal|comping|rootless|quartal|block\s*chords?|locked\s*hands|drop\s*2\s*\+?\s*4|drop\s*2|upper\s*structure|shell|stride|spread|4[- ]?note\s*closed)\b/i;
+
+/**
+ * Remove the clauses that choose *which voicing* of a chord to draw — the
+ * starting note or degree, the style hint, and "all inversions" — leaving
+ * every other clause the user wrote exactly where it was.
+ *
+ * For callers that swap one voicing for another and have to say so in the
+ * chord string. The alternative — rebuilding the string from `chordName` plus
+ * a hand-kept list of clauses to re-emit — silently drops everything the list
+ * does not know about, and has already cost this project two shipped bugs
+ * (a dropped degrees clause, a re-emitted fingering size the size regex no
+ * longer matched). Surgery on the original string keeps the rest by
+ * construction.
+ *
+ * Note what is deliberately *not* stripped: an inversion clause ("1st
+ * inversion") survives, because it is folded into the resolved notes before
+ * any voicing is chosen, so both sides of the swap already agree about it.
+ *
+ * Lives here, beside the regexes it uses, so its spelling of them can never
+ * drift from the parser's own — which is the failure mode a copy in a
+ * consuming package would reintroduce.
+ */
+export function stripVoicingClauses(text: string): string {
+  return text
+    .replace(ALL_INVERSIONS_RE, " ")
+    // Degree form first, exactly as the parser prefers it: "starting on the
+    // 5th" would otherwise leave "the 5th" behind for the note form to miss.
+    .replace(STARTING_DEGREE_RE, " ")
+    .replace(STARTING_NOTE_RE, " ")
+    // "$2" puts back the clause boundary the match swallowed — see STYLE_RE.
+    .replace(STYLE_RE, "$2")
+    .replace(STYLE_KEYWORD_RE, " ")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
 
 // "with 2 notes on either side" / "with 3 keys on each side"
 const PADDING_RE =

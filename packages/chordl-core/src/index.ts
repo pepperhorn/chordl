@@ -37,7 +37,7 @@ export {
   DEFAULT_WHITE_FILL, DEFAULT_BLACK_FILL, DEFAULT_STROKE, DEFAULT_STROKE_WIDTH,
 } from "./engine/svg-constants.js";
 
-export { parseChordDescription } from "./parser/natural-language.js";
+export { parseChordDescription, stripVoicingClauses } from "./parser/natural-language.js";
 export { isProgressionRequest, parseProgressionRequest } from "./parser/progression-parser.js";
 export type { ParsedProgressionRequest } from "./parser/progression-parser.js";
 export { resolveChord } from "./resolver/chord-resolver.js";

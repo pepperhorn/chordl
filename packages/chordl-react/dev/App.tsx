@@ -634,6 +634,36 @@ export function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExpo
   // "Add to board" can record the exact shape on screen.
   const [guitarInstrument, setGuitarInstrument] = useState<InstrumentId>("guitar");
   const [guitarPosition, setGuitarPosition] = useState(0);
+  // The piano equivalent, and here for the same reason. A guitar shape is a
+  // number into a list of placements; a piano voicing has no such index the
+  // card format can hold, so the toggle reports the whole rebuilt chord string
+  // and that string becomes the card's `nl`. null means "nothing has reported
+  // yet" — the plain composed chord, not an empty one.
+  const [pianoVariantNl, setPianoVariantNl] = useState<string | null>(null);
+
+  /**
+   * The only writer for the chord box.
+   *
+   * `pianoVariantNl` names a voicing *of the chord currently in the box*, and
+   * nothing else can be said about it — so the moment the box changes it is
+   * stale, whether the change came from typing, from opening a card to edit,
+   * or from leaving edit mode. Routing every write through one function is
+   * what makes that a rule rather than three remembered clears: two of the
+   * three were missed the first time, and both were live bugs. Editing a card
+   * whose chord text already matched the box left the toggle with no reason to
+   * remount or re-report, so the previous selection was written straight onto
+   * the card the user had only opened to look at; and "Done" emptied the box
+   * without a toggle on screen to re-report, so the next "+ Add to board"
+   * duplicated the chord that had just been finished.
+   *
+   * A value guard ("ignore the report unless it was made for this exact
+   * string") does not work here: in the first case the composed string is
+   * byte-identical either way, so there is nothing for equality to catch.
+   */
+  const setChordInput = (next: string) => {
+    setInput(next);
+    setPianoVariantNl(null);
+  };
   // Experience level: the guitar panel used to draw its own beginner/emerging/
   // established toggle; it now lives here, in the annotations control row, so
   // it can eventually drive the piano voicing too.
@@ -746,7 +776,16 @@ export function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExpo
       // The guitar panel renders the raw input — octave shifts and annotation
       // modifiers are keyboard/staff concerns — so a guitar card stores the
       // same string it was drawn from.
-      nl: isGuitar ? input : withOctave + detailsModifiers,
+      //
+      // The keyboard/staff branch prefers what the voicing toggle reported,
+      // because the voicing on screen may be a variant of the typed chord (an
+      // inversion, say) that the input itself does not spell. The fallback is
+      // not a formality: the toggle only reports while it is mounted, so guitar
+      // mode and a render the error boundary swallowed both land here. It is
+      // also byte-identical to what the toggle reports for the default variant,
+      // since `chord` at its call site is exactly this string — so the
+      // untouched case cannot change shape depending on which one wins.
+      nl: isGuitar ? input : (pianoVariantNl ?? withOctave + detailsModifiers),
       title: title || undefined,
       subheading: subheading || undefined,
       footerText: footerText || undefined,
@@ -765,8 +804,8 @@ export function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExpo
       playbackHighlightColor,
     };
   }, [input, octaveShift, detailsModifiers, title, subheading, footerText,
-      displayMode, guitarInstrument, guitarPosition, level, playbackSpec,
-      arpeggioBpm, playbackHighlightColor]);
+      displayMode, guitarInstrument, guitarPosition, pianoVariantNl, level,
+      playbackSpec, arpeggioBpm, playbackHighlightColor]);
 
   // A text card is text, and deliberately nothing else: no `nl`, no `display`,
   // no instrument. `updateItem` merges a patch, so a chord key that appeared
@@ -808,7 +847,7 @@ export function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExpo
     setImageError(null);
     // The input too, or "go back to creating a new chord" leaves the finished
     // card's chord in the box and "+ Add to board" quietly duplicates it.
-    setInput("");
+    setChordInput("");
     board.clearSelection();
   };
 
@@ -843,7 +882,9 @@ export function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExpo
    * chord is in the box.
    */
   const handleChordInputChange = (next: string) => {
-    setInput(next);
+    // Drops the reported voicing rather than carry it onto a different chord —
+    // see `setChordInput`.
+    setChordInput(next);
     setError(null);
     if (!editingItemId && !cardTextTouched) clearCardText();
   };
@@ -939,7 +980,7 @@ export function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExpo
     // panel blank on a card that plainly had details — and the next toggle
     // appended a clause the string already carried.
     const details = splitChordDetails(item.nl ?? "");
-    setInput(details.input);
+    setChordInput(details.input);
     setTitle(item.title ?? "");
     setSubheading(item.subheading ?? "");
     setFooterText(item.footerText ?? "");
@@ -1508,6 +1549,7 @@ export function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExpo
               title={title || undefined}
               subheading={subheading || undefined}
               footerText={footerText || undefined}
+              onVariantChange={setPianoVariantNl}
               arpeggioBpm={arpeggioBpm}
               playbackHighlightColor={playbackHighlightColor}
               onPlaybackSpecChange={handlePlaybackSpecChange}

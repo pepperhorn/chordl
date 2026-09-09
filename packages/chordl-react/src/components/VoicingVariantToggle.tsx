@@ -1,10 +1,11 @@
-import { useState, useMemo, useRef, useCallback } from "react";
+import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import type { DisplayMode, OnVariation, RenderVariationExtras, PlaybackSpecSnapshot } from "../types";
 import type { UIThemeMode } from "../config";
 import { PianoChord } from "./PianoChord";
 import {
   parseChordDescription,
   resolveChord,
+  stripVoicingClauses,
   FLAT_TO_SHARP,
 } from "@pepperhorn/chordl-core";
 import {
@@ -42,6 +43,21 @@ export interface VoicingVariantToggleProps {
    * doesn't pass it sees today's unfiltered behaviour.
    */
   level?: ExperienceLevel;
+  /**
+   * Called with the chord string of the voicing currently on screen — the
+   * `chord` given to this component with the active variant's clause swapped
+   * in, everything else the user typed left alone.
+   *
+   * The selection is private state, so without this a host can watch the right
+   * voicing being drawn and still have no way to name it: `dev/App.tsx`'s
+   * "+ Add to board" stored the typed chord and therefore always the default
+   * variant. Mirrors `GuitarChordPanel`'s `onPositionChange`, including its
+   * discipline of reporting drift the user did not cause — a level filter that
+   * pushes the display off the clicked variant, or a new chord resetting the
+   * selection — so a host that persists the value can never hold a string for a
+   * voicing that is no longer on screen.
+   */
+  onVariantChange?: (chordString: string) => void;
   arpeggioBpm?: number;
   playbackHighlightColor?: string;
   onPlaybackSpecChange?: (spec: PlaybackSpecSnapshot) => void;
@@ -65,6 +81,7 @@ export function VoicingVariantToggle({
   subheading,
   footerText,
   level = "established",
+  onVariantChange,
   arpeggioBpm,
   playbackHighlightColor,
   onPlaybackSpecChange,
@@ -138,6 +155,73 @@ export function VoicingVariantToggle({
   );
   const visible = selection.indices;
 
+  // The displayed variant's index into the full `variants` array. Indices
+  // stay indices into the full list (never a pre-filtered slice) so a click
+  // on visible variant "B" always reports the same number regardless of
+  // which level is active — the same discipline `GuitarChordPanel` follows
+  // for its position toggle.
+  //
+  // Computed above the early return, along with everything below it down to
+  // the reporting effect, because `onVariantChange` has to fire from every
+  // branch: a chord with a single variant still has a chord string, and a host
+  // that stopped hearing about it there would keep quoting the previous chord's
+  // voicing. (`variants` empty makes `rawActive` -1, which the `activeIdx > 0`
+  // gate below reads as "the chord as given" — the same string that branch
+  // renders.)
+  const rawActive = Math.min(activeIndex, variants.length - 1);
+  const activeIdx = visible.includes(rawActive) ? rawActive : visible[0] ?? rawActive;
+  const active = variants[activeIdx];
+
+  // The chord string for the active variant.
+  //
+  // Surgery on the string the host gave us, not a rebuild from the parsed
+  // chord name. `chord` is already the complete request — every clause the
+  // user typed, in their own words — so replacing just the clause this variant
+  // actually changes keeps the rest by construction. The rebuild it replaces
+  // re-emitted a hand-kept list of clauses instead, and silently dropped
+  // everything not on the list: "2 octaves", the bass note and its octave,
+  // span, padding. That was survivable while the string only fed the preview;
+  // once `onVariantChange` puts it on a saved card it is permanent and
+  // unrecoverable on re-edit. (The same hand-kept list had already cost a
+  // dropped degrees clause and a mangled fingering size — see
+  // `stripVoicingClauses`, which owns the parser's own spelling of the
+  // clauses being replaced.)
+  //
+  // Gated on `activeIdx`, not the raw `activeIndex` state: the level filter
+  // can push the displayed variant off index 0 even while the click-state
+  // itself is still sitting at 0 (nothing has been clicked yet).
+  const chordString = useMemo(() => {
+    if (!resolved || activeIdx <= 0) return chord;
+    if (active.source === "inversion") {
+      // "starting on X" rather than an inversion number: the input may already
+      // carry a rotation, and two rotations do not compose.
+      return `${stripVoicingClauses(chord)} starting on ${active.notes[0]}`;
+    }
+    if (active.source === "library") {
+      return `${stripVoicingClauses(chord)} ${active.label} style`;
+    }
+    // Algorithmic variants (open, drop 2, simplified) have no clause that
+    // names them, so there is nothing to replace — the string stays exactly
+    // as typed. It does not draw the algorithmic shape, but neither did the
+    // rebuild, which drew the plain chord *and* threw the user's clauses away.
+    return chord;
+  }, [resolved, activeIdx, active, chord]);
+
+  // Report the string upward. Value-guarded rather than fired on every render:
+  // a host that passes an inline callback hands us a new identity each render,
+  // and calling it re-renders the host — an unguarded effect would loop. The
+  // ref makes the effect a no-op until the string itself actually changes,
+  // which is exactly the event a host cares about, whether it came from a pill
+  // click, a level filter moving the display off the clicked variant, or a new
+  // chord resetting the selection.
+  const notifiedString = useRef<string | null>(null);
+  useEffect(() => {
+    if (notifiedString.current === chordString) return;
+    notifiedString.current = chordString;
+    onVariantChange?.(chordString);
+  }, [chordString, onVariantChange]);
+
+  const label = resolved?.parsed.chordName ?? chord;
   // A widen can fire (`selection.widenedFrom` set) while removing nothing to
   // look at: if every variant already ranks at or below the level it widened
   // to, `selection.indices` ends up covering the whole `variants` array, and
@@ -186,90 +270,6 @@ export function VoicingVariantToggle({
         />
       </div>
     );
-  }
-
-  // The displayed variant's index into the full `variants` array. Indices
-  // stay indices into the full list (never a pre-filtered slice) so a click
-  // on visible variant "B" always reports the same number regardless of
-  // which level is active — the same discipline `GuitarChordPanel` follows
-  // for its position toggle.
-  const rawActive = Math.min(activeIndex, variants.length - 1);
-  const activeIdx = visible.includes(rawActive) ? rawActive : visible[0] ?? rawActive;
-  const active = variants[activeIdx];
-
-  // Extract display modifiers from the original prompt so all variants
-  // inherit them (midi note names, fingering, note name size, etc.).
-  const displayModifiers = useMemo(() => {
-    if (!resolved) return "";
-    const parts: string[] = [];
-    const p = resolved.parsed;
-    /*
-     * "degree" is degree-only: no name row at all. Emitting the literal "note
-     * names" for every non-midi mode turned that card into a plain pitch-class
-     * one on the first variant click. The degrees clause has to be written down
-     * too, or the degree row and its size are dropped by the same rebuild.
-     */
-    const mode = p.noteNameMode ?? "pitch-class";
-    const wantsDegrees =
-      mode === "degree" || mode === "pitch-class+degree" || mode === "midi+degree";
-    if (p.showNoteNames && mode !== "degree") {
-      if (mode === "midi" || mode === "midi+degree") {
-        parts.push("midi note names");
-      } else {
-        parts.push("note names");
-      }
-      // Write the size down whenever the card has one, base included: the
-      // renderer's fallback is `degreeSize ?? noteNameSize` defaulting to lg,
-      // so leaving base off does not mean base — it means lg, and the row
-      // grew on the first pill click.
-      if (p.noteNameSize) {
-        parts.push(`in ${p.noteNameSize}`);
-      }
-    }
-    if (wantsDegrees) {
-      // The explicit "in <size>" form: the bare-size form carries a negative
-      // lookahead so it can't swallow a following note-names shape, and there
-      // is no reason to go near that hazard here.
-      parts.push(p.degreeSize ? `degrees in ${p.degreeSize}` : "degrees");
-    }
-    if (p.customFingering) {
-      parts.push(`custom fingering "${p.customFingering.join(",")}"`);;
-    } else if (p.autoFingering) {
-      parts.push("with fingering");
-    } else if (p.fingering) {
-      parts.push(`fingering ${p.fingering.join("-")}`);
-    }
-    if (p.fingeringSize && p.fingeringSize !== "base") {
-      parts.push(`fingering in ${p.fingeringSize}`);
-    }
-    if (p.colorTheme) {
-      parts.push(p.colorTheme);
-    }
-    if (p.scale != null) {
-      parts.push(`size ${Math.round(p.scale * 100)}`);
-    }
-    if (p.showHeading) {
-      parts.push("heading");
-    }
-    return parts.length > 0 ? " " + parts.join(" ") : "";
-  }, [resolved]);
-
-  // Build the chord string for the active variant, preserving display modifiers.
-  // Gated on `activeIdx`, not the raw `activeIndex` state: the level filter
-  // can push the displayed variant off index 0 even while the click-state
-  // itself is still sitting at 0 (nothing has been clicked yet).
-  let chordString = chord;
-  if (activeIdx > 0) {
-    const baseChord = resolved.parsed.chordName ?? chord;
-    if (active.source === "inversion") {
-      // Use "starting on X" instead of inversion number to avoid
-      // mismatch when the input already has a starting note rotation
-      chordString = `${baseChord} starting on ${active.notes[0]}${displayModifiers}`;
-    } else if (active.source === "library") {
-      chordString = `${baseChord} ${active.label} style${displayModifiers}`;
-    } else {
-      chordString = `${baseChord}${displayModifiers}`;
-    }
   }
 
   const getSvgElement = useCallback((): SVGSVGElement | null => {
