@@ -90,10 +90,12 @@ async function ensureInstrument(instrument: PlaybackInstrument): Promise<Playbac
  * `startPlayback` will surface the failure if the patch is actually used.
  */
 export async function preloadInstruments(
-  instruments: readonly PlaybackInstrument[],
+  // Not `instruments`: that is the module-level cache this function fills, and
+  // shadowing it here reads as though the parameter were that map.
+  wanted: readonly PlaybackInstrument[],
 ): Promise<void> {
   await Promise.all(
-    [...new Set(instruments)].map((instrument) =>
+    [...new Set(wanted)].map((instrument) =>
       ensureInstrument(instrument).catch(() => undefined),
     ),
   );
