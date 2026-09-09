@@ -23,6 +23,8 @@ export type { LocalStorageAdapterOptions } from "./storage.js";
 export { exportBoardJson, importBoardJson, computeCacheKey } from "./io.js";
 export type { BoardJsonV1, BoardItemJsonV1, BoardSchema } from "./io.js";
 export { BOARD_SCHEMA, READABLE_BOARD_SCHEMAS } from "./io.js";
+export { GRID_TRACKS, trackWidth, computeRowSpans, sizeFits } from "./layout.js";
+export type { RowSpans } from "./layout.js";
 export {
   fileToCardImage,
   imageBytesUsed,
