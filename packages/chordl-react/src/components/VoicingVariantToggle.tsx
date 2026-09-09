@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useCallback } from "react";
+import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import type { DisplayMode, OnVariation, RenderVariationExtras } from "../types";
 import type { UIThemeMode } from "../config";
 import { PianoChord } from "./PianoChord";
@@ -13,6 +13,11 @@ import {
   selectVoicingsForExperience,
 } from "@pepperhorn/chordl-voicings";
 import type { VoicingVariant, ExperienceLevel } from "@pepperhorn/chordl-voicings";
+// The editor owns the wording of the octave clause, and the variant rebuild
+// below has to re-emit it byte-for-byte or a shifted chord comes back unshifted.
+// A direct import of the leaf module (it pulls in nothing but core types), so
+// no cycle between `components` and `editor`.
+import { composeOctaveShift } from "../editor/chordDetails";
 import { exportSingleZip, exportAllZip, downloadBlob } from "../audio/zip-export";
 import type { ZipVariant } from "../audio/zip-export";
 
@@ -42,6 +47,20 @@ export interface VoicingVariantToggleProps {
    * doesn't pass it sees today's unfiltered behaviour.
    */
   level?: ExperienceLevel;
+  /**
+   * Called with the chord string of the voicing currently on screen — the one
+   * this component rebuilds for the active variant, modifiers and all.
+   *
+   * The selection is private state, so without this a host can watch the right
+   * voicing being drawn and still have no way to name it: `dev/App.tsx`'s
+   * "+ Add to board" stored the typed chord and therefore always the default
+   * variant. Mirrors `GuitarChordPanel`'s `onPositionChange`, including its
+   * discipline of reporting drift the user did not cause — a level filter that
+   * pushes the display off the clicked variant, or a new chord resetting the
+   * selection — so a host that persists the value can never hold a string for a
+   * voicing that is no longer on screen.
+   */
+  onVariantChange?: (chordString: string) => void;
 }
 
 const LABELS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -62,6 +81,7 @@ export function VoicingVariantToggle({
   subheading,
   footerText,
   level = "established",
+  onVariantChange,
 }: VoicingVariantToggleProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [totalCount, setTotalCount] = useState(3);
@@ -132,60 +152,19 @@ export function VoicingVariantToggle({
   );
   const visible = selection.indices;
 
-  const label = resolved?.parsed.chordName ?? chord;
-  // A widen can fire (`selection.widenedFrom` set) while removing nothing to
-  // look at: if every variant already ranks at or below the level it widened
-  // to, `selection.indices` ends up covering the whole `variants` array, and
-  // the voicings on screen are identical to what an unfiltered view would
-  // show. Measured across the library: 41% of chords hit exactly this at the
-  // default "emerging" level. The widening still happened, but it changed
-  // nothing observable, so narrating it is noise — only announce a widen
-  // that actually left something out.
-  const widenedVisibly =
-    selection.widenedFrom != null && selection.indices.length < variants.length;
-  const filterNotice = widenedVisibly
-    ? `No ${selection.widenedFrom} voicing for ${label} — showing ${selection.level} instead.`
-    : null;
-
-  // If we couldn't resolve or only have 1 variant, just render PianoChord
-  // directly — but still surface the widening notice above it. `resolved` is
-  // guaranteed non-null whenever `variants.length` is 1 (an empty `variants`
-  // list, the `!resolved` case, always fails `selectVoicingsForExperience`'s
-  // own `variants.length === 0` guard before setting `widenedFrom`), so
-  // `label` above is safe to use here too.
-  if (!resolved || variants.length <= 1) {
-    return (
-      <div className="voicing-variant-toggle voicing-variant-toggle-single" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.5rem" }}>
-        {filterNotice && (
-          <div className="voicing-variant-notice" style={{ textAlign: "center", color: "var(--text-muted)", fontSize: "0.8rem" }}>
-            {filterNotice}
-          </div>
-        )}
-        <PianoChord
-          chord={chord}
-          format={format}
-          theme={theme}
-          highlightColor={highlightColor}
-          scale={scale}
-          display={display}
-          uiTheme={uiTheme}
-          title={title}
-          subheading={subheading}
-          footerText={footerText}
-          onVariation={onVariation}
-          renderVariationExtras={renderVariationExtras}
-          voicingId="default"
-          chordIndex={chordIndex ?? 0}
-        />
-      </div>
-    );
-  }
-
   // The displayed variant's index into the full `variants` array. Indices
   // stay indices into the full list (never a pre-filtered slice) so a click
   // on visible variant "B" always reports the same number regardless of
   // which level is active — the same discipline `GuitarChordPanel` follows
   // for its position toggle.
+  //
+  // Computed above the early return, along with everything below it down to
+  // the reporting effect, because `onVariantChange` has to fire from every
+  // branch: a chord with a single variant still has a chord string, and a host
+  // that stopped hearing about it there would keep quoting the previous chord's
+  // voicing. (`variants` empty makes `rawActive` -1, which the `activeIdx > 0`
+  // gate below reads as "the chord as given" — the same string that branch
+  // renders.)
   const rawActive = Math.min(activeIndex, variants.length - 1);
   const activeIdx = visible.includes(rawActive) ? rawActive : visible[0] ?? rawActive;
   const active = variants[activeIdx];
@@ -251,18 +230,85 @@ export function VoicingVariantToggle({
   // Gated on `activeIdx`, not the raw `activeIndex` state: the level filter
   // can push the displayed variant off index 0 even while the click-state
   // itself is still sitting at 0 (nothing has been clicked yet).
-  let chordString = chord;
-  if (activeIdx > 0) {
+  const chordString = useMemo(() => {
+    if (!resolved || activeIdx <= 0) return chord;
     const baseChord = resolved.parsed.chordName ?? chord;
+    // `chordName` is the bare chord — every other clause the user wrote was
+    // parsed off it, the octave shift included. Anything the rebuild does not
+    // write back is therefore lost, so re-emit the shift in the editor's own
+    // wording rather than a second spelling of it here.
+    const octave = composeOctaveShift(resolved.parsed.chordOctaveShift ?? 0);
     if (active.source === "inversion") {
       // Use "starting on X" instead of inversion number to avoid
       // mismatch when the input already has a starting note rotation
-      chordString = `${baseChord} starting on ${active.notes[0]}${displayModifiers}`;
+      return `${baseChord} starting on ${active.notes[0]}${octave}${displayModifiers}`;
     } else if (active.source === "library") {
-      chordString = `${baseChord} ${active.label} style${displayModifiers}`;
-    } else {
-      chordString = `${baseChord}${displayModifiers}`;
+      return `${baseChord} ${active.label} style${octave}${displayModifiers}`;
     }
+    return `${baseChord}${octave}${displayModifiers}`;
+  }, [resolved, activeIdx, active, chord, displayModifiers]);
+
+  // Report the string upward. Value-guarded rather than fired on every render:
+  // a host that passes an inline callback hands us a new identity each render,
+  // and calling it re-renders the host — an unguarded effect would loop. The
+  // ref makes the effect a no-op until the string itself actually changes,
+  // which is exactly the event a host cares about, whether it came from a pill
+  // click, a level filter moving the display off the clicked variant, or a new
+  // chord resetting the selection.
+  const notifiedString = useRef<string | null>(null);
+  useEffect(() => {
+    if (notifiedString.current === chordString) return;
+    notifiedString.current = chordString;
+    onVariantChange?.(chordString);
+  }, [chordString, onVariantChange]);
+
+  const label = resolved?.parsed.chordName ?? chord;
+  // A widen can fire (`selection.widenedFrom` set) while removing nothing to
+  // look at: if every variant already ranks at or below the level it widened
+  // to, `selection.indices` ends up covering the whole `variants` array, and
+  // the voicings on screen are identical to what an unfiltered view would
+  // show. Measured across the library: 41% of chords hit exactly this at the
+  // default "emerging" level. The widening still happened, but it changed
+  // nothing observable, so narrating it is noise — only announce a widen
+  // that actually left something out.
+  const widenedVisibly =
+    selection.widenedFrom != null && selection.indices.length < variants.length;
+  const filterNotice = widenedVisibly
+    ? `No ${selection.widenedFrom} voicing for ${label} — showing ${selection.level} instead.`
+    : null;
+
+  // If we couldn't resolve or only have 1 variant, just render PianoChord
+  // directly — but still surface the widening notice above it. `resolved` is
+  // guaranteed non-null whenever `variants.length` is 1 (an empty `variants`
+  // list, the `!resolved` case, always fails `selectVoicingsForExperience`'s
+  // own `variants.length === 0` guard before setting `widenedFrom`), so
+  // `label` above is safe to use here too.
+  if (!resolved || variants.length <= 1) {
+    return (
+      <div className="voicing-variant-toggle voicing-variant-toggle-single" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.5rem" }}>
+        {filterNotice && (
+          <div className="voicing-variant-notice" style={{ textAlign: "center", color: "var(--text-muted)", fontSize: "0.8rem" }}>
+            {filterNotice}
+          </div>
+        )}
+        <PianoChord
+          chord={chord}
+          format={format}
+          theme={theme}
+          highlightColor={highlightColor}
+          scale={scale}
+          display={display}
+          uiTheme={uiTheme}
+          title={title}
+          subheading={subheading}
+          footerText={footerText}
+          onVariation={onVariation}
+          renderVariationExtras={renderVariationExtras}
+          voicingId="default"
+          chordIndex={chordIndex ?? 0}
+        />
+      </div>
+    );
   }
 
   const getSvgElement = useCallback((): SVGSVGElement | null => {

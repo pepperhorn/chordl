@@ -624,6 +624,12 @@ export function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExpo
   // "Add to board" can record the exact shape on screen.
   const [guitarInstrument, setGuitarInstrument] = useState<InstrumentId>("guitar");
   const [guitarPosition, setGuitarPosition] = useState(0);
+  // The piano equivalent, and here for the same reason. A guitar shape is a
+  // number into a list of placements; a piano voicing has no such index the
+  // card format can hold, so the toggle reports the whole rebuilt chord string
+  // and that string becomes the card's `nl`. null means "nothing has reported
+  // yet" — the plain composed chord, not an empty one.
+  const [pianoVariantNl, setPianoVariantNl] = useState<string | null>(null);
   // Experience level: the guitar panel used to draw its own beginner/emerging/
   // established toggle; it now lives here, in the annotations control row, so
   // it can eventually drive the piano voicing too.
@@ -729,7 +735,16 @@ export function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExpo
       // The guitar panel renders the raw input — octave shifts and annotation
       // modifiers are keyboard/staff concerns — so a guitar card stores the
       // same string it was drawn from.
-      nl: isGuitar ? input : withOctave + detailsModifiers,
+      //
+      // The keyboard/staff branch prefers what the voicing toggle reported,
+      // because the voicing on screen may be a variant of the typed chord (an
+      // inversion, say) that the input itself does not spell. The fallback is
+      // not a formality: the toggle only reports while it is mounted, so guitar
+      // mode and a render the error boundary swallowed both land here. It is
+      // also byte-identical to what the toggle reports for the default variant,
+      // since `chord` at its call site is exactly this string — so the
+      // untouched case cannot change shape depending on which one wins.
+      nl: isGuitar ? input : (pianoVariantNl ?? withOctave + detailsModifiers),
       title: title || undefined,
       subheading: subheading || undefined,
       footerText: footerText || undefined,
@@ -744,7 +759,7 @@ export function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExpo
       level,
     };
   }, [input, octaveShift, detailsModifiers, title, subheading, footerText,
-      displayMode, guitarInstrument, guitarPosition, level]);
+      displayMode, guitarInstrument, guitarPosition, pianoVariantNl, level]);
 
   // A text card is text, and deliberately nothing else: no `nl`, no `display`,
   // no instrument. `updateItem` merges a patch, so a chord key that appeared
@@ -823,6 +838,13 @@ export function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExpo
   const handleChordInputChange = (next: string) => {
     setInput(next);
     setError(null);
+    // Drop the reported voicing rather than carry it onto a different chord.
+    // The toggle re-reports for itself on every chord change (its identity
+    // reset fires the same effect, and the keyed ErrorBoundary around it
+    // remounts it outright), so this is not what makes the common case
+    // correct — it covers the case where there is no toggle to report at all,
+    // which is what a chord the error boundary rejected leaves behind.
+    setPianoVariantNl(null);
     if (!editingItemId && !cardTextTouched) clearCardText();
   };
 
@@ -1440,6 +1462,7 @@ export function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExpo
               title={title || undefined}
               subheading={subheading || undefined}
               footerText={footerText || undefined}
+              onVariantChange={setPianoVariantNl}
               onExportStatus={onExportStatus}
             />
           )}
