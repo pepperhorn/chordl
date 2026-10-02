@@ -149,6 +149,8 @@ export function BoardCardContent({
         chord={item.nl}
         instrument={item.instrument as InstrumentId | undefined}
         position={item.position}
+        orientation={item.frameOrientation}
+        lineStyle={item.frameLineStyle}
         showControls={false}
         showPlayback={false}
         // A fretboard is a tall, narrow graphic and caps at 260*scale, so at the

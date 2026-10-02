@@ -81,3 +81,38 @@ describe("GuitarChord", () => {
     }
   });
 });
+
+describe("frame appearance", () => {
+  it.each(["guitar", "ukulele"] as const)("lays out %s strings horizontally and keeps text upright", (instrument) => {
+    const shape = lookupGuitarChord("Am", instrument)!.shapes[0];
+    const strings = instrument === "ukulele" ? 4 : 6;
+    const { container, rerender } = render(<GuitarChord chord={shape} settings={{ strings }} />);
+    const vertical = container.querySelector("line.bc-frame-string")!;
+    expect(vertical.getAttribute("x1")).toBe(vertical.getAttribute("x2"));
+    rerender(<GuitarChord chord={shape} settings={{ strings }} orientation="horizontal" />);
+    const horizontal = container.querySelector("line.bc-frame-string")!;
+    expect(horizontal.getAttribute("y1")).toBe(horizontal.getAttribute("y2"));
+    expect(horizontal.getAttribute("x1")).not.toBe(horizontal.getAttribute("x2"));
+    expect(container.querySelectorAll("line.bc-frame-string")).toHaveLength(strings);
+    expect(container.querySelector(".bc-guitar-chord__canvas")?.getAttribute("style")).toBeNull();
+  });
+
+  it.each(["vertical", "horizontal"] as const)("sketches only grid lines in %s frames and stays deterministic", (orientation) => {
+    const { container, rerender } = render(<GuitarChord chord={amShape} orientation={orientation} />);
+    const gridCount = container.querySelectorAll("line.bc-frame-string, line.bc-frame-fret").length;
+    const fingers = () => Array.from(container.querySelectorAll(".finger")).map(el => el.outerHTML);
+    const originalFingers = fingers();
+    rerender(<GuitarChord chord={amShape} orientation={orientation} lineStyle="handdrawn" />);
+    expect(container.querySelectorAll("path.bc-frame-string, path.bc-frame-fret")).toHaveLength(gridCount);
+    expect(container.querySelectorAll("line.bc-frame-string, line.bc-frame-fret")).toHaveLength(0);
+    expect(fingers()).toEqual(originalFingers);
+    const paths = () => Array.from(container.querySelectorAll("path.bc-frame-string, path.bc-frame-fret")).map(el => el.getAttribute("d"));
+    const sketch = paths();
+    rerender(<GuitarChord chord={amShape} orientation={orientation} />);
+    rerender(<GuitarChord chord={amShape} orientation={orientation} lineStyle="handdrawn" />);
+    expect(paths()).toEqual(sketch);
+    const svg = container.querySelector("svg");
+    rerender(<GuitarChord chord={{ ...amShape }} orientation={orientation} lineStyle="handdrawn" activeString={1} />);
+    expect(container.querySelector("svg")).toBe(svg);
+  });
+});

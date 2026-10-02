@@ -464,3 +464,28 @@ describe("bundleId", () => {
     expect(importBoardJson(withId(".hidden")).items[0].bundleId).toBe(".hidden");
   });
 });
+
+describe("frame appearance persistence", () => {
+  it("round-trips orientation and lines and gives each appearance its own cache key", async () => {
+    const items = [
+      { id: "a", nl: "Am", display: "guitar" as const, frameOrientation: "vertical" as const, frameLineStyle: "clean" as const },
+      { id: "b", nl: "Am", display: "guitar" as const, frameOrientation: "horizontal" as const, frameLineStyle: "clean" as const },
+      { id: "c", nl: "Am", display: "guitar" as const, frameOrientation: "horizontal" as const, frameLineStyle: "handdrawn" as const },
+    ];
+    const json = await exportBoardJson(board(items));
+    expect(importBoardJson(json).items).toMatchObject(items);
+    const exported = JSON.parse(json).items;
+    expect(new Set(exported.map((item: { cacheKey: string }) => item.cacheKey)).size).toBe(3);
+  });
+
+  it("drops unknown appearance values and keeps legacy cards unset", () => {
+    const { items } = importBoardJson(rawBoard([
+      { id: "a", nl: "Am", frameOrientation: "diagonal", frameLineStyle: "scribble" },
+      { id: "b", nl: "C" },
+    ]));
+    for (const item of items) {
+      expect(item.frameOrientation).toBeUndefined();
+      expect(item.frameLineStyle).toBeUndefined();
+    }
+  });
+});

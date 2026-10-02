@@ -82,6 +82,8 @@ export async function exportBoardJson(state: BoardState): Promise<string> {
       if (it.size !== undefined) renderConfig.size = it.size;
       if (it.instrument !== undefined) renderConfig.instrument = it.instrument;
       if (it.position !== undefined) renderConfig.position = it.position;
+      if (it.frameOrientation !== undefined) renderConfig.frameOrientation = it.frameOrientation;
+      if (it.frameLineStyle !== undefined) renderConfig.frameLineStyle = it.frameLineStyle;
       // `level` is deliberately absent here, unlike every other field above
       // it: today every card that reaches this point has `showControls={false}`
       // in the renderer, which bypasses the level filter entirely, so `level`
@@ -256,6 +258,8 @@ export function importBoardJson(text: string): BoardState {
       display: parseDisplayMode(raw.display),
       instrument: typeof raw.instrument === "string" && raw.instrument ? raw.instrument : undefined,
       position: parsePosition(raw.position),
+      frameOrientation: raw.frameOrientation === "vertical" || raw.frameOrientation === "horizontal" ? raw.frameOrientation : undefined,
+      frameLineStyle: raw.frameLineStyle === "clean" || raw.frameLineStyle === "handdrawn" ? raw.frameLineStyle : undefined,
       level: parseLevel(raw.level),
       playbackNotes: parsePlaybackNotes(raw.playbackNotes),
       playbackInstrument: parsePlaybackInstrument(raw.playbackInstrument),

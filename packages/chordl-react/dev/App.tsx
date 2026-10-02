@@ -38,7 +38,7 @@ import type { StaffGlyphSet, ChordSheetData, PlaybackSpecSnapshot } from "../src
 // `import type` erases entirely at build time regardless, so this costs
 // nothing towards keeping the guitar panel's lazy chunk (see above) out of
 // the main bundle.
-import type { ExperienceLevel, InstrumentId, UIThemeMode } from "../src";
+import type { ExperienceLevel, InstrumentId, UIThemeMode, FrameOrientation, FrameLineStyle } from "../src";
 import { SHOW_HINTS, HINT_SPEED } from "../src/config";
 import { HINTS } from "./hints";
 import packageMetadata from "../package.json";
@@ -644,6 +644,8 @@ export function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExpo
   // "Add to board" can record the exact shape on screen.
   const [guitarInstrument, setGuitarInstrument] = useState<InstrumentId>("guitar");
   const [guitarPosition, setGuitarPosition] = useState(0);
+  const [frameOrientation, setFrameOrientation] = useState<FrameOrientation>("vertical");
+  const [frameLineStyle, setFrameLineStyle] = useState<FrameLineStyle>("clean");
   // The piano equivalent, and here for the same reason. A guitar shape is a
   // number into a list of placements; a piano voicing has no such index the
   // card format can hold, so the toggle reports the whole rebuilt chord string
@@ -874,6 +876,8 @@ export function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExpo
       display: displayMode,
       instrument: isGuitar ? guitarInstrument : undefined,
       position: isGuitar ? guitarPosition : undefined,
+      frameOrientation: isGuitar ? frameOrientation : undefined,
+      frameLineStyle: isGuitar ? frameLineStyle : undefined,
       // Unlike instrument/position, stored unconditionally rather than
       // isGuitar-gated: it's meaningless to the keyboard/staff renderer today,
       // but the piano voicing is expected to read it in a later PR, and a
@@ -886,7 +890,7 @@ export function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExpo
       playbackHighlightColor,
     };
   }, [input, octaveShift, detailsModifiers, title, subheading, footerText,
-      displayMode, guitarInstrument, guitarPosition, pianoVariantNl, level,
+      displayMode, guitarInstrument, guitarPosition, frameOrientation, frameLineStyle, pianoVariantNl, level,
       playbackSpec, arpeggioBpm, playbackHighlightColor]);
 
   // A text card is text, and deliberately nothing else: no `nl`, no `display`,
@@ -1086,6 +1090,8 @@ export function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExpo
     setDisplayMode(item.display ?? "keyboard");
     setGuitarInstrument((item.instrument as InstrumentId | undefined) ?? "guitar");
     setGuitarPosition(item.position ?? 0);
+    setFrameOrientation(item.frameOrientation ?? "vertical");
+    setFrameLineStyle(item.frameLineStyle ?? "clean");
     // A card with no stored level predates the level control entirely — it
     // was drawn under no filter at all, at any display mode (piano cards will
     // read this too, once they start filtering). Level matching is
@@ -1611,6 +1617,10 @@ export function InteractiveInput({ uiTheme, showOptions, onToggleOptions, onExpo
                 onInstrumentChange={setGuitarInstrument}
                 position={guitarPosition}
                 onPositionChange={setGuitarPosition}
+                orientation={frameOrientation}
+                onOrientationChange={setFrameOrientation}
+                lineStyle={frameLineStyle}
+                onLineStyleChange={setFrameLineStyle}
                 level={level}
                 scale={scale}
                 uiTheme={uiTheme}

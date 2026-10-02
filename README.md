@@ -47,6 +47,27 @@ import { PianoChord, PianoKeyboard } from "@pepperhorn/chordl-react";
 />
 ```
 
+## Guitar and ukulele frames
+
+```tsx
+import { GuitarChordPanel } from "@pepperhorn/chordl-react";
+
+<GuitarChordPanel
+  chord="Am"
+  instrument="ukulele"
+  orientation="horizontal"
+  lineStyle="handdrawn"
+/>
+```
+
+Frames offer Vertical/Horizontal and Clean/Hand drawn pill controls. The hand-drawn
+option applies to the neck lines and nut, retaining crisp labels and note markers.
+Defaults are vertical and clean. Set `showControls={false}` for a static frame.
+Hosts can persist changes through `onOrientationChange` and `onLineStyleChange`;
+board cards save them as `frameOrientation` and `frameLineStyle` through editing,
+local storage and JSON export/import. `GuitarChord` accepts the same appearance
+props for explicit SVGuitar chord data.
+
 ## Natural Language Parser
 
 The parser extracts structured data from freeform text:
