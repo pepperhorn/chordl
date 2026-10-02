@@ -355,3 +355,30 @@ describe("level filtering", () => {
     // `chordl-guitar`'s experience.ts and this file's filterNotice comment.
   });
 });
+
+describe("frame appearance controls", () => {
+  it("switches appearance, reports it to the host and retains it across instruments", () => {
+    const onOrientationChange = vi.fn();
+    const onLineStyleChange = vi.fn();
+    const { container } = render(<GuitarChordPanel chord="Am" onOrientationChange={onOrientationChange} onLineStyleChange={onLineStyleChange} />);
+    fireEvent.click(within(container).getByRole("button", { name: "Horizontal" }));
+    fireEvent.click(within(container).getByRole("button", { name: "Hand drawn" }));
+    expect(onOrientationChange).toHaveBeenCalledWith("horizontal");
+    expect(onLineStyleChange).toHaveBeenCalledWith("handdrawn");
+    fireEvent.click(instrumentButtons(container).ukulele);
+    expect(container.querySelector(".bc-guitar-chord")?.getAttribute("data-orientation")).toBe("horizontal");
+    expect(container.querySelectorAll("path.bc-frame-string")).toHaveLength(4);
+    expect(within(container).getByRole("button", { name: "Hand drawn" }).getAttribute("aria-pressed")).toBe("true");
+  });
+
+  it("renders persisted appearance on static panels and follows changed props", () => {
+    const { container, rerender } = render(<GuitarChordPanel chord="F" showControls={false} orientation="horizontal" lineStyle="handdrawn" activePlaybackIndices={[0]} />);
+    expect(container.querySelector(".bc-guitar-frame-controls")).toBeNull();
+    expect(container.querySelectorAll("path.bc-frame-string")).toHaveLength(6);
+    expect(container.querySelector(".bc-playback-string-0")).toBeTruthy();
+    const active = container.querySelector(".bc-guitar-chord")?.getAttribute("data-active-strings");
+    rerender(<GuitarChordPanel chord="F" showControls={false} orientation="vertical" lineStyle="clean" activePlaybackIndices={[0]} />);
+    expect(container.querySelectorAll("line.bc-frame-string")).toHaveLength(6);
+    expect(container.querySelector(".bc-guitar-chord")?.getAttribute("data-active-strings")).toBe(active);
+  });
+});

@@ -22,7 +22,7 @@ export { sequenceFromChords, normalizeToDetectorSymbol, pageCount } from "./foll
 export { GuitarChord } from "./components/GuitarChord";
 export { renderMeiToSvg, getVerovioToolkit, prefetchVerovio, prefetchVerovioWhenIdle, isVerovioReady } from "./verovio";
 export type { VerovioFont, RenderMeiOptions } from "./verovio";
-export type { GuitarChordProps } from "./components/GuitarChord";
+export type { GuitarChordProps, FrameOrientation, FrameLineStyle } from "./components/GuitarChord";
 export { GuitarChordPanel } from "./components/GuitarChordPanel";
 export type { GuitarChordPanelProps } from "./components/GuitarChordPanel";
 /** Re-exported so consumers can name the types `GuitarChordPanelProps` uses. */

@@ -107,6 +107,9 @@ export interface BoardItem {
    * shorter (e.g. after a chords-db update).
    */
   position?: number;
+  /** Frame appearance. Absent values retain the original vertical, clean frame. */
+  frameOrientation?: "vertical" | "horizontal";
+  frameLineStyle?: "clean" | "handdrawn";
   /**
    * Difficulty filter on a chord's alternate shapes — "can I play this yet".
    * Typed loosely (a bare string), like `instrument`, so the board carries no

@@ -1,11 +1,20 @@
 import { useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
-import { SVGuitarChord } from "svguitar";
+import { Orientation, SVGuitarChord } from "svguitar";
+import { styleFrameLines } from "../frameLines";
+import { alignHorizontalFrame } from "../frameOrientation";
 import type { Chord, ChordSettings } from "svguitar";
 import { DEFAULT_PLAYBACK_HIGHLIGHT_COLOR } from "@pepperhorn/chordl-core";
 import { useUITheme } from "../ui-theme";
 
+export type FrameOrientation = "vertical" | "horizontal";
+export type FrameLineStyle = "clean" | "handdrawn";
+
 export interface GuitarChordProps {
+  /** Direction of the neck. Defaults to vertical. */
+  orientation?: FrameOrientation;
+  /** Subtle hand-drawn fret/string lines; labels and note targets stay crisp. */
+  lineStyle?: FrameLineStyle;
   /** An svguitar Chord (from chordl-guitar's lookupGuitarChord shapes). */
   chord: Chord;
   /** Number of frets to draw (default 5). */
@@ -52,6 +61,8 @@ function drawKeyOf(input: unknown): string {
 export function GuitarChord({
   chord,
   frets = 5,
+  orientation = "vertical",
+  lineStyle = "clean",
   settings,
   scale = 1,
   className,
@@ -69,18 +80,18 @@ export function GuitarChord({
   // Redraw when the drawing would differ, not when a prop object is merely a
   // new instance of the same data. GuitarChord is public API, so this has to
   // hold for any caller — memoising at the call site is not enough.
-  const drawKey = drawKeyOf({ chord, frets, settings, color });
+  const drawKey = drawKeyOf({ chord, frets, settings, color, orientation, lineStyle });
   // The effect runs off `drawKey` alone, so it reads the live props from here
   // rather than closing over stale ones.
-  const drawRef = useRef({ chord, frets, settings, color });
-  drawRef.current = { chord, frets, settings, color };
+  const drawRef = useRef({ chord, frets, settings, color, orientation, lineStyle });
+  drawRef.current = { chord, frets, settings, color, orientation, lineStyle };
 
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
     let firstFrame = 0;
     let secondFrame = 0;
-    const { chord: nextChord, frets: nextFrets, settings: nextSettings, color: nextColor } =
+    const { chord: nextChord, frets: nextFrets, settings: nextSettings, color: nextColor, orientation: nextOrientation, lineStyle: nextLineStyle } =
       drawRef.current;
     setPainted(false);
     el.innerHTML = "";
@@ -89,6 +100,7 @@ export function GuitarChord({
       new SVGuitarChord(el)
         .configure({
           frets: nextFrets,
+          orientation: nextOrientation === "horizontal" ? Orientation.horizontal : Orientation.vertical,
           fontFamily: "'DM Sans', system-ui, sans-serif",
           color: nextColor,
           backgroundColor: "transparent",
@@ -99,6 +111,8 @@ export function GuitarChord({
         })
         .chord(nextChord)
         .draw();
+      styleFrameLines(el, (nextSettings?.orientation ?? nextOrientation) === "horizontal", nextLineStyle === "handdrawn");
+      if ((nextSettings?.orientation ?? nextOrientation) === "horizontal") alignHorizontalFrame(el);
       drawn = true;
     } catch {
       el.innerHTML = "";
@@ -133,11 +147,13 @@ export function GuitarChord({
   return (
     <div
       className={`bc-guitar-chord ${className ?? ""}`.trim()}
+      data-orientation={settings?.orientation ?? orientation}
+      data-line-style={lineStyle}
       data-active-strings={resolvedActiveStrings.join(" ")}
       style={{
         position: "relative",
         width: "100%",
-        maxWidth: 260 * scale,
+        maxWidth: ((settings?.orientation ?? orientation) === "horizontal" ? 360 : 260) * scale,
         minHeight: painted ? undefined : 160 * scale,
         ...style,
         ["--bc-playback-highlight" as string]: playbackHighlightColor,

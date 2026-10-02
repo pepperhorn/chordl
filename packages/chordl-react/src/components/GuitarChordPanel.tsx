@@ -12,6 +12,7 @@ import type { InstrumentId, ExperienceLevel, SoundingString } from "@pepperhorn/
 import type { UIThemeMode } from "../config";
 import { resolveUITheme, UIThemeProvider } from "../ui-theme";
 import { GuitarChord } from "./GuitarChord";
+import type { FrameOrientation, FrameLineStyle } from "./GuitarChord";
 import { CardHeading, CardFooter } from "./CardHeading";
 import { GuitarPlaybackControls } from "./GuitarPlaybackControls";
 import type { PlaybackSpecSnapshot } from "../types";
@@ -21,6 +22,11 @@ export interface GuitarChordPanelProps {
   /** NL chord string (same input the piano view takes). */
   chord: string;
   instrument?: InstrumentId;
+  /** Frame appearance; changes are reported so hosts can persist them. */
+  orientation?: FrameOrientation;
+  onOrientationChange?: (orientation: FrameOrientation) => void;
+  lineStyle?: FrameLineStyle;
+  onLineStyleChange?: (lineStyle: FrameLineStyle) => void;
   /** Fires when the user picks a different instrument, so hosts can persist it. */
   onInstrumentChange?: (instrument: InstrumentId) => void;
   /**
@@ -44,7 +50,7 @@ export interface GuitarChordPanelProps {
    */
   level?: ExperienceLevel;
   /**
-   * Show the instrument and A/B/C position toggles. Default true; board cards
+   * Show instrument, frame appearance and A/B/C position toggles. Default true; board cards
    * render one fixed shape and pass false.
    */
   showControls?: boolean;
@@ -172,6 +178,10 @@ export function GuitarChordPanel({
   chord,
   instrument: instrumentProp = "guitar",
   onInstrumentChange,
+  orientation: orientationProp = "vertical",
+  onOrientationChange,
+  lineStyle: lineStyleProp = "clean",
+  onLineStyleChange,
   position: positionProp,
   onPositionChange,
   level: levelProp,
@@ -190,6 +200,18 @@ export function GuitarChordPanel({
   activePlaybackIndices: controlledActiveIndices,
   onPlaybackSpecChange,
 }: GuitarChordPanelProps) {
+  const [orientation, setOrientation] = useState(orientationProp);
+  const [previousOrientation, setPreviousOrientation] = useState(orientationProp);
+  if (orientationProp !== previousOrientation) {
+    setPreviousOrientation(orientationProp);
+    setOrientation(orientationProp);
+  }
+  const [lineStyle, setLineStyle] = useState(lineStyleProp);
+  const [previousLineStyle, setPreviousLineStyle] = useState(lineStyleProp);
+  if (lineStyleProp !== previousLineStyle) {
+    setPreviousLineStyle(lineStyleProp);
+    setLineStyle(lineStyleProp);
+  }
   const resolvedShowPlayback = showPlayback ?? showControls;
   const [internalActiveStrings, setInternalActiveStrings] = useState<number[]>([]);
   const uiCtx = resolveUITheme(uiTheme);
@@ -420,6 +442,35 @@ export function GuitarChordPanel({
     </div>
   );
 
+  const appearanceControls = !showControls ? null : (
+    <div className="bc-guitar-frame-controls" style={{ display: "flex", flexWrap: "wrap", gap: 12, justifyContent: "center" }}>
+      {([
+        { label: "Frame orientation", value: orientation, options: [["vertical", "Vertical"], ["horizontal", "Horizontal"]], change: (value: string) => {
+          setOrientation(value as FrameOrientation); onOrientationChange?.(value as FrameOrientation);
+        } },
+        { label: "Frame lines", value: lineStyle, options: [["clean", "Clean"], ["handdrawn", "Hand drawn"]], change: (value: string) => {
+          setLineStyle(value as FrameLineStyle); onLineStyleChange?.(value as FrameLineStyle);
+        } },
+      ]).map(({ label, value, options, change }) => (
+        <div key={label} role="group" aria-label={label} style={{ display: "flex", gap: 6 }}>
+          {options.map(([option, caption]) => (
+            <button key={option} type="button" aria-pressed={value === option} data-active={value === option}
+              onClick={() => change(option)} className="bc-guitar-frame-btn"
+              style={{
+                padding: "4px 12px", borderRadius: 999, cursor: "pointer",
+                border: value === option ? "1px solid transparent" : "1px solid var(--btn-border, #ddd)",
+                background: value === option ? "var(--pill-active-bg, #0ea5e9)" : "var(--pill-bg, #f1f5f9)",
+                color: value === option ? "var(--pill-active-text, #fff)" : "var(--text-muted, #64748b)",
+                fontFamily: "system-ui, sans-serif", fontSize: "0.8rem", fontWeight: value === option ? 600 : 500,
+              }}>
+              {caption}
+            </button>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+
   if (parsed?.isScale) return notice("Guitar view shows chords — switch off scale mode.");
   if (!label) return notice("Enter a chord to see its guitar shapes.");
   if (!result) {
@@ -485,6 +536,7 @@ export function GuitarChordPanel({
         )}
 
         {instrumentToggle}
+        {appearanceControls}
 
         {filterNotice && (
           <div className="bc-guitar-notice" style={{ textAlign: "center", color: muted, fontSize: "0.8rem" }}>
@@ -495,6 +547,8 @@ export function GuitarChordPanel({
         <GuitarChord
           chord={playbackDiagram ?? diagram}
           scale={scale}
+          orientation={orientation}
+          lineStyle={lineStyle}
           frets={Math.max(frets ?? minFrets, minFrets)}
           settings={guitarSettings}
           activeStrings={activeStrings}
