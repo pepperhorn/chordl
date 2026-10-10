@@ -22,6 +22,23 @@
 
 - **The "Hide barre shapes" switch is gone, replaced by the level control.** The one-off barre filter documented under the 2026-09-01 release no longer exists as a control; its job — offering an easier alternative shape rather than showing nothing — is now done more generally by the Beginner/Emerging/Established level control above, which also covers position-on-the-neck, not just barres.
 
+## 2026-10-11 — chordl-core 0.5.0
+
+Only `@pepperhorn/chordl-core` is published in this release. It still depends on `@pepperhorn/chordl-voicings` 0.4.0, which already provides everything core imports, so no other package needs to go out with it. Its chord-recognition entry stays under **Unreleased → Added** above, together with the other packages' unreleased changes.
+
+| Package | Version | |
+|---|---|---|
+| `@pepperhorn/chordl-core` | 0.5.0 | adds `identifyChords` / `matchesChordName`; additive, no breaking changes |
+
+What ships in chordl-core 0.5.0 (everything merged to core since 0.4.0):
+
+- **Notes → chord-name recognition** (#70): `identifyChords`, `matchesChordName`, `IdentifyOptions`, `ChordCandidate`, `ChordNameMatch`. See Unreleased → Added.
+- **Starting-note helpers** (#68): `DEGREE_NAMES`, `degreeToNote`, `describeAvailableDegrees`, `rotateToStartingNote`, `StartingNoteRotation`.
+- **Playback settings for chord sheets** (#62): `arpeggioBpm`, `playbackHighlightColor`, `playbackNotes` and `playbackInstrument` on the sheet types, plus `MIN_/MAX_/DEFAULT_ARPEGGIO_BPM`, `DEFAULT_PLAYBACK_HIGHLIGHT_COLOR`, `isPlaybackColor`, `normalizeArpeggioBpm`, `normalizePlaybackHighlightColor` and the `PlaybackInstrument` type.
+- **Voicing clauses** (#63): `stripVoicingClauses` is exported from the natural-language parser.
+- **Fixed** (#64): MEI and MIDI export now use the same octave-qualified pitches the staff engraves.
+- **Fixed** (#57): `calculateLayout` takes `octaveOffsets`, so a library voicing is laid out where it is declared. See Unreleased → Fixed.
+
 ## 2026-09-01 — first six-package release
 
 Published from `e63c630`. Everything documented below this heading shipped in
