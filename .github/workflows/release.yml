@@ -1,0 +1,110 @@
+name: Release
+
+# Publishes one package to npm with trusted publishing (OIDC): no npm token is
+# stored anywhere. Each package must have this repo + "release.yml" registered
+# as a Trusted Publisher in its npm settings.
+#
+# Trigger by pushing a release tag on a main commit, using the existing naming:
+#   git tag chordl-core@0.5.0 && git push origin chordl-core@0.5.0
+# For a multi-package release, push the tags one at a time in the publish order
+# given in CHANGELOG.md, waiting for each run to finish.
+
+on:
+  push:
+    tags:
+      - "chordl-*@*"
+
+# One release at a time; never cancel a publish part-way.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: publish ${{ github.ref_name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      id-token: write # OIDC token for npm trusted publishing and provenance
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Resolve package from tag
+        id: pkg
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          dir="${tag%@*}"
+          version="${tag##*@}"
+          manifest="packages/${dir}/package.json"
+          if [ ! -f "$manifest" ]; then
+            echo "::error::No package directory for tag ${tag} (expected ${manifest})"; exit 1
+          fi
+          name=$(node -p "require('./${manifest}').name")
+          actual=$(node -p "require('./${manifest}').version")
+          private=$(node -p "require('./${manifest}').private === true")
+          if [ "$private" = "true" ]; then
+            echo "::error::${name} is private and cannot be published"; exit 1
+          fi
+          if [ "$actual" != "$version" ]; then
+            echo "::error::Tag ${tag} says ${version} but ${manifest} is ${actual}"; exit 1
+          fi
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "::error::Tag ${tag} does not point at a commit on main"; exit 1
+          fi
+          if npm view "${name}@${version}" version >/dev/null 2>&1; then
+            echo "::error::${name}@${version} is already on npm"; exit 1
+          fi
+          {
+            echo "dir=${dir}"
+            echo "name=${name}"
+            echo "version=${version}"
+          } >> "$GITHUB_OUTPUT"
+
+      # Version comes from the root package.json "packageManager" field.
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+
+      # Trusted publishing needs npm >= 11.5.1; Node 22 ships npm 10.
+      - name: Upgrade npm
+        run: npm install -g npm@^11.5.1
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build, lint and test
+        run: |
+          pnpm build
+          pnpm lint
+          pnpm test:run
+
+      # pnpm pack rewrites workspace:* dependencies to real versions; npm then
+      # publishes the tarball over OIDC, with provenance attached automatically.
+      - name: Pack
+        id: pack
+        run: |
+          mkdir -p "$RUNNER_TEMP/pack"
+          pnpm --filter "${{ steps.pkg.outputs.name }}" pack --pack-destination "$RUNNER_TEMP/pack"
+          tarball=$(ls "$RUNNER_TEMP"/pack/*.tgz)
+          if tar xzOf "$tarball" package/package.json | grep -q '"workspace:'; then
+            echo "::error::Packed manifest still contains a workspace: dependency"; exit 1
+          fi
+          echo "tarball=${tarball}" >> "$GITHUB_OUTPUT"
+
+      - name: Publish
+        run: npm publish "${{ steps.pack.outputs.tarball }}" --access public
+
+      - name: Summary
+        run: |
+          echo "Published [${{ steps.pkg.outputs.name }}@${{ steps.pkg.outputs.version }}](https://www.npmjs.com/package/${{ steps.pkg.outputs.name }}/v/${{ steps.pkg.outputs.version }}) with provenance." >> "$GITHUB_STEP_SUMMARY"

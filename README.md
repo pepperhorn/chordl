@@ -640,6 +640,21 @@ npm run test -w @pepperhorn/chordl-voicings -- --run
 npm run test -w @pepperhorn/chordl-react -- --run
 ```
 
+## Releasing
+
+Packages are published to npm from GitHub Actions using [trusted publishing](https://docs.npmjs.com/trusted-publishers) (OIDC), so no npm token is stored locally or in the repo. Every release also gets a provenance attestation.
+
+1. Bump the package's `version`, add a dated release section to `CHANGELOG.md`, and merge the change to `main` through a PR.
+2. Tag the merge commit using the existing naming, then push the tag:
+   ```bash
+   git tag chordl-core@0.5.0 && git push origin chordl-core@0.5.0
+   ```
+3. `.github/workflows/release.yml` refuses to publish if the tag doesn't match `packages/<dir>/package.json`, if the commit isn't on `main`, if the package is private, or if that version is already on npm. Otherwise it builds, lints and tests the workspace, packs the package with pnpm (which turns `workspace:*` into real versions), and publishes it.
+
+For a multi-package release, push the tags one at a time in the publish order given in the changelog, waiting for each run to finish.
+
+**One-time setup per package:** on npmjs.com, open the package's Settings → Trusted Publisher → GitHub Actions and enter organization `pepperhorn`, repository `chordl` and workflow `release.yml`. A package that isn't configured fails at the publish step.
+
 ## Test Coverage
 
 170 tests across 10 test files:
