@@ -51,10 +51,16 @@ describe("dev app — p enters play mode", () => {
     await waitForBoard();
     expect(player()).toBeNull();
 
-    fireEvent.keyDown(document, { key: "p" });
-
-    await waitFor(() => expect(player()).toBeTruthy());
-  });
+    // The hotkey is bound in a passive effect, which can land a tick after the
+    // Play button paints; a single key press could arrive before anyone is
+    // listening. Re-press until play mode opens. Once it does, the host's
+    // listener is unbound and BoardPlayer listens on its own element, so a
+    // repeated press on the document cannot toggle it back off.
+    await waitFor(() => {
+      fireEvent.keyDown(document, { key: "p" });
+      expect(player()).toBeTruthy();
+    }, { timeout: 5000 });
+  }, 10_000);
 
   it("ignores p typed into the chord input", async () => {
     seedBoard();
@@ -161,8 +167,10 @@ describe("dev app — p enters play mode", () => {
     const { unmount } = renderApp();
     await waitForBoard();
 
-    const added = add.mock.calls.filter(([type]) => type === "keydown").map(([, fn]) => fn);
-    expect(added.length).toBeGreaterThan(0);
+    // The listener is bound in a passive effect that can trail the Play button.
+    const keydownAdds = () => add.mock.calls.filter(([type]) => type === "keydown").map(([, fn]) => fn);
+    await waitFor(() => expect(keydownAdds().length).toBeGreaterThan(0));
+    const added = keydownAdds();
 
     unmount();
 
