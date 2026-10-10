@@ -103,7 +103,7 @@ jobs:
           echo "tarball=${tarball}" >> "$GITHUB_OUTPUT"
 
       - name: Publish
-        run: npm publish "${{ steps.pack.outputs.tarball }}" --access public
+        run: npm publish "${{ steps.pack.outputs.tarball }}" --access public --loglevel verbose
 
       - name: Summary
         run: |
