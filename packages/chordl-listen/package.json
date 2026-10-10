@@ -2,6 +2,11 @@
   "name": "@pepperhorn/chordl-listen",
   "version": "0.1.0",
   "description": "Live microphone chord identification — chroma template matching that hands pitch sets to chordl's resolver",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pepperhorn/chordl.git",
+    "directory": "packages/chordl-listen"
+  },
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
