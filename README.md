@@ -461,6 +461,39 @@ resolveChord("Cm7sus");       // Special builder: [C, Eb, F, Bb]
 resolveChord("C7omit3");      // Special builder: [C, G, Bb]
 ```
 
+## Chord Identification
+
+The reverse direction — notes to chord names — lives in `@pepperhorn/chordl-core`.
+Notes are compared as a pitch-class set, so spelling (`C#` vs `Db`), octaves and
+doubled notes don't matter.
+
+```ts
+import { identifyChords, matchesChordName } from "@pepperhorn/chordl-core";
+
+identifyChords(["A", "C#", "E"]);      // [{ symbol: "A", root: "A", type: "M" }, ...]
+identifyChords(["C#", "F", "G#"]);     // "C#" and "Db" offered as separate candidates
+identifyChords(["C", "D", "E"]);       // [{ symbol: "Cadd9", ..., omitted: ["5"] }, ...]
+identifyChords(["Ab", "C", "E", "G"]); // includes "Abmaj7#5" and "C/Ab" (bass: "Ab")
+
+matchesChordName("A major", ["A", "Db", "E"]);
+// { ok: true, normalized: "A", matched: { symbol: "A", ... }, candidates: [...] }
+matchesChordName("Cm", ["C", "E", "G"]);                                   // ok: false, normalized: "Cm"
+matchesChordName("Cmaj7", ["C", "E", "G", "B"], { chordTypes: ["M", "m"] }); // ok: false
+```
+
+| Option | Default | |
+|---|---|---|
+| `chordTypes` | all | Allowed tonal type symbols (`"M"`, `"m"`, `"dim"`, `"maj7"`, `"m7b5"`, `"add9"`, ...). Synonyms such as `"major"` or `"Δ7"` are accepted. |
+| `allowSlash` | `true` | Accept slash names: inversions (`C/E`) and pedal basses (`C/Ab`). A slash bass must be one of the notes. |
+| `allowOmittedFifth` | `true` | Accept a chord missing its perfect 5th (`C D E` → `Cadd9`), as long as at least three notes remain. Not applied under a pedal bass. |
+| `inversionAgnostic` | `true` | Name `E G C` as `C`. When `false`, the first note passed is the bass, and a chord whose root isn't the bass must be written as a slash chord. |
+
+`matchesChordName` parses the typed name tolerantly: `#`/`b`/`♯`/`♭`; `maj`/`M`/`Δ`/`major`
+→ major; `min`/`m`/`-`/`minor` → minor; `ø`/`min7b5` → `m7b5`; `°`/`°7` → `dim`/`dim7`; `+` → `aug`;
+`sus` → `sus4`; `add2` → `add9`; `M7`/`Δ7` → `maj7`; spaces and parentheses are ignored. An
+empty quality means major. `normalized` is the canonical spelling of whatever parsed, whether or
+not it matched.
+
 ## Props
 
 ### `<PianoChord>`
