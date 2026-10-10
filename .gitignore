@@ -4,8 +4,8 @@ site-dist
 *.tsbuildinfo
 .worktrees
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
 
 # generated from chords-db by packages/chordl-guitar/scripts/build-data.mjs
 packages/chordl-guitar/src/generated/
