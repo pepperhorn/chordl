@@ -68,6 +68,8 @@ export {
   DEGREE_NAMES, degreeToNote, describeAvailableDegrees, rotateToStartingNote,
 } from "./theory/starting-note.js";
 export type { StartingNoteRotation } from "./theory/starting-note.js";
+export { identifyChords, matchesChordName } from "./theory/chord-identify.js";
+export type { IdentifyOptions, ChordCandidate, ChordNameMatch } from "./theory/chord-identify.js";
 
 // Scale resolver
 export { resolveScale } from "./resolver/scale-resolver.js";
