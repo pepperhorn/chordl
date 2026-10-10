@@ -16,7 +16,7 @@ import { resolveChord } from "../resolver/chord-resolver.js";
 export interface IdentifyOptions {
   /**
    * Allowed chord-type symbols, tonal style ("M", "m", "dim", "maj7", "m7b5",
-   * "add9", ...). Synonyms are accepted ("major", "Δ7", "°7"). `undefined`
+   * "add9", ...). Synonyms are accepted ("major", "Δ", "°7"). `undefined`
    * allows every type tonal knows.
    */
   chordTypes?: string[];
@@ -164,7 +164,8 @@ const TONAL_SHAPES: ChordShape[] = ChordType.all().map((t) =>
 /**
  * Rewrite a typed chord quality into a symbol tonal recognises. Tolerates
  * spaces, parentheses, unicode accidentals and the common written synonyms:
- * maj/major/Δ → M, min/minor/- → m, ø → m7b5, ° → dim, + → aug, sus → sus4,
+ * maj/major → M, Δ → maj7 (Δ9 → maj9), min/minor/- → m, ø → m7b5, ° → dim,
+ * + → aug, sus → sus4,
  * add2 → add9. The single letters M and m keep their case-sensitive meaning.
  */
 function normalizeQuality(raw: string): string {
@@ -172,7 +173,10 @@ function normalizeQuality(raw: string): string {
     .replace(/[\s()]/g, "")
     .replace(/♯/g, "#")
     .replace(/♭/g, "b")
-    .replace(/Δ/g, "maj");
+    // A bare Δ is maj7, as in tonal and jazz usage; Δ before a number is
+    // "maj" (Δ7, Δ9, Δ13).
+    .replace(/Δ(?=\d)/g, "maj")
+    .replace(/Δ/g, "maj7");
   s = s.replace(/^major/i, "maj").replace(/^minor/i, "min");
   s = s.replace(/^min/i, "m").replace(/^-/, "m");
   s = s.replace(/^ø7?/, "m7b5").replace(/^°/, "dim");
@@ -201,6 +205,22 @@ function shapeForQuality(raw: string): ChordShape | null {
   } catch {
     return null;
   }
+}
+
+/**
+ * Common chord types first, so that when one set of notes spells several
+ * names over the same bass the familiar one leads ("Abmaj7#5" before
+ * "AbM7b6"). Types not listed keep tonal's dictionary order after these.
+ */
+const TYPE_PRIORITY = [
+  "M", "m", "7", "maj7", "m7", "dim", "aug", "sus4", "sus2", "m7b5", "dim7",
+  "6", "m6", "add9", "madd9", "7sus4", "9", "maj9", "m9", "maj7#5", "mMaj7",
+];
+const TONAL_ORDER = new Map(TONAL_SHAPES.map((s, i) => [s.type, i]));
+
+function typePriority(type: string): number {
+  const i = TYPE_PRIORITY.indexOf(type);
+  return i >= 0 ? i : TYPE_PRIORITY.length + (TONAL_ORDER.get(type) ?? TONAL_SHAPES.length);
 }
 
 const displaySuffix = (type: string) => (type === "M" ? "" : type);
@@ -310,7 +330,8 @@ function makeCandidate(
  * Every chord name the given notes spell.
  *
  * Root-position names come first (the name whose root is the first note given
- * leads), then omitted-5th readings, then slash names. A black-key root is
+ * leads), then omitted-5th readings, then slash names. Within each of those
+ * groups, common chord types come before rare ones (see `TYPE_PRIORITY`). A black-key root is
  * offered in both spellings ("C#" and "Db") as separate candidates. Slash
  * names returned here are pedal basses — a non-chord-tone under a chord
  * ("C/Ab") — plus, when `inversionAgnostic` is false, inversions ("C/E").
@@ -323,13 +344,13 @@ export function identifyChords(notes: string[], opts: IdentifyOptions = {}): Cho
   const allowed = allowedTypes(opts.chordTypes);
   const shapes = allowed ? TONAL_SHAPES.filter((s) => allowed.has(s.type)) : TONAL_SHAPES;
 
-  const found: { c: ChordCandidate; rank: number }[] = [];
+  const found: { c: ChordCandidate; rank: number; priority: number }[] = [];
   const push = (rootPc: number, type: string, bassPc: number | undefined, omitted?: string[]) => {
     const bass = bassPc === undefined ? undefined : parsed.spelling.get(bassPc);
     const rank =
       (bass ? 4 : 0) + (omitted ? 2 : 0) + (rootPc === parsed.bass && !bass ? 0 : 1);
     for (const root of rootSpellings(rootPc)) {
-      found.push({ c: makeCandidate(root, type, bass, omitted), rank });
+      found.push({ c: makeCandidate(root, type, bass, omitted), rank, priority: typePriority(type) });
     }
   };
 
@@ -363,7 +384,7 @@ export function identifyChords(notes: string[], opts: IdentifyOptions = {}): Cho
   const seen = new Set<string>();
   return found
     .map((f, i) => ({ ...f, i }))
-    .sort((a, b) => a.rank - b.rank || a.i - b.i)
+    .sort((a, b) => a.rank - b.rank || a.priority - b.priority || a.i - b.i)
     .map((f) => f.c)
     .filter((c) => (seen.has(c.symbol) ? false : (seen.add(c.symbol), true)));
 }

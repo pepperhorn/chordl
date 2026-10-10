@@ -102,6 +102,21 @@ describe("identifyChords", () => {
     expect(symbols(identifyChords(["C", "E", "G"], { chordTypes: ["major"] }))).toContain("C");
   });
 
+  it("ranks common chord types first within the same root and bass", () => {
+    const result = symbols(identifyChords(["Ab", "C", "E", "G"]));
+    expect(result.indexOf("Abmaj7#5")).toBeGreaterThanOrEqual(0);
+    expect(result.indexOf("Abmaj7#5")).toBeLessThan(result.indexOf("AbM7b6"));
+    expect(result.indexOf("G#maj7#5")).toBeLessThan(result.indexOf("G#M7b6"));
+    expect(result).toContain("C/Ab");
+  });
+
+  it("lists root-position names before slash names", () => {
+    const result = identifyChords(["Ab", "C", "E", "G"]);
+    const firstSlash = result.findIndex((c) => c.bass);
+    const lastPlain = result.map((c) => !c.bass).lastIndexOf(true);
+    expect(firstSlash).toBeGreaterThan(lastPlain);
+  });
+
   it("lists the root-position name first", () => {
     expect(identifyChords(["C", "E", "G"])[0].symbol).toBe("C");
     expect(identifyChords(["A", "C", "E", "G"])[0].symbol).toBe("Am7");
@@ -144,7 +159,7 @@ describe("identifyChords", () => {
 
 describe("matchesChordName", () => {
   it("accepts A for A–C#–E and its major synonyms", () => {
-    for (const name of ["A", "Amaj", "AM", "A major", "AΔ", "Amajor"]) {
+    for (const name of ["A", "Amaj", "AM", "A major", "Amajor"]) {
       const r = matchesChordName(name, ["A", "C#", "E"]);
       expect(r.ok, name).toBe(true);
       expect(r.normalized, name).toBe("A");
@@ -243,6 +258,10 @@ describe("matchesChordName", () => {
       ["C7sus", ["C", "F", "G", "Bb"], "C7sus4"],
       ["CM7", ["C", "E", "G", "B"], "Cmaj7"],
       ["CΔ7", ["C", "E", "G", "B"], "Cmaj7"],
+      ["CΔ", ["C", "E", "G", "B"], "Cmaj7"],
+      ["CΔ9", ["C", "E", "G", "B", "D"], "Cmaj9"],
+      ["CmΔ", ["C", "Eb", "G", "B"], "CmMaj7"],
+      ["CmΔ7", ["C", "Eb", "G", "B"], "CmMaj7"],
       ["Cmaj7", ["C", "E", "G", "B"], "Cmaj7"],
       ["CmMaj7", ["C", "Eb", "G", "B"], "CmMaj7"],
       ["Cm(maj7)", ["C", "Eb", "G", "B"], "CmMaj7"],
@@ -269,6 +288,11 @@ describe("matchesChordName", () => {
     expect(matchesChordName("bbmaj7", ["Bb", "D", "F", "A"]).normalized).toBe("Bbmaj7");
     expect(matchesChordName("C / E", ["E", "G", "C"]).normalized).toBe("C/E");
     expect(matchesChordName("c maj 7", ["C", "E", "G", "B"]).ok).toBe(true);
+  });
+
+  it("reads a bare Δ as maj7, not a major triad", () => {
+    expect(matchesChordName("CΔ", ["C", "E", "G"]).ok).toBe(false);
+    expect(matchesChordName("CΔ", ["C", "E", "G"]).normalized).toBe("Cmaj7");
   });
 
   it("keeps M and m distinct by case", () => {

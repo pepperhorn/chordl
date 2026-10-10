@@ -483,16 +483,33 @@ matchesChordName("Cmaj7", ["C", "E", "G", "B"], { chordTypes: ["M", "m"] }); // 
 
 | Option | Default | |
 |---|---|---|
-| `chordTypes` | all | Allowed tonal type symbols (`"M"`, `"m"`, `"dim"`, `"maj7"`, `"m7b5"`, `"add9"`, ...). Synonyms such as `"major"` or `"Δ7"` are accepted. |
+| `chordTypes` | all | Allowed tonal type symbols (`"M"`, `"m"`, `"dim"`, `"maj7"`, `"m7b5"`, `"add9"`, ...). Synonyms such as `"major"` or `"Δ"` are accepted. |
 | `allowSlash` | `true` | Accept slash names: inversions (`C/E`) and pedal basses (`C/Ab`). A slash bass must be one of the notes. |
 | `allowOmittedFifth` | `true` | Accept a chord missing its perfect 5th (`C D E` → `Cadd9`), as long as at least three notes remain. Not applied under a pedal bass. |
 | `inversionAgnostic` | `true` | Name `E G C` as `C`. When `false`, the first note passed is the bass, and a chord whose root isn't the bass must be written as a slash chord. |
 
-`matchesChordName` parses the typed name tolerantly: `#`/`b`/`♯`/`♭`; `maj`/`M`/`Δ`/`major`
-→ major; `min`/`m`/`-`/`minor` → minor; `ø`/`min7b5` → `m7b5`; `°`/`°7` → `dim`/`dim7`; `+` → `aug`;
+`matchesChordName` parses the typed name tolerantly: `#`/`b`/`♯`/`♭`; `maj`/`M`/`major`
+→ major; a bare `Δ` → `maj7` (as in tonal and jazz usage, so `CΔ` is Cmaj7; `Δ9` → `maj9`); `min`/`m`/`-`/`minor` → minor; `ø`/`min7b5` → `m7b5`; `°`/`°7` → `dim`/`dim7`; `+` → `aug`;
 `sus` → `sus4`; `add2` → `add9`; `M7`/`Δ7` → `maj7`; spaces and parentheses are ignored. An
-empty quality means major. `normalized` is the canonical spelling of whatever parsed, whether or
-not it matched.
+empty quality means major. The single letters `M` and `m` stay case-sensitive.
+
+Behaviour worth knowing:
+
+- **`normalized` is echoed back** whenever the typed name parses, right or wrong — `"Cm"` for
+  C–E–G returns `ok: false, normalized: "Cm"`, so a UI can show what it understood. It is
+  `undefined` only for input that is not a chord name.
+- **Omitted-5th guards.** At least three notes must remain, so C–E alone is not "C". The 5th is
+  never omitted under a pedal bass (Ab–C–E–G is not "Abmaj7/E"), nor while the 5th is itself the
+  bass.
+- **Slash names in `identifyChords`.** By default only pedal basses are listed (`C/Ab`: the bass is
+  not a chord tone, and the chord above it is at least a triad). Inversion names such as `C/E` are
+  listed only with `inversionAgnostic: false`; `matchesChordName` accepts them either way.
+- **Ordering.** Root-position names first (the one rooted on the first note given leads), then
+  omitted-5th readings, then slash names. Within each group common types come first — `M`, `m`,
+  `7`, `maj7`, `m7`, `dim`, `aug`, `sus4`, `sus2`, `m7b5`, `dim7`, `6`, `m6`, `add9`, `madd9`,
+  `7sus4`, `9`, `maj9`, `m9`, `maj7#5`, `mMaj7` — then the rest in tonal's order. A black-key root
+  is listed in both spellings (`C#`, `Db`); a slash bass keeps the caller's spelling.
+- **Invalid notes.** An empty list, or any unparseable note, gives `[]` / `ok: false`.
 
 ## Props
 
