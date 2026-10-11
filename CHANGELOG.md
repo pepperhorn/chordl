@@ -22,6 +22,17 @@
 
 - **The "Hide barre shapes" switch is gone, replaced by the level control.** The one-off barre filter documented under the 2026-09-01 release no longer exists as a control; its job — offering an easier alternative shape rather than showing nothing — is now done more generally by the Beginner/Emerging/Established level control above, which also covers position-on-the-neck, not just barres.
 
+## 2026-10-11 — chordl-voicings 0.4.1, chordl-core 0.5.1 (tonal pin)
+
+`tonal` 6.5.0 (published 2026-09-28) points `main` at `dist/index.js`, which it no longer ships; it only has `index.cjs` and `index.mjs`. Bundlers that read `module` still work, but Node can't load it, through either `import` or `require`. Since every chordl package declared `tonal: ^6.3.0`, a fresh install of chordl-core or chordl-voicings pulled 6.5.0 and failed under Node and Vitest.
+
+| Package | Version | |
+|---|---|---|
+| `@pepperhorn/chordl-voicings` | 0.4.1 | `tonal` pinned to `~6.4.3`; no code changes |
+| `@pepperhorn/chordl-core` | 0.5.1 | `tonal` pinned to `~6.4.3`; depends on chordl-voicings 0.4.1 |
+
+Publish in that order. chordl-react also pins `tonal ~6.4.3` in this repo, but it isn't republished here: browser bundles resolve tonal's `module` entry and aren't affected. Widen the pin once tonal ships a fixed `main`.
+
 ## 2026-10-11 — chordl-core 0.5.0
 
 Only `@pepperhorn/chordl-core` is published in this release. It still depends on `@pepperhorn/chordl-voicings` 0.4.0, which already provides everything core imports, so no other package needs to go out with it. Its chord-recognition entry stays under **Unreleased → Added** above, together with the other packages' unreleased changes.

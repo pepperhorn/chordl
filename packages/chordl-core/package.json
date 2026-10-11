@@ -1,6 +1,6 @@
 {
   "name": "@pepperhorn/chordl-core",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Pure TypeScript chord parsing, resolving, layout, and export engine",
   "repository": {
     "type": "git",
@@ -29,7 +29,7 @@
   },
   "dependencies": {
     "@pepperhorn/chordl-voicings": "workspace:*",
-    "tonal": "^6.3.0"
+    "tonal": "~6.4.3"
   },
   "devDependencies": {
     "typescript": "^5.7.0",
