@@ -87,6 +87,46 @@ describe("identifyChords", () => {
     expect(symbols(result)).toContain("Abmaj7#5");
   });
 
+  it("lists pedal-bass slash names by default", () => {
+    expect(symbols(identifyChords(["Ab", "C", "E", "G"]))).toContain("C/Ab");
+    expect(symbols(identifyChords(["E", "A", "C#", "C"]))).toContain("A/C");
+  });
+
+  it("never lists a non-chord-tone bass when allowPedalBass is false", () => {
+    const cases: [string[], Parameters<typeof identifyChords>[1]][] = [
+      [["Ab", "C", "E", "G"], { allowPedalBass: false }],
+      [["E", "A", "C#", "C"], { allowPedalBass: false }],
+      [["D", "C", "E", "G", "B"], { allowPedalBass: false }],
+      [["E", "G", "C"], { allowPedalBass: false, inversionAgnostic: false }],
+      [["Ab", "C", "E", "G"], { allowPedalBass: false, inversionAgnostic: false }],
+    ];
+    for (const [notes, opts] of cases) {
+      const result = identifyChords(notes, opts);
+      for (const c of result.filter((c) => c.bass !== undefined)) {
+        const tones = matchesChordName(c.root + (c.type === "M" ? "" : c.type), notes, {
+          ...opts,
+          inversionAgnostic: true,
+        });
+        // The upper chord alone (no slash) must already spell the notes,
+        // i.e. the bass is one of its tones.
+        expect(tones.ok, `${c.symbol} for ${notes.join(" ")}`).toBe(true);
+      }
+    }
+    const ab = symbols(identifyChords(["Ab", "C", "E", "G"], { allowPedalBass: false }));
+    expect(ab).not.toContain("C/Ab");
+    expect(ab).toContain("Abmaj7#5");
+    expect(symbols(identifyChords(["E", "A", "C#", "C"], { allowPedalBass: false }))).not.toContain(
+      "A/C",
+    );
+  });
+
+  it("keeps inversion slash names when allowPedalBass is false", () => {
+    const result = symbols(
+      identifyChords(["E", "G", "C"], { allowPedalBass: false, inversionAgnostic: false }),
+    );
+    expect(result).toContain("C/E");
+  });
+
   it("restricts to the given chord types", () => {
     const result = identifyChords(["C", "E", "G", "B"], { chordTypes: ["M", "m"] });
     expect(symbols(result)).not.toContain("Cmaj7");
@@ -222,6 +262,47 @@ describe("matchesChordName", () => {
 
   it("rejects slash names when allowSlash is false", () => {
     expect(matchesChordName("C/Ab", ["Ab", "C", "E", "G"], { allowSlash: false }).ok).toBe(false);
+  });
+
+  it("rejects a pedal-bass name when allowPedalBass is false", () => {
+    const notes = ["Ab", "C", "E", "G"];
+    expect(matchesChordName("C/Ab", notes).ok).toBe(true);
+    const r = matchesChordName("C/Ab", notes, { allowPedalBass: false });
+    expect(r.ok).toBe(false);
+    expect(r.normalized).toBe("C/Ab");
+    expect(
+      matchesChordName("Abmaj7#5", notes, { allowPedalBass: false, chordTypes: ["M", "maj7#5"] })
+        .ok,
+    ).toBe(true);
+    expect(matchesChordName("A/C", ["E", "A", "C#", "C"], { allowPedalBass: false }).ok).toBe(
+      false,
+    );
+    expect(matchesChordName("A/C", ["E", "A", "C#", "C"]).ok).toBe(true);
+  });
+
+  it("accepts inversion slash names when allowPedalBass is false", () => {
+    const opts = { allowPedalBass: false };
+    expect(matchesChordName("C/E", ["E", "G", "C"], opts).ok).toBe(true);
+    expect(matchesChordName("C/G", ["C", "E", "G"], opts).ok).toBe(true);
+    expect(matchesChordName("C/E", ["E", "G", "C"], { ...opts, inversionAgnostic: false }).ok).toBe(
+      true,
+    );
+    // The bass is judged against the whole chord, so an omitted-5th inversion
+    // is still an inversion.
+    const add9 = matchesChordName("Cadd9/E", ["E", "C", "D"], opts);
+    expect(add9.ok).toBe(true);
+    expect(add9.matched?.omitted).toEqual(["5"]);
+  });
+
+  it("still rejects every slash name when allowSlash is false, whatever allowPedalBass", () => {
+    for (const allowPedalBass of [true, false]) {
+      expect(matchesChordName("C/E", ["E", "G", "C"], { allowSlash: false, allowPedalBass }).ok).toBe(
+        false,
+      );
+      expect(
+        matchesChordName("C/Ab", ["Ab", "C", "E", "G"], { allowSlash: false, allowPedalBass }).ok,
+      ).toBe(false);
+    }
   });
 
   it("rejects a slash bass that is not one of the notes", () => {

@@ -22,6 +22,13 @@ export interface IdentifyOptions {
   chordTypes?: string[];
   /** Accept slash names — inversions ("C/E") and pedal basses ("C/Ab"). Default true. */
   allowSlash?: boolean;
+  /**
+   * Accept pedal-bass (foreign-bass) slash names, whose bass is not a tone of
+   * the chord above it: "C/Ab" for Ab–C–E–G, "A/C" for E–A–C#–C. Default
+   * true. When false, only inversion slash names ("C/E", "C/G" for C–E–G)
+   * are allowed. Has no effect when `allowSlash` is false.
+   */
+  allowPedalBass?: boolean;
   /** Accept a chord whose perfect 5th is missing (C–D–E → "Cadd9"). Default true. */
   allowOmittedFifth?: boolean;
   /**
@@ -334,11 +341,17 @@ function makeCandidate(
  * groups, common chord types come before rare ones (see `TYPE_PRIORITY`). A black-key root is
  * offered in both spellings ("C#" and "Db") as separate candidates. Slash
  * names returned here are pedal basses — a non-chord-tone under a chord
- * ("C/Ab") — plus, when `inversionAgnostic` is false, inversions ("C/E").
+ * ("C/Ab"), unless `allowPedalBass` is false — plus, when `inversionAgnostic`
+ * is false, inversions ("C/E").
  * Returns `[]` when any note is unparseable or nothing matches.
  */
 export function identifyChords(notes: string[], opts: IdentifyOptions = {}): ChordCandidate[] {
-  const { allowSlash = true, allowOmittedFifth = true, inversionAgnostic = true } = opts;
+  const {
+    allowSlash = true,
+    allowPedalBass = true,
+    allowOmittedFifth = true,
+    inversionAgnostic = true,
+  } = opts;
   const parsed = parseNotes(notes);
   if (!parsed) return [];
   const allowed = allowedTypes(opts.chordTypes);
@@ -365,7 +378,7 @@ export function identifyChords(notes: string[], opts: IdentifyOptions = {}): Cho
   }
 
   // Pedal basses: one note under a chord that does not contain it.
-  if (allowSlash) {
+  if (allowSlash && allowPedalBass) {
     const basses = inversionAgnostic ? pcsOf(parsed.mask) : [parsed.bass];
     for (const b of basses) {
       const upper = parsed.mask & ~bit(b);
@@ -396,7 +409,9 @@ export function identifyChords(notes: string[], opts: IdentifyOptions = {}): Cho
  * its pitch-class set equals the notes' set — or equals it with the perfect
  * 5th omitted, when `allowOmittedFifth`. A slash bass must be one of the
  * notes; the chord above it may contain it (an inversion, "C/E") or not (a
- * pedal, "C/Ab"). `normalized` is the canonical spelling of whatever parsed,
+ * pedal, "C/Ab"; rejected when `allowPedalBass` is false). Whether the bass is
+ * a chord tone is judged against the whole chord, so "Cadd9/E" over E–C–D is
+ * an inversion even with its 5th omitted. `normalized` is the canonical spelling of whatever parsed,
  * right or wrong, so a UI can echo it back.
  */
 export function matchesChordName(
@@ -404,7 +419,12 @@ export function matchesChordName(
   notes: string[],
   opts: IdentifyOptions = {},
 ): ChordNameMatch {
-  const { allowSlash = true, allowOmittedFifth = true, inversionAgnostic = true } = opts;
+  const {
+    allowSlash = true,
+    allowPedalBass = true,
+    allowOmittedFifth = true,
+    inversionAgnostic = true,
+  } = opts;
   const candidates = identifyChords(notes, opts);
   const sym = parseSymbol(input);
   if (!sym) return { ok: false, candidates };
@@ -421,6 +441,8 @@ export function matchesChordName(
   const lowest = sym.bassPc ?? sym.rootPc;
   if (sym.bassPc !== undefined) {
     if (!allowSlash || !(parsed.mask & bit(sym.bassPc))) return fail;
+    const isChordTone = transpose(sym.shape.mask, sym.rootPc) & bit(sym.bassPc);
+    if (!allowPedalBass && !isChordTone) return fail;
   }
   if (!inversionAgnostic && lowest !== parsed.bass) return fail;
 

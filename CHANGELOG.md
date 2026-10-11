@@ -29,9 +29,13 @@
 | Package | Version | |
 |---|---|---|
 | `@pepperhorn/chordl-voicings` | 0.4.1 | `tonal` pinned to `~6.4.3`; no code changes |
-| `@pepperhorn/chordl-core` | 0.5.1 | `tonal` pinned to `~6.4.3`; depends on chordl-voicings 0.4.1 |
+| `@pepperhorn/chordl-core` | 0.5.1 | tonal pin + `allowPedalBass` option (additive) |
 
 Publish in that order. chordl-react also pins `tonal ~6.4.3` in this repo, but it isn't republished here: browser bundles resolve tonal's `module` entry and aren't affected. Widen the pin once tonal ships a fixed `main`.
+
+chordl-core 0.5.1 pins `tonal` to `~6.4.3` and depends on chordl-voicings 0.4.1. It wasn't published before this option was added, so it also ships one additive option:
+
+- **`allowPedalBass` on `identifyChords` / `matchesChordName`.** Separates inversion slash names, whose bass is a chord tone (`C/E`, `C/G` for C–E–G), from pedal or foreign-bass slash names, whose bass isn't (`C/Ab` for Ab–C–E–G, `A/C` for E–A–C♯–C). It defaults to `true`, which keeps the current behaviour. When `false`, `identifyChords` omits candidates whose bass isn't a tone of the upper chord, and `matchesChordName` rejects such names while still accepting inversion slash names. `allowSlash: false` still rejects all slash names. The chord-tone test uses the whole chord, so `Cadd9/E` over E–C–D is an inversion even with its 5th omitted.
 
 ## 2026-10-11 — chordl-core 0.5.0
 
