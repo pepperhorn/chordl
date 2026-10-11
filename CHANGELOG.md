@@ -22,6 +22,19 @@
 
 - **The "Hide barre shapes" switch is gone, replaced by the level control.** The one-off barre filter documented under the 2026-09-01 release no longer exists as a control; its job — offering an easier alternative shape rather than showing nothing — is now done more generally by the Beginner/Emerging/Established level control above, which also covers position-on-the-neck, not just barres.
 
+## 2026-10-11 — chordl-core 0.5.2
+
+Only `@pepperhorn/chordl-core` is published. Everything here is additive: with default options, `identifyChords` and `matchesChordName` accept and list what 0.5.1 did, apart from the new names noted below.
+
+| Package | Version | |
+|---|---|---|
+| `@pepperhorn/chordl-core` | 0.5.2 | `allowOmittedThird`, omission markers, `msus` synonyms, `m7sus4` in identification |
+
+- **`allowOmittedThird` on `identifyChords` / `matchesChordName`** (default `false`). A chord whose 3rd, major or minor, is missing from the notes can still match, recorded as `omitted: ["3"]`: D–A–C is `D7`. It combines with `allowOmittedFifth`, so A–C–D is `C6/9` with `omitted: ["3", "5"]`, provided at least three notes sound (C–G is never `C`). It never applies to sus or power chords, which have no 3rd, under a pedal bass, or while the 3rd is the slash bass. Candidates are ordered complete readings, then omitted 5th, then omitted 3rd, then both omitted, then slash names. Within each group, `TYPE_PRIORITY` order still applies.
+- **Explicit omission markers.** `omit3`, `omit5`, `no3` and `no5` parse with or without parentheses or a space, and they can be combined: `D7no3`, `D7(no3)`, `Cmaj7 omit5`, `C69 no3 no5`, `C6/9(omit3,5)`. A marked tone must be absent from the notes. A marker counts as the user's stated intent, so it's accepted even when the matching `allowOmitted*` option is off. `normalized` writes markers as `(no3)`, `(no5)` or `(no3,5)`, for example `Cmaj7(no5)` and `D7(no3)/C`. A marker on a tone the chord doesn't have, as in `Csus4no3` or `C5no3`, doesn't parse. `D7omit3` used to normalize to `D7omit3` through `resolveChord`'s special case; it now normalizes to `D7(no3)` and matches as type `7` with `omitted: ["3"]`. Tonal's own `7no5`/`9no5`/`13no5` names now normalize the same way (`C7(no5)`).
+- **`msus` synonyms.** `msus`, `msus4`, `m(sus4)`, `minsus4` and `-sus4` parse as tonal's `madd4` (1P 3m 4P 5P), so `Amsus` and `Am(sus4)` both match A–C–D and normalize to `Amadd4`. "msus" is an informal name: a true sus chord replaces its 3rd, but this one keeps the minor 3rd and adds the 4th.
+- **`m7sus4` is now a type that identification lists.** Tonal's dictionary has no m3 + P4 + m7 type, so `identifyChords` couldn't list `m7sus4`, although `resolveChord` and `matchesChordName` already accepted `Am7sus`. A small `CHORDL_EXTRA_TYPES` table now adds `m7sus4` (1P 3m 4P 5P 7m; aliases `m7sus`, `m7sus4`, `min7sus4`) alongside tonal's shapes. It works with `chordTypes` allow-lists and omissions (A–C–D–G is `Am7sus4` with its 5th omitted), and it ranks right after `7sus4`. Its pitch-class set is the same as tonal's `m7add11`, which still gets listed too. `madd4` is already in tonal, so it isn't in the extras table.
+
 ## 2026-10-11 — chordl-voicings 0.4.1, chordl-core 0.5.1 (tonal pin)
 
 `tonal` 6.5.0 (published 2026-09-28) points `main` at `dist/index.js`, which it no longer ships; it only has `index.cjs` and `index.mjs`. Bundlers that read `module` still work, but Node can't load it, through either `import` or `require`. Since every chordl package declared `tonal: ^6.3.0`, a fresh install of chordl-core or chordl-voicings pulled 6.5.0 and failed under Node and Vitest.

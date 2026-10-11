@@ -482,6 +482,15 @@ matchesChordName("Cm", ["C", "E", "G"]);                                   // ok
 matchesChordName("Cmaj7", ["C", "E", "G", "B"], { chordTypes: ["M", "m"] }); // ok: false
 matchesChordName("C/Ab", ["Ab", "C", "E", "G"], { allowPedalBass: false });   // ok: false
 matchesChordName("C/E", ["E", "G", "C"], { allowPedalBass: false });          // ok: true (inversion)
+
+identifyChords(["A", "C", "D"], { allowOmittedThird: true });
+// Amadd4 (no 5th), D7 (no 3rd), Dm7 (no 3rd), C6add9 (no 3rd, no 5th), Cm69 (no 3rd, no 5th)
+matchesChordName("C6/9", ["A", "C", "D"]);                              // ok: false (3rd missing)
+matchesChordName("C6/9", ["A", "C", "D"], { allowOmittedThird: true }); // ok: true, omitted ["3", "5"]
+matchesChordName("D7no3", ["D", "A", "C"]);       // ok: true, normalized "D7(no3)"
+matchesChordName("Cmaj7 omit5", ["C", "E", "B"]); // ok: true, normalized "Cmaj7(no5)"
+matchesChordName("Amsus", ["A", "C", "D"]);       // ok: true, normalized "Amadd4"
+identifyChords(["A", "C", "D", "G"]);             // includes "Am7sus4" (5th omitted)
 ```
 
 | Option | Default | |
@@ -490,6 +499,7 @@ matchesChordName("C/E", ["E", "G", "C"], { allowPedalBass: false });          //
 | `allowSlash` | `true` | Accept slash names: inversions (`C/E`) and pedal basses (`C/Ab`). A slash bass must be one of the notes. |
 | `allowPedalBass` | `true` | Accept pedal (foreign-bass) slash names, whose bass is not a tone of the chord above it: `C/Ab` for `Ab C E G`, `A/C` for `E A C# C`. When `false`, only inversion slash names (`C/E`, `C/G`) are accepted or listed. No effect when `allowSlash` is `false`. |
 | `allowOmittedFifth` | `true` | Accept a chord missing its perfect 5th (`C D E` → `Cadd9`), as long as at least three notes remain. Not applied under a pedal bass. |
+| `allowOmittedThird` | `false` | Accept a chord missing its 3rd, major or minor (`D A C` → `D7`, `omitted: ["3"]`). Combines with `allowOmittedFifth` (`A C D` → `C6/9`, `omitted: ["3", "5"]`), provided at least three notes remain. Never applied to sus or power chords, under a pedal bass, or while the 3rd is the bass. |
 | `inversionAgnostic` | `true` | Name `E G C` as `C`. When `false`, the first note passed is the bass, and a chord whose root isn't the bass must be written as a slash chord. |
 
 `matchesChordName` parses the typed name tolerantly: `#`/`b`/`♯`/`♭`; `maj`/`M`/`major`
@@ -497,14 +507,26 @@ matchesChordName("C/E", ["E", "G", "C"], { allowPedalBass: false });          //
 `sus` → `sus4`; `add2` → `add9`; `M7`/`Δ7` → `maj7`; spaces and parentheses are ignored. An
 empty quality means major. The single letters `M` and `m` stay case-sensitive.
 
+`msus`, `msus4`, `m(sus4)`, `minsus4` and `-sus4` mean minor add 4 (tonal's `madd4`: root, minor 3rd,
+4th, 5th), so `Amsus` normalizes to `Amadd4`. "msus" is an informal name: a true sus chord
+replaces its 3rd, but this one keeps it. `m7sus`/`m7sus4`/`min7sus4` is chordl's own `m7sus4`
+type (root, minor 3rd, 4th, 5th, minor 7th). Tonal has no such type, so chordl adds it, and
+`identifyChords` lists it and `chordTypes` can name it.
+
+Omission markers `omit3`, `omit5`, `no3` and `no5` can be written with or without parentheses or a
+space, and can be combined: `D7no3`, `D7(no3)`, `Cmaj7 omit5`, `C69 no3 no5`, `C6/9(omit3,5)`. A
+marked tone has to be absent from the notes. A marker counts as explicit intent, so it's accepted
+even when the matching `allowOmitted*` option is off. `normalized` writes markers as `(no3)`,
+`(no5)` or `(no3,5)`. A marker on a tone the chord doesn't have, such as `Csus4no3`, doesn't parse.
+
 Behaviour worth knowing:
 
 - **`normalized` is echoed back** whenever the typed name parses, right or wrong — `"Cm"` for
   C–E–G returns `ok: false, normalized: "Cm"`, so a UI can show what it understood. It is
   `undefined` only for input that is not a chord name.
-- **Omitted-5th guards.** At least three notes must remain, so C–E alone is not "C". The 5th is
-  never omitted under a pedal bass (Ab–C–E–G is not "Abmaj7/E"), nor while the 5th is itself the
-  bass.
+- **Omission guards.** At least three notes must remain, so C–E alone is not "C", and C–G is
+  never "C" even with both omissions allowed. Neither the 3rd nor the 5th is omitted under a pedal
+  bass (Ab–C–E–G is not "Abmaj7/E"), or while that tone is itself the bass.
 - **Slash names in `identifyChords`.** By default only pedal basses are listed (`C/Ab`: the bass is
   not a chord tone, and the chord above it is at least a triad). Inversion names such as `C/E` are
   listed only with `inversionAgnostic: false`; `matchesChordName` accepts them either way.
@@ -512,9 +534,10 @@ Behaviour worth knowing:
   Whether a bass is a chord tone is judged against the whole chord, so `Cadd9/E` over `E C D`
   counts as an inversion even with its 5th omitted.
 - **Ordering.** Root-position names first (the one rooted on the first note given leads), then
-  omitted-5th readings, then slash names. Within each group common types come first — `M`, `m`,
+  omitted-5th readings, then omitted-3rd readings, then readings missing both, then slash names.
+  Within each group common types come first — `M`, `m`,
   `7`, `maj7`, `m7`, `dim`, `aug`, `sus4`, `sus2`, `m7b5`, `dim7`, `6`, `m6`, `add9`, `madd9`,
-  `7sus4`, `9`, `maj9`, `m9`, `maj7#5`, `mMaj7` — then the rest in tonal's order. A black-key root
+  `7sus4`, `m7sus4`, `9`, `maj9`, `m9`, `maj7#5`, `mMaj7` — then the rest in tonal's order. A black-key root
   is listed in both spellings (`C#`, `Db`); a slash bass keeps the caller's spelling.
 - **Invalid notes.** An empty list, or any unparseable note, gives `[]` / `ok: false`.
 

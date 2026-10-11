@@ -401,3 +401,185 @@ describe("matchesChordName", () => {
     expect(matchesChordName("C", ["C", "E"]).ok).toBe(false);
   });
 });
+
+describe("msus synonyms (minor add 4)", () => {
+  const ACD = ["A", "C", "D"];
+  const both = { allowOmittedFifth: true, allowOmittedThird: true };
+
+  it("parses msus, msus4, m(sus4), minsus4 and -sus4 as madd4", () => {
+    for (const name of ["Amsus", "Amsus4", "Am(sus4)", "Aminsus4", "A-sus4", "Am(add4)", "Amadd4"]) {
+      const r = matchesChordName(name, ACD, both);
+      expect(r.ok, name).toBe(true);
+      expect(r.normalized, name).toBe("Amadd4");
+      expect(r.matched, name).toMatchObject({ type: "madd4", omitted: ["5"] });
+    }
+  });
+
+  it("accepts Amsus and Amadd4 under the default options", () => {
+    expect(matchesChordName("Amsus", ACD).ok).toBe(true);
+    expect(matchesChordName("Amadd4", ACD).ok).toBe(true);
+    expect(matchesChordName("Amsus", ["A", "C", "D", "E"]).matched?.omitted).toBeUndefined();
+  });
+
+  it("accepts msus in a chordTypes allow-list", () => {
+    expect(matchesChordName("Amadd4", ACD, { chordTypes: ["msus"] }).ok).toBe(true);
+  });
+});
+
+describe("chordl extra types (m7sus4)", () => {
+  const ACDG = ["A", "C", "D", "G"];
+
+  it("lists Am7sus4 for A–C–D–G, its 5th omitted", () => {
+    const result = identifyChords(ACDG);
+    const m7sus4 = result.find((c) => c.symbol === "Am7sus4");
+    expect(m7sus4).toMatchObject({ root: "A", type: "m7sus4", omitted: ["5"] });
+    expect(identifyChords(["A", "C", "D", "E", "G"]).find((c) => c.symbol === "Am7sus4")?.omitted).toBeUndefined();
+  });
+
+  it("works with the chordTypes allow-list", () => {
+    for (const name of ["Am7sus", "Am7sus4", "Amin7sus4", "Am7(sus4)"]) {
+      const r = matchesChordName(name, ACDG, { chordTypes: ["m7sus4"] });
+      expect(r.ok, name).toBe(true);
+      expect(r.normalized, name).toBe("Am7sus4");
+    }
+    expect(matchesChordName("Am7sus", ACDG, { chordTypes: ["m7sus"] }).ok).toBe(true);
+    expect(matchesChordName("Am7sus", ACDG, { chordTypes: ["7sus4", "m7"] }).ok).toBe(false);
+    expect(symbols(identifyChords(ACDG, { chordTypes: ["m7sus4"] }))).toContain("Am7sus4");
+    expect(symbols(identifyChords(ACDG, { chordTypes: ["7sus4"] }))).not.toContain("Am7sus4");
+  });
+
+  it("ranks m7sus4 after 7sus4 among omitted-5th readings", () => {
+    const result = symbols(identifyChords(["A", "C", "D", "E", "G"]));
+    expect(result).toContain("Am7sus4");
+  });
+});
+
+describe("allowOmittedThird", () => {
+  const ACD = ["A", "C", "D"];
+  const both = { allowOmittedFifth: true, allowOmittedThird: true };
+
+  it("accepts every reading of A–C–D the user named, with both omissions on", () => {
+    for (const name of ["D7omit3", "D7no3", "D7(no3)", "C69", "C6/9", "C6/9 no3", "C69omit3", "Amsus", "Amadd4"]) {
+      expect(matchesChordName(name, ACD, both).ok, name).toBe(true);
+    }
+    expect(matchesChordName("C6/9", ACD, both).matched?.omitted).toEqual(["3", "5"]);
+    expect(matchesChordName("D7", ["D", "A", "C"], both).matched?.omitted).toEqual(["3"]);
+  });
+
+  it("rejects an unmarked omitted 3rd when the option is off", () => {
+    expect(matchesChordName("C6/9", ACD).ok).toBe(false);
+    expect(matchesChordName("C6/9", ACD, { allowOmittedThird: false }).ok).toBe(false);
+    expect(matchesChordName("D7", ["D", "A", "C"]).ok).toBe(false);
+    expect(matchesChordName("D7", ["D", "A", "C"], { allowOmittedThird: true }).ok).toBe(true);
+  });
+
+  it("needs allowOmittedFifth too when the 5th is also missing and unmarked", () => {
+    expect(
+      matchesChordName("C6/9", ACD, { allowOmittedThird: true, allowOmittedFifth: false }).ok,
+    ).toBe(false);
+  });
+
+  it("never stretches two notes into a chord", () => {
+    for (const opts of [{}, both, { allowOmittedThird: true }]) {
+      expect(matchesChordName("C", ["C", "G"], opts).ok).toBe(false);
+      expect(matchesChordName("Cm", ["C", "G"], opts).ok).toBe(false);
+      expect(matchesChordName("Comit3", ["C", "G"], opts).ok).toBe(false);
+      expect(symbols(identifyChords(["C", "G"], opts))).not.toContain("C");
+    }
+  });
+
+  it("does not apply to sus chords or power chords", () => {
+    expect(matchesChordName("Csus4omit3", ["C", "F", "G"], both).normalized).toBeUndefined();
+    expect(matchesChordName("C5no3", ["C", "G"], both).normalized).toBeUndefined();
+    const cands = identifyChords(["C", "G", "Bb"], both);
+    expect(cands.some((c) => c.type.includes("sus") && c.omitted?.includes("3"))).toBe(false);
+  });
+
+  it("does not omit the 3rd under a pedal bass or while the 3rd is the bass", () => {
+    expect(matchesChordName("D7/F#", ["F#", "D", "A", "C"], both).matched?.omitted).toBeUndefined();
+    expect(matchesChordName("D7/F#", ["F#", "D", "A"], both).ok).toBe(false);
+    expect(matchesChordName("D7/E", ["E", "D", "A", "C"], both).ok).toBe(false);
+  });
+
+  it("leaves default identification unchanged", () => {
+    expect(identifyChords(ACD)).toEqual(identifyChords(ACD, { allowOmittedThird: false }));
+    expect(identifyChords(ACD).some((c) => c.omitted?.includes("3"))).toBe(false);
+  });
+
+  it("lists Amadd4, D7 (no 3rd) and C6/9 (no 3rd, no 5th) in group order", () => {
+    const result = identifyChords(ACD, { allowOmittedThird: true });
+    const idx = (sym: string) => result.findIndex((c) => c.symbol === sym);
+    const amadd4 = result[idx("Amadd4")];
+    const d7 = result[idx("D7")];
+    const c69 = result[idx("C6add9")];
+    expect(amadd4).toMatchObject({ type: "madd4", omitted: ["5"] });
+    expect(d7).toMatchObject({ type: "7", omitted: ["3"] });
+    expect(c69).toMatchObject({ type: "6add9", omitted: ["3", "5"] });
+    expect(idx("Amadd4")).toBeLessThan(idx("D7"));
+    expect(idx("D7")).toBeLessThan(idx("C6add9"));
+    // Groups never interleave: complete, no 5th, no 3rd, no 3rd and 5th, slash.
+    const group = (c: ChordCandidate) =>
+      c.bass ? 4 : !c.omitted ? 0 : c.omitted.length === 2 ? 3 : c.omitted[0] === "5" ? 1 : 2;
+    const groups = result.map(group);
+    expect([...groups].sort((a, b) => a - b)).toEqual(groups);
+  });
+});
+
+describe("explicit omission markers", () => {
+  it("parses omit5 / no5 in every spelling and normalizes to (no5)", () => {
+    const CEB = ["C", "E", "B"];
+    for (const name of ["Cmaj7omit5", "Cmaj7no5", "Cmaj7(no5)", "Cmaj7 no5", "Cmaj7(omit5)", "Cmaj7 (omit 5)"]) {
+      const r = matchesChordName(name, CEB);
+      expect(r.ok, name).toBe(true);
+      expect(r.normalized, name).toBe("Cmaj7(no5)");
+      expect(r.matched, name).toMatchObject({ symbol: "Cmaj7", omitted: ["5"] });
+    }
+    expect(matchesChordName("C7omit5", ["C", "E", "Bb"]).normalized).toBe("C7(no5)");
+    expect(matchesChordName("C7omit5", ["C", "E", "Bb"]).ok).toBe(true);
+  });
+
+  it("parses omit3 / no3 in every spelling and normalizes to (no3)", () => {
+    const DAC = ["D", "A", "C"];
+    for (const name of ["D7omit3", "D7no3", "D7(no3)", "D7 no3", "D7(omit3)"]) {
+      const r = matchesChordName(name, DAC);
+      expect(r.ok, name).toBe(true);
+      expect(r.normalized, name).toBe("D7(no3)");
+      expect(r.matched, name).toMatchObject({ symbol: "D7", omitted: ["3"] });
+    }
+  });
+
+  it("combines markers", () => {
+    const ACD = ["A", "C", "D"];
+    for (const name of ["C69 no3 no5", "C6/9(omit3,5)", "C6/9(no3)(no5)", "C69no3no5", "C6/9 (no3, no5)"]) {
+      const r = matchesChordName(name, ACD);
+      expect(r.ok, name).toBe(true);
+      expect(r.normalized, name).toBe("C6add9(no3,5)");
+      expect(r.matched?.omitted, name).toEqual(["3", "5"]);
+    }
+  });
+
+  it("stands alone as explicit intent, whatever the allowOmitted* options", () => {
+    const off = { allowOmittedFifth: false, allowOmittedThird: false };
+    expect(matchesChordName("Cmaj7(no5)", ["C", "E", "B"], off).ok).toBe(true);
+    expect(matchesChordName("D7(no3)", ["D", "A", "C"], off).ok).toBe(true);
+    expect(matchesChordName("C6/9(no3,5)", ["A", "C", "D"], off).ok).toBe(true);
+    // An unmarked 5th still needs the option.
+    expect(matchesChordName("C6/9(no3)", ["A", "C", "D"], off).ok).toBe(false);
+  });
+
+  it("requires a marked tone to be absent", () => {
+    expect(matchesChordName("Cmaj7(no5)", ["C", "E", "G", "B"]).ok).toBe(false);
+    expect(matchesChordName("D7(no3)", ["D", "F#", "A", "C"]).ok).toBe(false);
+  });
+
+  it("keeps a slash bass after the marker", () => {
+    const r = matchesChordName("D7no3/C", ["C", "D", "A"]);
+    expect(r.ok).toBe(true);
+    expect(r.normalized).toBe("D7(no3)/C");
+  });
+
+  it("keeps the allow-list on the base type", () => {
+    expect(matchesChordName("D7(no3)", ["D", "A", "C"], { chordTypes: ["7"] }).ok).toBe(true);
+    expect(matchesChordName("D7(no3)", ["D", "A", "C"], { chordTypes: ["M"] }).ok).toBe(false);
+  });
+});

@@ -1,6 +1,6 @@
 {
   "name": "@pepperhorn/chordl-core",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "Pure TypeScript chord parsing, resolving, layout, and export engine",
   "repository": {
     "type": "git",

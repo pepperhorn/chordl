@@ -32,6 +32,15 @@ export interface IdentifyOptions {
   /** Accept a chord whose perfect 5th is missing (C–D–E → "Cadd9"). Default true. */
   allowOmittedFifth?: boolean;
   /**
+   * Accept a chord whose 3rd (major or minor) is missing: D–A–C → "D7",
+   * recorded as `omitted: ["3"]`. Default false. Combines with
+   * `allowOmittedFifth` (A–C–D → "C6/9", `omitted: ["3", "5"]`) as long as at
+   * least three notes sound. Never applies to sus or power chords, which have
+   * no 3rd. A name typed with an explicit marker ("D7no3", "D7(omit3)") is
+   * accepted whatever this option says.
+   */
+  allowOmittedThird?: boolean;
+  /**
    * Name an inversion by its root ("C" for E–G–C). Default true. When false,
    * the first note passed is taken as the bass: a chord whose root is not the
    * bass must be written as a slash chord ("C/E").
@@ -48,7 +57,7 @@ export interface ChordCandidate {
   type: string;
   /** Bass note of a slash name, spelled as given. */
   bass?: string;
-  /** Chord tones left out of the notes, e.g. ["5"]. */
+  /** Chord tones left out of the notes: ["5"], ["3"] or ["3", "5"]. */
   omitted?: string[];
 }
 
@@ -66,7 +75,7 @@ export interface ChordNameMatch {
 
 const SHARP_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 const FIFTH = 7;
-/** An omitted-5th reading must still leave a triad's worth of notes. */
+/** An omitted-3rd or omitted-5th reading must still leave a triad's worth of notes. */
 const MIN_NOTES_AFTER_OMISSION = 3;
 /** A slash chord's upper structure must be at least a triad. */
 const MIN_PEDAL_UPPER_NOTES = 3;
@@ -153,15 +162,35 @@ interface ChordShape {
   type: string;
   /** Pitch classes relative to the root. */
   mask: number;
+  /**
+   * Pitch class (relative to the root) of the chord's 3rd, major or minor,
+   * when it can be omitted: undefined for sus and power chords, which have
+   * none, and when another chord tone shares its pitch class.
+   */
+  third?: number;
 }
 
 function shapeFromIntervals(type: string, intervals: string[]): ChordShape {
   let mask = 0;
+  const pcs: number[] = [];
+  let third: number | undefined;
   for (const ivl of intervals) {
     const semis = Interval.semitones(ivl);
-    if (Number.isInteger(semis)) mask |= bit(((semis % 12) + 12) % 12);
+    if (!Number.isInteger(semis)) continue;
+    const pc = ((semis % 12) + 12) % 12;
+    mask |= bit(pc);
+    pcs.push(pc);
+    if (Interval.get(ivl).num === 3) third = pc;
   }
-  return { type, mask };
+  const shape: ChordShape = { type, mask };
+  if (
+    third !== undefined &&
+    !/sus/.test(type) &&
+    pcs.filter((pc) => pc === third).length === 1
+  ) {
+    shape.third = third;
+  }
+  return shape;
 }
 
 const TONAL_SHAPES: ChordShape[] = ChordType.all().map((t) =>
@@ -169,11 +198,38 @@ const TONAL_SHAPES: ChordShape[] = ChordType.all().map((t) =>
 );
 
 /**
+ * Chord types chordl names that tonal's dictionary lacks. `resolveChord`
+ * already builds these; listing them here lets `identifyChords` find them and
+ * the `chordTypes` allow-list name them. Aliases are matched after
+ * `normalizeQuality`, so "min7sus4" and "m7(sus4)" need no entry of their own.
+ */
+const CHORDL_EXTRA_TYPES: { type: string; aliases: string[]; intervals: string[] }[] = [
+  // Minor 7th with an added 4th (A–C–D–E–G). "sus" is informal here, as in
+  // "msus": the minor 3rd stays.
+  { type: "m7sus4", aliases: ["m7sus4", "m7sus", "min7sus4"], intervals: ["1P", "3m", "4P", "5P", "7m"] },
+].filter((t) => ChordType.get(t.type).empty);
+
+const EXTRA_SHAPES: ChordShape[] = CHORDL_EXTRA_TYPES.map((t) =>
+  shapeFromIntervals(t.type, t.intervals),
+);
+
+/** Every chord shape identification considers: tonal's, then chordl's extras. */
+const ALL_SHAPES: ChordShape[] = [...TONAL_SHAPES, ...EXTRA_SHAPES];
+
+function extraShape(normalized: string): ChordShape | null {
+  const i = CHORDL_EXTRA_TYPES.findIndex((t) =>
+    t.aliases.some((a) => normalizeQuality(a) === normalized),
+  );
+  return i >= 0 ? EXTRA_SHAPES[i] : null;
+}
+
+/**
  * Rewrite a typed chord quality into a symbol tonal recognises. Tolerates
  * spaces, parentheses, unicode accidentals and the common written synonyms:
  * maj/major → M, Δ → maj7 (Δ9 → maj9), min/minor/- → m, ø → m7b5, ° → dim,
  * + → aug, sus → sus4,
- * add2 → add9. The single letters M and m keep their case-sensitive meaning.
+ * add2 → add9, msus/msus4/m(sus4)/minsus4/-sus4 → madd4 (minor add 4: the
+ * informal "msus" keeps its minor 3rd, unlike a true sus chord). The single letters M and m keep their case-sensitive meaning.
  */
 function normalizeQuality(raw: string): string {
   let s = raw
@@ -193,6 +249,9 @@ function normalizeQuality(raw: string): string {
   if (s === "maj" || s === "") s = "M";
   if (s === "+") s = "aug";
   s = s.replace(/sus(?![24])/, "sus4").replace(/add2/, "add9");
+  // "msus" is informal: a sus chord replaces its 3rd, but "Amsus" (A–C–D–E)
+  // keeps the minor 3rd and adds the 4th, so it is tonal's madd4.
+  if (s === "msus4") s = "madd4";
   return s;
 }
 
@@ -203,6 +262,8 @@ function shapeForQuality(raw: string): ChordShape | null {
   if (!t.empty) {
     return shapeFromIntervals(CANONICAL_TYPE[t.aliases[0]] ?? t.aliases[0], t.intervals);
   }
+  const extra = extraShape(s);
+  if (extra) return extra;
   // Names tonal does not know but `resolveChord` builds (m6/9, 7omit3,
   // compound alterations like maj9#5#13): reuse its fallback rather than
   // re-deriving those chords here.
@@ -221,13 +282,13 @@ function shapeForQuality(raw: string): ChordShape | null {
  */
 const TYPE_PRIORITY = [
   "M", "m", "7", "maj7", "m7", "dim", "aug", "sus4", "sus2", "m7b5", "dim7",
-  "6", "m6", "add9", "madd9", "7sus4", "9", "maj9", "m9", "maj7#5", "mMaj7",
+  "6", "m6", "add9", "madd9", "7sus4", "m7sus4", "9", "maj9", "m9", "maj7#5", "mMaj7",
 ];
-const TONAL_ORDER = new Map(TONAL_SHAPES.map((s, i) => [s.type, i]));
+const SHAPE_ORDER = new Map(ALL_SHAPES.map((s, i) => [s.type, i]));
 
 function typePriority(type: string): number {
   const i = TYPE_PRIORITY.indexOf(type);
-  return i >= 0 ? i : TYPE_PRIORITY.length + (TONAL_ORDER.get(type) ?? TONAL_SHAPES.length);
+  return i >= 0 ? i : TYPE_PRIORITY.length + (SHAPE_ORDER.get(type) ?? ALL_SHAPES.length);
 }
 
 const displaySuffix = (type: string) => (type === "M" ? "" : type);
@@ -241,12 +302,34 @@ function allowedTypes(chordTypes: string[] | undefined): Set<string> | null {
   return set;
 }
 
+type Omission = "3" | "5";
+
 interface ParsedSymbol {
   root: string;
   rootPc: number;
   shape: ChordShape;
   bass?: string;
   bassPc?: number;
+  /** Tones the name itself marks as left out ("D7no3", "Cmaj7(omit5)"). */
+  omit: Omission[];
+}
+
+/**
+ * One trailing omission marker: "omit3", "no5", "(no3)", " omit 5",
+ * "(omit3,5)", "(no3, no5)".
+ */
+const OMISSION_MARKER =
+  /[\s,]*\(?\s*(?:omit|no)\s*([35](?:\s*,\s*(?:(?:omit|no)\s*)?[35])*)\s*\)?\s*$/i;
+
+/** Strip trailing omission markers off a typed quality. */
+function stripOmissions(quality: string): { quality: string; omit: Omission[] } {
+  const omit = new Set<Omission>();
+  let q = quality;
+  for (let m = q.match(OMISSION_MARKER); m && m[0].length; m = q.match(OMISSION_MARKER)) {
+    for (const d of m[1].match(/[35]/g) ?? []) omit.add(d as Omission);
+    q = q.slice(0, m.index);
+  }
+  return { quality: q, omit: (["3", "5"] as const).filter((d) => omit.has(d)) };
 }
 
 /** Parse a typed chord symbol: root, quality, optional "/bass". */
@@ -269,14 +352,19 @@ function parseSymbol(input: string): ParsedSymbol | null {
     bass = spelled;
   }
 
-  const shape = shapeForQuality(quality);
+  const stripped = stripOmissions(quality);
+  const shape = shapeForQuality(stripped.quality);
   if (!shape || !(root in PC_SEMITONES)) return null;
+  // A marker must name a tone the chord has: "Csus4no3" and "C5no3" are not chords.
+  if (stripped.omit.includes("3") && shape.third === undefined) return null;
+  if (stripped.omit.includes("5") && !(shape.mask & bit(FIFTH))) return null;
   return {
     root,
     rootPc: PC_SEMITONES[root],
     shape,
     bass,
     bassPc: bass === undefined ? undefined : PC_SEMITONES[bass],
+    omit: stripped.omit,
   };
 }
 
@@ -287,31 +375,61 @@ interface Resolved {
   omitted?: string[];
 }
 
+interface OmissionRules {
+  allowOmittedFifth: boolean;
+  allowOmittedThird: boolean;
+  /** Omissions the typed name marks explicitly: required, and allowed whatever the options. */
+  required?: Omission[];
+}
+
+/** Omission sets in ranking order: none, 5th, 3rd, both. */
+const OMISSION_SETS: Omission[][] = [[], ["5"], ["3"], ["3", "5"]];
+
 /**
  * Does `shape` on `root`, with an optional slash bass, spell exactly `target`?
  * Tries the whole chord first, then — if allowed — the chord minus its
- * perfect 5th. A pedal bass (one that is not a chord tone, "C/Ab") requires
- * the whole chord above it: omitting the 5th there yields names like
- * "Abmaj7/E" that describe the notes but no musician would write.
+ * perfect 5th, minus its 3rd, and minus both. At least three notes must
+ * remain after any omission. A pedal bass (one that is not a chord tone,
+ * "C/Ab") requires the whole chord above it: omitting a tone there yields
+ * names like "Abmaj7/E" that describe the notes but no musician would write.
+ * A tone that is sounding as the bass cannot be omitted.
  */
 function spells(
   shape: ChordShape,
   root: number,
   target: number,
   bassPc: number | undefined,
-  allowOmittedFifth: boolean,
+  rules: OmissionRules,
 ): Resolved {
   const chord = transpose(shape.mask, root);
   const bassBit = bassPc === undefined ? 0 : bit(bassPc);
   const full = chord | bassBit;
-  if (full === target) return { ok: true };
   const isPedal = bassBit !== 0 && !(chord & bassBit);
+  const required = rules.required ?? [];
   const fifthPc = (root + FIFTH) % 12;
-  // The 5th cannot be "omitted" while it is sounding as the bass.
-  if (allowOmittedFifth && !isPedal && shape.mask & bit(FIFTH) && bassPc !== fifthPc) {
-    const without = full & ~bit(fifthPc);
+  const thirdPc = shape.third === undefined ? undefined : (root + shape.third) % 12;
+  const can: Record<Omission, boolean> = {
+    "5":
+      (rules.allowOmittedFifth || required.includes("5")) &&
+      !!(shape.mask & bit(FIFTH)) &&
+      bassPc !== fifthPc,
+    "3":
+      (rules.allowOmittedThird || required.includes("3")) &&
+      thirdPc !== undefined &&
+      bassPc !== thirdPc,
+  };
+  for (const set of OMISSION_SETS) {
+    if (!required.every((o) => set.includes(o))) continue;
+    if (set.length === 0) {
+      if (full === target) return { ok: true };
+      continue;
+    }
+    if (isPedal || !set.every((o) => can[o])) continue;
+    let without = full;
+    if (set.includes("5")) without &= ~bit(fifthPc);
+    if (set.includes("3")) without &= ~bit(thirdPc!);
     if (without === target && popcount(without) >= MIN_NOTES_AFTER_OMISSION) {
-      return { ok: true, omitted: ["5"] };
+      return { ok: true, omitted: set };
     }
   }
   return { ok: false };
@@ -337,7 +455,8 @@ function makeCandidate(
  * Every chord name the given notes spell.
  *
  * Root-position names come first (the name whose root is the first note given
- * leads), then omitted-5th readings, then slash names. Within each of those
+ * leads), then omitted-5th readings, then omitted-3rd readings, then readings
+ * missing both, then slash names. Within each of those
  * groups, common chord types come before rare ones (see `TYPE_PRIORITY`). A black-key root is
  * offered in both spellings ("C#" and "Db") as separate candidates. Slash
  * names returned here are pedal basses — a non-chord-tone under a chord
@@ -350,27 +469,30 @@ export function identifyChords(notes: string[], opts: IdentifyOptions = {}): Cho
     allowSlash = true,
     allowPedalBass = true,
     allowOmittedFifth = true,
+    allowOmittedThird = false,
     inversionAgnostic = true,
   } = opts;
+  const rules: OmissionRules = { allowOmittedFifth, allowOmittedThird };
   const parsed = parseNotes(notes);
   if (!parsed) return [];
   const allowed = allowedTypes(opts.chordTypes);
-  const shapes = allowed ? TONAL_SHAPES.filter((s) => allowed.has(s.type)) : TONAL_SHAPES;
+  const shapes = allowed ? ALL_SHAPES.filter((s) => allowed.has(s.type)) : ALL_SHAPES;
 
   const found: { c: ChordCandidate; rank: number; priority: number }[] = [];
   const push = (rootPc: number, type: string, bassPc: number | undefined, omitted?: string[]) => {
     const bass = bassPc === undefined ? undefined : parsed.spelling.get(bassPc);
+    const group = omitted ? OMISSION_SETS.findIndex((s) => s.join() === omitted.join()) : 0;
     const rank =
-      (bass ? 4 : 0) + (omitted ? 2 : 0) + (rootPc === parsed.bass && !bass ? 0 : 1);
+      (bass ? 2 * OMISSION_SETS.length : 0) + 2 * group + (rootPc === parsed.bass && !bass ? 0 : 1);
     for (const root of rootSpellings(rootPc)) {
       found.push({ c: makeCandidate(root, type, bass, omitted), rank, priority: typePriority(type) });
     }
   };
 
-  // Plain names: the notes are exactly the chord (or the chord minus its 5th).
+  // Plain names: the notes are exactly the chord (or the chord minus its 5th and/or 3rd).
   for (const root of pcsOf(parsed.mask)) {
     for (const shape of shapes) {
-      const r = spells(shape, root, parsed.mask, undefined, allowOmittedFifth);
+      const r = spells(shape, root, parsed.mask, undefined, rules);
       if (!r.ok) continue;
       if (inversionAgnostic || root === parsed.bass) push(root, shape.type, undefined, r.omitted);
       else if (allowSlash) push(root, shape.type, parsed.bass, r.omitted);
@@ -387,7 +509,7 @@ export function identifyChords(notes: string[], opts: IdentifyOptions = {}): Cho
         for (const shape of shapes) {
           // A chord that contains the bass is an inversion, named above.
           if (transpose(shape.mask, root) & bit(b)) continue;
-          const r = spells(shape, root, parsed.mask, b, allowOmittedFifth);
+          const r = spells(shape, root, parsed.mask, b, rules);
           if (r.ok) push(root, shape.type, b, r.omitted);
         }
       }
@@ -407,7 +529,11 @@ export function identifyChords(notes: string[], opts: IdentifyOptions = {}): Cho
  *
  * The name is parsed tolerantly (see `normalizeQuality`) and is correct when
  * its pitch-class set equals the notes' set — or equals it with the perfect
- * 5th omitted, when `allowOmittedFifth`. A slash bass must be one of the
+ * 5th omitted, when `allowOmittedFifth`, and/or the 3rd omitted, when
+ * `allowOmittedThird`. Explicit markers ("D7no3", "Cmaj7(omit5)",
+ * "C6/9(no3,5)") require the marked tone to be absent and are accepted
+ * whatever the options; `normalized` writes them as "(no3)", "(no5)" or
+ * "(no3,5)". A slash bass must be one of the
  * notes; the chord above it may contain it (an inversion, "C/E") or not (a
  * pedal, "C/Ab"; rejected when `allowPedalBass` is false). Whether the bass is
  * a chord tone is judged against the whole chord, so "Cadd9/E" over E–C–D is
@@ -423,13 +549,16 @@ export function matchesChordName(
     allowSlash = true,
     allowPedalBass = true,
     allowOmittedFifth = true,
+    allowOmittedThird = false,
     inversionAgnostic = true,
   } = opts;
   const candidates = identifyChords(notes, opts);
   const sym = parseSymbol(input);
   if (!sym) return { ok: false, candidates };
 
-  const normalized = makeCandidate(sym.root, sym.shape.type, sym.bass, undefined).symbol;
+  const marker = sym.omit.length ? `(no${sym.omit.join(",")})` : "";
+  const normalized =
+    sym.root + displaySuffix(sym.shape.type) + marker + (sym.bass ? `/${sym.bass}` : "");
   const fail: ChordNameMatch = { ok: false, normalized, candidates };
 
   const parsed = parseNotes(notes);
@@ -446,7 +575,11 @@ export function matchesChordName(
   }
   if (!inversionAgnostic && lowest !== parsed.bass) return fail;
 
-  const r = spells(sym.shape, sym.rootPc, parsed.mask, sym.bassPc, allowOmittedFifth);
+  const r = spells(sym.shape, sym.rootPc, parsed.mask, sym.bassPc, {
+    allowOmittedFifth,
+    allowOmittedThird,
+    required: sym.omit,
+  });
   if (!r.ok) return fail;
 
   return {
