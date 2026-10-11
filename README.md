@@ -474,17 +474,21 @@ identifyChords(["A", "C#", "E"]);      // [{ symbol: "A", root: "A", type: "M" }
 identifyChords(["C#", "F", "G#"]);     // "C#" and "Db" offered as separate candidates
 identifyChords(["C", "D", "E"]);       // [{ symbol: "Cadd9", ..., omitted: ["5"] }, ...]
 identifyChords(["Ab", "C", "E", "G"]); // includes "Abmaj7#5" and "C/Ab" (bass: "Ab")
+identifyChords(["Ab", "C", "E", "G"], { allowPedalBass: false }); // "Abmaj7#5", no "C/Ab"
 
 matchesChordName("A major", ["A", "Db", "E"]);
 // { ok: true, normalized: "A", matched: { symbol: "A", ... }, candidates: [...] }
 matchesChordName("Cm", ["C", "E", "G"]);                                   // ok: false, normalized: "Cm"
 matchesChordName("Cmaj7", ["C", "E", "G", "B"], { chordTypes: ["M", "m"] }); // ok: false
+matchesChordName("C/Ab", ["Ab", "C", "E", "G"], { allowPedalBass: false });   // ok: false
+matchesChordName("C/E", ["E", "G", "C"], { allowPedalBass: false });          // ok: true (inversion)
 ```
 
 | Option | Default | |
 |---|---|---|
 | `chordTypes` | all | Allowed tonal type symbols (`"M"`, `"m"`, `"dim"`, `"maj7"`, `"m7b5"`, `"add9"`, ...). Synonyms such as `"major"` or `"Δ"` are accepted. |
 | `allowSlash` | `true` | Accept slash names: inversions (`C/E`) and pedal basses (`C/Ab`). A slash bass must be one of the notes. |
+| `allowPedalBass` | `true` | Accept pedal (foreign-bass) slash names, whose bass is not a tone of the chord above it: `C/Ab` for `Ab C E G`, `A/C` for `E A C# C`. When `false`, only inversion slash names (`C/E`, `C/G`) are accepted or listed. No effect when `allowSlash` is `false`. |
 | `allowOmittedFifth` | `true` | Accept a chord missing its perfect 5th (`C D E` → `Cadd9`), as long as at least three notes remain. Not applied under a pedal bass. |
 | `inversionAgnostic` | `true` | Name `E G C` as `C`. When `false`, the first note passed is the bass, and a chord whose root isn't the bass must be written as a slash chord. |
 
@@ -504,6 +508,9 @@ Behaviour worth knowing:
 - **Slash names in `identifyChords`.** By default only pedal basses are listed (`C/Ab`: the bass is
   not a chord tone, and the chord above it is at least a triad). Inversion names such as `C/E` are
   listed only with `inversionAgnostic: false`; `matchesChordName` accepts them either way.
+  `allowPedalBass: false` drops the pedal names from both functions and keeps the inversions.
+  Whether a bass is a chord tone is judged against the whole chord, so `Cadd9/E` over `E C D`
+  counts as an inversion even with its 5th omitted.
 - **Ordering.** Root-position names first (the one rooted on the first note given leads), then
   omitted-5th readings, then slash names. Within each group common types come first — `M`, `m`,
   `7`, `maj7`, `m7`, `dim`, `aug`, `sus4`, `sus2`, `m7b5`, `dim7`, `6`, `m6`, `add9`, `madd9`,
