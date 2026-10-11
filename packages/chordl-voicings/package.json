@@ -1,6 +1,6 @@
 {
   "name": "@pepperhorn/chordl-voicings",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Jazz piano voicing library with shell, rootless, quartal, upper structure, and drop 2 voicings",
   "repository": {
     "type": "git",
@@ -28,7 +28,7 @@
     "test:run": "vitest run"
   },
   "dependencies": {
-    "tonal": "^6.3.0"
+    "tonal": "~6.4.3"
   },
   "devDependencies": {
     "typescript": "^5.7.0",
