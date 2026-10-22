@@ -134,6 +134,31 @@ describe("ChordCardPlayer — guitar-top3", () => {
   });
 });
 
+describe("ChordCardPlayer — guitar (six strings)", () => {
+  it("renders a chords-db shape with no generated badge", () => {
+    const { container } = render(<ChordCardPlayer chord="C" face="guitar" theme={THEME} />);
+    expect(container.querySelector(".chord-card-player[data-face='guitar'] .bc-guitar-chord")).toBeTruthy();
+    expect(container.querySelector(".ccp-badge--generated")).toBeNull();
+  });
+
+  it("badges a generated voicing as pending teacher review", () => {
+    const { container } = render(<ChordCardPlayer chord="C13(#11)" face="guitar" theme={THEME} />);
+    const badge = container.querySelector(".ccp-badge--generated");
+    expect(badge?.textContent).toMatch(/generated voicing — pending teacher review/i);
+  });
+
+  it("strums all six strings' sounding notes low to high", async () => {
+    render(<ChordCardPlayer chord="C" face="guitar" theme={THEME} />);
+    fireEvent.click(screen.getByRole("button", { name: /play arpeggio/i }));
+    await waitFor(() => expect(notesOf("electric_guitar_clean")).toEqual([48, 52, 55, 60, 64]));
+  });
+
+  it("explains a chord with no position instead of drawing one", () => {
+    render(<ChordCardPlayer chord="C13(b9,b5)" face="guitar" theme={THEME} />);
+    expect(screen.getByRole("alert").textContent).toMatch(/no six-string guitar position/);
+  });
+});
+
 describe("ChordCardPlayer — shell", () => {
   it("carries contextual classes, the caller's className and the theme's UI font", () => {
     const { container } = render(

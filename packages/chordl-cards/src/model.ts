@@ -11,7 +11,7 @@ export {
 export type { KeyboardWindow, WhiteNote } from "./keyboard-window";
 
 export {
-  requestFor, sharpPitchClasses, chordNotes,
+  requestFor, sharpPitchClasses, chordNotes, plainKeyboardWindow,
   keyboardNoteLabels, handsNoteLabels, handLabels,
   faceNoteNames, handBracketsFor,
 } from "./faces";
@@ -33,7 +33,7 @@ export type {
 
 export {
   CHORD_TYPES, ROOTS, SHEET_ERRATA, chordTypeById, parseChordSymbol, spellChord,
-  spellInterval, noteParts,
+  spellInterval, noteParts, chordSpelling, spelledChord,
 } from "./catalogue";
 export type { ChordType, CatalogueFace, ParsedChord, Root } from "./catalogue";
 

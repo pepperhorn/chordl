@@ -305,10 +305,17 @@ export function spellChord(root: string, type: ChordType | string): string[] {
  * chord, on anything the catalogue does not hold.
  */
 export function chordSpelling(symbol: string): string[] {
+  const s = spelledChord(symbol);
+  return s.bass ? [s.bass, ...s.pitchClasses] : s.pitchClasses;
+}
+
+/** A chord symbol spelled: { root, pitchClasses (the upper chord, root first), bass? }.
+ * The shape chordl-guitar's `guitarPositionFor` takes. */
+export function spelledChord(symbol: string): { root: string; pitchClasses: string[]; bass?: string } {
   const p = parseChordSymbol(symbol);
   if (!p) throw new Error(`unsupported chord "${symbol}": not in the chord catalogue`);
-  const upper = spellChord(p.root, p.type);
-  return p.bass ? [p.bass, ...upper] : upper;
+  const pitchClasses = spellChord(p.root, p.type);
+  return p.bass ? { root: p.root, pitchClasses, bass: p.bass } : { root: p.root, pitchClasses };
 }
 
 // ── Parsing ─────────────────────────────────────────────────────────────────

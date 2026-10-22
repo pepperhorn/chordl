@@ -31,6 +31,7 @@ const FACE_LABELS: Record<CardFace, string> = {
   keyboard: "keyboard",
   "keyboard-hands": "exploded triad, two hands",
   "guitar-top3": "guitar, top three strings",
+  guitar: "guitar",
 };
 
 /**
@@ -89,6 +90,8 @@ const CSS = `
 .chord-card-player .ccp-tempo-slider { min-height: 44px; width: 140px; accent-color: var(--ccp-primary); }
 .chord-card-player .ccp-tempo-value { min-width: 4.5em; font-variant-numeric: tabular-nums; }
 .chord-card-player .ccp-status { min-height: 1.2em; margin: 0; text-align: center; color: var(--ccp-muted); font-size: 0.85rem; }
+.chord-card-player .ccp-badge { margin: 0; text-align: center; color: var(--ccp-muted); font-size: 0.85rem; }
+.chord-card-player .ccp-badge--generated { font-style: italic; }
 .chord-card-player .ccp-error { margin: 0; padding: 12px; border: var(--ccp-border-width) solid var(--ccp-border); border-radius: var(--ccp-radius); }
 @media (prefers-reduced-motion: no-preference) {
   .chord-card-player .ccp-btn { transition: background-color 120ms ease; }
@@ -250,6 +253,14 @@ export function ChordCardPlayer({ chord, face, theme, className }: ChordCardPlay
           ? <KeyboardDiagram req={req} chord={chord} face={face} active={active} highlight={highlight} />
           : <GuitarDiagram req={req} playback={playback} active={active} highlight={highlight} />}
       </div>
+      {req.kind === "guitar" && req.generated && (
+        <p className="ccp-badge ccp-badge--generated" data-omitted={req.omitted?.join(" ") || undefined}>
+          Generated voicing — pending teacher review
+          {req.omitted && req.omitted.length > 0 && (
+            <span className="ccp-badge-omitted"> (leaves out {req.omitted.join(", ")})</span>
+          )}
+        </p>
+      )}
       <div
         className="ccp-controls"
         role="group"

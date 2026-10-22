@@ -11,15 +11,15 @@
  * test/faces.test.ts's golden check.
  */
 
-import { INSTRUMENTS, lookupTop3Chord } from "@pepperhorn/chordl-guitar";
+import { INSTRUMENTS, dbPositionToChord, guitarPositionFor, lookupTop3Chord } from "@pepperhorn/chordl-guitar";
 import { computeKeyboard } from "@pepperhorn/chordl-core";
-import { chordSpelling } from "./catalogue";
-import { keyCentresFor, keyboardWindow } from "./keyboard-window";
+import { noteParts, parseChordSymbol, spelledChord } from "./catalogue";
+import { keyCentresFor, keyboardWindow, voiceAscending, whiteSpan, type KeyboardWindow } from "./keyboard-window";
 import { handsWindow } from "./hands";
 import { familyOf, toneColor, type Theme } from "./theme";
 
 /** The card faces this package models. */
-export type CardFace = "keyboard" | "keyboard-hands" | "guitar-top3";
+export type CardFace = "keyboard" | "keyboard-hands" | "guitar-top3" | "guitar";
 
 /** A fretted shape as svguitar takes it (chordl-guitar's `Chord`). */
 export type FrettedShape = NonNullable<ReturnType<typeof lookupTop3Chord>>;
@@ -46,7 +46,7 @@ export interface GuitarFaceRequest {
   kind: "guitar";
   /** Fingers carry per-note colours when the theme's fret colorMode is "pitch". */
   shape: FrettedShape;
-  instrument: "guitar-top3";
+  instrument: "guitar-top3" | "guitar";
   fingerColor: string;
   fingerTextColor: string;
   fingerTextSize: number;
@@ -57,6 +57,13 @@ export interface GuitarFaceRequest {
   fingerTextWeight: number;
   labelFontFamily: string;
   labelFontWeight: number;
+  /** guitar (six-string) only, after every other key so a guitar-top3
+   * request is unchanged: whether the voicing was generated rather than taken
+   * from chords-db (badge it "generated voicing, pending teacher review"),
+   * where it came from, and which optional degrees it leaves out. */
+  generated?: boolean;
+  source?: "chords-db" | "power-chord" | "generated";
+  omitted?: string[];
 }
 
 export type FaceRequest = KeyboardFaceRequest | GuitarFaceRequest;
@@ -71,22 +78,11 @@ const PC: Record<string, number> = {
   C: 0, "C#": 1, Db: 1, D: 2, "D#": 3, Eb: 3, E: 4, F: 5,
   "F#": 6, Gb: 6, G: 7, "G#": 8, Ab: 8, A: 9, "A#": 10, Bb: 10, B: 11,
 };
-// The chord qualities the keyboard faces can render. ./names.ts's
-// QUALITY_LABELS advertises a wider set (sus2, add9); keep the two in step by
-// hand. 6, m6, aug, dim, sus2, sus4, dim7, m7b5, mMaj7, 7#5 and maj7#5 are keyboard-only: SUFFIX has no guitar
-// presets for them, so the guitar face throws "unsupported chord suffix".
-//
-// Maps, not object literals: the key is whatever text followed the root, and
-// an object literal answers `INTERVALS["constructor"]` with something truthy
-// off Object.prototype. A Map has no such inheritance.
-const INTERVALS = new Map<string, number[]>([
-  ["", [0, 4, 7]], ["m", [0, 3, 7]], ["7", [0, 4, 7, 10]],
-  ["m7", [0, 3, 7, 10]], ["maj7", [0, 4, 7, 11]],
-  ["6", [0, 4, 7, 9]], ["m6", [0, 3, 7, 9]], ["aug", [0, 4, 8]],
-  ["dim", [0, 3, 6]], ["sus4", [0, 5, 7]], ["sus2", [0, 2, 7]],
-  ["dim7", [0, 3, 6, 9]], ["m7b5", [0, 3, 6, 10]], ["mMaj7", [0, 3, 7, 11]],
-  ["7#5", [0, 4, 8, 10]], ["maj7#5", [0, 4, 8, 11]],
-]);
+// The plain keyboard and six-string guitar faces take any chord in the
+// catalogue (./catalogue.ts). The top-3 face takes only the qualities below,
+// which have presets; keyboard-hands only those in ./hands.ts's QUALITIES. A
+// Map, not an object literal: the key is whatever text followed the root, and
+// an object literal answers SUFFIX["constructor"] off Object.prototype.
 /** Chord-symbol suffix -> the suffix spelling used by the preset tables. */
 const SUFFIX = new Map<string, string>([
   ["", "major"], ["m", "minor"], ["7", "7"], ["m7", "m7"], ["maj7", "maj7"],
@@ -99,28 +95,51 @@ function split(chord: string): { root: string; rest: string } {
 }
 
 /**
- * Sharp-only root-position pitch classes, e.g. Gm -> ["G", "A#", "D"].
+ * Sharp-only pitch classes, e.g. Gm -> ["G", "A#", "D"]; a slash chord's bass
+ * first ("D7/C" -> ["C", "D", "F#", "A", "C"]).
  *
  * The keyboard's key-matching identity, never printed — see `chordNotes` for
- * the display spelling. Also the gate that a chord's quality is supported.
+ * the display spelling. Also the gate: anything outside the chord catalogue
+ * throws /unsupported/.
  */
 export function sharpPitchClasses(chord: string): string[] {
-  const { root, rest } = split(chord);
-  const r = PC[root];
-  if (r === undefined) throw new Error(`unknown root in "${chord}"`);
-  const iv = INTERVALS.get(rest);
-  if (!iv) throw new Error(`unsupported quality "${rest}" in "${chord}"`);
-  return iv.map((i) => PC_NAMES[(r + i) % 12]);
+  return chordNotes(chord).map((n) => PC_NAMES[noteParts(n)!.pc]);
 }
 
 /**
- * Root-position note names for display ("Bb", not "A#"), from chordl-core's
- * `resolveChord` — one spelling authority. Gated by `sharpPitchClasses`, so an
- * unsupported quality throws /unsupported/ before chordl-core sees it.
+ * Note names for display ("Bb", not "A#"; "Bbb" where the chord spells one),
+ * from the chord catalogue: the one spelling authority. Root position, a slash
+ * bass first. Throws /unsupported/ for anything the catalogue does not hold.
  */
 export function chordNotes(chord: string): string[] {
-  sharpPitchClasses(chord); // validates root + quality; throws "unsupported ..." otherwise
-  return chordSpelling(chord);
+  const { root, rest } = split(chord);
+  if (PC[root] === undefined) throw new Error(`unknown root in "${chord}"`);
+  if (!parseChordSymbol(chord)) throw new Error(`unsupported quality "${rest}" in "${chord}"`);
+  const s = spelledChord(chord);
+  return s.bass ? [s.bass, ...s.pitchClasses] : s.pitchClasses;
+}
+
+/**
+ * The plain keyboard face's window: the chord in root position, a slash bass in
+ * the octave directly below the upper chord's root (as the sheet engraves
+ * D7/C: C D F# A C). The theme's window (13 keys) when the chord fits it with
+ * the theme's context; otherwise the smallest window that fits with one key of
+ * context either side (a 13th spans 13 white keys, so it gets 15).
+ */
+export function plainKeyboardWindow(chord: string, theme: Theme): KeyboardWindow {
+  const pcs = sharpPitchClasses(chord);
+  const bass = parseChordSymbol(chord)!.bass;
+  const upper = voiceAscending(bass ? pcs.slice(1) : pcs);
+  let semitones = upper;
+  if (bass) {
+    const below = (upper[0] - PC[bass]! + 12) % 12 || 12;
+    semitones = [upper[0] - below, ...upper];
+  }
+  const span = whiteSpan(semitones);
+  const dims = span + theme.keyboard.minContextKeys * 2 <= theme.keyboard.whiteKeys
+    ? theme.keyboard
+    : { whiteKeys: span + 2, minContextKeys: 1 };
+  return keyboardWindow(pcs, chord, dims, semitones);
 }
 
 /**
@@ -137,6 +156,37 @@ export function requestFor(chord: string, face: CardFace, theme: Theme): FaceReq
   const root = split(chord).root;
   const rootEntry = theme.roots[root] ?? theme.roots[FLAT_TO_SHARP[root] ?? root];
   if (!rootEntry) throw new Error(`theme has no root entry for "${root}" (chord "${chord}")`);
+
+  if (face === "guitar") {
+    const instrument = "guitar" as const;
+    const spelled = spelledChord(chord);
+    const pos = guitarPositionFor(spelled);
+    if (!pos) {
+      throw new Error(
+        `no six-string guitar position for "${chord}": every voicing needs more ` +
+          `than four fingers, one barre and a four-fret box (see chordl-guitar's generator).`,
+      );
+    }
+    const shape = dbPositionToChord(pos, INSTRUMENTS.guitar.strings) as FrettedShape;
+    return {
+      kind: "guitar" as const,
+      shape: colourFingers(shape, instrument, root, theme),
+      instrument,
+      fingerColor: rootEntry.fretCircle,
+      fingerTextColor: rootEntry.fretFingerText,
+      fingerTextSize: theme.fonts.fretFingerText.size,
+      fingerStrokeColor: rootEntry.fretCircleStroke,
+      fingerStrokeWidth: theme.fret.circleStrokeWidth,
+      diagramColor: theme.fret.diagramColor,
+      fontFamily: familyOf(theme, theme.fonts.fretFingerText),
+      fingerTextWeight: theme.fonts.fretFingerText.weight,
+      labelFontFamily: familyOf(theme, theme.fonts.stringLabel),
+      labelFontWeight: theme.fonts.stringLabel.weight,
+      generated: pos.generated,
+      source: pos.generated ? "generated" : pos.source,
+      omitted: pos.generated ? [...pos.omitted] : [],
+    };
+  }
 
   if (face === "guitar-top3") {
     const instrument = "guitar-top3" as const;
@@ -187,7 +237,7 @@ export function requestFor(chord: string, face: CardFace, theme: Theme): FaceReq
   }
 
   const pitchClasses = sharpPitchClasses(chord);
-  const window = keyboardWindow(pitchClasses, chord, theme.keyboard);
+  const window = plainKeyboardWindow(chord, theme);
   return {
     kind: "keyboard" as const,
     chordLabel: chord,
@@ -293,7 +343,9 @@ function colourFingers(
 /** The top-3 preset shape for a chord, or throw naming the chord. */
 function top3ShapeFor(chord: string): FrettedShape {
   const { root, rest } = split(chord);
-  const suffix = SUFFIX.get(rest);
+  // Any catalogue symbol of a preset quality: "Cmin7" is "Cm7" here.
+  const p = parseChordSymbol(chord);
+  const suffix = SUFFIX.get(p && !p.bass ? p.type.quality ?? rest : rest);
   if (!suffix) throw new Error(`unsupported chord suffix in "${chord}"`);
   const shape = lookupTop3Chord(root, suffix);
   if (!shape) {
@@ -335,7 +387,7 @@ function assertLabelsAlign(
 
 /** Where each note name goes on the plain keyboard face. */
 export function keyboardNoteLabels(chord: string, theme: Theme): NoteLabel[] {
-  const window = keyboardWindow(sharpPitchClasses(chord), chord, theme.keyboard);
+  const window = plainKeyboardWindow(chord, theme);
   const centres = keyCentresFor(window, theme.keyboard.format);
   const names = chordNotes(chord);
   assertLabelsAlign(chord, names.length, centres.length, "note");

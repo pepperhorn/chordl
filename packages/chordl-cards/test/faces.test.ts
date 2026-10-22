@@ -38,7 +38,9 @@ describe("chordNotes", () => {
   });
 
   it("throws on an unsupported quality rather than guessing", () => {
-    expect(() => chordNotes("C13")).toThrow(/unsupported/);
+    expect(() => chordNotes("Cfoo")).toThrow(/unsupported/);
+    expect(() => chordNotes("C(tmp-test)")).toThrow(/unsupported/);
+    expect(chordNotes("C13")).toEqual(["C", "E", "G", "Bb", "D", "A"]);
   });
 });
 
@@ -165,7 +167,13 @@ describe("byte-identical with chordcards", () => {
   });
 
   it("differs from the golden file only where reviewed", () => {
-    expect([...NOW_RENDERS].sort()).toMatchInlineSnapshot(`[]`);
+    expect([...NOW_RENDERS].sort()).toMatchInlineSnapshot(`
+      [
+        "C/E keyboard",
+        "C/G keyboard",
+        "C9 keyboard",
+      ]
+    `);
     expect(labelDiffs.sort()).toMatchInlineSnapshot(`
       [
         "Aaug hands: A C# F -> A C# E#",

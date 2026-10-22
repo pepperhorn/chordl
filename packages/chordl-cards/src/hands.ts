@@ -11,7 +11,7 @@
  * Pure and node-free: it is bundled for the browser with the card builder and the web player.
  */
 
-import { chordSpelling, noteParts } from "./catalogue";
+import { chordSpelling, noteParts, parseChordSymbol } from "./catalogue";
 import { keyboardWindow, voiceAscending, type KeyboardWindow } from "./keyboard-window";
 
 export interface HandTone {
@@ -83,8 +83,10 @@ function pcOf(name: string): number {
 export function explodedVoicing(chord: string): ExplodedVoicing | undefined {
   const m = CHORD.exec(chord);
   if (!m) return undefined;
-  const [, root, quality, slash] = m;
-  const q = QUALITIES[quality];
+  const [, root, written, slash] = m;
+  // Any catalogue symbol of an allowed quality: "C7(#5)" is "C7#5" here.
+  const quality = parseChordSymbol(root + written)?.type.quality ?? written;
+  const q = Object.prototype.hasOwnProperty.call(QUALITIES, quality) ? QUALITIES[quality] : undefined;
   if (!q) return undefined;
 
   let spelled: string[];

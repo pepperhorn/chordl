@@ -69,6 +69,12 @@ const SEMITONE_OF_PITCH_CLASS: Record<string, number> = {
  */
 const BASE_SEMITONE = 48;
 
+/** White keys from the lowest to the highest tone, both included (a black key
+ * counts as the white key beneath it). */
+export function whiteSpan(semitones: number[]): number {
+  return whiteIndexOf(Math.max(...semitones)) - whiteIndexOf(Math.min(...semitones)) + 1;
+}
+
 /** Absolute white-key index of an absolute semitone. */
 function whiteIndexOf(semitone: number): number {
   return Math.floor(semitone / 12) * 7 + WHITE_INDEX_OF_SEMITONE[semitone % 12];
