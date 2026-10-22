@@ -158,6 +158,20 @@ describe("raised accidentals", () => {
     // Top of the glyph on the cap line (y down: baseline 100 minus cap height).
     expect(Math.min(...ys)).toBeCloseTo(100 - ACCIDENTAL_METRICS.capHeight[700] / 10, 0);
   });
+
+  it("scales the stroke with a raised glyph so the outline does not clog its counters", () => {
+    const opts = {
+      weight: 700 as const, size: 100, fill: "#fff", x: 0, y: 100,
+      accidentals: "raised" as const, stroke: "#000", strokeWidth: 7,
+    };
+    const svg = renderChordSymbolSvg("C#", opts);
+    expect(svg).toMatch(/<text[^>]* stroke-width="7"/);
+    const pathStroke = /<path[^>]* stroke-width="([^"]+)"/.exec(svg)![1];
+    expect(Number(pathStroke)).toBeCloseTo(7 * RAISED_SCALE, 3);
+    // Full-size accidentals keep the run's stroke.
+    const full = renderChordSymbolSvg("C#", { ...opts, accidentals: "full" as const });
+    expect(/<path[^>]* stroke-width="([^"]+)"/.exec(full)![1]).toBe("7");
+  });
 });
 
 describe("spokenChordSymbol", () => {

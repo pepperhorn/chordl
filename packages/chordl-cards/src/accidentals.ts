@@ -391,9 +391,10 @@ export function renderChordSymbolSvg(text: string, opts: ChordSymbolSvgOptions):
   let x = (opts.x ?? 0) - anchorShift;
   const y = opts.y ?? 0;
   const n = (v: number) => String(Math.round(v * 1000) / 1000);
-  const stroke = opts.stroke
-    ? ` stroke="${opts.stroke}" stroke-width="${opts.strokeWidth ?? 1}" paint-order="stroke" stroke-linejoin="round"`
+  const strokeAttrs = (scale: number) => opts.stroke
+    ? ` stroke="${opts.stroke}" stroke-width="${n((opts.strokeWidth ?? 1) * scale)}" paint-order="stroke" stroke-linejoin="round"`
     : "";
+  const stroke = strokeAttrs(1);
   const cls = opts.className ? ` class="${opts.className}"` : "";
   const family = escapeXml(opts.fontFamily ?? "Poppins, sans-serif");
   const extra = opts.textAttrs ? ` ${opts.textAttrs}` : "";
@@ -408,7 +409,9 @@ export function renderChordSymbolSvg(text: string, opts: ChordSymbolSvgOptions):
       // Raised: the scaled glyph's top on the cap line.
       const lift = gs === 1 ? 0 : (ACCIDENTAL_METRICS.capHeight[weight] - glyphBounds(g).yMax * gs) * k;
       out = `<path class="${opts.className ? `${opts.className} ` : ""}chord-accidental chord-accidental-${t.kind}" d="${glyphPathData(g, x, y - lift, size * gs)}" ` +
-        `fill="${fill}"${stroke}/>`;
+        // A raised glyph's outline shrinks with it: the run's full stroke
+        // would fill the small sharp's counter.
+        `fill="${fill}"${strokeAttrs(gs)}/>`;
     }
     x += tokenAdvance(t, opts) * k;
     return out;
