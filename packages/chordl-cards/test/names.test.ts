@@ -79,4 +79,19 @@ describe("fullChordName", () => {
     expect(fullChordName("CtoString")).toBe("c toString");
     expect(fullChordName("C13")).toBe("c 13");
   });
+
+  it("labels and spells out the extended qualities", () => {
+    const cases: [string, string, string][] = [
+      ["Cdim7", "dim7", "c diminished seventh"],
+      ["Cm7b5", "m7b5", "c half-diminished seventh"],
+      ["CmMaj7", "minMaj7", "c minor major seventh"],
+      ["C7#5", "7#5", "c augmented seventh"],
+      ["Cmaj7#5", "maj7#5", "c augmented major seventh"],
+      ["Bbsus2", "sus2", "b flat suspended second"],
+    ];
+    for (const [chord, label, full] of cases) {
+      expect(qualityLabelFor(chord)).toBe(label);
+      expect(fullChordName(chord)).toBe(full);
+    }
+  });
 });

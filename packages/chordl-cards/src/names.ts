@@ -26,6 +26,8 @@ const QUALITY_LABELS = new Map<string, string>([
   ["maj7", "maj7"], ["m7", "min7"], ["min7", "min7"], ["7", "7"],
   ["6", "6"], ["m6", "min6"], ["min6", "min6"],
   ["dim", "dim"], ["aug", "aug"], ["sus2", "sus2"], ["sus4", "sus4"], ["add9", "add9"],
+  // "b"/"#" stay ASCII in labels: Poppins has no flat/sharp glyphs.
+  ["dim7", "dim7"], ["m7b5", "m7b5"], ["mMaj7", "minMaj7"], ["7#5", "7#5"], ["maj7#5", "maj7#5"],
 ]);
 
 export function rootOf(chord: string): string {
@@ -48,6 +50,9 @@ const QUALITY_NAMES = new Map<string, string>([
   ["m7", "minor seventh"], ["min7", "minor seventh"],
   ["aug", "augmented"], ["dim", "diminished"],
   ["sus4", "suspended fourth"], ["sus2", "suspended second"], ["add9", "added ninth"],
+  ["dim7", "diminished seventh"], ["m7b5", "half-diminished seventh"],
+  ["mMaj7", "minor major seventh"], ["7#5", "augmented seventh"],
+  ["maj7#5", "augmented major seventh"],
 ]);
 
 const ACCIDENTAL_NAMES = new Map<string, string>([["#", " sharp"], ["b", " flat"]]);

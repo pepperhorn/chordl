@@ -72,7 +72,7 @@ const PC: Record<string, number> = {
 };
 // The chord qualities the keyboard faces can render. ./names.ts's
 // QUALITY_LABELS advertises a wider set (sus2, add9); keep the two in step by
-// hand. 6, m6, aug, dim and sus4 are keyboard-only: SUFFIX has no guitar
+// hand. 6, m6, aug, dim, sus2, sus4, dim7, m7b5, mMaj7, 7#5 and maj7#5 are keyboard-only: SUFFIX has no guitar
 // presets for them, so the guitar face throws "unsupported chord suffix".
 //
 // Maps, not object literals: the key is whatever text followed the root, and
@@ -82,7 +82,9 @@ const INTERVALS = new Map<string, number[]>([
   ["", [0, 4, 7]], ["m", [0, 3, 7]], ["7", [0, 4, 7, 10]],
   ["m7", [0, 3, 7, 10]], ["maj7", [0, 4, 7, 11]],
   ["6", [0, 4, 7, 9]], ["m6", [0, 3, 7, 9]], ["aug", [0, 4, 8]],
-  ["dim", [0, 3, 6]], ["sus4", [0, 5, 7]],
+  ["dim", [0, 3, 6]], ["sus4", [0, 5, 7]], ["sus2", [0, 2, 7]],
+  ["dim7", [0, 3, 6, 9]], ["m7b5", [0, 3, 6, 10]], ["mMaj7", [0, 3, 7, 11]],
+  ["7#5", [0, 4, 8, 10]], ["maj7#5", [0, 4, 8, 11]],
 ]);
 /** Chord-symbol suffix -> the suffix spelling used by the preset tables. */
 const SUFFIX = new Map<string, string>([

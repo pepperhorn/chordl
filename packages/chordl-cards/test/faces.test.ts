@@ -37,7 +37,7 @@ describe("chordNotes", () => {
   });
 
   it("throws on an unsupported quality rather than guessing", () => {
-    expect(() => chordNotes("Cdim7")).toThrow(/unsupported/);
+    expect(() => chordNotes("C13")).toThrow(/unsupported/);
   });
 });
 

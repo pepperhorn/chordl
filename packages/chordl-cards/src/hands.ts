@@ -57,6 +57,8 @@ const QUALITIES: Record<string, { intervals: number[]; rh: [number, number] }> =
   m7b5: { intervals: [0, 3, 6, 10], rh: [1, 3] },
   dim7: { intervals: [0, 3, 6, 9], rh: [1, 3] },
   mMaj7: { intervals: [0, 3, 7, 11], rh: [1, 3] },
+  "7#5": { intervals: [0, 4, 8, 10], rh: [1, 3] },
+  "maj7#5": { intervals: [0, 4, 8, 11], rh: [1, 3] },
 };
 
 const CHORD = /^([A-G][#b]?)([^/]*)(?:\/([A-G][#b]?))?$/;
