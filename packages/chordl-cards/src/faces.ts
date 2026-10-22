@@ -270,8 +270,12 @@ export function requestFor(chord: string, face: CardFace, theme: Theme): FaceReq
  * `InstrumentConfig.tuning` is listed low to high, hence `strings - n`.
  * Open (0) and muted ("x") strings are left alone: svguitar draws them as nut
  * glyphs, which have nothing to fill.
+ *
+ * Exported for print's fretted faces that `requestFor` does not model
+ * (ukulele, bass, violin, guitar voicings), so they colour fingers by the
+ * same rule as the card faces.
  */
-function colourFingers(
+export function colourFingers(
   shape: FrettedShape,
   instrument: keyof typeof INSTRUMENTS,
   root: string,

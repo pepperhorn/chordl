@@ -13,7 +13,7 @@ export type { KeyboardWindow, WhiteNote } from "./keyboard-window";
 export {
   requestFor, sharpPitchClasses, chordNotes, plainKeyboardWindow,
   keyboardNoteLabels, handsNoteLabels, handLabels,
-  faceNoteNames, handBracketsFor,
+  faceNoteNames, handBracketsFor, colourFingers,
 } from "./faces";
 export type {
   CardFace, FaceRequest, KeyboardFaceRequest, GuitarFaceRequest, FrettedShape,
