@@ -115,6 +115,37 @@ describe("CHORD_TYPES", () => {
   });
 });
 
+describe("names, twins and teaching notes", () => {
+  it("names the cross-convention pairs as written", () => {
+    const n = (id: string) => chordTypeById(id)!.fullName;
+    expect(n("half-dim7")).toBe("half-diminished seventh");
+    expect(n("m7-flat5")).toBe("minor seventh flat five");
+    expect(n("7-sharp5")).toBe("dominant seventh sharp five");
+    expect(n("maj7-sharp5")).toBe("major seventh sharp five");
+  });
+
+  it("the only types sharing intervals are ø7 and m7(b5), and each lists the other", () => {
+    const twins = CHORD_TYPES.filter((t) => t.alsoKnownAs.length).map((t) => [t.id, t.alsoKnownAs]);
+    expect(twins).toEqual([["half-dim7", ["m7-flat5"]], ["m7-flat5", ["half-dim7"]]]);
+  });
+
+  it("dim7 is spelled with the 6th on every root, and says why", () => {
+    expect(spellChord("F#", "dim7")).toEqual(["F#", "A", "C", "D#"]);
+    expect(spellChord("C", "dim7")).toEqual(["C", "Eb", "Gb", "A"]);
+    const LETTERS = "CDEFGAB";
+    for (const root of ROOTS) {
+      const top = spellChord(root, "dim7")[3];
+      // The top note takes the 6th's letter (A over C), never the 7th's double flat.
+      expect(LETTERS.indexOf(top[0]), root).toBe((LETTERS.indexOf(root[0]) + 5) % 7);
+      expect(top, root).not.toMatch(/bb$/);
+    }
+    const note = chordTypeById("dim7")!.teachingNote!;
+    expect(note).toMatch(/diminished seventh/);
+    expect(note).toMatch(/double flat/);
+    expect(CHORD_TYPES.filter((t) => t.teachingNote).map((t) => t.id)).toEqual(["dim7"]);
+  });
+});
+
 describe("faces", () => {
   const theme = loadTheme();
   it("keyboard and guitar are on for every type", () => {

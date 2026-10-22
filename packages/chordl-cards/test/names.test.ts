@@ -47,6 +47,14 @@ describe("chord name parsing", () => {
     // QUALITY_LABELS; this function only formats.)
     expect(qualityLabelFor("C13")).toBe("13");
   });
+
+  it("reads every label from the catalogue, slash chords as written", () => {
+    expect(qualityLabelFor("C7(b9/#5)")).toBe("7b9#5");
+    expect(qualityLabelFor("Cm7b5")).toBe("m7b5");
+    expect(qualityLabelFor("Cø7")).toBe("half-dim7");
+    expect(qualityLabelFor("C/E")).toBe("/E");
+    expect(qualityLabelFor("D7/C")).toBe("7/C");
+  });
 });
 
 describe("fullChordName", () => {
@@ -77,16 +85,19 @@ describe("fullChordName", () => {
     // Map-based for the same reason as QUALITY_LABELS: an object literal would
     // answer "toString" with a function off Object.prototype.
     expect(fullChordName("CtoString")).toBe("c toString");
-    expect(fullChordName("C13")).toBe("c 13");
+    expect(fullChordName("Cfoo")).toBe("c foo");
+    expect(fullChordName("C13")).toBe("c dominant thirteenth");
+    expect(fullChordName("D7/C")).toBe("d dominant seventh over c");
   });
 
   it("labels and spells out the extended qualities", () => {
     const cases: [string, string, string][] = [
       ["Cdim7", "dim7", "c diminished seventh"],
-      ["Cm7b5", "m7b5", "c half-diminished seventh"],
+      ["Cm7b5", "m7b5", "c minor seventh flat five"],
+      ["Cø7", "half-dim7", "c half-diminished seventh"],
       ["CmMaj7", "minMaj7", "c minor major seventh"],
-      ["C7#5", "7#5", "c augmented seventh"],
-      ["Cmaj7#5", "maj7#5", "c augmented major seventh"],
+      ["C7#5", "7#5", "c dominant seventh sharp five"],
+      ["Cmaj7#5", "maj7#5", "c major seventh sharp five"],
       ["Bbsus2", "sus2", "b flat suspended second"],
     ];
     for (const [chord, label, full] of cases) {

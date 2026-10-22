@@ -10,14 +10,18 @@ import { rootSlug, slugFor } from "../src/slug";
 const ALL_SLASH = ROOTS.flatMap((bass) => slashChordsForBass(bass));
 
 describe("slash chords", () => {
-  it("12 intervals x 15 upper types per bass, 2,700 in all", () => {
+  it("12 intervals x 15 upper types per bass; #4/b5 twins collapse: 2,520 distinct", () => {
     expect(SLASH_INTERVALS).toEqual(["b2", "2", "b3", "3", "4", "#4", "b5", "5", "b6", "6", "b7", "7"]);
     expect(SLASH_UPPER_TYPES.map((id) => chordTypeById(id)!.label)).toEqual([
       "maj", "min", "6", "7", "maj7", "min7", "m7b5", "add9", "min6", "aug", "dim",
       "sus4", "dim7", "minMaj7", "9",
     ]);
-    for (const bass of ROOTS) expect(slashChordsForBass(bass)).toHaveLength(180);
-    expect(ALL_SLASH).toHaveLength(15 * 12 * 15);
+    // Only C, D and G keep #4 and b5 apart (F#/Gb, G#/Ab, C#/Db over them).
+    for (const bass of ROOTS) {
+      expect(slashChordsForBass(bass), bass).toHaveLength(["C", "D", "G"].includes(bass) ? 180 : 165);
+    }
+    expect(ALL_SLASH).toHaveLength(15 * 12 * 15 - 12 * 15);
+    expect(new Set(ALL_SLASH.map((c) => c.symbol)).size).toBe(ALL_SLASH.length);
   });
 
   it("every upper root is one of the 15 roots", () => {
@@ -31,10 +35,17 @@ describe("slash chords", () => {
     expect(over("C", "#4").upperRoot).toBe("F#");
     expect(over("C", "b5").upperRoot).toBe("Gb");
     expect(over("Gb", "b2")).toMatchObject({ spelledRoot: "Abb", upperRoot: "G", respelled: true });
-    expect(over("E", "#4")).toMatchObject({ spelledRoot: "A#", upperRoot: "Bb", respelled: true });
+    // Over E, #4 (A#) needs respelling and b5 (Bb) does not: b5 is kept, A# is its alias.
+    expect(over("E", "#4")).toBeUndefined();
+    expect(over("E", "b5")).toMatchObject({ upperRoot: "Bb", respelled: false, aliases: ["A#/E"] });
+    // Over F, #4 (B) is in the set and b5 (Cb) is not: #4 is kept.
+    expect(over("F", "#4")).toMatchObject({ upperRoot: "B", aliases: ["Cb/F"] });
+    expect(over("F", "b5")).toBeUndefined();
+    // Over C both spellings are roots: two chords, no aliases.
+    expect(over("C", "#4").aliases).toEqual([]);
     expect(over("C", "6")).toMatchObject({ spelledRoot: "A", upperRoot: "A", respelled: false });
     const respelled = ALL_SLASH.filter((c) => c.respelled).length;
-    expect(respelled).toMatchInlineSnapshot(`630`);
+    expect(respelled).toMatchInlineSnapshot(`450`);
   });
 
   it("contains the sheet's four examples", () => {
@@ -56,28 +67,14 @@ describe("slash chords", () => {
     }
   });
 
-  it("the only repeats are #4 and b5 respelled onto the same root", () => {
-    const seen = new Map<string, (typeof ALL_SLASH)[number]>();
-    const repeats: string[] = [];
-    for (const c of ALL_SLASH) {
-      const prev = seen.get(c.symbol);
-      if (prev) {
-        expect([prev.interval, c.interval].sort(), c.symbol).toEqual(["#4", "b5"]);
-        expect(prev.respelled || c.respelled).toBe(true);
-        expect(c.duplicateOf).toBe(prev.interval);
-        repeats.push(c.symbol);
-      } else {
-        expect(c.duplicateOf).toBeUndefined();
-        seen.set(c.symbol, c);
-      }
+  it("every collapsed twin carries the other spelling as an alias", () => {
+    const withAlias = ALL_SLASH.filter((c) => c.aliases.length);
+    expect(withAlias).toHaveLength(12 * 15);
+    for (const c of withAlias) {
+      expect(["#4", "b5"]).toContain(c.interval);
+      expect(c.aliases[0]).toMatch(new RegExp(`/${c.bass}$`));
+      expect(c.aliases[0]).not.toBe(c.symbol);
     }
-    // #4 and b5 share a pitch class; where the 15 roots spell it only one way they meet.
-    expect({ repeats: repeats.length, distinct: seen.size }).toMatchInlineSnapshot(`
-      {
-        "distinct": 2520,
-        "repeats": 180,
-      }
-    `);
   });
 });
 
@@ -110,12 +107,11 @@ describe("slugFor", () => {
     };
     for (const root of ROOTS) for (const t of CHORD_TYPES) add(slugFor({ root, type: t }), root + t.symbol);
     for (const c of ALL_SLASH) {
-      if (c.duplicateOf) continue;
       expect(c.slug).toBe(slugFor({ root: c.upperRoot, type: c.upperType, bass: c.bass }));
       expect(c.slug).toBe([rootSlug(c.upperRoot), ...c.slugModifiers].join("-"));
       add(c.slug, c.symbol);
     }
-    expect(slugs.size).toBe(15 * CHORD_TYPES.length + ALL_SLASH.filter((c) => !c.duplicateOf).length);
+    expect(slugs.size).toBe(15 * CHORD_TYPES.length + ALL_SLASH.length);
   });
 
   it("agrees with every slug already applied in Directus (crf-admin chords)", () => {

@@ -1,5 +1,5 @@
+import { chordSpelling } from "../src/catalogue";
 import { describe, it, expect } from "vitest";
-import { resolveChord } from "@pepperhorn/chordl-core";
 import { loadTheme } from "./theme-fixture";
 import {
   keyboardNoteLabels, handsNoteLabels, handLabels, sharpPitchClasses,
@@ -23,8 +23,8 @@ const THEME = loadTheme();
 describe("every Exploded Triads chord", () => {
   it("is 120 chords", () => expect(CHORDS).toHaveLength(120));
 
-  it.each(CHORDS)("%s fits the plain keyboard, one label per tone, spelled by chordl-core", (chord) => {
-    const tones = resolveChord(chord).notes;
+  it.each(CHORDS)("%s fits the plain keyboard, one label per tone, spelled by the catalogue", (chord) => {
+    const tones = chordSpelling(chord);
     const w = keyboardWindow(sharpPitchClasses(chord), chord, THEME.keyboard);
     expect(w.highlightKeys).toHaveLength(tones.length);
     expect(w.padLeft).toBeGreaterThanOrEqual(THEME.keyboard.minContextKeys);
@@ -36,10 +36,10 @@ describe("every Exploded Triads chord", () => {
   });
 
   it.each(CHORDS)("%s builds the hands face: bass plus an R.H. pair, captions placed", (chord) => {
-    const tones = resolveChord(chord).notes;
+    const tones = chordSpelling(chord);
     const labels = handsNoteLabels(chord, THEME);
     expect(labels).toHaveLength(3);
-    // L.H. is the root; the R.H. pair are chord tones in chordl-core's spelling.
+    // L.H. is the root; the R.H. pair are chord tones in the catalogue's spelling.
     expect(labels[0].text).toBe(tones[0]);
     for (const l of labels.slice(1)) expect(tones, `${chord} R.H.`).toContain(l.text);
 
@@ -71,10 +71,10 @@ describe("every Exploded Triads chord", () => {
     expect(fitted).toBe(115);
   });
 
-  it("spells the awkward ones as chordl-core does", () => {
+  it("spells the awkward ones as the catalogue does", () => {
     for (const chord of ["Ebm6", "Bbdim", "Gaug", "C#maj7", "Absus4"]) {
       expect(keyboardNoteLabels(chord, THEME).map((l) => l.text), chord)
-        .toEqual(resolveChord(chord).notes);
+        .toEqual(chordSpelling(chord));
     }
     expect(qualityLabelFor("Ebm6")).toBe("min6");
     expect(qualityLabelFor("Gaug")).toBe("aug");

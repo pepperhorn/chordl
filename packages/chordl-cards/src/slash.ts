@@ -5,8 +5,9 @@
  * (G). 15 basses x 12 intervals x 15 upper types = 2,700 entries.
  *
  * #4 and b5 are one pitch class. Where the 15 roots spell it only one way
- * (over Db: G and Abb -> G), both land on the same chord; the later (b5) entry
- * carries `duplicateOf: "#4"` so a consumer can skip it.
+ * (over Db: G and Abb -> G) the two are one chord, and one record is kept: the
+ * one whose upper root needed no respelling (both did -> #4). The other's
+ * spelling is listed in its `aliases` ("Abb/Db"). 2,520 distinct chords.
  */
 import { ROOTS, chordTypeById, noteParts, spellInterval, type Root } from "./catalogue";
 import { rootSlug } from "./slug";
@@ -39,8 +40,8 @@ export interface SlashChord {
   /** Slug segments after the upper root: the type's modifiers, "over", the bass. */
   slugModifiers: string[];
   slug: string;
-  /** Set on the b5 entry when it is the same chord as the #4 entry. */
-  duplicateOf?: SlashInterval;
+  /** The #4/b5 twin's spelling, when it collapsed onto this chord ("Abb/Db"). */
+  aliases: string[];
 }
 
 const ROOT_SET = new Set<string>(ROOTS);
@@ -60,14 +61,26 @@ export function respellIntoRoots(name: string): Root {
 export function slashChordsForBass(bassRoot: string): SlashChord[] {
   if (!ROOT_SET.has(bassRoot)) throw new Error(`bass "${bassRoot}" is not one of the 15 roots`);
   const bass = bassRoot as Root;
-  const out: SlashChord[] = [];
-  const byInterval = new Map<string, Root>();
+  const roots = new Map<SlashInterval, { spelled: string; upper: Root }>();
   for (const interval of SLASH_INTERVALS) {
-    const spelledRoot = spellInterval(bass, interval);
-    const upperRoot = respellIntoRoots(spelledRoot);
-    byInterval.set(interval, upperRoot);
-    const duplicateOf =
-      interval === "b5" && byInterval.get("#4") === upperRoot ? ("#4" as const) : undefined;
+    const spelled = spellInterval(bass, interval);
+    roots.set(interval, { spelled, upper: respellIntoRoots(spelled) });
+  }
+  // #4 and b5 collapse when they land on one root: keep the unrespelled one.
+  const sharp4 = roots.get("#4")!;
+  const flat5 = roots.get("b5")!;
+  let dropped: SlashInterval | undefined;
+  if (sharp4.upper === flat5.upper) {
+    dropped = sharp4.spelled !== sharp4.upper && flat5.spelled === flat5.upper ? "#4" : "b5";
+  }
+  const twinOf = (kept: SlashInterval) =>
+    dropped && kept !== dropped && (kept === "#4" || kept === "b5") ? roots.get(dropped)!.spelled : undefined;
+
+  const out: SlashChord[] = [];
+  for (const interval of SLASH_INTERVALS) {
+    if (interval === dropped) continue;
+    const { spelled: spelledRoot, upper: upperRoot } = roots.get(interval)!;
+    const twin = twinOf(interval);
     for (const id of SLASH_UPPER_TYPES) {
       const type = chordTypeById(id)!;
       const slugModifiers = [...type.slugModifiers, "over", rootSlug(bass)];
@@ -81,7 +94,7 @@ export function slashChordsForBass(bassRoot: string): SlashChord[] {
         respelled: spelledRoot !== upperRoot,
         slugModifiers,
         slug: [rootSlug(upperRoot), ...slugModifiers].join("-"),
-        ...(duplicateOf ? { duplicateOf } : {}),
+        aliases: twin ? [`${twin}${type.symbol}/${bass}`] : [],
       });
     }
   }

@@ -1,5 +1,5 @@
+import { chordSpelling } from "../src/catalogue";
 import { describe, expect, it } from "vitest";
-import { resolveChord } from "@pepperhorn/chordl-core";
 import { explodedVoicing, handsWindow, HANDS_WINDOW } from "../src/hands";
 import { keyIndicesFor } from "../src/keyboard-window";
 
@@ -22,8 +22,8 @@ describe("explodedVoicing", () => {
   it("Cmaj7", () => expect(shape("Cmaj7")?.rh).toEqual(["E", "B"]));
   it("Cm7", () => expect(shape("Cm7")?.rh).toEqual(["Eb", "Bb"]));
   it("Cm7b5", () => expect(shape("Cm7b5")?.rh).toEqual(["Eb", "Bb"]));
-  it("Cdim7 takes chordl-core's spelling of the 7th", () => {
-    const seventh = resolveChord("Cdim7").notes[3];
+  it("Cdim7 takes the catalogue's spelling of the 7th", () => {
+    const seventh = chordSpelling("Cdim7")[3];
     expect(shape("Cdim7")?.rh).toEqual(["Eb", seventh]);
   });
   it("C/E", () => expect(shape("C/E")).toEqual({ lh: ["E"], rh: ["G", "C"], semis: [3, 8] }));

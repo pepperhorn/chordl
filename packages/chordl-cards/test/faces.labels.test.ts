@@ -6,7 +6,7 @@ import { loadTheme } from "./theme-fixture";
  *
  * `keyboardNoteLabels` and `handsNoteLabels` zip two lists that are built by
  * different routes: the note NAMES come from the chord's spelling
- * (chordl-core's `resolveChord`, via `chordNotes`), the x positions from the
+ * (the catalogue's `chordSpelling`, via `chordNotes`), the x positions from the
  * keys chordl's own `computeKeyboard` resolved for the window
  * (`keyCentresFor`). Nothing makes them the same length. Zipping past the end
  * of the centres yields `x: undefined`, which reaches the sheet as `x="NaN"`

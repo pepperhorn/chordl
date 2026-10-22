@@ -4,14 +4,14 @@
  *
  * The right hand gets the two tones that say what KIND of chord it is - the
  * 3rd (or the sus tone) and the 5th, or the 3rd and the 6th/7th when the chord
- * has one. The root is the left hand's. Spelling comes from chordl-core's
- * `resolveChord`, the same authority `chordNotes` in ./faces.ts uses, so
- * a card says "Bb" where a sharp-only table would say "A#".
+ * has one. The root is the left hand's. Spelling comes from the chord
+ * catalogue (./catalogue.ts), the same authority `chordNotes` in ./faces.ts
+ * uses, so a card says "Bb" where a sharp-only table would say "A#".
  *
  * Pure and node-free: it is bundled for the browser with the card builder and the web player.
  */
 
-import { resolveChord } from "@pepperhorn/chordl-core";
+import { chordSpelling, noteParts } from "./catalogue";
 import { keyboardWindow, voiceAscending, type KeyboardWindow } from "./keyboard-window";
 
 export interface HandTone {
@@ -39,7 +39,6 @@ export interface ExplodedVoicing {
 export const HANDS_WINDOW = { whiteKeys: 14, minContextKeys: 3 } as const;
 
 const SHARP_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-const LETTER_PC: Record<string, number> = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
 
 /** Chord-tone intervals and the indices (into those intervals) the R.H. plays. */
 const QUALITIES: Record<string, { intervals: number[]; rh: [number, number] }> = {
@@ -64,8 +63,10 @@ const QUALITIES: Record<string, { intervals: number[]; rh: [number, number] }> =
 const CHORD = /^([A-G][#b]?)([^/]*)(?:\/([A-G][#b]?))?$/;
 
 function pcOf(name: string): number {
-  const acc = name[1] === "#" ? 1 : name[1] === "b" ? -1 : 0;
-  return (LETTER_PC[name[0]] + acc + 12) % 12;
+  // Double accidentals included: G## is A, Bbb is A — the catalogue spells both.
+  const parts = noteParts(name);
+  if (!parts) throw new Error(`hands: not a note name "${name}"`);
+  return parts.pc;
 }
 
 /**
@@ -88,7 +89,7 @@ export function explodedVoicing(chord: string): ExplodedVoicing | undefined {
 
   let spelled: string[];
   try {
-    spelled = resolveChord(root + quality).notes;
+    spelled = chordSpelling(root + quality);
   } catch {
     return undefined;
   }

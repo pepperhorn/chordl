@@ -1,5 +1,5 @@
+import { chordSpelling } from "../src/catalogue";
 import { describe, it, expect } from "vitest";
-import { resolveChord } from "@pepperhorn/chordl-core";
 import { requestFor, keyboardNoteLabels, handsNoteLabels, type CardFace } from "../src/faces";
 import { loadTheme } from "./theme-fixture";
 
@@ -31,15 +31,15 @@ describe("chord library sweep: 15 roots x 16 qualities", () => {
     expect(CHORDS.map((c) => tryFace(c, "keyboard-hands")).filter(Boolean)).toEqual([]);
   });
 
-  it("keyboard note labels are resolveChord's spelling, root position", () => {
+  it("keyboard note labels are the catalogue's spelling, root position", () => {
     for (const c of CHORDS) {
-      expect(keyboardNoteLabels(c, theme).map((l) => l.text), c).toEqual(resolveChord(c).notes);
+      expect(keyboardNoteLabels(c, theme).map((l) => l.text), c).toEqual(chordSpelling(c));
     }
   });
 
-  it("hands note labels are resolveChord's spelling (bass first, R.H. ascending)", () => {
+  it("hands note labels are the catalogue's spelling (bass first, R.H. ascending)", () => {
     for (const c of CHORDS) {
-      const spelled = resolveChord(c).notes;
+      const spelled = chordSpelling(c);
       const labels = handsNoteLabels(c, theme).map((l) => l.text);
       expect(labels[0], c).toBe(spelled[0]);
       for (const l of labels) expect(spelled, c).toContain(l);

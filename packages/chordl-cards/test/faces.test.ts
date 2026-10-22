@@ -1,6 +1,7 @@
+import { chordSpelling } from "../src/catalogue";
 import { readFileSync } from "node:fs";
 import { describe, it, expect } from "vitest";
-import { computeKeyboard, resolveChord } from "@pepperhorn/chordl-core";
+import { computeKeyboard } from "@pepperhorn/chordl-core";
 import {
   chordNotes, faceNoteNames, handBracketsFor, handLabels, handsNoteLabels, keyboardNoteLabels,
   requestFor, sharpPitchClasses, type CardFace,
@@ -26,9 +27,9 @@ describe("chordNotes", () => {
     expect(chordNotes("C7")).toEqual(["C", "E", "G", "Bb"]);
   });
 
-  it("covers the sixths, aug, dim and sus4, in chordl-core's spelling", () => {
+  it("covers the sixths, aug, dim and sus4, in the catalogue's spelling", () => {
     for (const chord of ["C6", "Ebm6", "Gaug", "Bbdim", "F#sus4"]) {
-      expect(chordNotes(chord), chord).toEqual(resolveChord(chord).notes);
+      expect(chordNotes(chord), chord).toEqual(chordSpelling(chord));
     }
     expect(sharpPitchClasses("Ebm6")).toEqual(["D#", "F#", "A#", "C"]);
     expect(sharpPitchClasses("Gaug")).toEqual(["G", "B", "D#"]);
@@ -121,6 +122,28 @@ const attempt = (f: () => unknown): { ok?: unknown; error?: string } => {
 const same = (actual: { ok?: unknown; error?: string }, golden: unknown) =>
   expect(JSON.stringify(actual)).toBe(JSON.stringify(golden));
 
+// Since the catalogue became the one spelling authority (2026-10-22, decision A)
+// note-label TEXT may differ from the golden file; the requests, the label
+// positions and everything else may not. The differences are pinned below so a
+// change to any card's printed spelling shows up as a reviewed diff.
+const NOW_RENDERS = new Set<string>();
+const labelDiffs: string[] = [];
+const nameDiffs: string[] = [];
+
+function sameLabels(chord: string, what: string, actual: { ok?: unknown; error?: string }, golden: unknown) {
+  const g = golden as { ok?: { text: string; x: number }[]; error?: string };
+  if (g.error !== undefined) {
+    if (actual.error === undefined) NOW_RENDERS.add(`${chord} ${what}`);
+    else expect(actual.error).toBe(g.error);
+    return;
+  }
+  const a = actual.ok as { text: string; x: number }[];
+  expect(a.map((l) => l.x), `${chord} ${what} x`).toEqual(g.ok!.map((l) => l.x));
+  const at = a.map((l) => l.text).join(" ");
+  const gt = g.ok!.map((l) => l.text).join(" ");
+  if (at !== gt) labelDiffs.push(`${chord} ${what}: ${gt} -> ${at}`);
+}
+
 describe("byte-identical with chordcards", () => {
   it("covers the chords the golden file was made from", () => {
     expect(Object.keys(GOLDEN).length).toBeGreaterThanOrEqual(124);
@@ -128,12 +151,66 @@ describe("byte-identical with chordcards", () => {
 
   it.each(Object.keys(GOLDEN))("%s: every face request, label and name", (chord) => {
     const g = GOLDEN[chord];
-    for (const [face, key] of FACE_KEYS) same(attempt(() => requestFor(chord, face, THEME)), g[key]);
-    same(attempt(() => keyboardNoteLabels(chord, THEME)), g.keyboardNoteLabels);
-    same(attempt(() => handsNoteLabels(chord, THEME)), g.handsNoteLabels);
+    for (const [face, key] of FACE_KEYS) {
+      const actual = attempt(() => requestFor(chord, face, THEME));
+      const golden = g[key] as { ok?: unknown; error?: string };
+      if (golden.error !== undefined && actual.error === undefined) NOW_RENDERS.add(`${chord} ${key}`);
+      else same(actual, golden);
+    }
+    sameLabels(chord, "keyboard", attempt(() => keyboardNoteLabels(chord, THEME)), g.keyboardNoteLabels);
+    sameLabels(chord, "hands", attempt(() => handsNoteLabels(chord, THEME)), g.handsNoteLabels);
     same(attempt(() => handLabels(chord, THEME)), g.handLabels);
     expect(qualityLabelFor(chord)).toBe(g.qualityLabel);
-    expect(fullChordName(chord)).toBe(g.fullName);
+    if (fullChordName(chord) !== g.fullName) nameDiffs.push(`${chord}: ${g.fullName} -> ${fullChordName(chord)}`);
+  });
+
+  it("differs from the golden file only where reviewed", () => {
+    expect([...NOW_RENDERS].sort()).toMatchInlineSnapshot(`[]`);
+    expect(labelDiffs.sort()).toMatchInlineSnapshot(`
+      [
+        "Aaug hands: A C# F -> A C# E#",
+        "Aaug keyboard: A C# F -> A C# E#",
+        "Abdim hands: Ab B D -> Ab Cb Ebb",
+        "Abdim keyboard: Ab B D -> Ab Cb Ebb",
+        "Abm hands: Ab B Eb -> Ab Cb Eb",
+        "Abm keyboard: Ab B Eb -> Ab Cb Eb",
+        "Abm6 hands: Ab B F -> Ab Cb F",
+        "Abm6 keyboard: Ab B Eb F -> Ab Cb Eb F",
+        "Abm7 hands: Ab B Gb -> Ab Cb Gb",
+        "Abm7 keyboard: Ab B Eb Gb -> Ab Cb Eb Gb",
+        "Baug hands: B D# G -> B D# F##",
+        "Baug keyboard: B D# G -> B D# F##",
+        "Bbdim hands: Bb Db E -> Bb Db Fb",
+        "Bbdim keyboard: Bb Db E -> Bb Db Fb",
+        "C# hands: C# F G# -> C# E# G#",
+        "C# keyboard: C# F G# -> C# E# G#",
+        "C#6 hands: C# F A# -> C# E# A#",
+        "C#6 keyboard: C# F G# A# -> C# E# G# A#",
+        "C#7 hands: C# F B -> C# E# B",
+        "C#7 keyboard: C# F G# B -> C# E# G# B",
+        "C#aug hands: C# F A -> C# E# G##",
+        "C#aug keyboard: C# F A -> C# E# G##",
+        "C#maj7 hands: C# F C -> C# E# B#",
+        "C#maj7 keyboard: C# F G# C -> C# E# G# B#",
+        "Eaug hands: E G# C -> E G# B#",
+        "Eaug keyboard: E G# C -> E G# B#",
+        "Ebdim hands: Eb Gb A -> Eb Gb Bbb",
+        "Ebdim keyboard: Eb Gb A -> Eb Gb Bbb",
+        "F#aug hands: F# A# D -> F# A# C##",
+        "F#aug keyboard: F# A# D -> F# A# C##",
+        "F#maj7 hands: F# A# F -> F# A# E#",
+        "F#maj7 keyboard: F# A# C# F -> F# A# C# E#",
+        "Fdim hands: F Ab B -> F Ab Cb",
+        "Fdim keyboard: F Ab B -> F Ab Cb",
+      ]
+    `);
+    expect(nameDiffs.sort()).toMatchInlineSnapshot(`
+      [
+        "C/E: c /E -> c major over e",
+        "C/G: c /G -> c major over g",
+        "C9: c 9 -> c dominant ninth",
+      ]
+    `);
   });
 });
 

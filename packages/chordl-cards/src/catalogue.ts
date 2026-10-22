@@ -46,6 +46,11 @@ export interface ChordType {
   /** Which bar of the sheet, and the symbol as printed there. */
   sheet?: { bar: number; symbol: string };
   faces: Record<CatalogueFace, boolean>;
+  /** Ids of the types with the same intervals under another convention
+   * (ø7 <-> m7(b5)), for "also known as" on a page. */
+  alsoKnownAs: string[];
+  /** A note for learners where the spelling is a deliberate simplification. */
+  teachingNote?: string;
 }
 
 /** Bars where the engraving is taken to be wrong; the catalogue corrects them. */
@@ -167,6 +172,13 @@ const ROWS: Row[] = [
   [null, "dim", null, ["(dim)", "mb5", "m(b5)"], "1 b3 b5", "dim", "diminished", "dim", "dim"],
 ];
 
+const TEACHING_NOTES = new Map([
+  ["dim7",
+    "The top note is the diminished seventh. Written strictly it is a double flat " +
+    "(on C, B𝄫, B double-flat). That is the same key as the major sixth, so we " +
+    "write the simpler name (on C, A)."],
+]);
+
 const DISPLAY_OVERRIDES = new Map([
   ["aug", "+"], ["dim7", "°7"], ["h7", "ø7"], ["m(#5)", "m+"],
 ]);
@@ -218,6 +230,8 @@ function build(row: Row): ChordType {
     ...(quality !== undefined ? { quality } : {}),
     ...(bar !== null ? { sheet: { bar, symbol: `C${sheetPrint}` } } : {}),
     faces,
+    alsoKnownAs: [],
+    ...(TEACHING_NOTES.has(symbol) ? { teachingNote: TEACHING_NOTES.get(symbol)! } : {}),
   };
   type.cSpelling = spellIntervals("C", ivs);
   return type;
@@ -264,6 +278,14 @@ export const CHORD_TYPES: readonly ChordType[] = ROWS.map(build);
 
 const BY_ID = new Map(CHORD_TYPES.map((t) => [t.id, t]));
 
+// Twins: the same intervals as another type (ø7 and m7(b5)).
+const intervalKey = (t: ChordType) => t.intervals.map((iv) => parseInterval(iv).semitones).join(",");
+for (const t of CHORD_TYPES) {
+  t.alsoKnownAs.push(
+    ...CHORD_TYPES.filter((o) => o !== t && intervalKey(o) === intervalKey(t)).map((o) => o.id),
+  );
+}
+
 export function chordTypeById(id: string): ChordType | undefined {
   return BY_ID.get(id);
 }
@@ -274,6 +296,19 @@ export function spellChord(root: string, type: ChordType | string): string[] {
   if (!t) throw new Error(`unknown chord type "${String(type)}"`);
   if (!noteParts(root)) throw new Error(`unknown root "${root}"`);
   return spellIntervals(root, t.intervals);
+}
+
+/**
+ * Root-position note names for a chord symbol, from the catalogue: the one
+ * spelling authority for the cards, the player and the site. A slash chord
+ * puts its bass first: "D7/C" -> ["C", "D", "F#", "A", "C"]. Throws, naming the
+ * chord, on anything the catalogue does not hold.
+ */
+export function chordSpelling(symbol: string): string[] {
+  const p = parseChordSymbol(symbol);
+  if (!p) throw new Error(`unsupported chord "${symbol}": not in the chord catalogue`);
+  const upper = spellChord(p.root, p.type);
+  return p.bass ? [p.bass, ...upper] : upper;
 }
 
 // ── Parsing ─────────────────────────────────────────────────────────────────

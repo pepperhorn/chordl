@@ -12,7 +12,8 @@
  */
 
 import { INSTRUMENTS, lookupTop3Chord } from "@pepperhorn/chordl-guitar";
-import { computeKeyboard, resolveChord } from "@pepperhorn/chordl-core";
+import { computeKeyboard } from "@pepperhorn/chordl-core";
+import { chordSpelling } from "./catalogue";
 import { keyCentresFor, keyboardWindow } from "./keyboard-window";
 import { handsWindow } from "./hands";
 import { familyOf, toneColor, type Theme } from "./theme";
@@ -119,7 +120,7 @@ export function sharpPitchClasses(chord: string): string[] {
  */
 export function chordNotes(chord: string): string[] {
   sharpPitchClasses(chord); // validates root + quality; throws "unsupported ..." otherwise
-  return resolveChord(chord).notes;
+  return chordSpelling(chord);
 }
 
 /**
