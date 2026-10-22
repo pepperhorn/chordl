@@ -2,9 +2,11 @@
  * The chord catalogue from "Common Chord Spellings" (PepperHorn.org, PH 1.0),
  * as listed in chordcards' docs/superpowers/specs/2026-10-22-full-chord-catalogue-design.md.
  *
- * Test-side stand-in: `@pepperhorn/chordl-cards` will own the machine-readable
- * catalogue (`CHORD_TYPES`, `slashChordsForBass`); when it lands, the coverage
- * test should read that instead. Degrees are spelled the way the sheet spells
+ * Test-side stand-in for the generator's unit tests and review sheet:
+ * `@pepperhorn/chordl-cards` owns the machine-readable catalogue (`CHORD_TYPES`,
+ * `slashChordsForBass`), and the coverage survey against it lives there
+ * (chordl-cards/test/catalogue.sweep.test.ts), since this package cannot
+ * depend on chordl-cards. Degrees are spelled the way the sheet spells
  * them for C, then transposed by letter so every root keeps its spelling
  * (G#aug is G# B# D##, not G# C E).
  */
