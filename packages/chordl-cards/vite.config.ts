@@ -45,6 +45,8 @@ export default defineConfig(({ command }) => ({
     },
     rollupOptions: {
       external: isRuntimeDep,
+      // The model is shared by both entries; name its chunk for what it is.
+      output: { chunkFileNames: "shared-[hash].js" },
     },
   },
 }));

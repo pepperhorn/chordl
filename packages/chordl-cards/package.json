@@ -10,10 +10,10 @@
   "type": "module",
   "main": "./dist/chordl-cards.js",
   "module": "./dist/chordl-cards.js",
-  "types": "./dist/index.d.ts",
+  "types": "./dist/chordl-cards.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
+      "types": "./dist/chordl-cards.d.ts",
       "import": "./dist/chordl-cards.js",
       "default": "./dist/chordl-cards.js"
     },
@@ -51,6 +51,8 @@
     "jsdom": "^25.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "smplr": "^0.18.1",
+    "soundfont2": "^0.5.0",
     "typescript": "^5.7.0",
     "vite": "^6.0.0",
     "vite-plugin-dts": "^4.3.0",
