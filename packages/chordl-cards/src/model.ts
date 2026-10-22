@@ -53,3 +53,6 @@ export type { SlashChord, SlashInterval } from "./slash";
 
 export { slugFor, rootSlug } from "./slug";
 export type { SlugInput } from "./slug";
+
+export { inversionsFor, figuredBassFor, ordinal } from "./inversions";
+export type { ChordInversion, InversionOptions } from "./inversions";
