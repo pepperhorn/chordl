@@ -122,6 +122,15 @@ describe("ChordCardPlayer — keyboard-hands", () => {
     expect(screen.getByRole("button", { name: /l\.h\. then r\.h\./i }).className).toContain("btn-play-hands");
   });
 
+  it("sets every note name on one baseline, like the printed card", () => {
+    // chordl-react staggers sharps above naturals by default; F#, A and E
+    // stepped up and down under the keys (v9 F#m7 review).
+    const { container } = render(<ChordCardPlayer chord="F#m7" face="keyboard-hands" theme={THEME} />);
+    const tops = [...container.querySelectorAll<HTMLElement>(".bc-annotation-cell")].map((c) => c.style.top);
+    expect(tops).toHaveLength(3);
+    expect(new Set(tops)).toEqual(new Set(["0px"]));
+  });
+
   it("plays the bass, then the right-hand pair", async () => {
     render(<ChordCardPlayer chord="C7" face="keyboard-hands" theme={THEME} />);
     fireEvent.change(screen.getByRole("slider", { name: /tempo/i }), { target: { value: "300" } });

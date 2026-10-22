@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import {
-  accidentalGlyphs, glyphPathData, spokenChordSymbol, tokenizeChordSymbol, type AccidentalWeight,
+  ACCIDENTAL_METRICS, RAISED_SCALE, accidentalGlyphs, glyphBounds, glyphPathData, spokenChordSymbol,
+  tokenizeChordSymbol, type AccidentalWeight,
 } from "./accidentals";
 
 export interface ChordTextProps {
@@ -10,6 +11,11 @@ export interface ChordTextProps {
   weight?: AccidentalWeight;
   /** What a screen reader says. Defaults to the symbol with its accidentals as words ("E flat"). */
   label?: string;
+  /**
+   * "full" (default): letter-sized on the baseline. "raised": the chord-chart
+   * convention the print title can use — RAISED_SCALE, hung from cap height.
+   */
+  accidentals?: "full" | "raised";
   className?: string;
   style?: CSSProperties;
 }
@@ -30,23 +36,31 @@ const SR_ONLY: CSSProperties = {
  * assistive tech; a visually-hidden twin carries the words ("E flat") so a
  * screen reader never reads "Eb" as "e b".
  */
-export function ChordText({ text, weight = 600, label, className, style }: ChordTextProps) {
+export function ChordText({ text, weight = 600, label, accidentals = "full", className, style }: ChordTextProps) {
   const tokens = tokenizeChordSymbol(text);
+  const s = accidentals === "raised" ? RAISED_SCALE : 1;
   return (
-    <span className={`chord-text ${className ?? ""}`.trim()} style={{ position: "relative", whiteSpace: "nowrap", ...style }}>
+    <span
+      className={`chord-text ${className ?? ""}`.trim()}
+      data-accidentals={accidentals}
+      style={{ position: "relative", whiteSpace: "nowrap", ...style }}
+    >
       <span className="chord-text-visual" aria-hidden="true">
         {tokens.map((t, i) => {
           if (t.kind === "text") return t.text;
           const g = accidentalGlyphs[weight][t.kind];
+          // Raised: the glyph's baseline lifts so its top meets cap height. A
+          // stroke set in the glyph's user units shrinks with it, as on the card.
+          const lift = s === 1 ? 0 : ACCIDENTAL_METRICS.capHeight[weight] - glyphBounds(g).yMax * s;
           return (
             <svg
               key={i}
               className={`chord-accidental chord-accidental-${t.kind}`}
               viewBox={`0 ${-ASC} ${g.advance} ${ASC + DESC}`}
               style={{
-                width: `${g.advance / 1000}em`,
-                height: `${(ASC + DESC) / 1000}em`,
-                verticalAlign: `${-DESC / 1000}em`,
+                width: `${(g.advance * s) / 1000}em`,
+                height: `${((ASC + DESC) * s) / 1000}em`,
+                verticalAlign: `${(lift - DESC * s) / 1000}em`,
                 overflow: "visible",
                 display: "inline",
               }}

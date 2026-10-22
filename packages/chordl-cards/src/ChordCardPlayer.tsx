@@ -329,6 +329,9 @@ function KeyboardDiagram({ req, chord, face, active, highlight }: {
       showNoteNames
       displayNoteNames={faceNoteNames(chord, face)}
       renderNoteName={renderNoteName}
+      // One baseline under the keys, as print sets them: chordl-react's
+      // default lifts sharps and flats a row above the naturals.
+      staggerNoteNames={false}
       uiTheme="light"
       scale={1}
       activePlaybackIndices={active}
