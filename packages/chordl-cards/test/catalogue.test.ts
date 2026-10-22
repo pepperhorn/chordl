@@ -2,8 +2,10 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
-  CHORD_TYPES, ROOTS, SHEET_ERRATA, chordTypeById, parseChordSymbol, spellChord,
+  CHORD_TYPES, ROOTS, SHEET_ERRATA, chordTypeById, parseChordSymbol, simplifyDoubleAccidental,
+  spellChord, spellChordStrict, teachingNoteFor,
 } from "../src/catalogue";
+import { slashChordsForBass } from "../src/slash";
 import { qualityLabelFor } from "../src/names";
 import { explodedVoicing } from "../src/hands";
 import { requestFor } from "../src/faces";
@@ -233,12 +235,12 @@ describe("parseChordSymbol", () => {
 
 describe("spellChord", () => {
   const NAME = /^[A-G](bb|b|##|#)?$/;
-  it("spells every type on every root with letters stepwise, at most double accidentals", () => {
+  it("strictly, spells every type on every root with letters stepwise, at most double accidentals", () => {
     let doubles = 0;
     const doubleChords: string[] = [];
     for (const root of ROOTS) {
       for (const t of CHORD_TYPES) {
-        const notes = spellChord(root, t);
+        const notes = spellChordStrict(root, t);
         expect(notes).toHaveLength(t.intervals.length);
         for (const n of notes) expect(n, `${root}${t.symbol}`).toMatch(NAME);
         const d = notes.filter((n) => /bb|##/.test(n)).length;
@@ -254,13 +256,61 @@ describe("spellChord", () => {
     `);
   });
 
-  it("uses the interval's letter and accidental", () => {
-    expect(spellChord("C", "dim7")).toEqual(["C", "Eb", "Gb", "A"]);
-    expect(spellChord("Db", "dim7")).toEqual(["Db", "Fb", "Abb", "Bb"]);
-    expect(spellChord("G#", "aug")).toEqual(["G#", "B#", "D##"]);
-    expect(spellChord("F#", "7-sharp9")).toEqual(["F#", "A#", "C#", "E", "G##"]);
-    expect(spellChord("Gb", "m")).toEqual(["Gb", "Bbb", "Db"]);
-    expect(spellChord("Bb", "13-sharp11")).toEqual(["Bb", "D", "F", "Ab", "C", "E", "G"]);
+  it("strictly, uses the interval's letter and accidental", () => {
+    expect(spellChordStrict("C", "dim7")).toEqual(["C", "Eb", "Gb", "A"]);
+    expect(spellChordStrict("Db", "dim7")).toEqual(["Db", "Fb", "Abb", "Bb"]);
+    expect(spellChordStrict("G#", "aug")).toEqual(["G#", "B#", "D##"]);
+    expect(spellChordStrict("F#", "7-sharp9")).toEqual(["F#", "A#", "C#", "E", "G##"]);
+    expect(spellChordStrict("Gb", "m")).toEqual(["Gb", "Bbb", "Db"]);
+    expect(spellChordStrict("Bb", "13-sharp11")).toEqual(["Bb", "D", "F", "Ab", "C", "E", "G"]);
+  });
+
+  it("prints double accidentals simplified, and nothing else", () => {
+    expect(spellChord("Db", "dim7")).toEqual(["Db", "Fb", "G", "Bb"]);
+    expect(spellChord("G#", "aug")).toEqual(["G#", "B#", "E"]);
+    expect(spellChord("C#", "aug")).toEqual(["C#", "E#", "A"]);
+    expect(spellChord("F#", "7-sharp9")).toEqual(["F#", "A#", "C#", "E", "A"]);
+    expect(spellChord("Gb", "m")).toEqual(["Gb", "A", "Db"]);
+    // Single accidentals stay as the theory spells them.
+    expect(spellChord("C#", "maj")).toEqual(["C#", "E#", "G#"]);
+    expect(spellChord("Ab", "m")).toEqual(["Ab", "Cb", "Eb"]);
+    expect(["G##", "C##", "F##", "Bbb", "Ebb", "Abb", "Cbb", "Fbb", "E##", "B##", "C#", "Cb"]
+      .map(simplifyDoubleAccidental)).toEqual(["A", "D", "G", "A", "D", "G", "Bb", "Eb", "F#", "C#", "C#", "Cb"]);
+    for (const root of ROOTS) {
+      for (const t of CHORD_TYPES) {
+        const printed = spellChord(root, t);
+        const strict = spellChordStrict(root, t);
+        for (const [i, n] of printed.entries()) {
+          expect(n, `${root}${t.symbol}`).toMatch(/^[A-G][#b]?$/);
+          if (!/bb|##/.test(strict[i])) expect(n).toBe(strict[i]);
+        }
+      }
+    }
+  });
+
+  it("writes a teaching note for every chord whose printed spelling was simplified", () => {
+    expect(teachingNoteFor("C#aug")).toBe(
+      "C#aug: the top note is strictly G𝄪 (G double-sharp); it sounds as A, so we write A.",
+    );
+    expect(teachingNoteFor("Gbm")).toBe(
+      "Gbm: the third is strictly B𝄫 (B double-flat); it sounds as A, so we write A.",
+    );
+    expect(teachingNoteFor("C#")).toBeUndefined();
+    let chords = 0;
+    for (const root of ROOTS) {
+      for (const t of CHORD_TYPES) {
+        const simplified = spellChord(root, t).join() !== spellChordStrict(root, t).join();
+        expect(teachingNoteFor(root + t.symbol) !== undefined, root + t.symbol).toBe(simplified);
+        if (simplified) chords++;
+      }
+    }
+    const slash = ROOTS.flatMap((b) => slashChordsForBass(b)).filter((c) => teachingNoteFor(c.symbol)).length;
+    expect({ chords, slash }).toMatchInlineSnapshot(`
+      {
+        "chords": 272,
+        "slash": 176,
+      }
+    `);
   });
 
   it("throws on an unknown type or root", () => {

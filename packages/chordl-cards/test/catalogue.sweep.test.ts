@@ -105,7 +105,7 @@ describe("catalogue sweep: six-string guitar", () => {
       }
       if (req.kind !== "guitar") throw new Error("expected guitar");
       // The face's position is the generator's and it spells the chord.
-      const s = spelledChord(chord);
+      const s = spelledChord(chord, { strict: true });
       const bass = s.bass && s.bass !== s.root ? s.bass : undefined;
       const pos = guitarPositionFor(s)!;
       expect(positionSpellsChord(pos, analyzeChordTones(s.root, s.pitchClasses, bass)), chord).toBe(true);

@@ -37,7 +37,7 @@ describe("guitar face (six strings)", () => {
 
   it("sounds exactly the position's strings, low to high", () => {
     for (const chord of ["C", "F#m7", "Bb13", "C7(b9,#5)", "Abmaj7/C", "E5"]) {
-      const p = spelledChord(chord);
+      const p = spelledChord(chord, { strict: true });
       const pos = guitarPositionFor(p)!;
       expect(playbackFor(guitar(chord)).notes, chord).toEqual(positionToMidi(pos, INSTRUMENTS.guitar.openMidi));
     }
@@ -73,9 +73,11 @@ describe("plain keyboard face, whole catalogue", () => {
     expect(playbackFor(req).notes).toEqual([48, 50, 54, 57, 60]);
   });
 
-  it("labels with the catalogue's spelling, double accidentals and the dim7 6th included", () => {
-    expect(faceNoteNames("Gbdim7", "keyboard")).toEqual(["Gb", "Bbb", "Dbb", "Eb"]);
-    expect(faceNoteNames("Ebdim7", "keyboard")).toEqual(["Eb", "Gb", "Bbb", "C"]);
+  it("labels with the catalogue's printed spelling: doubles simplified, the dim7 6th kept", () => {
+    // Double accidentals are printed simplified (Bbb -> A, Dbb -> C).
+    expect(faceNoteNames("Gbdim7", "keyboard")).toEqual(["Gb", "A", "C", "Eb"]);
+    expect(faceNoteNames("Ebdim7", "keyboard")).toEqual(["Eb", "Gb", "A", "C"]);
+    expect(faceNoteNames("C#", "keyboard")).toEqual(["C#", "E#", "G#"]);
     expect(keyboard("G#aug").notes.map((n) => n.split(":")[0])).toEqual(["G#", "C", "E"]);
   });
 });

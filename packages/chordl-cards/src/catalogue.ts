@@ -290,8 +290,13 @@ export function chordTypeById(id: string): ChordType | undefined {
   return BY_ID.get(id);
 }
 
-/** Spell a chord on any root by its intervals (letters stepwise). */
-export function spellChord(root: string, type: ChordType | string): string[] {
+/**
+ * The strict spelling of a chord on any root: letters stepwise, accidentals
+ * from the intervals, double accidentals where the theory demands (G#aug =
+ * G# B# D##). Kept for analysis and for teaching notes; what is printed or
+ * shown is `spellChord`.
+ */
+export function spellChordStrict(root: string, type: ChordType | string): string[] {
   const t = typeof type === "string" ? chordTypeById(type) : type;
   if (!t) throw new Error(`unknown chord type "${String(type)}"`);
   if (!noteParts(root)) throw new Error(`unknown root "${root}"`);
@@ -299,22 +304,89 @@ export function spellChord(root: string, type: ChordType | string): string[] {
 }
 
 /**
- * Root-position note names for a chord symbol, from the catalogue: the one
- * spelling authority for the cards, the player and the site. A slash chord
- * puts its bass first: "D7/C" -> ["C", "D", "F#", "A", "C"]. Throws, naming the
- * chord, on anything the catalogue does not hold.
+ * The enharmonic of a double-accidental note with at most one accidental:
+ * the natural where there is one (G## -> A, Bbb -> A), else the single
+ * accidental in the same direction (Cbb -> Bb, E## -> F#). Any other name is
+ * returned as it is.
  */
-export function chordSpelling(symbol: string): string[] {
-  const s = spelledChord(symbol);
+export function simplifyDoubleAccidental(name: string): string {
+  const n = noteParts(name);
+  if (!n || Math.abs(n.accidental) < 2) return name;
+  const natural = LETTER_PC.indexOf(n.pc);
+  if (natural >= 0) return LETTERS[natural];
+  const sign = Math.sign(n.accidental);
+  const letter = LETTER_PC.indexOf((n.pc - sign + 12) % 12);
+  return LETTERS[letter] + (sign > 0 ? "#" : "b");
+}
+
+/**
+ * A chord's printed spelling on any root: the strict spelling with double
+ * accidentals simplified (user decision, 2026-10-22: "most pop and rock
+ * musicians do not understand double flat"). Single accidentals stay as the
+ * theory spells them: C# is C# E# G#, Abm is Ab Cb Eb. `teachingNoteFor` says
+ * what was simplified.
+ */
+export function spellChord(root: string, type: ChordType | string): string[] {
+  return spellChordStrict(root, type).map(simplifyDoubleAccidental);
+}
+
+const DEGREE_WORDS = new Map([
+  [2, "second"], [3, "third"], [4, "fourth"], [5, "fifth"], [6, "sixth"], [7, "seventh"],
+  [9, "ninth"], [11, "eleventh"], [13, "thirteenth"],
+]);
+const accidentalGlyph = (n: string) => n.replace(/##$/, "𝄪").replace(/bb$/, "𝄫");
+const accidentalWords = (n: string) =>
+  `${n[0]} ${n.endsWith("##") ? "double-sharp" : "double-flat"}`;
+
+/**
+ * Why a chord's printed spelling differs from its strict one, or undefined when
+ * it does not: "C#aug: the top note is strictly G𝄪 (G double-sharp); it sounds
+ * as A, so we write A." A slash chord's upper chord is explained (its bass is a
+ * root, never a double accidental).
+ */
+export function teachingNoteFor(symbol: string): string | undefined {
+  const p = parseChordSymbol(symbol);
+  if (!p) return undefined;
+  const strict = spellChordStrict(p.root, p.type);
+  const sentences: string[] = [];
+  strict.forEach((note, i) => {
+    const printed = simplifyDoubleAccidental(note);
+    if (printed === note) return;
+    const where = i === strict.length - 1
+      ? "the top note"
+      : `the ${DEGREE_WORDS.get(Number(/\d+/.exec(p.type.intervals[i])![0])) ?? "note"}`;
+    sentences.push(
+      `${where} is strictly ${accidentalGlyph(note)} (${accidentalWords(note)}); ` +
+        `it sounds as ${printed}, so we write ${printed}.`,
+    );
+  });
+  if (!sentences.length) return undefined;
+  return `${symbol}: ${sentences.join(" Also, ")}`;
+}
+
+/**
+ * Root-position note names for a chord symbol, from the catalogue: the one
+ * spelling authority for the cards, the player and the site. Printed spelling
+ * by default (double accidentals simplified); `{ strict: true }` keeps them. A
+ * slash chord puts its bass first: "D7/C" -> ["C", "D", "F#", "A", "C"].
+ * Throws, naming the chord, on anything the catalogue does not hold.
+ */
+export function chordSpelling(symbol: string, options: { strict?: boolean } = {}): string[] {
+  const s = spelledChord(symbol, options);
   return s.bass ? [s.bass, ...s.pitchClasses] : s.pitchClasses;
 }
 
 /** A chord symbol spelled: { root, pitchClasses (the upper chord, root first), bass? }.
- * The shape chordl-guitar's `guitarPositionFor` takes. */
-export function spelledChord(symbol: string): { root: string; pitchClasses: string[]; bass?: string } {
+ * The printed spelling by default; `{ strict: true }` keeps double accidentals,
+ * which is what chordl-guitar's `guitarPositionFor` wants (its letters decide
+ * degrees). */
+export function spelledChord(
+  symbol: string,
+  { strict = false }: { strict?: boolean } = {},
+): { root: string; pitchClasses: string[]; bass?: string } {
   const p = parseChordSymbol(symbol);
   if (!p) throw new Error(`unsupported chord "${symbol}": not in the chord catalogue`);
-  const pitchClasses = spellChord(p.root, p.type);
+  const pitchClasses = (strict ? spellChordStrict : spellChord)(p.root, p.type);
   return p.bass ? { root: p.root, pitchClasses, bass: p.bass } : { root: p.root, pitchClasses };
 }
 

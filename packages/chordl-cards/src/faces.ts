@@ -159,7 +159,7 @@ export function requestFor(chord: string, face: CardFace, theme: Theme): FaceReq
 
   if (face === "guitar") {
     const instrument = "guitar" as const;
-    const spelled = spelledChord(chord);
+    const spelled = spelledChord(chord, { strict: true });
     const pos = guitarPositionFor(spelled);
     if (!pos) {
       throw new Error(
