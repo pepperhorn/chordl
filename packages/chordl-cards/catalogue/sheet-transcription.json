@@ -1,0 +1,1815 @@
+{
+ "source": "Common Chord Spellings, PepperHorn.org, PH Ver. 1.0 (2 pages, 89 bars)",
+ "method": "Rasterised at 300 dpi (pdftoppm). Note positions from notehead holes (staff lines removed), accidentals and symbols read by eye per bar; see review/contact-sheet-*.png.",
+ "conventions": "symbol is as printed: stacked alterations read top to bottom and joined with \"/\"; ♭/♯ as printed. spelling is low to high; pitches add the written octave (C4 = middle C).",
+ "entries": [
+  {
+   "bar": 1,
+   "page": 1,
+   "symbol": "C",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "E",
+    "G"
+   ],
+   "pitches": [
+    "C4",
+    "E4",
+    "G4"
+   ]
+  },
+  {
+   "bar": 2,
+   "page": 1,
+   "symbol": "C+",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "E",
+    "G#"
+   ],
+   "pitches": [
+    "C4",
+    "E4",
+    "G#4"
+   ]
+  },
+  {
+   "bar": 3,
+   "page": 1,
+   "symbol": "C°",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "Eb",
+    "Gb",
+    "A"
+   ],
+   "pitches": [
+    "C4",
+    "Eb4",
+    "Gb4",
+    "A4"
+   ],
+   "note": "A is written A, not B double-flat: the sheet spells the diminished seventh with a major sixth."
+  },
+  {
+   "bar": 4,
+   "page": 1,
+   "symbol": "C6",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "E",
+    "G",
+    "A"
+   ],
+   "pitches": [
+    "C4",
+    "E4",
+    "G4",
+    "A4"
+   ]
+  },
+  {
+   "bar": 5,
+   "page": 1,
+   "symbol": "Cø7",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "Eb",
+    "Gb",
+    "Bb"
+   ],
+   "pitches": [
+    "C4",
+    "Eb4",
+    "Gb4",
+    "Bb4"
+   ]
+  },
+  {
+   "bar": 6,
+   "page": 1,
+   "symbol": "C7",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "E",
+    "G",
+    "Bb"
+   ],
+   "pitches": [
+    "C4",
+    "E4",
+    "G4",
+    "Bb4"
+   ]
+  },
+  {
+   "bar": 7,
+   "page": 1,
+   "symbol": "C7(omit3)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "G",
+    "Bb"
+   ],
+   "pitches": [
+    "C4",
+    "G4",
+    "Bb4"
+   ]
+  },
+  {
+   "bar": 8,
+   "page": 1,
+   "symbol": "C7(♭5)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "E",
+    "Gb",
+    "Bb"
+   ],
+   "pitches": [
+    "C4",
+    "E4",
+    "Gb4",
+    "Bb4"
+   ]
+  },
+  {
+   "bar": 9,
+   "page": 1,
+   "symbol": "C7(♯5)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "E",
+    "G#",
+    "Bb"
+   ],
+   "pitches": [
+    "C4",
+    "E4",
+    "G#4",
+    "Bb4"
+   ]
+  },
+  {
+   "bar": 10,
+   "page": 1,
+   "symbol": "C(add9)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "E",
+    "G",
+    "D"
+   ],
+   "pitches": [
+    "C4",
+    "E4",
+    "G4",
+    "D5"
+   ],
+   "note": "Bracketed (cautionary) natural before the chord; no pitch is altered."
+  },
+  {
+   "bar": 11,
+   "page": 1,
+   "symbol": "C6/9",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "E",
+    "G",
+    "A",
+    "D"
+   ],
+   "pitches": [
+    "C4",
+    "E4",
+    "G4",
+    "A4",
+    "D5"
+   ]
+  },
+  {
+   "bar": 12,
+   "page": 1,
+   "symbol": "C9",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "E",
+    "G",
+    "Bb",
+    "D"
+   ],
+   "pitches": [
+    "C4",
+    "E4",
+    "G4",
+    "Bb4",
+    "D5"
+   ]
+  },
+  {
+   "bar": 13,
+   "page": 1,
+   "symbol": "C9(♭5)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "E",
+    "Gb",
+    "Bb",
+    "D"
+   ],
+   "pitches": [
+    "C4",
+    "E4",
+    "Gb4",
+    "Bb4",
+    "D5"
+   ]
+  },
+  {
+   "bar": 14,
+   "page": 1,
+   "symbol": "C9(♯5)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "E",
+    "G#",
+    "Bb",
+    "D"
+   ],
+   "pitches": [
+    "C4",
+    "E4",
+    "G#4",
+    "Bb4",
+    "D5"
+   ]
+  },
+  {
+   "bar": 15,
+   "page": 1,
+   "symbol": "C7(♭9)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "E",
+    "G",
+    "Bb",
+    "Db"
+   ],
+   "pitches": [
+    "C4",
+    "E4",
+    "G4",
+    "Bb4",
+    "Db5"
+   ]
+  },
+  {
+   "bar": 16,
+   "page": 1,
+   "symbol": "C7(♭9/♭5)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "E",
+    "Gb",
+    "Bb",
+    "Db"
+   ],
+   "pitches": [
+    "C4",
+    "E4",
+    "Gb4",
+    "Bb4",
+    "Db5"
+   ]
+  },
+  {
+   "bar": 17,
+   "page": 1,
+   "symbol": "C7(♭9/♯5)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "E",
+    "G#",
+    "Bb",
+    "Db"
+   ],
+   "pitches": [
+    "C4",
+    "E4",
+    "G#4",
+    "Bb4",
+    "Db5"
+   ]
+  },
+  {
+   "bar": 18,
+   "page": 1,
+   "symbol": "C7(♯9)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "E",
+    "G",
+    "Bb",
+    "D#"
+   ],
+   "pitches": [
+    "C4",
+    "E4",
+    "G4",
+    "Bb4",
+    "D#5"
+   ]
+  },
+  {
+   "bar": 19,
+   "page": 1,
+   "symbol": "C7(♯9/♭5)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "E",
+    "Gb",
+    "Bb",
+    "D#"
+   ],
+   "pitches": [
+    "C4",
+    "E4",
+    "Gb4",
+    "Bb4",
+    "D#5"
+   ]
+  },
+  {
+   "bar": 20,
+   "page": 1,
+   "symbol": "C7(♯9/♯5)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "E",
+    "G#",
+    "Bb",
+    "D#"
+   ],
+   "pitches": [
+    "C4",
+    "E4",
+    "G#4",
+    "Bb4",
+    "D#5"
+   ]
+  },
+  {
+   "bar": 21,
+   "page": 1,
+   "symbol": "C9(♯11)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "E",
+    "G",
+    "Bb",
+    "D",
+    "F#"
+   ],
+   "pitches": [
+    "C4",
+    "E4",
+    "G4",
+    "Bb4",
+    "D5",
+    "F#5"
+   ]
+  },
+  {
+   "bar": 22,
+   "page": 1,
+   "symbol": "C9(♯11/♯5)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "E",
+    "G#",
+    "Bb",
+    "D",
+    "F#"
+   ],
+   "pitches": [
+    "C4",
+    "E4",
+    "G#4",
+    "Bb4",
+    "D5",
+    "F#5"
+   ]
+  },
+  {
+   "bar": 23,
+   "page": 1,
+   "symbol": "C7(♯11/♭9)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "E",
+    "G",
+    "Bb",
+    "Db",
+    "F#"
+   ],
+   "pitches": [
+    "C4",
+    "E4",
+    "G4",
+    "Bb4",
+    "Db5",
+    "F#5"
+   ]
+  },
+  {
+   "bar": 24,
+   "page": 1,
+   "symbol": "C7(♯11/♭9/♯5)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "E",
+    "G#",
+    "Bb",
+    "Db",
+    "F#"
+   ],
+   "pitches": [
+    "C4",
+    "E4",
+    "G#4",
+    "Bb4",
+    "Db5",
+    "F#5"
+   ]
+  },
+  {
+   "bar": 25,
+   "page": 1,
+   "symbol": "C7(♯11/♯9)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "E",
+    "G",
+    "Bb",
+    "D#",
+    "F#"
+   ],
+   "pitches": [
+    "C4",
+    "E4",
+    "G4",
+    "Bb4",
+    "D#5",
+    "F#5"
+   ]
+  },
+  {
+   "bar": 26,
+   "page": 1,
+   "symbol": "C7(♯11/♯9/♯5)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "E",
+    "G#",
+    "Bb",
+    "D#",
+    "F#"
+   ],
+   "pitches": [
+    "C4",
+    "E4",
+    "G#4",
+    "Bb4",
+    "D#5",
+    "F#5"
+   ]
+  },
+  {
+   "bar": 27,
+   "page": 1,
+   "symbol": "C13",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "E",
+    "G",
+    "Bb",
+    "D",
+    "A"
+   ],
+   "pitches": [
+    "C4",
+    "E4",
+    "G4",
+    "Bb4",
+    "D5",
+    "A5"
+   ],
+   "note": "No 11th: C13 is C E G Bb D A (the 13ths with a natural 11 are maj13 and m13 only)."
+  },
+  {
+   "bar": 28,
+   "page": 1,
+   "symbol": "C13(♭5)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "E",
+    "Gb",
+    "Bb",
+    "D",
+    "A"
+   ],
+   "pitches": [
+    "C4",
+    "E4",
+    "Gb4",
+    "Bb4",
+    "D5",
+    "A5"
+   ]
+  },
+  {
+   "bar": 29,
+   "page": 1,
+   "symbol": "C13(♯5)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "E",
+    "G#",
+    "Bb",
+    "D",
+    "A"
+   ],
+   "pitches": [
+    "C4",
+    "E4",
+    "G#4",
+    "Bb4",
+    "D5",
+    "A5"
+   ]
+  },
+  {
+   "bar": 30,
+   "page": 1,
+   "symbol": "C13(♭9)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "E",
+    "G",
+    "Bb",
+    "Db",
+    "A"
+   ],
+   "pitches": [
+    "C4",
+    "E4",
+    "G4",
+    "Bb4",
+    "Db5",
+    "A5"
+   ]
+  },
+  {
+   "bar": 31,
+   "page": 1,
+   "symbol": "C13(♭9/♭5)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "E",
+    "Gb",
+    "Bb",
+    "Db",
+    "A"
+   ],
+   "pitches": [
+    "C4",
+    "E4",
+    "Gb4",
+    "Bb4",
+    "Db5",
+    "A5"
+   ]
+  },
+  {
+   "bar": 32,
+   "page": 1,
+   "symbol": "C13(♭9/♯5)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "E",
+    "G#",
+    "Bb",
+    "Db",
+    "A"
+   ],
+   "pitches": [
+    "C4",
+    "E4",
+    "G#4",
+    "Bb4",
+    "Db5",
+    "A5"
+   ]
+  },
+  {
+   "bar": 33,
+   "page": 1,
+   "symbol": "C13(♯9)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "E",
+    "G",
+    "Bb",
+    "D#",
+    "A"
+   ],
+   "pitches": [
+    "C4",
+    "E4",
+    "G4",
+    "Bb4",
+    "D#5",
+    "A5"
+   ]
+  },
+  {
+   "bar": 34,
+   "page": 1,
+   "symbol": "C13(♯9/♭5)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "E",
+    "Gb",
+    "Bb",
+    "D#",
+    "A"
+   ],
+   "pitches": [
+    "C4",
+    "E4",
+    "Gb4",
+    "Bb4",
+    "D#5",
+    "A5"
+   ]
+  },
+  {
+   "bar": 35,
+   "page": 1,
+   "symbol": "C13(♯9/♯5)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "E",
+    "G#",
+    "Bb",
+    "D#",
+    "A"
+   ],
+   "pitches": [
+    "C4",
+    "E4",
+    "G#4",
+    "Bb4",
+    "D#5",
+    "A5"
+   ]
+  },
+  {
+   "bar": 36,
+   "page": 1,
+   "symbol": "C13(♯11)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "E",
+    "G",
+    "Bb",
+    "D",
+    "F#",
+    "A"
+   ],
+   "pitches": [
+    "C4",
+    "E4",
+    "G4",
+    "Bb4",
+    "D5",
+    "F#5",
+    "A5"
+   ]
+  },
+  {
+   "bar": 37,
+   "page": 1,
+   "symbol": "C13(♯11/♯5)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "E",
+    "G#",
+    "Bb",
+    "D",
+    "F#",
+    "A"
+   ],
+   "pitches": [
+    "C4",
+    "E4",
+    "G#4",
+    "Bb4",
+    "D5",
+    "F#5",
+    "A5"
+   ]
+  },
+  {
+   "bar": 38,
+   "page": 1,
+   "symbol": "C13(♯11/♭9)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "E",
+    "G",
+    "Bb",
+    "Db",
+    "F#",
+    "A"
+   ],
+   "pitches": [
+    "C4",
+    "E4",
+    "G4",
+    "Bb4",
+    "Db5",
+    "F#5",
+    "A5"
+   ]
+  },
+  {
+   "bar": 39,
+   "page": 1,
+   "symbol": "C13(♯11/♯9)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "E",
+    "G",
+    "Bb",
+    "D#",
+    "F#",
+    "A"
+   ],
+   "pitches": [
+    "C4",
+    "E4",
+    "G4",
+    "Bb4",
+    "D#5",
+    "F#5",
+    "A5"
+   ]
+  },
+  {
+   "bar": 40,
+   "page": 1,
+   "symbol": "Cmaj7",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "E",
+    "G",
+    "B"
+   ],
+   "pitches": [
+    "C4",
+    "E4",
+    "G4",
+    "B4"
+   ],
+   "note": "Bracketed (cautionary) natural before the chord; no pitch is altered."
+  },
+  {
+   "bar": 41,
+   "page": 1,
+   "symbol": "Cmaj7(♭5)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "E",
+    "Gb",
+    "B"
+   ],
+   "pitches": [
+    "C4",
+    "E4",
+    "Gb4",
+    "B4"
+   ]
+  },
+  {
+   "bar": 42,
+   "page": 1,
+   "symbol": "Cmaj7(♯5)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "E",
+    "G#",
+    "B"
+   ],
+   "pitches": [
+    "C4",
+    "E4",
+    "G#4",
+    "B4"
+   ]
+  },
+  {
+   "bar": 43,
+   "page": 1,
+   "symbol": "Cmaj9",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "E",
+    "G",
+    "B",
+    "D"
+   ],
+   "pitches": [
+    "C4",
+    "E4",
+    "G4",
+    "B4",
+    "D5"
+   ]
+  },
+  {
+   "bar": 44,
+   "page": 1,
+   "symbol": "Cmaj9(♭5)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "E",
+    "Gb",
+    "B",
+    "D"
+   ],
+   "pitches": [
+    "C4",
+    "E4",
+    "Gb4",
+    "B4",
+    "D5"
+   ]
+  },
+  {
+   "bar": 45,
+   "page": 1,
+   "symbol": "Cmaj9(♯5)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "E",
+    "G#",
+    "B",
+    "D"
+   ],
+   "pitches": [
+    "C4",
+    "E4",
+    "G#4",
+    "B4",
+    "D5"
+   ]
+  },
+  {
+   "bar": 46,
+   "page": 1,
+   "symbol": "Cmaj7(♭9)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "E",
+    "G",
+    "B",
+    "Db"
+   ],
+   "pitches": [
+    "C4",
+    "E4",
+    "G4",
+    "B4",
+    "Db5"
+   ]
+  },
+  {
+   "bar": 47,
+   "page": 1,
+   "symbol": "Cmaj7(♯9)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "E",
+    "G",
+    "B",
+    "D#"
+   ],
+   "pitches": [
+    "C4",
+    "E4",
+    "G4",
+    "B4",
+    "D#5"
+   ]
+  },
+  {
+   "bar": 48,
+   "page": 1,
+   "symbol": "Cmaj9(♯11)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "E",
+    "G",
+    "B",
+    "D",
+    "F#"
+   ],
+   "pitches": [
+    "C4",
+    "E4",
+    "G4",
+    "B4",
+    "D5",
+    "F#5"
+   ]
+  },
+  {
+   "bar": 49,
+   "page": 1,
+   "symbol": "Cmaj9(♯11/♯5)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "E",
+    "G#",
+    "B",
+    "D",
+    "F#"
+   ],
+   "pitches": [
+    "C4",
+    "E4",
+    "G#4",
+    "B4",
+    "D5",
+    "F#5"
+   ]
+  },
+  {
+   "bar": 50,
+   "page": 1,
+   "symbol": "Cmaj13",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "E",
+    "G",
+    "B",
+    "D",
+    "F",
+    "A"
+   ],
+   "pitches": [
+    "C4",
+    "E4",
+    "G4",
+    "B4",
+    "D5",
+    "F5",
+    "A5"
+   ],
+   "note": "Seven notes: the natural 11 (F) is written."
+  },
+  {
+   "bar": 51,
+   "page": 1,
+   "symbol": "Cmaj13(♯5)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "E",
+    "G#",
+    "B",
+    "D",
+    "F",
+    "A"
+   ],
+   "pitches": [
+    "C4",
+    "E4",
+    "G#4",
+    "B4",
+    "D5",
+    "F5",
+    "A5"
+   ]
+  },
+  {
+   "bar": 52,
+   "page": 1,
+   "symbol": "Cmaj13(♯11)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "E",
+    "G",
+    "B",
+    "D",
+    "F#",
+    "A"
+   ],
+   "pitches": [
+    "C4",
+    "E4",
+    "G4",
+    "B4",
+    "D5",
+    "F#5",
+    "A5"
+   ]
+  },
+  {
+   "bar": 53,
+   "page": 1,
+   "symbol": "Cmaj13(♯11/♯5)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "E",
+    "G#",
+    "B",
+    "D",
+    "F#",
+    "A"
+   ],
+   "pitches": [
+    "C4",
+    "E4",
+    "G#4",
+    "B4",
+    "D5",
+    "F#5",
+    "A5"
+   ]
+  },
+  {
+   "bar": 54,
+   "page": 1,
+   "symbol": "C(sus2)",
+   "aliases": [
+    "C(add2)"
+   ],
+   "spelling": [
+    "C",
+    "D",
+    "G"
+   ],
+   "pitches": [
+    "C4",
+    "D4",
+    "G4"
+   ]
+  },
+  {
+   "bar": 55,
+   "page": 1,
+   "symbol": "C(sus4)",
+   "aliases": [
+    "C(sus)"
+   ],
+   "spelling": [
+    "C",
+    "D",
+    "F"
+   ],
+   "pitches": [
+    "C4",
+    "D4",
+    "F4"
+   ],
+   "note": "ERRATUM? Engraved C D F (D displaced right of C, F in the first space; no G). C(sus4) is C F G; the catalogue corrects it."
+  },
+  {
+   "bar": 56,
+   "page": 1,
+   "symbol": "C5",
+   "aliases": [
+    "C(omit3)"
+   ],
+   "spelling": [
+    "C",
+    "G"
+   ],
+   "pitches": [
+    "C4",
+    "G4"
+   ]
+  },
+  {
+   "bar": 57,
+   "page": 1,
+   "symbol": "C7(sus)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "F",
+    "G",
+    "Bb"
+   ],
+   "pitches": [
+    "C4",
+    "F4",
+    "G4",
+    "Bb4"
+   ]
+  },
+  {
+   "bar": 58,
+   "page": 1,
+   "symbol": "C9(sus)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "F",
+    "G",
+    "Bb",
+    "D"
+   ],
+   "pitches": [
+    "C4",
+    "F4",
+    "G4",
+    "Bb4",
+    "D5"
+   ]
+  },
+  {
+   "bar": 59,
+   "page": 1,
+   "symbol": "C13(sus)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "F",
+    "G",
+    "Bb",
+    "D",
+    "A"
+   ],
+   "pitches": [
+    "C4",
+    "F4",
+    "G4",
+    "Bb4",
+    "D5",
+    "A5"
+   ]
+  },
+  {
+   "bar": 60,
+   "page": 2,
+   "symbol": "Cm",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "Eb",
+    "G"
+   ],
+   "pitches": [
+    "C4",
+    "Eb4",
+    "G4"
+   ]
+  },
+  {
+   "bar": 61,
+   "page": 2,
+   "symbol": "Cm+",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "Eb",
+    "G#"
+   ],
+   "pitches": [
+    "C4",
+    "Eb4",
+    "G#4"
+   ]
+  },
+  {
+   "bar": 62,
+   "page": 2,
+   "symbol": "Cm6",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "Eb",
+    "A"
+   ],
+   "pitches": [
+    "C4",
+    "Eb4",
+    "A4"
+   ],
+   "note": "ERRATUM? Engraved C Eb A with no G (the G line shows between Eb and A). C6 on page 1 keeps its G; the catalogue keeps the 5th."
+  },
+  {
+   "bar": 63,
+   "page": 2,
+   "symbol": "Cm7",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "Eb",
+    "G",
+    "Bb"
+   ],
+   "pitches": [
+    "C4",
+    "Eb4",
+    "G4",
+    "Bb4"
+   ]
+  },
+  {
+   "bar": 64,
+   "page": 2,
+   "symbol": "Cm7(♭5)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "Eb",
+    "Gb",
+    "Bb"
+   ],
+   "pitches": [
+    "C4",
+    "Eb4",
+    "Gb4",
+    "Bb4"
+   ]
+  },
+  {
+   "bar": 65,
+   "page": 2,
+   "symbol": "Cm7(♯5)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "Eb",
+    "G#",
+    "Bb"
+   ],
+   "pitches": [
+    "C4",
+    "Eb4",
+    "G#4",
+    "Bb4"
+   ]
+  },
+  {
+   "bar": 66,
+   "page": 2,
+   "symbol": "Cm(add9)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "Eb",
+    "G",
+    "D"
+   ],
+   "pitches": [
+    "C4",
+    "Eb4",
+    "G4",
+    "D5"
+   ]
+  },
+  {
+   "bar": 67,
+   "page": 2,
+   "symbol": "Cm6/9",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "Eb",
+    "G",
+    "A",
+    "D"
+   ],
+   "pitches": [
+    "C4",
+    "Eb4",
+    "G4",
+    "A4",
+    "D5"
+   ]
+  },
+  {
+   "bar": 68,
+   "page": 2,
+   "symbol": "Cm9",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "Eb",
+    "G",
+    "Bb",
+    "D"
+   ],
+   "pitches": [
+    "C4",
+    "Eb4",
+    "G4",
+    "Bb4",
+    "D5"
+   ]
+  },
+  {
+   "bar": 69,
+   "page": 2,
+   "symbol": "Cm9(♭5)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "Eb",
+    "Gb",
+    "Bb",
+    "D"
+   ],
+   "pitches": [
+    "C4",
+    "Eb4",
+    "Gb4",
+    "Bb4",
+    "D5"
+   ]
+  },
+  {
+   "bar": 70,
+   "page": 2,
+   "symbol": "Cm9(♯5)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "Eb",
+    "G#",
+    "Bb",
+    "D"
+   ],
+   "pitches": [
+    "C4",
+    "Eb4",
+    "G#4",
+    "Bb4",
+    "D5"
+   ]
+  },
+  {
+   "bar": 71,
+   "page": 2,
+   "symbol": "Cm7(♭9)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "Eb",
+    "G",
+    "Bb",
+    "Db"
+   ],
+   "pitches": [
+    "C4",
+    "Eb4",
+    "G4",
+    "Bb4",
+    "Db5"
+   ]
+  },
+  {
+   "bar": 72,
+   "page": 2,
+   "symbol": "Cm7(add11)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "Eb",
+    "G",
+    "Bb",
+    "F"
+   ],
+   "pitches": [
+    "C4",
+    "Eb4",
+    "G4",
+    "Bb4",
+    "F5"
+   ],
+   "note": "No 9th: C Eb G Bb F."
+  },
+  {
+   "bar": 73,
+   "page": 2,
+   "symbol": "Cm11",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "Eb",
+    "G",
+    "Bb",
+    "D",
+    "F"
+   ],
+   "pitches": [
+    "C4",
+    "Eb4",
+    "G4",
+    "Bb4",
+    "D5",
+    "F5"
+   ]
+  },
+  {
+   "bar": 74,
+   "page": 2,
+   "symbol": "Cm11(♭5)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "Eb",
+    "Gb",
+    "Bb",
+    "D",
+    "F"
+   ],
+   "pitches": [
+    "C4",
+    "Eb4",
+    "Gb4",
+    "Bb4",
+    "D5",
+    "F5"
+   ]
+  },
+  {
+   "bar": 75,
+   "page": 2,
+   "symbol": "Cm9(♯11)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "Eb",
+    "G",
+    "Bb",
+    "D",
+    "F#"
+   ],
+   "pitches": [
+    "C4",
+    "Eb4",
+    "G4",
+    "Bb4",
+    "D5",
+    "F#5"
+   ]
+  },
+  {
+   "bar": 76,
+   "page": 2,
+   "symbol": "Cm13",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "Eb",
+    "G",
+    "Bb",
+    "D",
+    "F",
+    "A"
+   ],
+   "pitches": [
+    "C4",
+    "Eb4",
+    "G4",
+    "Bb4",
+    "D5",
+    "F5",
+    "A5"
+   ]
+  },
+  {
+   "bar": 77,
+   "page": 2,
+   "symbol": "Cm13(♭5)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "Eb",
+    "Gb",
+    "Bb",
+    "D",
+    "F",
+    "A"
+   ],
+   "pitches": [
+    "C4",
+    "Eb4",
+    "Gb4",
+    "Bb4",
+    "D5",
+    "F5",
+    "A5"
+   ]
+  },
+  {
+   "bar": 78,
+   "page": 2,
+   "symbol": "Cm13(♯5)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "Eb",
+    "G#",
+    "Bb",
+    "D",
+    "F",
+    "A"
+   ],
+   "pitches": [
+    "C4",
+    "Eb4",
+    "G#4",
+    "Bb4",
+    "D5",
+    "F5",
+    "A5"
+   ]
+  },
+  {
+   "bar": 79,
+   "page": 2,
+   "symbol": "Cm(maj7)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "Eb",
+    "G",
+    "B"
+   ],
+   "pitches": [
+    "C4",
+    "Eb4",
+    "G4",
+    "B4"
+   ]
+  },
+  {
+   "bar": 80,
+   "page": 2,
+   "symbol": "Cm(maj7♭5)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "Eb",
+    "Gb",
+    "B"
+   ],
+   "pitches": [
+    "C4",
+    "Eb4",
+    "Gb4",
+    "B4"
+   ]
+  },
+  {
+   "bar": 81,
+   "page": 2,
+   "symbol": "Cm(maj7♯5)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "Eb",
+    "G#",
+    "B"
+   ],
+   "pitches": [
+    "C4",
+    "Eb4",
+    "G#4",
+    "B4"
+   ]
+  },
+  {
+   "bar": 82,
+   "page": 2,
+   "symbol": "Cm(maj9)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "Eb",
+    "G",
+    "B",
+    "D"
+   ],
+   "pitches": [
+    "C4",
+    "Eb4",
+    "G4",
+    "B4",
+    "D5"
+   ]
+  },
+  {
+   "bar": 83,
+   "page": 2,
+   "symbol": "Cm(maj9♭5)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "Eb",
+    "Gb",
+    "B",
+    "D"
+   ],
+   "pitches": [
+    "C4",
+    "Eb4",
+    "Gb4",
+    "B4",
+    "D5"
+   ]
+  },
+  {
+   "bar": 84,
+   "page": 2,
+   "symbol": "Cm(maj9♯5)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "Eb",
+    "G#",
+    "B",
+    "D"
+   ],
+   "pitches": [
+    "C4",
+    "Eb4",
+    "G#4",
+    "B4",
+    "D5"
+   ]
+  },
+  {
+   "bar": 85,
+   "page": 2,
+   "symbol": "Cm7(sus)",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "Eb",
+    "F",
+    "Bb"
+   ],
+   "pitches": [
+    "C4",
+    "Eb4",
+    "F4",
+    "Bb4"
+   ],
+   "note": "Engraved C Eb F Bb: the minor third is kept beside the 4th, and there is no 5th. Transcribed as printed."
+  },
+  {
+   "bar": 86,
+   "page": 2,
+   "symbol": "B♭/C",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "F",
+    "Bb",
+    "D"
+   ],
+   "pitches": [
+    "C4",
+    "F4",
+    "Bb4",
+    "D5"
+   ],
+   "slash": true
+  },
+  {
+   "bar": 87,
+   "page": 2,
+   "symbol": "D7/C",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "D",
+    "F#",
+    "A",
+    "C"
+   ],
+   "pitches": [
+    "C4",
+    "D4",
+    "F#4",
+    "A4",
+    "C5"
+   ],
+   "slash": true
+  },
+  {
+   "bar": 88,
+   "page": 2,
+   "symbol": "F(add9)/C",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "F",
+    "A",
+    "C",
+    "G"
+   ],
+   "pitches": [
+    "C4",
+    "F4",
+    "A4",
+    "C5",
+    "G5"
+   ],
+   "slash": true,
+   "note": "Bracketed (cautionary) natural before the chord; no pitch is altered."
+  },
+  {
+   "bar": 89,
+   "page": 2,
+   "symbol": "A♭maj7/C",
+   "aliases": [],
+   "spelling": [
+    "C",
+    "Ab",
+    "C",
+    "Eb",
+    "G"
+   ],
+   "pitches": [
+    "C4",
+    "Ab4",
+    "C5",
+    "Eb5",
+    "G5"
+   ],
+   "slash": true
+  }
+ ]
+}

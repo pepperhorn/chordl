@@ -1,0 +1,1489 @@
+{
+ "source": "chordcards/.cache/cms-slug-normalise.md (crf-admin chords, slugs as applied; values of cms-slug-map.json)",
+ "chords": [
+  {
+   "chord_name": "A",
+   "chord_root": "a",
+   "status": "published",
+   "oldSlug": "a-major",
+   "slug": "a"
+  },
+  {
+   "chord_name": "A6",
+   "chord_root": "a",
+   "status": "published",
+   "oldSlug": "a6",
+   "slug": "a-6"
+  },
+  {
+   "chord_name": "A7",
+   "chord_root": "a",
+   "status": "published",
+   "oldSlug": "a7",
+   "slug": "a-7"
+  },
+  {
+   "chord_name": "A7#5",
+   "chord_root": "a",
+   "status": "published",
+   "oldSlug": "a7-sharp5",
+   "slug": "a-7-sharp5"
+  },
+  {
+   "chord_name": "Aaug",
+   "chord_root": "a",
+   "status": "published",
+   "oldSlug": "aaug",
+   "slug": "a-aug"
+  },
+  {
+   "chord_name": "A dim",
+   "chord_root": "a",
+   "status": "published",
+   "oldSlug": "a-dim",
+   "slug": "a-dim"
+  },
+  {
+   "chord_name": "Adim7",
+   "chord_root": "a",
+   "status": "published",
+   "oldSlug": "adim7",
+   "slug": "a-dim7"
+  },
+  {
+   "chord_name": "Ab",
+   "chord_root": "a-flat",
+   "status": "published",
+   "oldSlug": "ab",
+   "slug": "a-flat"
+  },
+  {
+   "chord_name": "Ab6",
+   "chord_root": "a-flat",
+   "status": "published",
+   "oldSlug": "ab6",
+   "slug": "a-flat-6"
+  },
+  {
+   "chord_name": "Ab7",
+   "chord_root": "a-flat",
+   "status": "published",
+   "oldSlug": "ab7",
+   "slug": "a-flat-7"
+  },
+  {
+   "chord_name": "Ab7#5",
+   "chord_root": "a-flat",
+   "status": "published",
+   "oldSlug": "ab7-sharp5",
+   "slug": "a-flat-7-sharp5"
+  },
+  {
+   "chord_name": "Abaug",
+   "chord_root": "a-flat",
+   "status": "published",
+   "oldSlug": "abaug",
+   "slug": "a-flat-aug"
+  },
+  {
+   "chord_name": "Ab dim",
+   "chord_root": "a-flat",
+   "status": "published",
+   "oldSlug": "ab-dim",
+   "slug": "a-flat-dim"
+  },
+  {
+   "chord_name": "Abdim7",
+   "chord_root": "a-flat",
+   "status": "published",
+   "oldSlug": "abdim7",
+   "slug": "a-flat-dim7"
+  },
+  {
+   "chord_name": "Abm",
+   "chord_root": "a-flat",
+   "status": "published",
+   "oldSlug": "abm",
+   "slug": "a-flat-m"
+  },
+  {
+   "chord_name": "AbmMaj7",
+   "chord_root": "a-flat",
+   "status": "published",
+   "oldSlug": "abmmaj7",
+   "slug": "a-flat-m-maj7"
+  },
+  {
+   "chord_name": "Abm6",
+   "chord_root": "a-flat",
+   "status": "published",
+   "oldSlug": "abm6",
+   "slug": "a-flat-m6"
+  },
+  {
+   "chord_name": "Abm7",
+   "chord_root": "a-flat",
+   "status": "published",
+   "oldSlug": "abm7",
+   "slug": "a-flat-m7"
+  },
+  {
+   "chord_name": "Abm7b5",
+   "chord_root": "a-flat",
+   "status": "published",
+   "oldSlug": "abm7b5",
+   "slug": "a-flat-m7-flat5"
+  },
+  {
+   "chord_name": "Abmaj7",
+   "chord_root": "a-flat",
+   "status": "published",
+   "oldSlug": "abmaj7",
+   "slug": "a-flat-maj7"
+  },
+  {
+   "chord_name": "Abmaj7#5",
+   "chord_root": "a-flat",
+   "status": "published",
+   "oldSlug": "abmaj7-sharp5",
+   "slug": "a-flat-maj7-sharp5"
+  },
+  {
+   "chord_name": "Absus4",
+   "chord_root": "a-flat",
+   "status": "published",
+   "oldSlug": "absus4",
+   "slug": "a-flat-sus4"
+  },
+  {
+   "chord_name": "Am",
+   "chord_root": "a",
+   "status": "published",
+   "oldSlug": "am",
+   "slug": "a-m"
+  },
+  {
+   "chord_name": "AmMaj7",
+   "chord_root": "a",
+   "status": "published",
+   "oldSlug": "ammaj7",
+   "slug": "a-m-maj7"
+  },
+  {
+   "chord_name": "Am6",
+   "chord_root": "a",
+   "status": "published",
+   "oldSlug": "am6",
+   "slug": "a-m6"
+  },
+  {
+   "chord_name": "Am7",
+   "chord_root": "a",
+   "status": "published",
+   "oldSlug": "am7",
+   "slug": "a-m7"
+  },
+  {
+   "chord_name": "Am7b5",
+   "chord_root": "a",
+   "status": "published",
+   "oldSlug": "am7b5",
+   "slug": "a-m7-flat5"
+  },
+  {
+   "chord_name": "Amaj7",
+   "chord_root": "a",
+   "status": "published",
+   "oldSlug": "amaj7",
+   "slug": "a-maj7"
+  },
+  {
+   "chord_name": "Amaj7#5",
+   "chord_root": "a",
+   "status": "published",
+   "oldSlug": "amaj7-sharp5",
+   "slug": "a-maj7-sharp5"
+  },
+  {
+   "chord_name": "A#",
+   "chord_root": "a-flat",
+   "status": "archived",
+   "oldSlug": "a-sharp",
+   "slug": "a-sharp"
+  },
+  {
+   "chord_name": "Asus4",
+   "chord_root": "a",
+   "status": "published",
+   "oldSlug": "asus4",
+   "slug": "a-sus4"
+  },
+  {
+   "chord_name": "B",
+   "chord_root": "b",
+   "status": "published",
+   "oldSlug": "b",
+   "slug": "b"
+  },
+  {
+   "chord_name": "B6",
+   "chord_root": "b",
+   "status": "published",
+   "oldSlug": "b6",
+   "slug": "b-6"
+  },
+  {
+   "chord_name": "B7",
+   "chord_root": "b",
+   "status": "published",
+   "oldSlug": "b7",
+   "slug": "b-7"
+  },
+  {
+   "chord_name": "B7#5",
+   "chord_root": "b",
+   "status": "published",
+   "oldSlug": "b7-sharp5",
+   "slug": "b-7-sharp5"
+  },
+  {
+   "chord_name": "Baug",
+   "chord_root": "b",
+   "status": "published",
+   "oldSlug": "baug",
+   "slug": "b-aug"
+  },
+  {
+   "chord_name": "B dim",
+   "chord_root": "b",
+   "status": "published",
+   "oldSlug": "b-dim",
+   "slug": "b-dim"
+  },
+  {
+   "chord_name": "Bdim7",
+   "chord_root": "b",
+   "status": "published",
+   "oldSlug": "bdim7",
+   "slug": "b-dim7"
+  },
+  {
+   "chord_name": "Bb",
+   "chord_root": "b-flat",
+   "status": "published",
+   "oldSlug": "bb",
+   "slug": "b-flat"
+  },
+  {
+   "chord_name": "Bb6",
+   "chord_root": "b-flat",
+   "status": "published",
+   "oldSlug": "bb6",
+   "slug": "b-flat-6"
+  },
+  {
+   "chord_name": "Bb7",
+   "chord_root": "b-flat",
+   "status": "published",
+   "oldSlug": "bb7",
+   "slug": "b-flat-7"
+  },
+  {
+   "chord_name": "Bb7#5",
+   "chord_root": "b-flat",
+   "status": "published",
+   "oldSlug": "bb7-sharp5",
+   "slug": "b-flat-7-sharp5"
+  },
+  {
+   "chord_name": "Bbaug",
+   "chord_root": "b-flat",
+   "status": "published",
+   "oldSlug": "bbaug",
+   "slug": "b-flat-aug"
+  },
+  {
+   "chord_name": "Bb dim",
+   "chord_root": "b-flat",
+   "status": "published",
+   "oldSlug": "bb-dim",
+   "slug": "b-flat-dim"
+  },
+  {
+   "chord_name": "Bbdim7",
+   "chord_root": "b-flat",
+   "status": "published",
+   "oldSlug": "bbdim7",
+   "slug": "b-flat-dim7"
+  },
+  {
+   "chord_name": "Bbm",
+   "chord_root": "b-flat",
+   "status": "published",
+   "oldSlug": "bbm",
+   "slug": "b-flat-m"
+  },
+  {
+   "chord_name": "BbmMaj7",
+   "chord_root": "b-flat",
+   "status": "published",
+   "oldSlug": "bbmmaj7",
+   "slug": "b-flat-m-maj7"
+  },
+  {
+   "chord_name": "Bbm6",
+   "chord_root": "b-flat",
+   "status": "published",
+   "oldSlug": "bbm6",
+   "slug": "b-flat-m6"
+  },
+  {
+   "chord_name": "Bbm7",
+   "chord_root": "b-flat",
+   "status": "published",
+   "oldSlug": "bbm7",
+   "slug": "b-flat-m7"
+  },
+  {
+   "chord_name": "Bbm7b5",
+   "chord_root": "b-flat",
+   "status": "published",
+   "oldSlug": "bbm7b5",
+   "slug": "b-flat-m7-flat5"
+  },
+  {
+   "chord_name": "Bbmaj7",
+   "chord_root": "b-flat",
+   "status": "published",
+   "oldSlug": "bbmaj7",
+   "slug": "b-flat-maj7"
+  },
+  {
+   "chord_name": "Bbmaj7#5",
+   "chord_root": "b-flat",
+   "status": "published",
+   "oldSlug": "bbmaj7-sharp5",
+   "slug": "b-flat-maj7-sharp5"
+  },
+  {
+   "chord_name": "Bbsus4",
+   "chord_root": "b-flat",
+   "status": "published",
+   "oldSlug": "bbsus4",
+   "slug": "b-flat-sus4"
+  },
+  {
+   "chord_name": "Bm",
+   "chord_root": "b",
+   "status": "published",
+   "oldSlug": "bm",
+   "slug": "b-m"
+  },
+  {
+   "chord_name": "BmMaj7",
+   "chord_root": "b",
+   "status": "published",
+   "oldSlug": "bmmaj7",
+   "slug": "b-m-maj7"
+  },
+  {
+   "chord_name": "Bm6",
+   "chord_root": "b",
+   "status": "published",
+   "oldSlug": "bm6",
+   "slug": "b-m6"
+  },
+  {
+   "chord_name": "Bm7",
+   "chord_root": "b",
+   "status": "published",
+   "oldSlug": "bm7",
+   "slug": "b-m7"
+  },
+  {
+   "chord_name": "Bm7b5",
+   "chord_root": "b",
+   "status": "published",
+   "oldSlug": "bm7b5",
+   "slug": "b-m7-flat5"
+  },
+  {
+   "chord_name": "Bmaj7",
+   "chord_root": "b",
+   "status": "published",
+   "oldSlug": "bmaj7",
+   "slug": "b-maj7"
+  },
+  {
+   "chord_name": "Bmaj7#5",
+   "chord_root": "b",
+   "status": "published",
+   "oldSlug": "bmaj7-sharp5",
+   "slug": "b-maj7-sharp5"
+  },
+  {
+   "chord_name": "Bsus4",
+   "chord_root": "b",
+   "status": "published",
+   "oldSlug": "bsus4",
+   "slug": "b-sus4"
+  },
+  {
+   "chord_name": "C",
+   "chord_root": "c",
+   "status": "published",
+   "oldSlug": "c",
+   "slug": "c"
+  },
+  {
+   "chord_name": "C6",
+   "chord_root": "c",
+   "status": "published",
+   "oldSlug": "c6",
+   "slug": "c-6"
+  },
+  {
+   "chord_name": "C7",
+   "chord_root": "c",
+   "status": "published",
+   "oldSlug": "c7",
+   "slug": "c-7"
+  },
+  {
+   "chord_name": "C7#5",
+   "chord_root": "c",
+   "status": "published",
+   "oldSlug": "c7-sharp5",
+   "slug": "c-7-sharp5"
+  },
+  {
+   "chord_name": "Caug",
+   "chord_root": "c",
+   "status": "published",
+   "oldSlug": "caug",
+   "slug": "c-aug"
+  },
+  {
+   "chord_name": "C dim",
+   "chord_root": "c",
+   "status": "published",
+   "oldSlug": "c-dim",
+   "slug": "c-dim"
+  },
+  {
+   "chord_name": "Cdim7",
+   "chord_root": "c",
+   "status": "published",
+   "oldSlug": "cdim7",
+   "slug": "c-dim7"
+  },
+  {
+   "chord_name": "Cm",
+   "chord_root": "c",
+   "status": "published",
+   "oldSlug": "cm",
+   "slug": "c-m"
+  },
+  {
+   "chord_name": "CmMaj7",
+   "chord_root": "c",
+   "status": "published",
+   "oldSlug": "cmmaj7",
+   "slug": "c-m-maj7"
+  },
+  {
+   "chord_name": "Cm6",
+   "chord_root": "c",
+   "status": "published",
+   "oldSlug": "cm6",
+   "slug": "c-m6"
+  },
+  {
+   "chord_name": "Cm7",
+   "chord_root": "c",
+   "status": "published",
+   "oldSlug": "cm7",
+   "slug": "c-m7"
+  },
+  {
+   "chord_name": "Cm7b5",
+   "chord_root": "c",
+   "status": "published",
+   "oldSlug": "cm7b5",
+   "slug": "c-m7-flat5"
+  },
+  {
+   "chord_name": "Cmaj7",
+   "chord_root": "c",
+   "status": "published",
+   "oldSlug": "cmaj7",
+   "slug": "c-maj7"
+  },
+  {
+   "chord_name": "Cmaj7#5",
+   "chord_root": "c",
+   "status": "published",
+   "oldSlug": "cmaj7-sharp5",
+   "slug": "c-maj7-sharp5"
+  },
+  {
+   "chord_name": "C#",
+   "chord_root": "c-sharp",
+   "status": "published",
+   "oldSlug": "csharp",
+   "slug": "c-sharp"
+  },
+  {
+   "chord_name": "C#6",
+   "chord_root": "c-sharp",
+   "status": "published",
+   "oldSlug": "csharp-6",
+   "slug": "c-sharp-6"
+  },
+  {
+   "chord_name": "C#7",
+   "chord_root": "c-sharp",
+   "status": "published",
+   "oldSlug": "csharp-7",
+   "slug": "c-sharp-7"
+  },
+  {
+   "chord_name": "C#7#5",
+   "chord_root": "c-sharp",
+   "status": "published",
+   "oldSlug": "csharp-7-sharp5",
+   "slug": "c-sharp-7-sharp5"
+  },
+  {
+   "chord_name": "C#aug",
+   "chord_root": "c-sharp",
+   "status": "published",
+   "oldSlug": "csharp-aug",
+   "slug": "c-sharp-aug"
+  },
+  {
+   "chord_name": "C# dim",
+   "chord_root": "c-sharp",
+   "status": "published",
+   "oldSlug": "csharp-dim",
+   "slug": "c-sharp-dim"
+  },
+  {
+   "chord_name": "C#dim7",
+   "chord_root": "c-sharp",
+   "status": "published",
+   "oldSlug": "csharp-dim7",
+   "slug": "c-sharp-dim7"
+  },
+  {
+   "chord_name": "C#m",
+   "chord_root": "c-sharp",
+   "status": "published",
+   "oldSlug": "c-sharp-m",
+   "slug": "c-sharp-m"
+  },
+  {
+   "chord_name": "C#mMaj7",
+   "chord_root": "c-sharp",
+   "status": "published",
+   "oldSlug": "csharp-mmaj7",
+   "slug": "c-sharp-m-maj7"
+  },
+  {
+   "chord_name": "C#m6",
+   "chord_root": "c-sharp",
+   "status": "published",
+   "oldSlug": "csharp-m6",
+   "slug": "c-sharp-m6"
+  },
+  {
+   "chord_name": "C#m7",
+   "chord_root": "c-sharp",
+   "status": "published",
+   "oldSlug": "csharp-m7",
+   "slug": "c-sharp-m7"
+  },
+  {
+   "chord_name": "C#m7b5",
+   "chord_root": "c-sharp",
+   "status": "published",
+   "oldSlug": "csharp-m7b5",
+   "slug": "c-sharp-m7-flat5"
+  },
+  {
+   "chord_name": "C#maj7",
+   "chord_root": "c-sharp",
+   "status": "published",
+   "oldSlug": "csharp-maj7",
+   "slug": "c-sharp-maj7"
+  },
+  {
+   "chord_name": "C#maj7#5",
+   "chord_root": "c-sharp",
+   "status": "published",
+   "oldSlug": "csharp-maj7-sharp5",
+   "slug": "c-sharp-maj7-sharp5"
+  },
+  {
+   "chord_name": "C#sus4",
+   "chord_root": "c-sharp",
+   "status": "published",
+   "oldSlug": "csharp-sus4",
+   "slug": "c-sharp-sus4"
+  },
+  {
+   "chord_name": "Csus4",
+   "chord_root": "c",
+   "status": "published",
+   "oldSlug": "csus4",
+   "slug": "c-sus4"
+  },
+  {
+   "chord_name": "D",
+   "chord_root": "d",
+   "status": "published",
+   "oldSlug": "d",
+   "slug": "d"
+  },
+  {
+   "chord_name": "D6",
+   "chord_root": "d",
+   "status": "published",
+   "oldSlug": "d6",
+   "slug": "d-6"
+  },
+  {
+   "chord_name": "D7",
+   "chord_root": "d",
+   "status": "published",
+   "oldSlug": "d7",
+   "slug": "d-7"
+  },
+  {
+   "chord_name": "D7#5",
+   "chord_root": "d",
+   "status": "published",
+   "oldSlug": "d7-sharp5",
+   "slug": "d-7-sharp5"
+  },
+  {
+   "chord_name": "Daug",
+   "chord_root": "d",
+   "status": "published",
+   "oldSlug": "daug",
+   "slug": "d-aug"
+  },
+  {
+   "chord_name": "D dim",
+   "chord_root": "d",
+   "status": "published",
+   "oldSlug": "d-dim",
+   "slug": "d-dim"
+  },
+  {
+   "chord_name": "Ddim7",
+   "chord_root": "d",
+   "status": "published",
+   "oldSlug": "ddim7",
+   "slug": "d-dim7"
+  },
+  {
+   "chord_name": "Db",
+   "chord_root": "d-flat",
+   "status": "published",
+   "oldSlug": "db",
+   "slug": "d-flat"
+  },
+  {
+   "chord_name": "Db6",
+   "chord_root": "d-flat",
+   "status": "published",
+   "oldSlug": "db6",
+   "slug": "d-flat-6"
+  },
+  {
+   "chord_name": "Db7",
+   "chord_root": "d-flat",
+   "status": "published",
+   "oldSlug": "db7",
+   "slug": "d-flat-7"
+  },
+  {
+   "chord_name": "Dbaug",
+   "chord_root": "d-flat",
+   "status": "published",
+   "oldSlug": "dbaug",
+   "slug": "d-flat-aug"
+  },
+  {
+   "chord_name": "Db dim",
+   "chord_root": "d-flat",
+   "status": "published",
+   "oldSlug": "db-dim",
+   "slug": "d-flat-dim"
+  },
+  {
+   "chord_name": "Dbm",
+   "chord_root": "d-flat",
+   "status": "published",
+   "oldSlug": "dbm",
+   "slug": "d-flat-m"
+  },
+  {
+   "chord_name": "Dbm6",
+   "chord_root": "d-flat",
+   "status": "published",
+   "oldSlug": "dbm6",
+   "slug": "d-flat-m6"
+  },
+  {
+   "chord_name": "Dbm7",
+   "chord_root": "d-flat",
+   "status": "published",
+   "oldSlug": "dbm7",
+   "slug": "d-flat-m7"
+  },
+  {
+   "chord_name": "Dbmaj7",
+   "chord_root": "d-flat",
+   "status": "published",
+   "oldSlug": "dbmaj7",
+   "slug": "d-flat-maj7"
+  },
+  {
+   "chord_name": "Dbsus4",
+   "chord_root": "d-flat",
+   "status": "published",
+   "oldSlug": "dbsus4",
+   "slug": "d-flat-sus4"
+  },
+  {
+   "chord_name": "Dm",
+   "chord_root": "d",
+   "status": "published",
+   "oldSlug": "dm",
+   "slug": "d-m"
+  },
+  {
+   "chord_name": "DmMaj7",
+   "chord_root": "d",
+   "status": "published",
+   "oldSlug": "dmmaj7",
+   "slug": "d-m-maj7"
+  },
+  {
+   "chord_name": "Dm6",
+   "chord_root": "d",
+   "status": "published",
+   "oldSlug": "dm6",
+   "slug": "d-m6"
+  },
+  {
+   "chord_name": "Dm7",
+   "chord_root": "d",
+   "status": "published",
+   "oldSlug": "dm7",
+   "slug": "d-m7"
+  },
+  {
+   "chord_name": "Dm7b5",
+   "chord_root": "d",
+   "status": "published",
+   "oldSlug": "dm7b5",
+   "slug": "d-m7-flat5"
+  },
+  {
+   "chord_name": "Dmaj7",
+   "chord_root": "d",
+   "status": "published",
+   "oldSlug": "dmaj7",
+   "slug": "d-maj7"
+  },
+  {
+   "chord_name": "Dmaj7#5",
+   "chord_root": "d",
+   "status": "published",
+   "oldSlug": "dmaj7-sharp5",
+   "slug": "d-maj7-sharp5"
+  },
+  {
+   "chord_name": "D#(tmp-test)",
+   "chord_root": "d-sharp",
+   "status": "archived",
+   "oldSlug": "dsharp-tmp-test",
+   "slug": "d-sharp-tmp-test"
+  },
+  {
+   "chord_name": "Dsus4",
+   "chord_root": "d",
+   "status": "published",
+   "oldSlug": "dsus4",
+   "slug": "d-sus4"
+  },
+  {
+   "chord_name": "E",
+   "chord_root": "e",
+   "status": "published",
+   "oldSlug": "e",
+   "slug": "e"
+  },
+  {
+   "chord_name": "E6",
+   "chord_root": "e",
+   "status": "published",
+   "oldSlug": "e6",
+   "slug": "e-6"
+  },
+  {
+   "chord_name": "E7",
+   "chord_root": "e",
+   "status": "published",
+   "oldSlug": "e7",
+   "slug": "e-7"
+  },
+  {
+   "chord_name": "E7#5",
+   "chord_root": "e",
+   "status": "published",
+   "oldSlug": "e7-sharp5",
+   "slug": "e-7-sharp5"
+  },
+  {
+   "chord_name": "Eaug",
+   "chord_root": "e",
+   "status": "published",
+   "oldSlug": "eaug",
+   "slug": "e-aug"
+  },
+  {
+   "chord_name": "E dim",
+   "chord_root": "e",
+   "status": "published",
+   "oldSlug": "e-dim",
+   "slug": "e-dim"
+  },
+  {
+   "chord_name": "Edim7",
+   "chord_root": "e",
+   "status": "published",
+   "oldSlug": "edim7",
+   "slug": "e-dim7"
+  },
+  {
+   "chord_name": "Eb",
+   "chord_root": "e-flat",
+   "status": "published",
+   "oldSlug": "eb",
+   "slug": "e-flat"
+  },
+  {
+   "chord_name": "Eb6",
+   "chord_root": "e-flat",
+   "status": "published",
+   "oldSlug": "eb6",
+   "slug": "e-flat-6"
+  },
+  {
+   "chord_name": "Eb7",
+   "chord_root": "e-flat",
+   "status": "published",
+   "oldSlug": "eb7",
+   "slug": "e-flat-7"
+  },
+  {
+   "chord_name": "Eb7#5",
+   "chord_root": "e-flat",
+   "status": "published",
+   "oldSlug": "eb7-sharp5",
+   "slug": "e-flat-7-sharp5"
+  },
+  {
+   "chord_name": "Ebaug",
+   "chord_root": "e-flat",
+   "status": "published",
+   "oldSlug": "ebaug",
+   "slug": "e-flat-aug"
+  },
+  {
+   "chord_name": "Eb dim",
+   "chord_root": "e-flat",
+   "status": "published",
+   "oldSlug": "eb-dim",
+   "slug": "e-flat-dim"
+  },
+  {
+   "chord_name": "Ebdim7",
+   "chord_root": "e-flat",
+   "status": "published",
+   "oldSlug": "ebdim7",
+   "slug": "e-flat-dim7"
+  },
+  {
+   "chord_name": "Ebm",
+   "chord_root": "e-flat",
+   "status": "published",
+   "oldSlug": "ebm",
+   "slug": "e-flat-m"
+  },
+  {
+   "chord_name": "EbmMaj7",
+   "chord_root": "e-flat",
+   "status": "published",
+   "oldSlug": "ebmmaj7",
+   "slug": "e-flat-m-maj7"
+  },
+  {
+   "chord_name": "Ebm6",
+   "chord_root": "e-flat",
+   "status": "published",
+   "oldSlug": "ebm6",
+   "slug": "e-flat-m6"
+  },
+  {
+   "chord_name": "Ebm7",
+   "chord_root": "e-flat",
+   "status": "published",
+   "oldSlug": "ebm7",
+   "slug": "e-flat-m7"
+  },
+  {
+   "chord_name": "Ebm7b5",
+   "chord_root": "e-flat",
+   "status": "published",
+   "oldSlug": "ebm7b5",
+   "slug": "e-flat-m7-flat5"
+  },
+  {
+   "chord_name": "Ebmaj7",
+   "chord_root": "e-flat",
+   "status": "published",
+   "oldSlug": "ebmaj7",
+   "slug": "e-flat-maj7"
+  },
+  {
+   "chord_name": "Ebmaj7#5",
+   "chord_root": "e-flat",
+   "status": "published",
+   "oldSlug": "ebmaj7-sharp5",
+   "slug": "e-flat-maj7-sharp5"
+  },
+  {
+   "chord_name": "Ebsus4",
+   "chord_root": "e-flat",
+   "status": "published",
+   "oldSlug": "ebsus4",
+   "slug": "e-flat-sus4"
+  },
+  {
+   "chord_name": "Em",
+   "chord_root": "e",
+   "status": "published",
+   "oldSlug": "em",
+   "slug": "e-m"
+  },
+  {
+   "chord_name": "EmMaj7",
+   "chord_root": "e",
+   "status": "published",
+   "oldSlug": "emmaj7",
+   "slug": "e-m-maj7"
+  },
+  {
+   "chord_name": "Em6",
+   "chord_root": "e",
+   "status": "published",
+   "oldSlug": "em6",
+   "slug": "e-m6"
+  },
+  {
+   "chord_name": "Em7",
+   "chord_root": "e",
+   "status": "published",
+   "oldSlug": "em7",
+   "slug": "e-m7"
+  },
+  {
+   "chord_name": "Em7b5",
+   "chord_root": "e",
+   "status": "published",
+   "oldSlug": "em7b5",
+   "slug": "e-m7-flat5"
+  },
+  {
+   "chord_name": "Emaj7",
+   "chord_root": "e",
+   "status": "published",
+   "oldSlug": "emaj7",
+   "slug": "e-maj7"
+  },
+  {
+   "chord_name": "Emaj7#5",
+   "chord_root": "e",
+   "status": "published",
+   "oldSlug": "emaj7-sharp5",
+   "slug": "e-maj7-sharp5"
+  },
+  {
+   "chord_name": "Esus4",
+   "chord_root": "e",
+   "status": "published",
+   "oldSlug": "esus4",
+   "slug": "e-sus4"
+  },
+  {
+   "chord_name": "F",
+   "chord_root": "f",
+   "status": "published",
+   "oldSlug": "f",
+   "slug": "f"
+  },
+  {
+   "chord_name": "F6",
+   "chord_root": "f",
+   "status": "published",
+   "oldSlug": "f6",
+   "slug": "f-6"
+  },
+  {
+   "chord_name": "F7",
+   "chord_root": "f",
+   "status": "published",
+   "oldSlug": "f7",
+   "slug": "f-7"
+  },
+  {
+   "chord_name": "F7#5",
+   "chord_root": "f",
+   "status": "published",
+   "oldSlug": "f7-sharp5",
+   "slug": "f-7-sharp5"
+  },
+  {
+   "chord_name": "Faug",
+   "chord_root": "f",
+   "status": "published",
+   "oldSlug": "faug",
+   "slug": "f-aug"
+  },
+  {
+   "chord_name": "F dim",
+   "chord_root": "f",
+   "status": "published",
+   "oldSlug": "f-dim",
+   "slug": "f-dim"
+  },
+  {
+   "chord_name": "Fdim7",
+   "chord_root": "f",
+   "status": "published",
+   "oldSlug": "fdim7",
+   "slug": "f-dim7"
+  },
+  {
+   "chord_name": "Fm",
+   "chord_root": "f",
+   "status": "published",
+   "oldSlug": "fm",
+   "slug": "f-m"
+  },
+  {
+   "chord_name": "FmMaj7",
+   "chord_root": "f",
+   "status": "published",
+   "oldSlug": "fmmaj7",
+   "slug": "f-m-maj7"
+  },
+  {
+   "chord_name": "Fm6",
+   "chord_root": "f",
+   "status": "published",
+   "oldSlug": "fm6",
+   "slug": "f-m6"
+  },
+  {
+   "chord_name": "Fm7",
+   "chord_root": "f",
+   "status": "published",
+   "oldSlug": "fm7",
+   "slug": "f-m7"
+  },
+  {
+   "chord_name": "Fm7b5",
+   "chord_root": "f",
+   "status": "published",
+   "oldSlug": "fm7b5",
+   "slug": "f-m7-flat5"
+  },
+  {
+   "chord_name": "Fmaj7",
+   "chord_root": "f",
+   "status": "published",
+   "oldSlug": "fmaj7",
+   "slug": "f-maj7"
+  },
+  {
+   "chord_name": "Fmaj7#5",
+   "chord_root": "f",
+   "status": "published",
+   "oldSlug": "fmaj7-sharp5",
+   "slug": "f-maj7-sharp5"
+  },
+  {
+   "chord_name": "F#",
+   "chord_root": "f-sharp",
+   "status": "published",
+   "oldSlug": "f-sharp",
+   "slug": "f-sharp"
+  },
+  {
+   "chord_name": "F#6",
+   "chord_root": "f-sharp",
+   "status": "published",
+   "oldSlug": "fsharp-6",
+   "slug": "f-sharp-6"
+  },
+  {
+   "chord_name": "F#7",
+   "chord_root": "f-sharp",
+   "status": "published",
+   "oldSlug": "fsharp-7",
+   "slug": "f-sharp-7"
+  },
+  {
+   "chord_name": "F#7#5",
+   "chord_root": "f-sharp",
+   "status": "published",
+   "oldSlug": "fsharp-7-sharp5",
+   "slug": "f-sharp-7-sharp5"
+  },
+  {
+   "chord_name": "F#aug",
+   "chord_root": "f-sharp",
+   "status": "published",
+   "oldSlug": "fsharp-aug",
+   "slug": "f-sharp-aug"
+  },
+  {
+   "chord_name": "F# dim",
+   "chord_root": "f-sharp",
+   "status": "published",
+   "oldSlug": "fsharp-dim",
+   "slug": "f-sharp-dim"
+  },
+  {
+   "chord_name": "F#dim7",
+   "chord_root": "f-sharp",
+   "status": "published",
+   "oldSlug": "fsharp-dim7",
+   "slug": "f-sharp-dim7"
+  },
+  {
+   "chord_name": "F#m",
+   "chord_root": "f-sharp",
+   "status": "published",
+   "oldSlug": "fsharp-m",
+   "slug": "f-sharp-m"
+  },
+  {
+   "chord_name": "F#mMaj7",
+   "chord_root": "f-sharp",
+   "status": "published",
+   "oldSlug": "fsharp-mmaj7",
+   "slug": "f-sharp-m-maj7"
+  },
+  {
+   "chord_name": "F#m6",
+   "chord_root": "f-sharp",
+   "status": "published",
+   "oldSlug": "fsharp-m6",
+   "slug": "f-sharp-m6"
+  },
+  {
+   "chord_name": "F#m7",
+   "chord_root": "f-sharp",
+   "status": "published",
+   "oldSlug": "fsharp-m7",
+   "slug": "f-sharp-m7"
+  },
+  {
+   "chord_name": "F#m7b5",
+   "chord_root": "f-sharp",
+   "status": "published",
+   "oldSlug": "fsharp-m7b5",
+   "slug": "f-sharp-m7-flat5"
+  },
+  {
+   "chord_name": "F#maj7",
+   "chord_root": "f-sharp",
+   "status": "published",
+   "oldSlug": "fsharp-maj7",
+   "slug": "f-sharp-maj7"
+  },
+  {
+   "chord_name": "F#maj7#5",
+   "chord_root": "f-sharp",
+   "status": "published",
+   "oldSlug": "fsharp-maj7-sharp5",
+   "slug": "f-sharp-maj7-sharp5"
+  },
+  {
+   "chord_name": "F#sus4",
+   "chord_root": "f-sharp",
+   "status": "published",
+   "oldSlug": "fsharp-sus4",
+   "slug": "f-sharp-sus4"
+  },
+  {
+   "chord_name": "Fsus4",
+   "chord_root": "f",
+   "status": "published",
+   "oldSlug": "fsus4",
+   "slug": "f-sus4"
+  },
+  {
+   "chord_name": "G",
+   "chord_root": "g",
+   "status": "published",
+   "oldSlug": "g",
+   "slug": "g"
+  },
+  {
+   "chord_name": "G6",
+   "chord_root": "g",
+   "status": "published",
+   "oldSlug": "g6",
+   "slug": "g-6"
+  },
+  {
+   "chord_name": "G7",
+   "chord_root": "g",
+   "status": "published",
+   "oldSlug": "g7",
+   "slug": "g-7"
+  },
+  {
+   "chord_name": "G7#5",
+   "chord_root": "g",
+   "status": "published",
+   "oldSlug": "g7-sharp5",
+   "slug": "g-7-sharp5"
+  },
+  {
+   "chord_name": "Gaug",
+   "chord_root": "g",
+   "status": "published",
+   "oldSlug": "gaug",
+   "slug": "g-aug"
+  },
+  {
+   "chord_name": "G dim",
+   "chord_root": "g",
+   "status": "published",
+   "oldSlug": "g-dim",
+   "slug": "g-dim"
+  },
+  {
+   "chord_name": "Gdim7",
+   "chord_root": "g",
+   "status": "published",
+   "oldSlug": "gdim7",
+   "slug": "g-dim7"
+  },
+  {
+   "chord_name": "Gb",
+   "chord_root": "g-flat",
+   "status": "published",
+   "oldSlug": "gb",
+   "slug": "g-flat"
+  },
+  {
+   "chord_name": "Gb6",
+   "chord_root": "g-flat",
+   "status": "published",
+   "oldSlug": "gb6",
+   "slug": "g-flat-6"
+  },
+  {
+   "chord_name": "Gb7",
+   "chord_root": "g-flat",
+   "status": "published",
+   "oldSlug": "gb7",
+   "slug": "g-flat-7"
+  },
+  {
+   "chord_name": "Gbaug",
+   "chord_root": "g-flat",
+   "status": "published",
+   "oldSlug": "gbaug",
+   "slug": "g-flat-aug"
+  },
+  {
+   "chord_name": "Gb dim",
+   "chord_root": "g-flat",
+   "status": "published",
+   "oldSlug": "gb-dim",
+   "slug": "g-flat-dim"
+  },
+  {
+   "chord_name": "Gbm",
+   "chord_root": "g-flat",
+   "status": "published",
+   "oldSlug": "gbm",
+   "slug": "g-flat-m"
+  },
+  {
+   "chord_name": "Gbm6",
+   "chord_root": "g-flat",
+   "status": "published",
+   "oldSlug": "gbm6",
+   "slug": "g-flat-m6"
+  },
+  {
+   "chord_name": "Gbm7",
+   "chord_root": "g-flat",
+   "status": "published",
+   "oldSlug": "gbm7",
+   "slug": "g-flat-m7"
+  },
+  {
+   "chord_name": "Gbmaj7",
+   "chord_root": "g-flat",
+   "status": "published",
+   "oldSlug": "gbmaj7",
+   "slug": "g-flat-maj7"
+  },
+  {
+   "chord_name": "Gbsus4",
+   "chord_root": "g-flat",
+   "status": "published",
+   "oldSlug": "gbsus4",
+   "slug": "g-flat-sus4"
+  },
+  {
+   "chord_name": "Gm",
+   "chord_root": "g",
+   "status": "published",
+   "oldSlug": "gm",
+   "slug": "g-m"
+  },
+  {
+   "chord_name": "GmMaj7",
+   "chord_root": "g",
+   "status": "published",
+   "oldSlug": "gmmaj7",
+   "slug": "g-m-maj7"
+  },
+  {
+   "chord_name": "Gm6",
+   "chord_root": "g",
+   "status": "published",
+   "oldSlug": "gm6",
+   "slug": "g-m6"
+  },
+  {
+   "chord_name": "Gm7",
+   "chord_root": "g",
+   "status": "published",
+   "oldSlug": "gm7",
+   "slug": "g-m7"
+  },
+  {
+   "chord_name": "Gm7b5",
+   "chord_root": "g",
+   "status": "published",
+   "oldSlug": "gm7b5",
+   "slug": "g-m7-flat5"
+  },
+  {
+   "chord_name": "Gmaj7",
+   "chord_root": "g",
+   "status": "published",
+   "oldSlug": "gmaj7",
+   "slug": "g-maj7"
+  },
+  {
+   "chord_name": "Gmaj7#5",
+   "chord_root": "g",
+   "status": "published",
+   "oldSlug": "gmaj7-sharp5",
+   "slug": "g-maj7-sharp5"
+  },
+  {
+   "chord_name": "G#",
+   "chord_root": "g-sharp",
+   "status": "published",
+   "oldSlug": "g-sharp",
+   "slug": "g-sharp"
+  },
+  {
+   "chord_name": "G#6",
+   "chord_root": "g-sharp",
+   "status": "published",
+   "oldSlug": "gsharp-6",
+   "slug": "g-sharp-6"
+  },
+  {
+   "chord_name": "G#7",
+   "chord_root": "g-sharp",
+   "status": "published",
+   "oldSlug": "gsharp-7",
+   "slug": "g-sharp-7"
+  },
+  {
+   "chord_name": "G#aug",
+   "chord_root": "g-sharp",
+   "status": "published",
+   "oldSlug": "gsharp-aug",
+   "slug": "g-sharp-aug"
+  },
+  {
+   "chord_name": "G# dim",
+   "chord_root": "g-sharp",
+   "status": "published",
+   "oldSlug": "gsharp-dim",
+   "slug": "g-sharp-dim"
+  },
+  {
+   "chord_name": "G#m",
+   "chord_root": "g-sharp",
+   "status": "published",
+   "oldSlug": "gsharp-m",
+   "slug": "g-sharp-m"
+  },
+  {
+   "chord_name": "G#m6",
+   "chord_root": "g-sharp",
+   "status": "published",
+   "oldSlug": "gsharp-m6",
+   "slug": "g-sharp-m6"
+  },
+  {
+   "chord_name": "G#m7",
+   "chord_root": "g-sharp",
+   "status": "published",
+   "oldSlug": "gsharp-m7",
+   "slug": "g-sharp-m7"
+  },
+  {
+   "chord_name": "G#maj7",
+   "chord_root": "g-sharp",
+   "status": "published",
+   "oldSlug": "gsharp-maj7",
+   "slug": "g-sharp-maj7"
+  },
+  {
+   "chord_name": "G#sus4",
+   "chord_root": "g-sharp",
+   "status": "published",
+   "oldSlug": "gsharp-sus4",
+   "slug": "g-sharp-sus4"
+  },
+  {
+   "chord_name": "Gsus4",
+   "chord_root": "g",
+   "status": "published",
+   "oldSlug": "gsus4",
+   "slug": "g-sus4"
+  }
+ ]
+}
