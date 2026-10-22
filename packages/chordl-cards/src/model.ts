@@ -30,3 +30,17 @@ export type {
   Theme, ThemeFonts, ThemeKeyboard, ThemeFret, ThemeQrChip, ThemePlayback,
   FontSpec, FontFamilyKey, FontStyle, ColorMode, KeyboardFormat, PitchEntry, RootEntry,
 } from "./theme";
+
+export {
+  CHORD_TYPES, ROOTS, SHEET_ERRATA, chordTypeById, parseChordSymbol, spellChord,
+  spellInterval, noteParts,
+} from "./catalogue";
+export type { ChordType, CatalogueFace, ParsedChord, Root } from "./catalogue";
+
+export {
+  SLASH_INTERVALS, SLASH_UPPER_TYPES, slashChordsForBass, respellIntoRoots,
+} from "./slash";
+export type { SlashChord, SlashInterval } from "./slash";
+
+export { slugFor, rootSlug } from "./slug";
+export type { SlugInput } from "./slug";
