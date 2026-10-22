@@ -119,6 +119,13 @@ describe("validation refuses to print a broken theme", () => {
     const raw = clone();
     raw.fonts.titleRoot.strokeWidth = "thick";
     expect(() => parseTheme(raw)).toThrow(/fonts\.titleRoot\.strokeWidth/);
+    raw.fonts.titleRoot.strokeWidth = 7;
+    raw.fonts.titleRoot.accidental = "tiny";
+    expect(() => parseTheme(raw)).toThrow(/fonts\.titleRoot\.accidental/);
+    raw.fonts.titleRoot.accidental = "raised";
+    expect(parseTheme(raw).fonts.titleRoot.accidental).toBe("raised");
+    raw.fonts.titleRoot.strokeWidth = "thick";
+    expect(() => parseTheme(raw)).toThrow(/fonts\.titleRoot\.strokeWidth/);
     const raw2 = clone();
     raw2.fret.panelShadowOffset = null;
     expect(() => parseTheme(raw2)).toThrow(/fret\.panelShadowOffset/);

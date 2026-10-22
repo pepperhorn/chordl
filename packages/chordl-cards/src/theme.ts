@@ -86,6 +86,12 @@ export interface FontSpec {
   strokeWidth?: number;
   /** Fill strength 0..1, printed as `fill-opacity`; absent means solid. */
   opacity?: number;
+  /**
+   * How a run's sharps and flats are set (print's title root reads it):
+   * "full" (default) letter-sized on the baseline, or "raised" — the
+   * chord-chart convention, ~62% size hung from cap height.
+   */
+  accidental?: "full" | "raised";
 }
 
 /**
@@ -310,7 +316,13 @@ function font(v: unknown, where: string): FontSpec {
     ...(o.shadowOffset === undefined ? {} : { shadowOffset: num(o.shadowOffset, `${where}.shadowOffset`) }),
     ...(o.strokeWidth === undefined ? {} : { strokeWidth: num(o.strokeWidth, `${where}.strokeWidth`) }),
     ...(o.opacity === undefined ? {} : { opacity: unit(o.opacity, `${where}.opacity`) }),
+    ...(o.accidental === undefined ? {} : { accidental: accidentalMode(o.accidental, `${where}.accidental`) }),
   };
+}
+
+function accidentalMode(v: unknown, where: string): "full" | "raised" {
+  if (v !== "full" && v !== "raised") fail(where, `must be "full" or "raised", got ${JSON.stringify(v)}`);
+  return v as "full" | "raised";
 }
 
 function obj(v: unknown, where: string): Record<string, unknown> {

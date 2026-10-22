@@ -26,7 +26,7 @@ export type { FacePlayback } from "./playback";
 export { qualityLabelFor, fullChordName, rootOf } from "./names";
 
 export {
-  ACCIDENTAL_METRICS, accidentalGlyphs, glyphBounds, glyphPathData, tokenizeChordSymbol,
+  ACCIDENTAL_METRICS, RAISED_SCALE, accidentalGlyphs, glyphBounds, glyphPathData, tokenizeChordSymbol,
   spokenChordSymbol, measureChordSymbol, measurePoppinsText, renderChordSymbolSvg,
 } from "./accidentals";
 export type {

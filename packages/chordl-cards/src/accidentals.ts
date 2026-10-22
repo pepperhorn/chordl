@@ -13,8 +13,9 @@
  *
  * Geometric like Poppins: monoline-ish, flat-cut stem ends, round shoulders.
  *
- * - Flat: a stem at the weight's stem width rising just past cap height, and a
- *   teardrop bowl hung off it whose top stays under x-height and whose bottom
+ * - Flat: a stem rising just past cap height (thickening half as fast as
+ *   Poppins' stems with weight), and the 400-weight teardrop bowl at every
+ *   weight, hung off it whose top stays under x-height and whose bottom
  *   tapers into a point at the foot of the stem — the engraved flat, not the
  *   round bowl of a "b".
  * - Sharp: two upright stems (0.62 of the stem width, the right one set higher)
@@ -107,13 +108,17 @@ function reverse(c: Cmd[]): Cmd[] {
 const wound = (c: Cmd[], outer: boolean) => ((signedArea(c) > 0) === outer ? c : reverse(c));
 
 function flat(w: AccidentalWeight): AccidentalGlyph {
-  const S = ACCIDENTAL_METRICS.stem[w];
-  const H = ACCIDENTAL_METRICS.horizontal[w];
-  const xh = ACCIDENTAL_METRICS.xHeight[w];
+  // Only the stem follows the weight, and only half way to Poppins' own stem:
+  // a heavier bowl filled its counter and grew a "b"'s belly at 600/700. The
+  // bowl is the 400 drawing at every weight — a thin, open teardrop.
+  const S = r(ACCIDENTAL_METRICS.stem[400] + 0.5 * (ACCIDENTAL_METRICS.stem[w] - ACCIDENTAL_METRICS.stem[400]));
+  const B = ACCIDENTAL_METRICS.stem[400]; // the bowl's own weight: Poppins 400
+  const H = ACCIDENTAL_METRICS.horizontal[400];
+  const xh = ACCIDENTAL_METRICS.xHeight[400];
   const lsb = 60;
   const rsb = 40;
   const top = 730; // past cap height (698-705), short of the ascender (740)
-  const Wo = 210 + 0.95 * S; // bowl, stem's right edge to the bowl's outer right
+  const Wo = 210 + 0.95 * B; // bowl, stem's right edge to the bowl's outer right
   const L = lsb;
   const xs = L + S;
   const xr = xs + Wo;
@@ -130,7 +135,7 @@ function flat(w: AccidentalWeight): AccidentalGlyph {
     ["Z"],
   ];
 
-  const wall = 0.78 * S; // the bowl's right side, near a stem's weight
+  const wall = 0.78 * B; // the bowl's right side, near a stem's weight
   const xi = xr - wall;
   const Wi = xi - xs;
   const iPeak = peak - 0.92 * H;
@@ -315,7 +320,18 @@ export interface ChordSymbolMetrics {
   weight: AccidentalWeight;
   /** Font size, in the caller's units. */
   size: number;
+  /**
+   * "full" (default): accidentals at full size on the baseline, like letters.
+   * "raised": the chord-chart convention — set at RAISED_SCALE and hung from
+   * cap height, superscript-like.
+   */
+  accidentals?: "full" | "raised";
 }
+
+/** Size of a raised accidental relative to a full one (~62% of cap height). */
+export const RAISED_SCALE = 0.62;
+
+const glyphScale = (m: ChordSymbolMetrics) => (m.accidentals === "raised" ? RAISED_SCALE : 1);
 
 function textAdvance(text: string, weight: AccidentalWeight): number {
   let sum = 0;
@@ -333,14 +349,14 @@ export function measurePoppinsText(text: string, { weight, size }: ChordSymbolMe
 }
 
 /** One token's advance, font units. */
-function tokenAdvance(t: ChordToken, weight: AccidentalWeight): number {
-  return t.kind === "text" ? textAdvance(t.text, weight) : accidentalGlyphs[weight][t.kind].advance;
+function tokenAdvance(t: ChordToken, m: ChordSymbolMetrics): number {
+  return t.kind === "text" ? textAdvance(t.text, m.weight) : accidentalGlyphs[m.weight][t.kind].advance * glyphScale(m);
 }
 
 /** The set width of a chord symbol: Poppins' real advances plus the glyphs'. */
-export function measureChordSymbol(text: string, { weight, size }: ChordSymbolMetrics): number {
-  const units = tokenizeChordSymbol(text).reduce((s, t) => s + tokenAdvance(t, weight), 0);
-  return (units * size) / ACCIDENTAL_METRICS.unitsPerEm;
+export function measureChordSymbol(text: string, m: ChordSymbolMetrics): number {
+  const units = tokenizeChordSymbol(text).reduce((s, t) => s + tokenAdvance(t, m), 0);
+  return (units * m.size) / ACCIDENTAL_METRICS.unitsPerEm;
 }
 
 export interface ChordSymbolSvgOptions extends ChordSymbolMetrics {
@@ -388,10 +404,13 @@ export function renderChordSymbolSvg(text: string, opts: ChordSymbolSvgOptions):
         `font-weight="${weight}" xml:space="preserve"${extra} fill="${fill}"${stroke}>${escapeXml(t.text)}</text>`;
     } else {
       const g = accidentalGlyphs[weight][t.kind];
-      out = `<path class="${opts.className ? `${opts.className} ` : ""}chord-accidental chord-accidental-${t.kind}" d="${glyphPathData(g, x, y, size)}" ` +
+      const gs = glyphScale(opts);
+      // Raised: the scaled glyph's top on the cap line.
+      const lift = gs === 1 ? 0 : (ACCIDENTAL_METRICS.capHeight[weight] - glyphBounds(g).yMax * gs) * k;
+      out = `<path class="${opts.className ? `${opts.className} ` : ""}chord-accidental chord-accidental-${t.kind}" d="${glyphPathData(g, x, y - lift, size * gs)}" ` +
         `fill="${fill}"${stroke}/>`;
     }
-    x += tokenAdvance(t, weight) * k;
+    x += tokenAdvance(t, opts) * k;
     return out;
   }).join("");
 }

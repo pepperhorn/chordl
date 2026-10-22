@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  ACCIDENTAL_METRICS, accidentalGlyphs, glyphBounds, measureChordSymbol, renderChordSymbolSvg,
+  ACCIDENTAL_METRICS, RAISED_SCALE, accidentalGlyphs, glyphBounds, measureChordSymbol, renderChordSymbolSvg,
   spokenChordSymbol, tokenizeChordSymbol, type AccidentalWeight,
 } from "../src/accidentals";
 import { POPPINS_ADVANCES, POPPINS_CHARS } from "../src/poppins-metrics";
@@ -55,10 +55,13 @@ describe("accidentalGlyphs", () => {
     }
   });
 
-  it("draws the flat's stem at Poppins' own stem weight, rising past cap height", () => {
+  it("thickens only the flat's stem with weight, modestly, rising past cap height", () => {
+    expect(accidentalGlyphs[400].flat.stem).toBe(ACCIDENTAL_METRICS.stem[400]);
+    expect(accidentalGlyphs[600].flat.stem).toBeGreaterThan(accidentalGlyphs[400].flat.stem);
+    expect(accidentalGlyphs[700].flat.stem).toBeGreaterThan(accidentalGlyphs[600].flat.stem);
+    expect(accidentalGlyphs[700].flat.stem).toBeLessThan(ACCIDENTAL_METRICS.stem[700]);
     for (const w of WEIGHTS) {
       const flat = accidentalGlyphs[w].flat;
-      expect(flat.stem).toBe(ACCIDENTAL_METRICS.stem[w]);
       const b = glyphBounds(flat);
       // Font units, y up: the stem tops out between cap height and ascender,
       // the bowl's point sits on the baseline.
@@ -66,6 +69,21 @@ describe("accidentalGlyphs", () => {
       expect(b.yMax).toBeLessThanOrEqual(ACCIDENTAL_METRICS.ascender);
       expect(b.yMin).toBeLessThanOrEqual(0);
     }
+  });
+
+  it("keeps the 400 bowl at every weight: same thin open teardrop, never a heavier belly", () => {
+    // The counter, relative to the stem's right edge, is identical at every
+    // weight, as are the bowl's top and its reach right of the stem.
+    const counter = (w: AccidentalWeight) => {
+      const g = accidentalGlyphs[w].flat;
+      const xs = g.lsb + g.stem;
+      return g.contours[1].map((cmd) => cmd.map((v, i) => (typeof v === "number" && i % 2 === 1 ? v - xs : v)));
+    };
+    expect(counter(600)).toEqual(counter(400));
+    expect(counter(700)).toEqual(counter(400));
+    expect(accidentalGlyphs[700].flat.bowlTop).toBe(accidentalGlyphs[400].flat.bowlTop);
+    expect(accidentalGlyphs[700].flat.advance - accidentalGlyphs[700].flat.stem)
+      .toBe(accidentalGlyphs[400].flat.advance - accidentalGlyphs[400].flat.stem);
   });
 
   it("keeps the flat's bowl below x-height, so it never reads as a lower-case b", () => {
@@ -123,6 +141,22 @@ describe("renderChordSymbolSvg", () => {
     const svg = renderChordSymbolSvg("Eb", { weight: 600, size: 26, fill: "#000", className: "keyboard-note-label" });
     expect(svg).toMatch(/<text class="keyboard-note-label" /);
     expect(svg).toMatch(/<path class="keyboard-note-label chord-accidental chord-accidental-flat" /);
+  });
+});
+
+describe("raised accidentals", () => {
+  it("sets the glyph at ~62% and hangs it from cap height", () => {
+    const opts = { weight: 700 as const, size: 100, fill: "#fff", x: 0, y: 100, accidentals: "raised" as const };
+    const full = measureChordSymbol("Eb", { weight: 700, size: 100 });
+    const raised = measureChordSymbol("Eb", opts);
+    const g = accidentalGlyphs[700].flat;
+    expect(full - raised).toBeCloseTo((g.advance * (1 - RAISED_SCALE)) / 10, 6);
+    expect(RAISED_SCALE).toBeGreaterThanOrEqual(0.6);
+    expect(RAISED_SCALE).toBeLessThanOrEqual(0.65);
+    const d = renderChordSymbolSvg("Eb", opts).match(/<path[^>]* d="([^"]+)"/)![1];
+    const ys = [...d.matchAll(/-?[\d.]+ (-?[\d.]+)/g)].map((m) => Number(m[1]));
+    // Top of the glyph on the cap line (y down: baseline 100 minus cap height).
+    expect(Math.min(...ys)).toBeCloseTo(100 - ACCIDENTAL_METRICS.capHeight[700] / 10, 0);
   });
 });
 
