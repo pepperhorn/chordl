@@ -1,0 +1,309 @@
+{
+  "name": "crf-default",
+  "description": "Creative Ranges chord-card theme. `pitches` is the CRF pitch palette used when a surface's colorMode is \"pitch\"; `roots` is the per-root resolution used when it is \"single\". Every value is explicit — nothing is derived at load time, so what is written here is what prints. `titleHighlight` is white on every root: with the title's paint-order ink stroke carrying the edge, one consistent fill beats the earlier adaptive white/shade split (proofed 2026-08-09).",
+  "ink": "#231f20",
+  "fonts": {
+    "families": {
+      "display": "Big Shoulders Display, sans-serif",
+      "mono": "Roboto Mono, monospace",
+      "ui": "Poppins, sans-serif"
+    },
+    "titleRoot": {
+      "family": "ui",
+      "size": 100.0,
+      "weight": 700,
+      "style": "normal",
+      "strokeWidth": 7.0
+    },
+    "titleQuality": {
+      "family": "ui",
+      "size": 38.0,
+      "weight": 600,
+      "style": "normal"
+    },
+    "titleFullName": {
+      "family": "ui",
+      "size": 18.0,
+      "weight": 400,
+      "style": "normal",
+      "opacity": 0.7
+    },
+    "badge": {
+      "family": "ui",
+      "size": 18.0,
+      "weight": 600,
+      "style": "normal"
+    },
+    "fretFingerText": {
+      "family": "ui",
+      "size": 18.0,
+      "weight": 600,
+      "style": "normal"
+    },
+    "keyboardNoteText": {
+      "family": "ui",
+      "size": 26.0,
+      "weight": 600,
+      "style": "normal"
+    },
+    "keyboardHandText": {
+      "family": "ui",
+      "size": 18.0,
+      "weight": 600,
+      "style": "normal"
+    },
+    "stringLabel": {
+      "family": "ui",
+      "size": 18.0,
+      "weight": 600,
+      "style": "normal"
+    }
+  },
+  "keyboard": {
+    "format": "exact",
+    "whiteKeys": 13,
+    "minContextKeys": 2,
+    "bleed": 14,
+    "colorMode": "pitch",
+    "textColor": "#ffffff",
+    "textStroke": "rgba(0,0,0,0.35)",
+    "textStrokeWidth": 3
+  },
+  "fret": {
+    "colorMode": "pitch",
+    "circleStrokeColor": "#231f20",
+    "circleStrokeWidth": 2,
+    "diagramColor": "#231f20",
+    "panelFill": "#ffffff",
+    "panelPadding": 10,
+    "panelRadius": 12,
+    "panelStrokeWidth": 2,
+    "panelShadowOffset": 4
+  },
+  "pitches": {
+    "C": {
+      "hex": "#f86e6e",
+      "cmyk": [
+        0,
+        56,
+        56,
+        3
+      ]
+    },
+    "C#": {
+      "hex": "#f58841",
+      "cmyk": [
+        0,
+        44,
+        73,
+        4
+      ]
+    },
+    "D": {
+      "hex": "#ffbc57",
+      "cmyk": [
+        0,
+        26,
+        66,
+        0
+      ]
+    },
+    "D#": {
+      "hex": "#b8a334",
+      "cmyk": [
+        0,
+        11,
+        72,
+        28
+      ]
+    },
+    "E": {
+      "hex": "#fff56d",
+      "cmyk": [
+        0,
+        4,
+        57,
+        0
+      ]
+    },
+    "F": {
+      "hex": "#b3f888",
+      "cmyk": [
+        28,
+        0,
+        45,
+        3
+      ]
+    },
+    "F#": {
+      "hex": "#93d154",
+      "cmyk": [
+        30,
+        0,
+        60,
+        18
+      ]
+    },
+    "G": {
+      "hex": "#6bc6a0",
+      "cmyk": [
+        46,
+        0,
+        19,
+        22
+      ]
+    },
+    "G#": {
+      "hex": "#7ee8df",
+      "cmyk": [
+        46,
+        0,
+        4,
+        9
+      ]
+    },
+    "A": {
+      "hex": "#88a7f8",
+      "cmyk": [
+        45,
+        33,
+        0,
+        3
+      ]
+    },
+    "A#": {
+      "hex": "#cc97e8",
+      "cmyk": [
+        12,
+        35,
+        0,
+        9
+      ]
+    },
+    "B": {
+      "hex": "#e277b1",
+      "cmyk": [
+        0,
+        47,
+        22,
+        11
+      ]
+    }
+  },
+  "roots": {
+    "C": {
+      "background": "#f86e6e",
+      "titleHighlight": "#ffffff",
+      "fretCircle": "#b3f888",
+      "fretCircleStroke": "#231f20",
+      "fretFingerText": "#231f20",
+      "keyboardHighlight": "#b3f888",
+      "keyboardText": "#231f20"
+    },
+    "C#": {
+      "background": "#f58841",
+      "titleHighlight": "#ffffff",
+      "fretCircle": "#b3f888",
+      "fretCircleStroke": "#231f20",
+      "fretFingerText": "#231f20",
+      "keyboardHighlight": "#b3f888",
+      "keyboardText": "#231f20"
+    },
+    "D": {
+      "background": "#ffbc57",
+      "titleHighlight": "#ffffff",
+      "fretCircle": "#b3f888",
+      "fretCircleStroke": "#231f20",
+      "fretFingerText": "#231f20",
+      "keyboardHighlight": "#b3f888",
+      "keyboardText": "#231f20"
+    },
+    "D#": {
+      "background": "#b8a334",
+      "titleHighlight": "#ffffff",
+      "fretCircle": "#b3f888",
+      "fretCircleStroke": "#231f20",
+      "fretFingerText": "#231f20",
+      "keyboardHighlight": "#b3f888",
+      "keyboardText": "#231f20"
+    },
+    "E": {
+      "background": "#fff56d",
+      "titleHighlight": "#ffffff",
+      "fretCircle": "#b3f888",
+      "fretCircleStroke": "#231f20",
+      "fretFingerText": "#231f20",
+      "keyboardHighlight": "#b3f888",
+      "keyboardText": "#231f20"
+    },
+    "F": {
+      "background": "#b3f888",
+      "titleHighlight": "#ffffff",
+      "fretCircle": "#231f20",
+      "fretCircleStroke": "#231f20",
+      "fretFingerText": "#231f20",
+      "keyboardHighlight": "#231f20",
+      "keyboardText": "#231f20"
+    },
+    "F#": {
+      "background": "#93d154",
+      "titleHighlight": "#ffffff",
+      "fretCircle": "#b3f888",
+      "fretCircleStroke": "#231f20",
+      "fretFingerText": "#231f20",
+      "keyboardHighlight": "#b3f888",
+      "keyboardText": "#231f20"
+    },
+    "G": {
+      "background": "#6bc6a0",
+      "titleHighlight": "#ffffff",
+      "fretCircle": "#b3f888",
+      "fretCircleStroke": "#231f20",
+      "fretFingerText": "#231f20",
+      "keyboardHighlight": "#b3f888",
+      "keyboardText": "#231f20"
+    },
+    "G#": {
+      "background": "#7ee8df",
+      "titleHighlight": "#ffffff",
+      "fretCircle": "#b3f888",
+      "fretCircleStroke": "#231f20",
+      "fretFingerText": "#231f20",
+      "keyboardHighlight": "#b3f888",
+      "keyboardText": "#231f20"
+    },
+    "A": {
+      "background": "#88a7f8",
+      "titleHighlight": "#ffffff",
+      "fretCircle": "#b3f888",
+      "fretCircleStroke": "#231f20",
+      "fretFingerText": "#231f20",
+      "keyboardHighlight": "#b3f888",
+      "keyboardText": "#231f20"
+    },
+    "A#": {
+      "background": "#cc97e8",
+      "titleHighlight": "#ffffff",
+      "fretCircle": "#b3f888",
+      "fretCircleStroke": "#231f20",
+      "fretFingerText": "#231f20",
+      "keyboardHighlight": "#b3f888",
+      "keyboardText": "#231f20"
+    },
+    "B": {
+      "background": "#e277b1",
+      "titleHighlight": "#ffffff",
+      "fretCircle": "#b3f888",
+      "fretCircleStroke": "#231f20",
+      "fretFingerText": "#231f20",
+      "keyboardHighlight": "#b3f888",
+      "keyboardText": "#231f20"
+    }
+  },
+  "qrChip": {
+    "fill": "#ffffff",
+    "padding": 5,
+    "radius": 6,
+    "strokeWidth": 1.5
+  }
+}
