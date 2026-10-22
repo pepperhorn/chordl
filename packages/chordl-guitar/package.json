@@ -1,6 +1,6 @@
 {
   "name": "@pepperhorn/chordl-guitar",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Guitar/ukulele chord-shape lookup and svguitar diagram data \u2014 chords-db backed, with alternate fret positions",
   "repository": {
     "type": "git",
