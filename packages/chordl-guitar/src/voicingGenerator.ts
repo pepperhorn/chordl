@@ -31,7 +31,7 @@
  * | add-tension            | 9 / 11 with no 7th (add9, m(add9), 6/9)    | required                        |
  * | altered                | b9 #9 #11 b5 #5 b13                        | required, always                |
  * | omit-unaltered-5th     | perfect 5th in a chord of 4+ tones         | 5 optional                      |
- * | ninth-under-11-or-13   | natural 9 with a 7th and an 11 or 13 above | 9 optional                      |
+ * | ninth-under-11-or-13   | natural 9 with a 7th and an 11, #11 or 13  | 9 optional                      |
  * | eleventh-under-13      | natural 11 with a 7th and a 13             | 11 optional; excluded against a major 3rd |
  * | thirteenth             | 13 / b13 with a 7th                        | required                        |
  * | dominant-11-drops-3    | major 3rd + b7 + natural 11                | 3 excluded (b9 clash with 11)   |
@@ -43,9 +43,9 @@
  * ── What a hand can play ──────────────────────────────────────────────────
  *
  *   - at most 4 fretting fingers; a barre is one finger, only at the lowest
- *     fretted fret, across strings that are all fretted at or above it; a
- *     barre wider than 3 strings must start at the lowest fretted string, and
- *     strings below a partial barre sit at most one fret above it (x32233)
+ *     fretted fret, across strings that are all fretted at or above it;
+ *     fretted strings below a partial barre sit at most one fret above it
+ *     (x32233 yes, 858555 no)
  *   - stretch: highest − lowest fretted fret ≤ 3 (a 4-fret box), ≤ 4 when the
  *     lowest fretted fret is above 5
  *   - at least 3 sounding strings
@@ -92,7 +92,7 @@ export const VOICING_RULES: VoicingRule[] = [
   { id: "add-tension", description: "9 or 11 with no 7th (add chords) is required" },
   { id: "altered", description: "b9, #9, #11, b5, #5, b13 are always required" },
   { id: "omit-unaltered-5th", description: "perfect 5th optional in chords of 4+ tones" },
-  { id: "ninth-under-11-or-13", description: "natural 9 optional when an 11 or 13 sits above a 7th" },
+  { id: "ninth-under-11-or-13", description: "natural 9 optional when an 11, #11 or 13 sits above a 7th" },
   { id: "eleventh-under-13", description: "natural 11 optional in a 13th chord; excluded against a major 3rd" },
   { id: "thirteenth", description: "13 / b13 with a 7th is required" },
   { id: "dominant-11-drops-3", description: "major 3rd excluded against b7 + natural 11" },
@@ -184,6 +184,7 @@ export function analyzeChordTones(root: string, notes: string[], bass?: string):
   const hasSeventh = has(6, -1) || has(6, 0); // b7 / maj7 — dim7's bb7 acts as a 6
   const hasDim7 = has(6, -2);
   const natural11 = has(3, 0) && hasThird;
+  const any11 = has(3) && hasThird;
   const has13 = hasSeventh && has(5);
   const rules = new Set<string>(["root"]);
 
@@ -208,7 +209,7 @@ export function analyzeChordTones(root: string, notes: string[], bass?: string):
         if (t.alter !== 0) return tone(`${acc}9`, "required", "altered");
         if (!hasThird && !has(3)) return tone("2", "required", "sus");
         if (!hasSeventh) return tone("9", "required", "add-tension");
-        if (has13 || natural11) return tone("9", "optional", "ninth-under-11-or-13");
+        if (has13 || any11) return tone("9", "optional", "ninth-under-11-or-13");
         return tone("9", "required", "seventh");
       }
       case 3: {
@@ -280,13 +281,11 @@ function fingerFor(abs: number[]): Fingering | null {
     if (atLo.length < 2) return null;
     const from = atLo[0];
     const to = atLo[atLo.length - 1];
-    // A full barre lies across the bass (E- and A-shape barres start there);
-    // only a partial barre of up to 3 strings, with the lower strings at most
-    // one fret above it (x32233), leaves room for a finger beneath it.
-    if (fretted[0].i < from) {
-      if (to - from + 1 > 3) return null;
-      if (fretted.some((x) => x.i < from && x.f > lo + 1)) return null;
-    }
+    // A barre usually lies across the bass (E- and A-shape barres start
+    // there). A partial barre above a lower fretted string works only when
+    // that string sits one fret above it (x32233, x32322); further, the hand
+    // cannot reach back over a flat index.
+    if (fretted.some((x) => x.i < from && x.f > lo + 1)) return null;
     for (let s = from; s <= to; s++) if (!(abs[s] >= lo)) return null;
     barre = lo;
     groups = [

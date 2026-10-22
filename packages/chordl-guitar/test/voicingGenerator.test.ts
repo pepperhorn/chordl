@@ -23,6 +23,10 @@ function grip(s: string): number[] {
   );
 }
 
+function hasGridFor(notes: string[], g: string): boolean {
+  return hasGrip(generateGuitarVoicings(notes, { limit: 40 }), g);
+}
+
 function hasGrip(results: GeneratedPosition[], ...grips: string[]): boolean {
   const want = grips.map((g) => grip(g).join(","));
   return results.some((p) => want.includes(absolute(p).join(",")));
@@ -57,6 +61,10 @@ describe("analyzeChordTones — the rule table", () => {
     expect(roles("C", ["C", "Eb", "G", "Bb", "D", "F", "A"])).toMatchObject({
       b3: "required", "9": "optional", "11": "optional", "13": "required",
     });
+  });
+
+  it("a #11 implies the 9 beneath it, like a 13 does", () => {
+    expect(roles("C", ["C", "E", "G", "B", "D", "F#"])).toMatchObject({ "9": "optional", "#11": "required" });
   });
 
   it("altered tensions are never optional", () => {
@@ -268,13 +276,23 @@ describe("generateGuitarVoicings — constraints are never violated", () => {
     expect(checked).toBeGreaterThan(sample.length);
   }, 60_000);
 
-  it("the barre rule: a partial barre may sit above a lower fretted bass, a full one may not", () => {
+  it("the barre rule: strings fretted below a partial barre sit one fret above it", () => {
+    let partial = 0;
     for (const p of generateGuitarVoicings(["C", "E", "G", "Bb", "D", "A"], { limit: 200 })) {
       if (!p.barres.length) continue;
       const on = p.frets.map((f, i) => (f === p.barres[0] ? i : -1)).filter((i) => i >= 0);
-      const lowest = p.frets.findIndex((f) => f > 0);
-      if (lowest < on[0]) expect(on[on.length - 1] - on[0] + 1).toBeLessThanOrEqual(3);
+      p.frets.slice(0, on[0]).forEach((f) => {
+        if (f > 0) {
+          partial++;
+          expect(f).toBe(p.barres[0] + 1);
+        }
+      });
     }
+    expect(partial).toBeGreaterThan(0);
+  });
+
+  it("D7(b9,b5): x54544, a partial barre over the A-string root", () => {
+    expect(hasGridFor(["D", "F#", "Ab", "C", "Eb"], "x54544")).toBe(true);
   });
 });
 
