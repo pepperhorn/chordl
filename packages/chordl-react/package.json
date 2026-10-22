@@ -53,6 +53,7 @@
   },
   "devDependencies": {
     "@pepperhorn/chordl-board": "workspace:*",
+    "@pepperhorn/chordl-cards": "workspace:*",
     "@testing-library/react": "^16.1.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",

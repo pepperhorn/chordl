@@ -33,6 +33,7 @@ export default defineConfig(({ command }) => ({
     alias: {
       "@pepperhorn/chordl-react": resolve(__dirname, "src/index.ts"),
       "@pepperhorn/chordl-board": resolve(__dirname, "../chordl-board/src/index.ts"),
+      "@pepperhorn/chordl-cards": resolve(__dirname, "../chordl-cards/src/index.ts"),
     },
   } : undefined,
   build: {

@@ -23,16 +23,6 @@ const isRuntimeDep = (id: string) =>
 
 export default defineConfig(({ command }) => ({
   plugins: [react(), ...(command === "build" ? [dts({ rollupTypes: true })] : [])],
-  root: command === "serve" ? "dev" : undefined,
-  // The demo resolves sibling packages to source so edits hot-reload rather
-  // than coming from whichever dist was last built.
-  resolve: command === "serve" ? {
-    alias: {
-      "@pepperhorn/chordl-cards/model": resolve(__dirname, "src/model.ts"),
-      "@pepperhorn/chordl-cards": resolve(__dirname, "src/index.ts"),
-      "@pepperhorn/chordl-react": resolve(__dirname, "../chordl-react/src/index.ts"),
-    },
-  } : undefined,
   build: {
     lib: {
       // Two entries: the React-free voicing model (what print imports) and the
