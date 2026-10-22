@@ -118,6 +118,12 @@ describe("renderChordSymbolSvg", () => {
     expect(x0).toBeCloseTo(200 - w / 2, 3);
     expect(svg).toMatch(/<path class="chord-accidental chord-accidental-flat"[^>]*fill="#fff"[^>]*stroke="#231f20"[^>]*stroke-width="7"[^>]*paint-order="stroke"/);
   });
+
+  it("gives the glyphs the runs' class too, so a role's pieces are found together", () => {
+    const svg = renderChordSymbolSvg("Eb", { weight: 600, size: 26, fill: "#000", className: "keyboard-note-label" });
+    expect(svg).toMatch(/<text class="keyboard-note-label" /);
+    expect(svg).toMatch(/<path class="keyboard-note-label chord-accidental chord-accidental-flat" /);
+  });
 });
 
 describe("spokenChordSymbol", () => {

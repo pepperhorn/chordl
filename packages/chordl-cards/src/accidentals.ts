@@ -354,7 +354,7 @@ export interface ChordSymbolSvgOptions extends ChordSymbolMetrics {
   fontFamily?: string;
   /** Extra attributes for each <text> run (e.g. a font-variation style). */
   textAttrs?: string;
-  /** Class on each <text> run; glyphs get "chord-accidental chord-accidental-<kind>". */
+  /** Class on each <text> run; glyphs get it too, then "chord-accidental chord-accidental-<kind>". */
   className?: string;
 }
 
@@ -388,7 +388,7 @@ export function renderChordSymbolSvg(text: string, opts: ChordSymbolSvgOptions):
         `font-weight="${weight}" xml:space="preserve"${extra} fill="${fill}"${stroke}>${escapeXml(t.text)}</text>`;
     } else {
       const g = accidentalGlyphs[weight][t.kind];
-      out = `<path class="chord-accidental chord-accidental-${t.kind}" d="${glyphPathData(g, x, y, size)}" ` +
+      out = `<path class="${opts.className ? `${opts.className} ` : ""}chord-accidental chord-accidental-${t.kind}" d="${glyphPathData(g, x, y, size)}" ` +
         `fill="${fill}"${stroke}/>`;
     }
     x += tokenAdvance(t, weight) * k;
