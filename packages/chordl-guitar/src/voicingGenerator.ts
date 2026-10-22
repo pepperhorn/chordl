@@ -519,3 +519,20 @@ function toPosition(c: Candidate, analysis: ChordToneAnalysis): GeneratedPositio
     score: Math.round(c.score * 100) / 100,
   };
 }
+
+/**
+ * True when a position (any source) sounds the chord under the rule table:
+ * every required tone, nothing outside the chord or excluded, and the bass
+ * lowest. chords-db positions are checked with this before they are trusted.
+ */
+export function positionSpellsChord(pos: ChordsDbPosition, analysis: ChordToneAnalysis): boolean {
+  const midi = pos.frets
+    .map((f, i) => (f < 0 ? -1 : f === 0 ? OPEN_MIDI[i] : OPEN_MIDI[i] + pos.baseFret + f - 1))
+    .filter((m) => m >= 0);
+  if (midi.length === 0) return false;
+  if (Math.min(...midi) % 12 !== analysis.bassPc) return false;
+  const allowed = new Set(analysis.tones.filter((t) => t.role !== "excluded").map((t) => t.pc));
+  const pcs = new Set(midi.map((m) => m % 12));
+  for (const p of pcs) if (!allowed.has(p)) return false;
+  return analysis.tones.every((t) => t.role !== "required" || pcs.has(t.pc));
+}
