@@ -12,6 +12,8 @@ import {
   type CardFace, type FaceRequest, type FrettedShape, type GuitarFaceRequest, type KeyboardFaceRequest,
 } from "./faces";
 import { playbackFor, type FacePlayback } from "./playback";
+import { ChordText } from "./ChordText";
+import { fullChordName } from "./names";
 import type { Theme } from "./theme";
 
 export interface ChordCardPlayerProps {
@@ -229,11 +231,13 @@ export function ChordCardPlayer({ chord, face, theme, className }: ChordCardPlay
   }, [built]);
 
   const rootClass = `chord-card-player ${className ?? ""}`.trim();
+  // Spoken, not spelled: "Ebmaj7" would be read "e b maj seven".
+  const spoken = fullChordName(chord);
   const rootStyle = { "--ccp-font": theme.fonts.families.ui } as CSSProperties;
 
   if ("error" in built) {
     return (
-      <section className={rootClass} data-face={face} style={rootStyle} aria-label={`${chord}, ${FACE_LABELS[face]}`}>
+      <section className={rootClass} data-face={face} style={rootStyle} aria-label={`${spoken}, ${FACE_LABELS[face]}`}>
         <style>{CSS}</style>
         <p className="ccp-error" role="alert">
           This card cannot show “{chord}” as {FACE_LABELS[face]}: {built.error}
@@ -246,7 +250,7 @@ export function ChordCardPlayer({ chord, face, theme, className }: ChordCardPlay
   const pressed = (m: Mode) => String(playing === m) as "true" | "false";
 
   return (
-    <section className={rootClass} data-face={face} style={rootStyle} aria-label={`${chord}, ${FACE_LABELS[face]}`}>
+    <section className={rootClass} data-face={face} style={rootStyle} aria-label={`${spoken}, ${FACE_LABELS[face]}`}>
       <style>{CSS}</style>
       <div className={`ccp-diagram ccp-diagram--${req.kind}`}>
         {req.kind === "keyboard"
@@ -264,7 +268,7 @@ export function ChordCardPlayer({ chord, face, theme, className }: ChordCardPlay
       <div
         className="ccp-controls"
         role="group"
-        aria-label={`${chord} playback`}
+        aria-label={`${spoken} playback`}
         aria-busy={status === "loading"}
         onPointerEnter={preload}
         onFocus={preload}
@@ -303,6 +307,9 @@ export function ChordCardPlayer({ chord, face, theme, className }: ChordCardPlay
   );
 }
 
+/** Note names set like print's: Poppins SemiBold with drawn accidentals. */
+const renderNoteName = (name: string) => <ChordText text={name} weight={600} />;
+
 function KeyboardDiagram({ req, chord, face, active, highlight }: {
   req: KeyboardFaceRequest; chord: string; face: CardFace; active: number[]; highlight: string;
 }) {
@@ -321,6 +328,7 @@ function KeyboardDiagram({ req, chord, face, active, highlight }: {
       showPlayback={false}
       showNoteNames
       displayNoteNames={faceNoteNames(chord, face)}
+      renderNoteName={renderNoteName}
       uiTheme="light"
       scale={1}
       activePlaybackIndices={active}

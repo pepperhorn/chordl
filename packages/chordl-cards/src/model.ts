@@ -25,6 +25,14 @@ export type { FacePlayback } from "./playback";
 
 export { qualityLabelFor, fullChordName, rootOf } from "./names";
 
+export {
+  ACCIDENTAL_METRICS, accidentalGlyphs, glyphBounds, glyphPathData, tokenizeChordSymbol,
+  spokenChordSymbol, measureChordSymbol, measurePoppinsText, renderChordSymbolSvg,
+} from "./accidentals";
+export type {
+  AccidentalGlyph, AccidentalKind, AccidentalWeight, ChordToken, ChordSymbolMetrics, ChordSymbolSvgOptions,
+} from "./accidentals";
+
 export { parseTheme, toneColor, familyOf, HEX_COLOUR } from "./theme";
 export type {
   Theme, ThemeFonts, ThemeKeyboard, ThemeFret, ThemeQrChip, ThemePlayback,

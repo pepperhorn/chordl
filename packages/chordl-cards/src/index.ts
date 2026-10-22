@@ -5,3 +5,6 @@ export * from "./model";
 
 export { ChordCardPlayer } from "./ChordCardPlayer";
 export type { ChordCardPlayerProps } from "./ChordCardPlayer";
+
+export { ChordText } from "./ChordText";
+export type { ChordTextProps } from "./ChordText";

@@ -49,6 +49,10 @@ const notesOf = (instrument: string) => started.filter((s) => s.instrument === i
 
 beforeEach(() => { started.length = 0; });
 
+/** Each note name as a screen reader hears it. */
+const names = (root: Element) =>
+  [...root.querySelectorAll(".bc-note-name .chord-text-sr")].map((n) => n.textContent);
+
 describe("ChordCardPlayer — keyboard", () => {
   it("renders the keyboard, note names under the keys, and the controls", () => {
     const { container } = render(<ChordCardPlayer chord="C" face="keyboard" theme={THEME} />);
@@ -56,7 +60,7 @@ describe("ChordCardPlayer — keyboard", () => {
     expect(root).toBeTruthy();
     expect(root.getAttribute("data-face")).toBe("keyboard");
     expect(root.querySelector("svg.bc-keyboard")).toBeTruthy();
-    expect([...root.querySelectorAll(".bc-note-name")].map((n) => n.textContent)).toEqual(["C", "E", "G"]);
+    expect(names(root)).toEqual(["C", "E", "G"]);
 
     expect(screen.getByRole("button", { name: /play chord/i }).className).toContain("btn-play-chord");
     expect(screen.getByRole("button", { name: /play arpeggio/i }).className).toContain("btn-play-arpeggio");
@@ -67,10 +71,18 @@ describe("ChordCardPlayer — keyboard", () => {
     expect(tempo.getAttribute("aria-valuetext")).toBe("120 BPM");
   });
 
-  it("spells note names for display", () => {
+  it("spells note names for display, flats drawn as glyphs and spoken as words", () => {
     const { container } = render(<ChordCardPlayer chord="Ebmaj7" face="keyboard" theme={THEME} />);
-    expect([...container.querySelectorAll(".bc-note-name")].map((n) => n.textContent))
-      .toEqual(["Eb", "G", "Bb", "D"]);
+    expect(names(container)).toEqual(["E flat", "G", "B flat", "D"]);
+    const visual = [...container.querySelectorAll(".bc-note-name .chord-text-visual")];
+    expect(visual.map((n) => n.textContent)).toEqual(["E", "G", "B", "D"]);
+    expect(container.querySelectorAll(".bc-note-name svg.chord-accidental-flat")).toHaveLength(2);
+  });
+
+  it("names the chord in words for assistive tech", () => {
+    const { container } = render(<ChordCardPlayer chord="Ebmaj7" face="keyboard" theme={THEME} />);
+    expect(container.querySelector(".chord-card-player")!.getAttribute("aria-label"))
+      .toBe("e flat major seventh, keyboard");
   });
 
   it("plays the block chord through the audio layer and paints the sounding keys", async () => {
@@ -105,7 +117,8 @@ describe("ChordCardPlayer — keyboard-hands", () => {
     const { container } = render(<ChordCardPlayer chord="F#m7" face="keyboard-hands" theme={THEME} />);
     const svgText = [...container.querySelectorAll("svg.bc-keyboard text")].map((t) => t.textContent);
     expect(svgText.filter((t) => t === "L.H." || t === "R.H.")).toEqual(["L.H.", "R.H."]);
-    expect([...container.querySelectorAll(".bc-note-name")].map((n) => n.textContent)).toEqual(["F#", "A", "E"]);
+    expect(names(container)).toEqual(["F sharp", "A", "E"]);
+    expect(container.querySelectorAll(".bc-note-name svg.chord-accidental-sharp")).toHaveLength(1);
     expect(screen.getByRole("button", { name: /l\.h\. then r\.h\./i }).className).toContain("btn-play-hands");
   });
 

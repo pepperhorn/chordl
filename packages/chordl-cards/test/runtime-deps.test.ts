@@ -48,7 +48,7 @@ describe("bundle externals", () => {
 
 describe("the model entry", () => {
   it("imports nothing React or node: — print loads it outside a browser", () => {
-    const model = ["model.ts", "hands.ts", "keyboard-window.ts", "faces.ts", "playback.ts", "names.ts", "theme.ts"];
+    const model = ["model.ts", "hands.ts", "keyboard-window.ts", "faces.ts", "playback.ts", "names.ts", "theme.ts", "accidentals.ts", "poppins-metrics.ts"];
     const offenders: string[] = [];
     for (const name of model) {
       for (const [, spec] of readFileSync(join(src, name), "utf8").matchAll(SPECIFIER)) {
