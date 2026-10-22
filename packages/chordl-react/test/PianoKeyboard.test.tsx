@@ -120,3 +120,18 @@ describe("keyboard centring", () => {
     expect(box.style.maxWidth).not.toBe("");
   });
 });
+
+describe("PianoKeyboard renderNoteName", () => {
+  it("draws each note name through the host's renderer", () => {
+    const { container } = render(
+      <PianoKeyboard
+        highlightKeys={["Eb", "G"]}
+        showNoteNames
+        displayNoteNames={["Eb", "G"]}
+        renderNoteName={(name) => <i className="custom-name">{name.toUpperCase()}</i>}
+      />,
+    );
+    const names = [...container.querySelectorAll(".bc-note-name .custom-name")].map((n) => n.textContent);
+    expect(names).toEqual(["EB", "G"]);
+  });
+});

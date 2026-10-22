@@ -72,6 +72,9 @@ export interface KeyboardProps {
   /** Display-friendly note names aligned with highlightKeys (e.g. "Bb" instead of "A#").
    *  When omitted, names are derived from highlightKeys (sharp-normalized). */
   displayNoteNames?: string[];
+  /** Renders one note name's content (default: the name as text). Lets a host
+   *  draw accidentals as glyphs instead of "b"/"#" letters. */
+  renderNoteName?: (name: string) => ReactNode;
   /** Text size for note name labels (default "base"). */
   noteNameSize?: TextSize;
   /** Note name display mode: "pitch-class" (default, e.g. "C") or "midi" (e.g. "C4"). */

@@ -145,6 +145,7 @@ export function PianoKeyboard({
   scale = 0.5,
   showNoteNames,
   displayNoteNames,
+  renderNoteName,
   noteNameSize = "lg",
   noteNameMode = "pitch-class",
   midiBaseOctave = 4,
@@ -508,7 +509,7 @@ export function PianoKeyboard({
                     color: uiTokens.text,
                     fontFamily: "system-ui, sans-serif",
                   }}>
-                    {h.note}
+                    {renderNoteName ? renderNoteName(h.note) : h.note}
                   </span>
                 )}
                 {showDeg && degree && (
