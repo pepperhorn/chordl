@@ -413,6 +413,30 @@
         "secondsPerTurn": 60,
         "default": "spinning"
       }
+    },
+    "skeleton": {
+      "ringPitch": {
+        "px": 8
+      },
+      "stroke": {
+        "px": 1
+      },
+      "centre": {
+        "x": 0.5,
+        "y": 0.6
+      },
+      "fill": 0.09,
+      "line": 0.1,
+      "frame": 0.42,
+      "shimmer": {
+        "colour": "paper",
+        "strength": 0.16,
+        "angle": 100,
+        "from": 0.3,
+        "peak": 0.5,
+        "to": 0.7,
+        "seconds": 1.8
+      }
     }
   },
   "gradient": {

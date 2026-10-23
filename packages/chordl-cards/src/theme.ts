@@ -8,8 +8,9 @@
  * site both import it; neither keeps a copy. Other file paths in the comments
  * below (src/card.ts, src/highlight.ts, ...) are chordcards' own. Additions
  * over print's schema are optional blocks: `playback` (web player only) and
- * the brand motifs `paper` / `contrast` / `groove` / `gradient` (rules in this
- * package's DESIGN.md). A theme without them parses exactly as before.
+ * the brand motifs `paper` / `contrast` / `groove` (fingerprint, ambient,
+ * skeleton) / `gradient` (rules in this package's DESIGN.md). A theme without
+ * them parses exactly as before.
  *
  * The theme is loaded from JSON (`themes/crf-default.json`) rather than being
  * spread across `src/palette.ts`, `src/card.ts` and `src/render-host/entry.tsx`
@@ -335,9 +336,35 @@ export interface ThemeGrooveAmbient {
   spin: GrooveSpin;
 }
 
+/**
+ * The loading skeleton (screen only): a placeholder in a card's footprint,
+ * fine grooves and a passing shimmer until the image or batch arrives. Drawn
+ * in the surrounding text colour (CSS `currentColor`), so one skeleton reads
+ * on the dark shell and on a root band. See DESIGN.md "Loading skeleton".
+ */
+export interface ThemeGrooveSkeleton {
+  ringPitch: DualLength;
+  stroke: DualLength;
+  /** Groove centre, fractions of the placeholder (0.5, 0.6: a little below the middle). */
+  centre: GroovePreset;
+  /** Placeholder ground: the surrounding text colour at this strength, 0..1. */
+  fill: number;
+  /** Groove line: the surrounding text colour at this strength, 0..1. */
+  line: number;
+  /** A card image's frame while it loads: its root colour mixed this far toward the dark ground (the site shell), 0..1. */
+  frame: number;
+  /**
+   * A light band sweeping across once per `seconds` (UI feedback speed, not an
+   * ambient loop): `colour` at `strength`, a linear gradient at `angle`
+   * degrees, transparent at `from` and `to`, full at `peak` (fractions).
+   */
+  shimmer: { colour: ColourRef; strength: number; angle: number; from: number; peak: number; to: number; seconds: number };
+}
+
 export interface ThemeGroove {
   fingerprint: ThemeGrooveFingerprint;
   ambient?: ThemeGrooveAmbient;
+  skeleton?: ThemeGrooveSkeleton;
 }
 
 /** One gradient stop: the root colour mixed `amount` toward ink or paper, in oklab. */
@@ -726,6 +753,35 @@ function ambientGroove(v: unknown): ThemeGrooveAmbient {
   };
 }
 
+function skeletonGroove(v: unknown): ThemeGrooveSkeleton {
+  const w = "groove.skeleton";
+  const o = obj(v, w);
+  const ringPitch = dualLength(o.ringPitch, `${w}.ringPitch`, false);
+  const stroke = dualLength(o.stroke, `${w}.stroke`, false);
+  ringStroke(ringPitch, stroke, w);
+  const c = obj(o.centre, `${w}.centre`);
+  const sh = obj(o.shimmer, `${w}.shimmer`);
+  const shimmer = {
+    colour: colourRef(sh.colour, `${w}.shimmer.colour`),
+    strength: unit(sh.strength, `${w}.shimmer.strength`),
+    angle: num(sh.angle, `${w}.shimmer.angle`),
+    from: unit(sh.from, `${w}.shimmer.from`),
+    peak: unit(sh.peak, `${w}.shimmer.peak`),
+    to: unit(sh.to, `${w}.shimmer.to`),
+    seconds: positive(sh.seconds, `${w}.shimmer.seconds`),
+  };
+  ascending([shimmer.from, shimmer.peak, shimmer.to], `${w}.shimmer`, "from, peak, to");
+  return {
+    ringPitch,
+    stroke,
+    centre: { x: num(c.x, `${w}.centre.x`), y: num(c.y, `${w}.centre.y`) },
+    fill: unit(o.fill, `${w}.fill`),
+    line: unit(o.line, `${w}.line`),
+    frame: unit(o.frame, `${w}.frame`),
+    shimmer,
+  };
+}
+
 function toward(v: unknown, where: string): "ink" | "paper" {
   if (v !== "ink" && v !== "paper") fail(where, `must be "ink" or "paper", got ${JSON.stringify(v)}`);
   return v;
@@ -803,6 +859,7 @@ function motifs(
     out.groove = {
       fingerprint: fingerprint(g.fingerprint),
       ...(g.ambient === undefined ? {} : { ambient: ambientGroove(g.ambient) }),
+      ...(g.skeleton === undefined ? {} : { skeleton: skeletonGroove(g.skeleton) }),
     };
   }
   if (t.gradient !== undefined) {

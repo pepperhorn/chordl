@@ -97,6 +97,15 @@ describe("the shipped theme's motifs", () => {
     expect(a.spin).toEqual({ secondsPerTurn: 60, default: "spinning" });
   });
 
+  it("carries the loading skeleton: 8px grooves at (0.5, 0.6), 9% / 10% text colour, a 1.8s paper shimmer", () => {
+    const k = t.groove!.skeleton!;
+    expect(k.ringPitch).toEqual({ px: 8 });
+    expect(k.stroke).toEqual({ px: 1 });
+    expect(k.centre).toEqual({ x: 0.5, y: 0.6 });
+    expect([k.fill, k.line, k.frame]).toEqual([0.09, 0.1, 0.42]);
+    expect(k.shimmer).toEqual({ colour: "paper", strength: 0.16, angle: 100, from: 0.3, peak: 0.5, to: 0.7, seconds: 1.8 });
+  });
+
   it("resolves colour roles", () => {
     expect(resolveColourRef(t, "ink", "C")).toBe("#231f20");
     expect(resolveColourRef(t, "paper", "C")).toBe("#ffffff");
@@ -167,6 +176,30 @@ describe("parseTheme: motif validation", () => {
     const d = clone();
     d.gradient.drift.secondsPerCycle = 3;
     expect(() => parseTheme(d)).toThrow(/drift\.secondsPerCycle/);
+  });
+
+  it("refuses a skeleton with a groove as thick as its pitch, an unordered shimmer band or a still shimmer", () => {
+    const a = clone();
+    a.groove.skeleton.stroke.px = 8;
+    expect(() => parseTheme(a)).toThrow(/groove\.skeleton\.stroke\.px: must be thinner/);
+    const b = clone();
+    b.groove.skeleton.shimmer.peak = 0.8;
+    expect(() => parseTheme(b)).toThrow(/groove\.skeleton\.shimmer: from, peak, to must increase/);
+    const c = clone();
+    c.groove.skeleton.shimmer.seconds = 0;
+    expect(() => parseTheme(c)).toThrow(/groove\.skeleton\.shimmer\.seconds: must be greater than 0/);
+    const d = clone();
+    d.groove.skeleton.fill = 1.5;
+    expect(() => parseTheme(d)).toThrow(/groove\.skeleton\.fill/);
+    const e = clone();
+    e.groove.skeleton.shimmer.colour = "#fff";
+    expect(() => parseTheme(e)).toThrow(/groove\.skeleton\.shimmer\.colour/);
+  });
+
+  it("parses a groove without a skeleton (it is optional)", () => {
+    const raw = clone();
+    delete raw.groove.skeleton;
+    expect("skeleton" in parseTheme(raw).groove!).toBe(false);
   });
 
   it("refuses label rings out of order", () => {

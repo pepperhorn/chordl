@@ -161,7 +161,8 @@ and gives accessible names in words. The full chord name is always words
 
 ## 2. Motifs
 
-Two motifs carry the brand between the media. Both are defined once in the
+Two motifs carry the brand between the media (the groove also gives the
+loading skeleton, §2.4). Both are defined once in the
 theme, medium-neutral: lengths in screen px **and** print pt, colours as
 **roles** (`ink`, `paper`, `root`) that each medium maps to its own tokens.
 
@@ -270,6 +271,38 @@ add contrast.
 - Don't add a stop toward ink above what `parseTheme` accepts, and don't mix
   toward anything but ink or paper (a hue shift makes C read as C#).
 
+### 2.4 Loading skeleton (`groove.skeleton`, screen only)
+
+What a card image or a rail's next batch shows while it loads: the card's
+footprint, fine grooves and a light band passing over it, then the image
+fades in. It is the groove motif at its quietest, so waiting still looks like
+the brand.
+
+| Key | Value | Meaning |
+|---|---|---|
+| `ringPitch` / `stroke` | 8px / 1px (no pt: not printed) | Finer than the fingerprint: the placeholder is poster-sized |
+| `centre` | (0.5, 0.6) | Groove centre, fractions of the placeholder (a little below the middle, where a card's diagram sits) |
+| `fill` | 0.09 | Placeholder ground: the **surrounding text colour** at 9% (CSS `currentColor`), so one skeleton reads on the shell (off-white) and on a root band (ink) |
+| `line` | 0.10 | Groove line, the surrounding text colour at 10% |
+| `frame` | 0.42 | A card image's own frame while it loads: its root colour mixed 42% toward the dark ground (the site shell), in oklab |
+| `shimmer` | `paper` 0.16, 100deg, transparent 0.30 → full 0.50 → transparent 0.70, 1.8s | A linear light band sweeping left to right (ease-in-out, repeating) |
+
+**Construction.** Grooves are
+`repeating-radial-gradient(circle at X Y, transparent 0 <pitch - stroke>, <line> <pitch - stroke> <pitch>)`
+over the `fill` (or `frame`) ground; the shimmer is a pseudo layer with
+`linear-gradient(<angle>deg, transparent <from>, color-mix(in oklab, <role token> <strength>, transparent) <peak>, transparent <to>)`
+translated from -100% to 100% every `seconds`.
+
+**Motion.** The shimmer is feedback ("on its way"), not ambient, so it runs
+at UI speed and is exempt from `MIN_AMBIENT_SECONDS`. It runs only while the
+thing is actually loading and on screen (a lazy image far along a rail waits
+still); under reduced motion the skeleton is static. Without JavaScript there
+is no skeleton: images show as usual.
+
+**Do / don't.** Do keep the skeleton the exact footprint of what replaces it
+(nothing jumps). Don't put text or a spinner on it, and don't use it for
+anything that is not loading.
+
 ---
 
 ## 3. Motion principles (screen only)
@@ -278,7 +311,8 @@ Print never moves; every motif has a static state that is its print state.
 
 - **Ambient is slow**: loops of 20–60s (sheen 44s, ambient record 60s; a
   groove fingerprint that spins takes 90s). `parseTheme` refuses any ambient
-  period under 20s (`MIN_AMBIENT_SECONDS`).
+  period under 20s (`MIN_AMBIENT_SECONDS`). The skeleton shimmer (1.8s) is
+  loading feedback, not ambient, and is exempt.
 - **UI feedback is quick**: 300ms or less (presses, tabs, toolkit pop).
 - Transform, opacity and clip-path only. Ambient layers run only on screen in
   a visible tab and start paused.
@@ -373,7 +407,7 @@ unchanged. This section is what to build and test if the deck adopts them.
 | Print loader | chordcards `src/theme-load.ts` (`DEFAULT_THEME_PATH` resolves the package file; `THEME_PATH` overrides) |
 | Print component rules | chordcards `DESIGN.md` |
 | Site theme | chords `src/lib/card-theme.ts` (parses the package file); `tokens.test.ts` pins `--root-*` to it |
-| Site motif CSS | chords `src/lib/motifs.ts` → `pnpm gen:motifs` → `src/styles/motifs.generated.css` (`--motif-*` primitives at `:root`; `--motif-sheen-image` and `--motif-sheen-highlight-image` on `.ambient` / `.motif-sheen`); `motifs.test.ts` fails when the file is stale |
+| Site motif CSS | chords `src/lib/motifs.ts` → `pnpm gen:motifs` → `src/styles/motifs.generated.css` (`--motif-*` primitives at `:root`, including `--motif-skeleton-*`; `--motif-sheen-image` and `--motif-sheen-highlight-image` on `.ambient` / `.motif-sheen`); `motifs.test.ts` fails when the file is stale |
 | Site UI rules | chords `CLAUDE.md` "Design system", crf-staff `docs/design.md` ("White / Tiles"), chords `docs/animation.md` |
 
 ---

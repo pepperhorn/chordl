@@ -43,7 +43,7 @@ export {
 export { mixOklab, over, contrastRatio, relativeLuminance } from "./colour";
 export type {
   Theme, ThemeFonts, ThemeKeyboard, ThemeFret, ThemeQrChip, ThemePlayback,
-  ThemeContrast, ThemeGroove, ThemeGrooveFingerprint, ThemeGrooveAmbient, ThemeGradient,
+  ThemeContrast, ThemeGroove, ThemeGrooveFingerprint, ThemeGrooveAmbient, ThemeGrooveSkeleton, ThemeGradient,
   GradientStop, GrooveInk, GroovePreset, GrooveSpin, DualLength, ColourRef,
   FontSpec, FontFamilyKey, FontStyle, ColorMode, KeyboardFormat, PitchEntry, RootEntry,
 } from "./theme";
