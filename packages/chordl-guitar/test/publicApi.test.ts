@@ -32,7 +32,9 @@ describe("public API", () => {
       "positionSpellsChord",
       "VOICING_RULES",
       "guitarPositionFor",
+      "guitarLibraryPositionsFor",
       "chordsDbSuffixFor",
+      "fingeringFor",
     ]) {
       expect(api, `missing export ${name}`).toHaveProperty(name);
     }

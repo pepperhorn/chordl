@@ -4,6 +4,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ChordCardPlayer } from "../src/ChordCardPlayer";
 import { parseTheme } from "../src/theme";
+import { positionsFor } from "../src/positions";
 import { RAW_THEME, loadTheme } from "./theme-fixture";
 
 // The audio layer: chordl-react's startPlayback loads smplr lazily. Stubbed the
@@ -28,8 +29,15 @@ vi.mock("smplr", () => ({
       return () => {};
     };
   },
+  // The ukulele's .sf2 sampler, recorded under "ukulele".
   Soundfont2Sampler: class {
-    load = Promise.reject(new Error("unused"));
+    load = Promise.resolve();
+    instrumentNames = ["Ukulele"];
+    loadInstrument() { created.push("ukulele"); return Promise.resolve(); }
+    start = (e: { note: number }) => {
+      started.push({ instrument: "ukulele", note: e.note });
+      return () => {};
+    };
   },
 }));
 vi.mock("soundfont2", () => ({ SoundFont2: class {} }));
@@ -52,6 +60,12 @@ beforeEach(() => { started.length = 0; });
 /** Each note name as a screen reader hears it. */
 const names = (root: Element) =>
   [...root.querySelectorAll(".bc-note-name .chord-text-sr")].map((n) => n.textContent);
+
+/** svguitar's tuning row, low string first. */
+const tuningRow = (root: Element) =>
+  [...root.querySelectorAll("text.tuning")].map((t) => t.textContent);
+/** GuitarChord classes one frame line per fret plus the nut. */
+const fretCount = (root: Element) => root.querySelectorAll(".bc-frame-fret").length - 1;
 
 describe("ChordCardPlayer — keyboard", () => {
   it("renders the keyboard, note names under the keys, and the controls", () => {
@@ -156,6 +170,44 @@ describe("ChordCardPlayer — guitar-top3", () => {
   });
 });
 
+describe("ChordCardPlayer — ukulele", () => {
+  it("draws four strings labelled G C E A, named for assistive tech", () => {
+    const { container } = render(<ChordCardPlayer chord="C" face="ukulele" theme={THEME} />);
+    const player = container.querySelector(".chord-card-player[data-face='ukulele']")!;
+    expect(player.getAttribute("aria-label")).toMatch(/ukulele$/);
+    expect(player.querySelector(".bc-guitar-chord")).toBeTruthy();
+    expect(tuningRow(player)).toEqual(["G", "C", "E", "A"]);
+    expect(player.querySelector(".ccp-badge--generated")).toBeNull();
+  });
+
+  it("strums G C E C on the ukulele patch, reentrant G first", async () => {
+    render(<ChordCardPlayer chord="C" face="ukulele" theme={THEME} />);
+    fireEvent.click(screen.getByRole("button", { name: /play arpeggio/i }));
+    await waitFor(() => expect(notesOf("ukulele")).toEqual([67, 60, 64, 72]));
+  });
+
+  it("explains a chord chords-db has no ukulele shape for", () => {
+    render(<ChordCardPlayer chord="C7(#9,#5)" face="ukulele" theme={THEME} />);
+    expect(screen.getByRole("alert").textContent).toMatch(/as ukulele: no ukulele shape/);
+  });
+});
+
+describe("ChordCardPlayer — bass4", () => {
+  it("draws four strings labelled E A D G over six frets", () => {
+    const { container } = render(<ChordCardPlayer chord="C" face="bass4" theme={THEME} />);
+    const player = container.querySelector(".chord-card-player[data-face='bass4']")!;
+    expect(player.getAttribute("aria-label")).toMatch(/four-string bass$/);
+    expect(tuningRow(player)).toEqual(["E", "A", "D", "G"]);
+    expect(fretCount(player)).toBe(6);
+  });
+
+  it("plays C-G-C on the bass patch", async () => {
+    render(<ChordCardPlayer chord="C" face="bass4" theme={THEME} />);
+    fireEvent.click(screen.getByRole("button", { name: /play arpeggio/i }));
+    await waitFor(() => expect(notesOf("electric_bass_finger")).toEqual([36, 43, 48]));
+  });
+});
+
 describe("ChordCardPlayer — guitar (six strings)", () => {
   it("renders a chords-db shape with no generated badge", () => {
     const { container } = render(<ChordCardPlayer chord="C" face="guitar" theme={THEME} />);
@@ -178,6 +230,23 @@ describe("ChordCardPlayer — guitar (six strings)", () => {
   it("explains a chord with no position instead of drawing one", () => {
     render(<ChordCardPlayer chord="C13(b9,b5)" face="guitar" theme={THEME} />);
     expect(screen.getByRole("alert").textContent).toMatch(/no six-string guitar position/);
+  });
+});
+
+describe("ChordCardPlayer — a position elsewhere on the neck", () => {
+  it("draws and plays the request it is given instead of the card shape", async () => {
+    const octave = positionsFor("C", "guitar-top3", THEME).find((p) => p.kind === "octave")!;
+    const { container } = render(<ChordCardPlayer chord="C" face="guitar-top3" theme={THEME} request={octave.request} />);
+    // svguitar prints the window's first fret beside a slid diagram.
+    expect(container.querySelector(".bc-guitar-chord text.fret-position")?.textContent).toBe("12fr");
+    fireEvent.click(screen.getByRole("button", { name: /play arpeggio/i }));
+    await waitFor(() => expect(notesOf("electric_guitar_clean")).toEqual([67, 72, 76]));
+  });
+
+  it("badges a generated alternative as pending teacher review", () => {
+    const generated = positionsFor("C", "guitar-top3", THEME).find((p) => p.generated)!;
+    const { container } = render(<ChordCardPlayer chord="C" face="guitar-top3" theme={THEME} request={generated.request} />);
+    expect(container.querySelector(".ccp-badge--generated")).toBeTruthy();
   });
 });
 

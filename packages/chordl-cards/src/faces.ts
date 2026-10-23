@@ -11,15 +11,18 @@
  * test/faces.test.ts's golden check.
  */
 
-import { INSTRUMENTS, dbPositionToChord, guitarPositionFor, lookupTop3Chord } from "@pepperhorn/chordl-guitar";
+import {
+  INSTRUMENTS, bassShapeFor, dbPositionToChord, guitarPositionFor, lookupGuitarChord, lookupTop3Chord,
+} from "@pepperhorn/chordl-guitar";
+import type { ChordsDbPosition } from "@pepperhorn/chordl-guitar";
 import { computeKeyboard } from "@pepperhorn/chordl-core";
 import { noteParts, parseChordSymbol, spelledChord } from "./catalogue";
 import { keyCentresFor, keyboardWindow, voiceAscending, whiteSpan, type KeyboardWindow } from "./keyboard-window";
 import { handsWindow } from "./hands";
-import { familyOf, toneColor, type Theme } from "./theme";
+import { familyOf, toneColor, type RootEntry, type Theme } from "./theme";
 
 /** The card faces this package models. */
-export type CardFace = "keyboard" | "keyboard-hands" | "guitar-top3" | "guitar";
+export type CardFace = "keyboard" | "keyboard-hands" | "guitar-top3" | "guitar" | "ukulele" | "bass4";
 
 /** A fretted shape as svguitar takes it (chordl-guitar's `Chord`). */
 export type FrettedShape = NonNullable<ReturnType<typeof lookupTop3Chord>>;
@@ -46,7 +49,7 @@ export interface GuitarFaceRequest {
   kind: "guitar";
   /** Fingers carry per-note colours when the theme's fret colorMode is "pitch". */
   shape: FrettedShape;
-  instrument: "guitar-top3" | "guitar";
+  instrument: "guitar-top3" | "guitar" | "ukulele" | "bass4";
   fingerColor: string;
   fingerTextColor: string;
   fingerTextSize: number;
@@ -60,7 +63,9 @@ export interface GuitarFaceRequest {
   /** guitar (six-string) only, after every other key so a guitar-top3
    * request is unchanged: whether the voicing was generated rather than taken
    * from chords-db (badge it "generated voicing, pending teacher review"),
-   * where it came from, and which optional degrees it leaves out. */
+   * where it came from, and which optional degrees it leaves out. The other
+   * fretted faces carry them only on a generated alternative from
+   * `positionsFor` (./positions.ts), never on the card shape. */
   generated?: boolean;
   source?: "chords-db" | "power-chord" | "generated";
   omitted?: string[];
@@ -148,7 +153,9 @@ export function plainKeyboardWindow(chord: string, theme: Theme): KeyboardWindow
  * `keyboard`: the chord in root position, centred in the theme's window.
  * `keyboard-hands`: the exploded voicing (bass in the L.H., two tones in the
  * R.H.) with the hand split as indices into `notes`. `guitar-top3`: the top-3
- * preset shape, fingers coloured by the pitch each one sounds.
+ * preset shape, fingers coloured by the pitch each one sounds. `ukulele`:
+ * chords-db's first ukulele position (G C E A, reentrant). `bass4`: the
+ * root-fifth-octave pattern on a four-string bass. Neither takes a slash chord.
  *
  * Throws, naming the chord, for anything the face cannot print.
  */
@@ -189,26 +196,13 @@ export function requestFor(chord: string, face: CardFace, theme: Theme): FaceReq
   }
 
   if (face === "guitar-top3") {
-    const instrument = "guitar-top3" as const;
-    const shape = top3ShapeFor(chord);
-    return {
-      kind: "guitar" as const,
-      shape: colourFingers(shape, instrument, root, theme),
-      instrument,
-      fingerColor: rootEntry.fretCircle,
-      fingerTextColor: rootEntry.fretFingerText,
-      fingerTextSize: theme.fonts.fretFingerText.size,
-      fingerStrokeColor: rootEntry.fretCircleStroke,
-      fingerStrokeWidth: theme.fret.circleStrokeWidth,
-      diagramColor: theme.fret.diagramColor,
-      fontFamily: familyOf(theme, theme.fonts.fretFingerText),
-      // svguitar has no weight setting and writes its <text> with none; the
-      // renderer stamps these on: finger numbers from fretFingerText, every
-      // other run (the tuning row, a "2fr" label) from stringLabel.
-      fingerTextWeight: theme.fonts.fretFingerText.weight,
-      labelFontFamily: familyOf(theme, theme.fonts.stringLabel),
-      labelFontWeight: theme.fonts.stringLabel.weight,
-    };
+    return frettedRequest(top3ShapeFor(chord), "guitar-top3", root, rootEntry, theme);
+  }
+  if (face === "ukulele") {
+    return frettedRequest(ukuleleShapeFor(chord), "ukulele", root, rootEntry, theme);
+  }
+  if (face === "bass4") {
+    return frettedRequest(bassPatternFor(chord), "bass4", root, rootEntry, theme);
   }
 
   // Sharp identity for highlightKeys (key-matching); display spelling comes
@@ -276,8 +270,8 @@ export function requestFor(chord: string, face: CardFace, theme: Theme): FaceReq
  * `barre-bar-<pitch>` like pitch mode's, since svguitar would draw them black.
  *
  * Exported for print's fretted faces that `requestFor` does not model
- * (ukulele, bass, violin, guitar voicings), so they colour fingers by the
- * same rule as the card faces.
+ * (violin, bass5, guitar voicings), so they colour fingers by the same rule
+ * as the card faces.
  */
 export function colourFingers(
   shape: FrettedShape,
@@ -357,8 +351,101 @@ export function colourFingers(
   return { ...shape, fingers, barres } as FrettedShape;
 }
 
+/**
+ * The fretted request shared by the top-3, ukulele and bass faces: the
+ * guitar-top3 request's keys in its original order (print hashes
+ * `JSON.stringify(request)`), with no generated/source/omitted tail.
+ */
+export function frettedRequest(
+  shape: FrettedShape,
+  instrument: GuitarFaceRequest["instrument"],
+  root: string,
+  rootEntry: RootEntry,
+  theme: Theme,
+): GuitarFaceRequest {
+  return {
+    kind: "guitar" as const,
+    shape: colourFingers(shape, instrument, root, theme),
+    instrument,
+    fingerColor: rootEntry.fretCircle,
+    fingerTextColor: rootEntry.fretFingerText,
+    fingerTextSize: theme.fonts.fretFingerText.size,
+    fingerStrokeColor: rootEntry.fretCircleStroke,
+    fingerStrokeWidth: theme.fret.circleStrokeWidth,
+    diagramColor: theme.fret.diagramColor,
+    fontFamily: familyOf(theme, theme.fonts.fretFingerText),
+    // svguitar has no weight setting and writes its <text> with none; the
+    // renderer stamps these on: finger numbers from fretFingerText, every
+    // other run (the tuning row, a "2fr" label) from stringLabel.
+    fingerTextWeight: theme.fonts.fretFingerText.weight,
+    labelFontFamily: familyOf(theme, theme.fonts.stringLabel),
+    labelFontWeight: theme.fonts.stringLabel.weight,
+  };
+}
+
+/** A catalogue chord, not a slash chord, or throw naming the chord and face. */
+function plainCatalogueChord(chord: string, face: string) {
+  const p = parseChordSymbol(chord);
+  if (!p) throw new Error(`unsupported quality "${split(chord).rest}" in "${chord}"`);
+  if (p.bass) throw new Error(`the ${face} face does not take slash chords ("${chord}")`);
+  return p;
+}
+
+/**
+ * The ukulele shape for a chord: chords-db's first position (as print's
+ * ukulele face draws it), looked up under the chord as written and then the
+ * catalogue's other spellings of its quality ("m7(b5)" is chords-db's
+ * "m7b5"). Slash chords are refused: chords-db has none for the ukulele.
+ */
+function ukuleleShapeFor(chord: string): FrettedShape {
+  return dbPositionToChord(ukulelePositionsFor(chord)[0], INSTRUMENTS.ukulele.strings, undefined) as FrettedShape;
+}
+
+/**
+ * Every chords-db ukulele position of the entry `ukuleleShapeFor` draws the
+ * first of (./positions.ts offers the rest). Not part of the public model.
+ */
+export function ukulelePositionsFor(chord: string): ChordsDbPosition[] {
+  const { root } = split(chord);
+  const p = plainCatalogueChord(chord, "ukulele");
+  const labels = [...new Set([
+    chord.trim(),
+    root + p.type.symbol,
+    ...p.type.aliases.map((a) => root + a),
+  ])];
+  for (const label of labels) {
+    const found = lookupGuitarChord(label, "ukulele");
+    if (found && found.positions.length) return found.positions;
+  }
+  throw new Error(`no ukulele shape for "${chord}" in chords-db`);
+}
+
+/** The theme's root entry for a chord (a flat via its sharp), or undefined. Not part of the public model. */
+export function rootEntryFor(chord: string, theme: Theme): RootEntry | undefined {
+  const root = split(chord).root;
+  return theme.roots[root] ?? theme.roots[FLAT_TO_SHARP[root] ?? root];
+}
+
+/**
+ * The bass face: chordl-guitar's movable root-fifth-octave pattern for the
+ * root (print's bass4 face). Any catalogue chord whose tones include the
+ * perfect fifth; one without (dim, aug, b5) would have the pattern play a
+ * note outside the chord, so it throws. Slash chords are refused.
+ */
+export function bassPatternFor(chord: string): FrettedShape {
+  const { root } = split(chord);
+  plainCatalogueChord(chord, "bass");
+  const fifth = PC_NAMES[(PC[root]! + 7) % 12];
+  if (!sharpPitchClasses(chord).includes(fifth)) {
+    throw new Error(`no bass root-fifth-octave pattern for "${chord}": the chord has no perfect fifth`);
+  }
+  const shape = bassShapeFor(root);
+  if (!shape) throw new Error(`no bass shape for "${chord}": unknown root "${root}"`);
+  return shape as FrettedShape;
+}
+
 /** The top-3 preset shape for a chord, or throw naming the chord. */
-function top3ShapeFor(chord: string): FrettedShape {
+export function top3ShapeFor(chord: string): FrettedShape {
   const { root, rest } = split(chord);
   // Any catalogue symbol of a preset quality: "Cmin7" is "Cm7" here.
   const p = parseChordSymbol(chord);

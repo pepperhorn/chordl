@@ -255,10 +255,12 @@ export function analyzeChordTones(root: string, notes: string[], bass?: string):
 
 // ── fingering ───────────────────────────────────────────────────────────────
 
-interface Fingering {
+export interface Fingering {
+  /** Finger number per string, low to high (0 = none). */
   fingers: number[];
   /** Absolute fret of the barre, or null. */
   barre: number | null;
+  /** Fretting fingers used (a barre counts as one). */
   count: number;
 }
 
@@ -307,6 +309,25 @@ function fingerFor(abs: number[]): Fingering | null {
     prev = finger;
   });
   return { fingers, barre, count: groups.length };
+}
+
+/**
+ * Whether a hand can hold these frets, and with which fingers — the generator's
+ * "What a hand can play" rules (stretch, at most four fingers, one barre at
+ * the lowest fret) applied to any shape, so a shape moved up the neck can be
+ * checked by the same rule that produced it. Null when it cannot be held.
+ *
+ * Instrument-neutral: strings are listed low to high, as `abs` indices.
+ *
+ * @param abs - absolute fret per string, low to high: -1 muted, 0 open
+ */
+export function fingeringFor(abs: number[]): Fingering | null {
+  const fretted = abs.filter((f) => f > 0);
+  if (fretted.length) {
+    const lo = Math.min(...fretted);
+    if (Math.max(...fretted) - lo > (lo > 5 ? 4 : 3)) return null;
+  }
+  return fingerFor(abs);
 }
 
 // ── search ──────────────────────────────────────────────────────────────────
@@ -425,12 +446,7 @@ export function generateGuitarVoicings(
     const pcs = new Set(midi.map((m) => m % 12));
     for (const p of required) if (!pcs.has(p)) return null;
 
-    const fretted = abs.filter((f) => f > 0);
-    if (fretted.length) {
-      const lo = Math.min(...fretted);
-      if (Math.max(...fretted) - lo > (lo > 5 ? 4 : 3)) return null;
-    }
-    const fingering = fingerFor(abs);
+    const fingering = fingeringFor(abs);
     if (!fingering) return null;
 
     const missing = analysis.tones.filter(
