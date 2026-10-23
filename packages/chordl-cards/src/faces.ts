@@ -271,6 +271,10 @@ export function requestFor(chord: string, face: CardFace, theme: Theme): FaceReq
  * Open (0) and muted ("x") strings are left alone: svguitar draws them as nut
  * glyphs, which have nothing to fill.
  *
+ * In "single" fret colour mode the fingers are returned untouched (the request's
+ * one `fingerColor` paints them) but the barres still take that colour, classed
+ * `barre-bar-<pitch>` like pitch mode's, since svguitar would draw them black.
+ *
  * Exported for print's fretted faces that `requestFor` does not model
  * (ukulele, bass, violin, guitar voicings), so they colour fingers by the
  * same rule as the card faces.
@@ -281,17 +285,26 @@ export function colourFingers(
   root: string,
   theme: Theme,
 ): FrettedShape {
-  if (theme.fret.colorMode !== "pitch") return shape;
-
   const cfg = INSTRUMENTS[instrument];
   if (!cfg) return shape;
   const { tuning, strings } = cfg as { tuning: string[]; strings: number };
+  const pitch = theme.fret.colorMode === "pitch";
+  // Single mode resolves the root as requestFor does (a flat via its sharp
+  // entry: the theme keys sharps only), so a Bb barre matches Bb's dots.
+  const rootEntry = theme.roots[root] ?? theme.roots[FLAT_TO_SHARP[root] ?? root];
+  if (!pitch && !rootEntry) return shape;
+  // Pitch mode keeps its bare lookup, so its requests (print's cache keys)
+  // are unchanged.
+  const barreRoot = pitch ? theme.roots[root] : rootEntry;
 
   // chords-db convention: when the window starts above the nut, finger frets
   // are window-relative and the absolute fret is position + fret - 1.
   const windowStart = (shape as { position?: number }).position ?? 1;
 
-  const fingers = shape.fingers.map((finger) => {
+  // "single" mode: the dots take the request's one fingerColor, so they are
+  // left alone. The barres still need colouring here, or svguitar's hardcoded
+  // black bar sits beside the root-coloured dots.
+  const fingers = !pitch ? shape.fingers : shape.fingers.map((finger) => {
     const [stringNo, fret, existing] = finger as [number, number | string, unknown];
     if (typeof fret !== "number" || fret <= 0) return finger;
 
@@ -334,9 +347,9 @@ export function colourFingers(
       // svguitar emits the bar as an unclassed <rect>; the class makes it
       // addressable (print repaints it, since svguitar hardcodes its fill).
       className: `barre-bar barre-bar-${pc.replace("#", "s")}`,
-      color: toneColor(theme, "fret", pc, root),
-      textColor: theme.roots[root]?.fretFingerText ?? theme.fret.diagramColor,
-      strokeColor: theme.roots[root]?.fretCircleStroke ?? theme.fret.diagramColor,
+      color: pitch ? toneColor(theme, "fret", pc, root) : rootEntry!.fretCircle,
+      textColor: barreRoot?.fretFingerText ?? theme.fret.diagramColor,
+      strokeColor: barreRoot?.fretCircleStroke ?? theme.fret.diagramColor,
       strokeWidth: theme.fret.circleStrokeWidth,
     };
   });
