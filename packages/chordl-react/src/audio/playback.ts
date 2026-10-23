@@ -36,10 +36,75 @@ const loading = new Map<PlaybackInstrument, Promise<PlaybackPlayer>>();
 // Kept outside Vite's static `new URL()` transform: library mode otherwise
 // base64-inlines every asset. This resolves to the separately published
 // package `soundfonts/` directory in production and the same path in dev.
+// A bundling consumer (whose output has no such directory) should host the
+// file and point `configureAudio({ ukuleleSoundfontUrl })` at it.
 const UKULELE_SOUNDFONT_FILE = "freepats-ukulele-20260811.sf2";
-const UKULELE_SOUNDFONT_URL = import.meta.env.DEV
+const DEFAULT_UKULELE_SOUNDFONT_URL = import.meta.env.DEV
   ? `/soundfonts/${UKULELE_SOUNDFONT_FILE}`
   : new URL("../soundfonts/" + UKULELE_SOUNDFONT_FILE, import.meta.url).href;
+
+/** The sample encodings MIDI.js soundfonts ship in (`<name>-ogg.js` / `<name>-mp3.js`). */
+export type SoundfontFormat = "ogg" | "mp3";
+
+/** Where the audio layer loads its samples from. Every field is optional. */
+export interface AudioConfig {
+  /**
+   * URL of a MIDI.js soundfont file (smplr's `instrumentUrl`) for a General
+   * MIDI patch, in the format this browser should load. Return `undefined` to
+   * leave that instrument on smplr's default (its kit on gleitz.github.io).
+   * Not consulted for `ukulele`, which loads from an .sf2.
+   */
+  soundfontUrl?: (instrument: PlaybackInstrument, format: SoundfontFormat) => string | undefined;
+  /** URL of the ukulele .sf2 (`freepats-ukulele-20260811.sf2`). */
+  ukuleleSoundfontUrl?: string;
+}
+
+let audioConfig: AudioConfig = {};
+
+/**
+ * Point the audio layer at self-hosted samples. Call once, before the first
+ * playback or preload: patches already loaded stay loaded from where they
+ * came. Calls merge; passing a key as `undefined` restores its default.
+ */
+export function configureAudio(config: AudioConfig): void {
+  const next: AudioConfig = { ...audioConfig, ...config };
+  for (const key of Object.keys(config) as Array<keyof AudioConfig>) {
+    if (config[key] === undefined) delete next[key];
+  }
+  audioConfig = next;
+}
+
+/** The configured MIDI.js soundfont URL for a patch, or undefined for smplr's default. */
+export function resolveSoundfontUrl(
+  instrument: PlaybackInstrument,
+  format: SoundfontFormat = preferredSoundfontFormat(),
+): string | undefined {
+  return audioConfig.soundfontUrl?.(instrument, format);
+}
+
+/** The URL the ukulele .sf2 loads from. */
+export function resolveUkuleleSoundfontUrl(): string {
+  return audioConfig.ukuleleSoundfontUrl ?? DEFAULT_UKULELE_SOUNDFONT_URL;
+}
+
+/**
+ * The format smplr itself would request in this browser: ogg where it plays,
+ * except Safari (which claims ogg but decodes it unreliably), else mp3. A
+ * mirror of smplr's private `findFirstSupportedFormat(["ogg", "mp3"])`, so a
+ * self-hosted copy serves exactly the file smplr would have fetched.
+ */
+export function preferredSoundfontFormat(): SoundfontFormat {
+  if (typeof document === "undefined") return "mp3";
+  const ua = typeof navigator === "undefined" ? "" : navigator.userAgent;
+  const safari = ua.includes("Safari") && !ua.includes("Chrome") && !ua.includes("Chromium");
+  const audio = document.createElement("audio");
+  const plays = (format: SoundfontFormat) => {
+    const answer = audio.canPlayType(`audio/${format}`);
+    return answer === "probably" || answer === "maybe";
+  };
+  if (!safari && plays("ogg")) return "ogg";
+  return "mp3";
+}
 
 function getContext(): AudioContext {
   if (!ctx) ctx = new AudioContext();
@@ -55,7 +120,7 @@ async function ensureInstrument(instrument: PlaybackInstrument): Promise<Playbac
   const promise = instrument === "ukulele"
     ? Promise.all([import("smplr"), import("soundfont2")]).then(async ([{ Soundfont2Sampler }, { SoundFont2 }]) => {
       const instance = new Soundfont2Sampler(getContext(), {
-        url: UKULELE_SOUNDFONT_URL,
+        url: resolveUkuleleSoundfontUrl(),
         createSoundfont: (data) => new SoundFont2(data),
       });
       await instance.load;
@@ -67,7 +132,10 @@ async function ensureInstrument(instrument: PlaybackInstrument): Promise<Playbac
       return instance;
     })
     : import("smplr").then(async ({ Soundfont }) => {
-    const instance = new Soundfont(getContext(), { instrument });
+    // Only one of the two: smplr warns when `instrument` rides along with
+    // an explicit `instrumentUrl`.
+    const instrumentUrl = resolveSoundfontUrl(instrument);
+    const instance = new Soundfont(getContext(), instrumentUrl ? { instrumentUrl } : { instrument });
     await instance.load;
     instruments.set(instrument, instance);
     loading.delete(instrument);

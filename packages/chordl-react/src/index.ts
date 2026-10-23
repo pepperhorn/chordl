@@ -34,9 +34,11 @@ export type { ProgressionViewProps, GroupMode } from "./components/ProgressionVi
 export {
   playBlock, playArpeggiated, startPlayback, buildPlaybackEvents,
   noteToMidi, toAscendingNotes, preloadInstruments,
+  configureAudio, resolveSoundfontUrl, resolveUkuleleSoundfontUrl, preferredSoundfontFormat,
 } from "./audio/playback";
 export type {
   PlaybackMode, PlaybackEvent, PlaybackController, StartPlaybackOptions,
+  AudioConfig, SoundfontFormat,
 } from "./audio/playback";
 export { downloadSvg, downloadPng, prepareExportClone } from "./audio/svg-export";
 
