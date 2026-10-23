@@ -36,9 +36,15 @@ export type {
   AccidentalGlyph, AccidentalKind, AccidentalWeight, ChordToken, ChordSymbolMetrics, ChordSymbolSvgOptions,
 } from "./accidentals";
 
-export { parseTheme, toneColor, familyOf, HEX_COLOUR } from "./theme";
+export {
+  parseTheme, toneColor, familyOf, HEX_COLOUR,
+  resolveColourRef, gradientColours, gradientContrast, MIN_PRINT_STROKE_PT, MIN_AMBIENT_SECONDS,
+} from "./theme";
+export { mixOklab, over, contrastRatio, relativeLuminance } from "./colour";
 export type {
   Theme, ThemeFonts, ThemeKeyboard, ThemeFret, ThemeQrChip, ThemePlayback,
+  ThemeContrast, ThemeGroove, ThemeGrooveFingerprint, ThemeGrooveAmbient, ThemeGradient,
+  GradientStop, GrooveInk, GroovePreset, GrooveSpin, DualLength, ColourRef,
   FontSpec, FontFamilyKey, FontStyle, ColorMode, KeyboardFormat, PitchEntry, RootEntry,
 } from "./theme";
 

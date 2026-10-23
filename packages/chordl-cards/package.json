@@ -21,11 +21,15 @@
       "types": "./dist/model.d.ts",
       "import": "./dist/model.js",
       "default": "./dist/model.js"
-    }
+    },
+    "./themes/crf-default.json": "./themes/crf-default.json",
+    "./DESIGN.md": "./DESIGN.md"
   },
   "sideEffects": false,
   "files": [
-    "dist"
+    "dist",
+    "themes",
+    "DESIGN.md"
   ],
   "scripts": {
     "build": "tsc --noEmit && vite build && node scripts/check-dist.mjs",

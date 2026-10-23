@@ -1,6 +1,6 @@
 {
   "name": "crf-default",
-  "description": "Creative Ranges chord-card theme. `pitches` is the CRF pitch palette used when a surface's colorMode is \"pitch\"; `roots` is the per-root resolution used when it is \"single\". Every value is explicit — nothing is derived at load time, so what is written here is what prints. `titleHighlight` is white on every root: with the title's paint-order ink stroke carrying the edge, one consistent fill beats the earlier adaptive white/shade split (proofed 2026-08-09).",
+  "description": "Creative Ranges chord-card theme. `pitches` is the CRF pitch palette used when a surface's colorMode is \"pitch\"; `roots` is the per-root resolution used when it is \"single\". Every value is explicit — nothing is derived at load time, so what is written here is what prints. `titleHighlight` is white on every root: with the title's paint-order ink stroke carrying the edge, one consistent fill beats the earlier adaptive white/shade split (proofed 2026-08-09). `paper`, `contrast`, `groove` and `gradient` are the shared brand motifs (the 45 groove fingerprint and the root-colour sheen) that the chord library site and the cards both read; their rules are in this package's DESIGN.md.",
   "ink": "#231f20",
   "fonts": {
     "families": {
@@ -13,7 +13,8 @@
       "size": 100.0,
       "weight": 700,
       "style": "normal",
-      "strokeWidth": 7.0
+      "strokeWidth": 7.0,
+      "accidental": "raised"
     },
     "titleQuality": {
       "family": "ui",
@@ -305,5 +306,165 @@
     "padding": 5,
     "radius": 6,
     "strokeWidth": 1.5
+  },
+  "paper": "#ffffff",
+  "contrast": {
+    "body": 4.5,
+    "large": 3,
+    "largeTextPx": 24,
+    "mutedInkOpacity": 0.7
+  },
+  "groove": {
+    "fingerprint": {
+      "ringPitch": {
+        "px": 7.25,
+        "pt": 2.9
+      },
+      "stroke": {
+        "px": 1.25,
+        "pt": 0.5
+      },
+      "fadeFrom": 0.82,
+      "label": {
+        "hole": 0.035,
+        "holeRim": 0.045,
+        "radius": 0.26,
+        "rim": 0.27
+      },
+      "grounds": {
+        "light": {
+          "colour": "ink",
+          "line": 0.09,
+          "label": 0.035,
+          "sheen": 0.05
+        },
+        "dark": {
+          "colour": "paper",
+          "line": 0.13,
+          "label": 0.05,
+          "sheen": 0.07
+        }
+      },
+      "sizes": {
+        "sm": 12,
+        "md": 22,
+        "lg": 34
+      },
+      "presets": {
+        "corner-tl": {
+          "x": 0,
+          "y": 0
+        },
+        "corner-tr": {
+          "x": 1,
+          "y": 0
+        },
+        "corner-bl": {
+          "x": 0,
+          "y": 1
+        },
+        "corner-br": {
+          "x": 1,
+          "y": 1
+        },
+        "edge-l": {
+          "x": 0,
+          "y": 0.5
+        },
+        "edge-r": {
+          "x": 1,
+          "y": 0.5
+        },
+        "centre": {
+          "x": 0.5,
+          "y": 0.5
+        }
+      },
+      "defaultPreset": "corner-tr",
+      "spin": {
+        "secondsPerTurn": 90,
+        "default": "static"
+      }
+    },
+    "ambient": {
+      "ringPitch": {
+        "px": 12.5
+      },
+      "stroke": {
+        "px": 1.5
+      },
+      "aspect": 0.92,
+      "grounds": {
+        "root": {
+          "colour": "paper",
+          "line": 0.14
+        },
+        "dark": {
+          "colour": "paper",
+          "line": 0.07
+        }
+      },
+      "mask": {
+        "innerFrom": 0.14,
+        "innerTo": 0.26,
+        "outerFrom": 0.84
+      },
+      "spin": {
+        "secondsPerTurn": 60,
+        "default": "spinning"
+      }
+    }
+  },
+  "gradient": {
+    "angle": 105,
+    "stops": [
+      {
+        "at": 0.12,
+        "toward": "ink",
+        "amount": 0.08
+      },
+      {
+        "at": 0.27,
+        "toward": "paper",
+        "amount": 0
+      },
+      {
+        "at": 0.38,
+        "toward": "paper",
+        "amount": 0.22
+      },
+      {
+        "at": 0.5,
+        "toward": "paper",
+        "amount": 0.45
+      },
+      {
+        "at": 0.62,
+        "toward": "paper",
+        "amount": 0.22
+      },
+      {
+        "at": 0.73,
+        "toward": "paper",
+        "amount": 0
+      },
+      {
+        "at": 0.88,
+        "toward": "ink",
+        "amount": 0.08
+      }
+    ],
+    "counterHighlight": {
+      "x": 0.28,
+      "y": 0.3,
+      "radius": 0.34,
+      "toward": "paper",
+      "amount": 0.4
+    },
+    "drift": {
+      "secondsPerCycle": 44,
+      "travel": 0.22,
+      "overscan": 0.5
+    }
   }
 }
