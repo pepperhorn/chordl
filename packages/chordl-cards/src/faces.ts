@@ -14,6 +14,7 @@
 import {
   INSTRUMENTS, bassShapeFor, dbPositionToChord, guitarPositionFor, lookupGuitarChord, lookupTop3Chord,
 } from "@pepperhorn/chordl-guitar";
+import type { ChordsDbPosition } from "@pepperhorn/chordl-guitar";
 import { computeKeyboard } from "@pepperhorn/chordl-core";
 import { noteParts, parseChordSymbol, spelledChord } from "./catalogue";
 import { keyCentresFor, keyboardWindow, voiceAscending, whiteSpan, type KeyboardWindow } from "./keyboard-window";
@@ -62,7 +63,9 @@ export interface GuitarFaceRequest {
   /** guitar (six-string) only, after every other key so a guitar-top3
    * request is unchanged: whether the voicing was generated rather than taken
    * from chords-db (badge it "generated voicing, pending teacher review"),
-   * where it came from, and which optional degrees it leaves out. */
+   * where it came from, and which optional degrees it leaves out. The other
+   * fretted faces carry them only on a generated alternative from
+   * `positionsFor` (./positions.ts), never on the card shape. */
   generated?: boolean;
   source?: "chords-db" | "power-chord" | "generated";
   omitted?: string[];
@@ -353,9 +356,9 @@ export function colourFingers(
  * guitar-top3 request's keys in its original order (print hashes
  * `JSON.stringify(request)`), with no generated/source/omitted tail.
  */
-function frettedRequest(
+export function frettedRequest(
   shape: FrettedShape,
-  instrument: "guitar-top3" | "ukulele" | "bass4",
+  instrument: GuitarFaceRequest["instrument"],
   root: string,
   rootEntry: RootEntry,
   theme: Theme,
@@ -395,6 +398,14 @@ function plainCatalogueChord(chord: string, face: string) {
  * "m7b5"). Slash chords are refused: chords-db has none for the ukulele.
  */
 function ukuleleShapeFor(chord: string): FrettedShape {
+  return dbPositionToChord(ukulelePositionsFor(chord)[0], INSTRUMENTS.ukulele.strings, undefined) as FrettedShape;
+}
+
+/**
+ * Every chords-db ukulele position of the entry `ukuleleShapeFor` draws the
+ * first of (./positions.ts offers the rest). Not part of the public model.
+ */
+export function ukulelePositionsFor(chord: string): ChordsDbPosition[] {
   const { root } = split(chord);
   const p = plainCatalogueChord(chord, "ukulele");
   const labels = [...new Set([
@@ -404,11 +415,15 @@ function ukuleleShapeFor(chord: string): FrettedShape {
   ])];
   for (const label of labels) {
     const found = lookupGuitarChord(label, "ukulele");
-    if (found && found.positions.length) {
-      return dbPositionToChord(found.positions[0], INSTRUMENTS.ukulele.strings, undefined) as FrettedShape;
-    }
+    if (found && found.positions.length) return found.positions;
   }
   throw new Error(`no ukulele shape for "${chord}" in chords-db`);
+}
+
+/** The theme's root entry for a chord (a flat via its sharp), or undefined. Not part of the public model. */
+export function rootEntryFor(chord: string, theme: Theme): RootEntry | undefined {
+  const root = split(chord).root;
+  return theme.roots[root] ?? theme.roots[FLAT_TO_SHARP[root] ?? root];
 }
 
 /**
@@ -417,7 +432,7 @@ function ukuleleShapeFor(chord: string): FrettedShape {
  * perfect fifth; one without (dim, aug, b5) would have the pattern play a
  * note outside the chord, so it throws. Slash chords are refused.
  */
-function bassPatternFor(chord: string): FrettedShape {
+export function bassPatternFor(chord: string): FrettedShape {
   const { root } = split(chord);
   plainCatalogueChord(chord, "bass");
   const fifth = PC_NAMES[(PC[root]! + 7) % 12];
@@ -430,7 +445,7 @@ function bassPatternFor(chord: string): FrettedShape {
 }
 
 /** The top-3 preset shape for a chord, or throw naming the chord. */
-function top3ShapeFor(chord: string): FrettedShape {
+export function top3ShapeFor(chord: string): FrettedShape {
   const { root, rest } = split(chord);
   // Any catalogue symbol of a preset quality: "Cmin7" is "Cm7" here.
   const p = parseChordSymbol(chord);

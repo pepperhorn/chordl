@@ -20,6 +20,9 @@ export type {
   NoteLabel, HandBracket,
 } from "./faces";
 
+export { positionsFor, POSITIONS_MAX_FRET } from "./positions";
+export type { FacePosition, PositionsOptions, FrettedCardFace } from "./positions";
+
 export { playbackFor } from "./playback";
 export type { FacePlayback } from "./playback";
 

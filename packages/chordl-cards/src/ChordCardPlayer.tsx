@@ -23,6 +23,12 @@ export interface ChordCardPlayerProps {
   face: CardFace;
   /** The same theme JSON print uses, parsed with `parseTheme`. */
   theme: Theme;
+  /**
+   * Draw and play this request instead of `requestFor(chord, face, theme)`:
+   * one of `positionsFor(chord, face, theme)`'s alternatives elsewhere on the
+   * neck. Omit for the printed card's own shape.
+   */
+  request?: FaceRequest;
   className?: string;
 }
 
@@ -143,15 +149,15 @@ const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve,
  * `startPlayback`); the diagrams are chordl-react's own, driven in controlled
  * mode with their built-in controls off.
  */
-export function ChordCardPlayer({ chord, face, theme, className }: ChordCardPlayerProps) {
+export function ChordCardPlayer({ chord, face, theme, request, className }: ChordCardPlayerProps) {
   const built = useMemo((): { req: FaceRequest; playback: FacePlayback } | { error: string } => {
     try {
-      const req = requestFor(chord, face, theme);
+      const req = request ?? requestFor(chord, face, theme);
       return { req, playback: playbackFor(req) };
     } catch (err) {
       return { error: err instanceof Error ? err.message : String(err) };
     }
-  }, [chord, face, theme]);
+  }, [chord, face, theme, request]);
 
   const [bpm, setBpm] = useState(theme.playback?.arpeggioBpm ?? DEFAULT_ARPEGGIO_BPM);
   const [active, setActive] = useState<number[]>([]);
@@ -169,8 +175,8 @@ export function ChordCardPlayer({ chord, face, theme, className }: ChordCardPlay
     setActive([]);
     setPlaying(null);
   }, []);
-  // A new chord, face or unmount ends whatever was sounding.
-  useEffect(() => stop, [chord, face, stop]);
+  // A new chord, face, position or unmount ends whatever was sounding.
+  useEffect(() => stop, [chord, face, request, stop]);
 
   const play = useCallback(async (mode: Mode) => {
     if ("error" in built) return;

@@ -69,6 +69,7 @@ export {
   generateGuitarVoicings,
   analyzeChordTones,
   positionSpellsChord,
+  fingeringFor,
   VOICING_RULES,
 } from "./voicingGenerator.js";
 export type {
@@ -76,9 +77,10 @@ export type {
   GenerateOptions,
   ChordTone,
   ChordToneAnalysis,
+  Fingering,
   ToneRole,
   VoicingRule,
 } from "./voicingGenerator.js";
 
-export { guitarPositionFor, chordsDbSuffixFor } from "./guitarPosition.js";
+export { guitarPositionFor, guitarLibraryPositionsFor, chordsDbSuffixFor } from "./guitarPosition.js";
 export type { GuitarPosition, LibraryPosition, SpelledChord } from "./guitarPosition.js";

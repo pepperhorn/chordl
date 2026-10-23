@@ -96,19 +96,31 @@ export function chordsDbSuffixFor(chord: SpelledChord): string | null {
 }
 
 /**
+ * Every chords-db six-string position that spells the chord (see
+ * `positionSpellsChord`), in chords-db's order — the alternatives elsewhere on
+ * the neck. The first is the one `guitarPositionFor` prints. Empty when
+ * chords-db has no entry for the chord or none of its positions spells it.
+ */
+export function guitarLibraryPositionsFor(chord: SpelledChord): LibraryPosition[] {
+  const bass = isSlash(chord) ? chord.bass : undefined;
+  const analysis = analyzeChordTones(chord.root, chord.pitchClasses, bass);
+  const suffix = chordsDbSuffixFor(chord);
+  if (!suffix) return [];
+  const entry = GUITAR_DB.chords[DB_KEY_BY_PC[pcOf(chord.root)]].find((e) => e.suffix === suffix)!;
+  return entry.positions
+    .filter((p) => positionSpellsChord(p, analysis))
+    .map((p) => ({ ...p, generated: false as const, source: "chords-db" as const, suffix }));
+}
+
+/**
  * The best guitar position for a spelled chord, or null if none is playable
  * under the generator's constraints.
  */
 export function guitarPositionFor(chord: SpelledChord): GuitarPosition | null {
   const bass = isSlash(chord) ? chord.bass : undefined;
-  const analysis = analyzeChordTones(chord.root, chord.pitchClasses, bass);
 
-  const suffix = chordsDbSuffixFor(chord);
-  if (suffix) {
-    const entry = GUITAR_DB.chords[DB_KEY_BY_PC[pcOf(chord.root)]].find((e) => e.suffix === suffix)!;
-    const pos = entry.positions.find((p) => positionSpellsChord(p, analysis));
-    if (pos) return { ...pos, generated: false, source: "chords-db", suffix };
-  }
+  const library = guitarLibraryPositionsFor(chord)[0];
+  if (library) return library;
 
   if (!bass && sameSet(relativeSet(chord), [0, 7])) {
     const pos = powerChordPosition(pcOf(chord.root), { stringSet: "E" });

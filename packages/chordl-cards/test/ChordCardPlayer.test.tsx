@@ -4,6 +4,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ChordCardPlayer } from "../src/ChordCardPlayer";
 import { parseTheme } from "../src/theme";
+import { positionsFor } from "../src/positions";
 import { RAW_THEME, loadTheme } from "./theme-fixture";
 
 // The audio layer: chordl-react's startPlayback loads smplr lazily. Stubbed the
@@ -229,6 +230,23 @@ describe("ChordCardPlayer — guitar (six strings)", () => {
   it("explains a chord with no position instead of drawing one", () => {
     render(<ChordCardPlayer chord="C13(b9,b5)" face="guitar" theme={THEME} />);
     expect(screen.getByRole("alert").textContent).toMatch(/no six-string guitar position/);
+  });
+});
+
+describe("ChordCardPlayer — a position elsewhere on the neck", () => {
+  it("draws and plays the request it is given instead of the card shape", async () => {
+    const octave = positionsFor("C", "guitar-top3", THEME).find((p) => p.kind === "octave")!;
+    const { container } = render(<ChordCardPlayer chord="C" face="guitar-top3" theme={THEME} request={octave.request} />);
+    // svguitar prints the window's first fret beside a slid diagram.
+    expect(container.querySelector(".bc-guitar-chord text.fret-position")?.textContent).toBe("12fr");
+    fireEvent.click(screen.getByRole("button", { name: /play arpeggio/i }));
+    await waitFor(() => expect(notesOf("electric_guitar_clean")).toEqual([67, 72, 76]));
+  });
+
+  it("badges a generated alternative as pending teacher review", () => {
+    const generated = positionsFor("C", "guitar-top3", THEME).find((p) => p.generated)!;
+    const { container } = render(<ChordCardPlayer chord="C" face="guitar-top3" theme={THEME} request={generated.request} />);
+    expect(container.querySelector(".ccp-badge--generated")).toBeTruthy();
   });
 });
 
