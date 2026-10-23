@@ -14,10 +14,11 @@ import type { FaceRequest, GuitarFaceRequest, KeyboardFaceRequest } from "./face
 export interface FacePlayback {
   /** MIDI note numbers, in the order the face plays them. */
   notes: number[];
-  instrument: "acoustic_grand_piano" | "electric_guitar_clean";
+  instrument: "acoustic_grand_piano" | "electric_guitar_clean" | "ukulele" | "electric_bass_finger";
   /** keyboard-hands: which `notes` indices each hand plays. */
   hands?: { lh: number[]; rh: number[] };
-  /** guitar: the physical string (0 = lowest) each note sounds on. */
+  /** Fretted faces: the physical string (0 = lowest-tuned, as INSTRUMENTS
+   * lists the tuning; a ukulele's reentrant G is 0) each note sounds on. */
   strings?: number[];
 }
 
@@ -56,6 +57,14 @@ function keyboardPlayback(req: KeyboardFaceRequest): FacePlayback {
   };
 }
 
+/** The patch each fretted instrument sounds on (chordl-react's audio layer). */
+const FRETTED_PATCH: Record<GuitarFaceRequest["instrument"], FacePlayback["instrument"]> = {
+  "guitar-top3": "electric_guitar_clean",
+  guitar: "electric_guitar_clean",
+  ukulele: "ukulele",
+  bass4: "electric_bass_finger",
+};
+
 function guitarPlayback(req: GuitarFaceRequest): FacePlayback {
   const { strings, openMidi } = INSTRUMENTS[req.instrument];
   const shape = req.shape as {
@@ -86,7 +95,7 @@ function guitarPlayback(req: GuitarFaceRequest): FacePlayback {
   const sounding = frets.flatMap((fret, i) => (fret === undefined ? [] : [{ i, midi: openMidi[i] + fret }]));
   return {
     notes: sounding.map((s) => s.midi),
-    instrument: "electric_guitar_clean",
+    instrument: FRETTED_PATCH[req.instrument],
     strings: sounding.map((s) => s.i),
   };
 }

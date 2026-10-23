@@ -34,6 +34,8 @@ const FACE_LABELS: Record<CardFace, string> = {
   "keyboard-hands": "exploded triad, two hands",
   "guitar-top3": "guitar, top three strings",
   guitar: "guitar",
+  ukulele: "ukulele",
+  bass4: "four-string bass",
 };
 
 /**
