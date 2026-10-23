@@ -145,6 +145,8 @@ export function PianoKeyboard({
   scale = 0.5,
   showNoteNames,
   displayNoteNames,
+  renderNoteName,
+  staggerNoteNames = true,
   noteNameSize = "lg",
   noteNameMode = "pitch-class",
   midiBaseOctave = 4,
@@ -389,7 +391,7 @@ export function PianoKeyboard({
   // Stagger: if any note has an accidental (#/b), put accidentals on row 1
   // and naturals on row 2 to avoid overlap on adjacent keys.
   const isAccidental = (name: string) => /[#b]/.test(name.slice(1)); // skip first char (the letter)
-  const anyAccidentals = highlighted.some((h) => isAccidental(h.note));
+  const anyAccidentals = staggerNoteNames && highlighted.some((h) => isAccidental(h.note));
   const staggerHeight = anyAccidentals ? nameFontSize * 1.3 : 0;
 
   // Attach annotation data to the SVG for export injection.
@@ -508,7 +510,7 @@ export function PianoKeyboard({
                     color: uiTokens.text,
                     fontFamily: "system-ui, sans-serif",
                   }}>
-                    {h.note}
+                    {renderNoteName ? renderNoteName(h.note) : h.note}
                   </span>
                 )}
                 {showDeg && degree && (

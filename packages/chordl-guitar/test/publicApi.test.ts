@@ -25,6 +25,19 @@ describe("public API", () => {
     }
   });
 
+  it("exports the voicing generator surface", () => {
+    for (const name of [
+      "generateGuitarVoicings",
+      "analyzeChordTones",
+      "positionSpellsChord",
+      "VOICING_RULES",
+      "guitarPositionFor",
+      "chordsDbSuffixFor",
+    ]) {
+      expect(api, `missing export ${name}`).toHaveProperty(name);
+    }
+  });
+
   it("no longer exports the retired svguitar-order table", () => {
     expect(api).not.toHaveProperty("OPEN_STRING_MIDI");
   });

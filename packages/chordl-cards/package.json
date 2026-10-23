@@ -1,0 +1,65 @@
+{
+  "name": "@pepperhorn/chordl-cards",
+  "version": "0.1.0",
+  "description": "Chord-card voicing model (node-free) and a React player for the printed card faces: keyboard, exploded-triad hands, top-3 guitar",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pepperhorn/chordl.git",
+    "directory": "packages/chordl-cards"
+  },
+  "type": "module",
+  "main": "./dist/chordl-cards.js",
+  "module": "./dist/chordl-cards.js",
+  "types": "./dist/chordl-cards.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/chordl-cards.d.ts",
+      "import": "./dist/chordl-cards.js",
+      "default": "./dist/chordl-cards.js"
+    },
+    "./model": {
+      "types": "./dist/model.d.ts",
+      "import": "./dist/model.js",
+      "default": "./dist/model.js"
+    }
+  },
+  "sideEffects": false,
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc --noEmit && vite build && node scripts/check-dist.mjs",
+    "check:dist": "node scripts/check-dist.mjs",
+    "lint": "tsc --noEmit",
+    "test": "vitest",
+    "test:run": "vitest run"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
+  },
+  "dependencies": {
+    "@pepperhorn/chordl-core": "workspace:*",
+    "@pepperhorn/chordl-guitar": "workspace:*",
+    "@pepperhorn/chordl-react": "workspace:*"
+  },
+  "devDependencies": {
+    "@testing-library/react": "^16.1.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "jsdom": "^25.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "smplr": "^0.18.1",
+    "soundfont2": "^0.5.0",
+    "typescript": "^5.7.0",
+    "vite": "^6.0.0",
+    "vite-plugin-dts": "^4.3.0",
+    "vitest": "^4.1.1"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "MIT"
+}

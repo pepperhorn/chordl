@@ -64,3 +64,21 @@ export type {
   ExperienceQuery,
   ExperienceSelection,
 } from "./experience.js";
+
+export {
+  generateGuitarVoicings,
+  analyzeChordTones,
+  positionSpellsChord,
+  VOICING_RULES,
+} from "./voicingGenerator.js";
+export type {
+  GeneratedPosition,
+  GenerateOptions,
+  ChordTone,
+  ChordToneAnalysis,
+  ToneRole,
+  VoicingRule,
+} from "./voicingGenerator.js";
+
+export { guitarPositionFor, chordsDbSuffixFor } from "./guitarPosition.js";
+export type { GuitarPosition, LibraryPosition, SpelledChord } from "./guitarPosition.js";

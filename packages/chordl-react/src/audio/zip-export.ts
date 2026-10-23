@@ -1,7 +1,10 @@
 /**
  * Bundle chord exports (SVG, PNG, MIDI, WAV) into a downloadable .zip.
  */
-import JSZip from "jszip";
+import type JSZipType from "jszip";
+
+// Loaded on first export: jszip (~95 KB) is only needed once the user downloads a zip.
+const loadJSZip = async () => (await import("jszip")).default;
 import { generateMidiFile } from "@pepperhorn/chordl-core";
 import { generateWav } from "./wav-export";
 import { prepareExportClone } from "./svg-export";
@@ -66,7 +69,7 @@ export interface ZipVariant {
  * Bundle a single chord variant into a zip folder.
  */
 async function addVariantToZip(
-  folder: JSZip,
+  folder: JSZipType,
   variant: ZipVariant,
   chordName: string,
 ): Promise<void> {
@@ -105,7 +108,7 @@ export async function exportSingleZip(
   chordName: string,
   variant: ZipVariant,
 ): Promise<Blob> {
-  const zip = new JSZip();
+  const zip = new (await loadJSZip())();
   await addVariantToZip(zip, variant, chordName);
   return zip.generateAsync({ type: "blob" });
 }
@@ -117,7 +120,7 @@ export async function exportAllZip(
   chordName: string,
   variants: ZipVariant[],
 ): Promise<Blob> {
-  const zip = new JSZip();
+  const zip = new (await loadJSZip())();
   for (let i = 0; i < variants.length; i++) {
     const letter = String.fromCharCode(65 + i); // A, B, C...
     const folderName = `${letter}_${sanitize(variants[i].label)}`;

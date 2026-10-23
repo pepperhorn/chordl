@@ -120,3 +120,46 @@ describe("keyboard centring", () => {
     expect(box.style.maxWidth).not.toBe("");
   });
 });
+
+describe("PianoKeyboard renderNoteName", () => {
+  it("draws each note name through the host's renderer", () => {
+    const { container } = render(
+      <PianoKeyboard
+        highlightKeys={["Eb", "G"]}
+        showNoteNames
+        displayNoteNames={["Eb", "G"]}
+        renderNoteName={(name) => <i className="custom-name">{name.toUpperCase()}</i>}
+      />,
+    );
+    const names = [...container.querySelectorAll(".bc-note-name .custom-name")].map((n) => n.textContent);
+    expect(names).toEqual(["EB", "G"]);
+  });
+});
+
+describe("PianoKeyboard staggerNoteNames", () => {
+  const tops = (container: HTMLElement) => Object.fromEntries(
+    [...container.querySelectorAll<HTMLElement>(".bc-annotation-cell")].map((c) => [c.textContent, c.style.top]),
+  );
+
+  it("staggers sharps and flats above naturals by default", () => {
+    const { container } = render(
+      <PianoKeyboard highlightKeys={["F#", "A", "E"]} showNoteNames displayNoteNames={["F#", "A", "E"]} />,
+    );
+    const { "F#": fs, A: a, E: e } = tops(container);
+    expect(fs).toBe("0px");
+    expect(a).not.toBe("0px");
+    expect(e).toBe(a);
+  });
+
+  it("sets every note name on one line when staggerNoteNames is false", () => {
+    const { container } = render(
+      <PianoKeyboard
+        highlightKeys={["F#", "A", "E"]}
+        showNoteNames
+        displayNoteNames={["F#", "A", "E"]}
+        staggerNoteNames={false}
+      />,
+    );
+    expect(new Set(Object.values(tops(container)))).toEqual(new Set(["0px"]));
+  });
+});
