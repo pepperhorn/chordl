@@ -46,7 +46,7 @@ export default function App() {
   const [draft, setDraft] = useState(initial);
   const board = useChordBoard({ initialItems: initial.items, initialMeta: initial.meta, storage, onChange: setDraft });
   const editor = useRef<BoardEditorHandle>(null);
-  return <><button type="button" onClick={() => editor.current?.setChord("Dm7")}>Catalogue</button>
+  return <><button type="button" onClick={() => editor.current?.setChord("Dm7", { ref: { source: "chords", id: "42" } })}>Catalogue</button>
     <BoardEditor ref={editor} board={board} enableListening={false} />
     <BoardPlayer items={draft.items} meta={draft.meta} playing={false} onPlayingChange={() => {}} /></>;
 }

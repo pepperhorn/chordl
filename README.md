@@ -685,8 +685,11 @@ export function MessageBoardEditor({ initialState, onChange }: {
   const editor = useRef<BoardEditorHandle>(null);
   return <>
     {/* A host catalogue picker calls setChord with the selected chord name.
-        This opens it in the form; Add to board captures the chosen voicing. */}
-    <button type="button" onClick={() => editor.current?.setChord("Dm7")}>Open Dm7</button>
+        This opens it in the form; Add to board captures the chosen voicing.
+        The optional ref ({ source, id }) lands on the card that Add creates;
+        it is dropped if the chord box is edited first, on Done, or by a
+        later setChord without one. */}
+    <button type="button" onClick={() => editor.current?.setChord("Dm7", { ref: { source: "chords", id: chordId } })}>Open Dm7</button>
     <BoardEditor ref={editor} board={board} enableListening={false} />
   </>;
 }
