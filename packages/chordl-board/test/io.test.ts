@@ -585,3 +585,41 @@ describe("import text and image sanitising", () => {
     expect(back.items.map((i) => i.image)).toEqual([...ok, ...bad.map(() => undefined)]);
   });
 });
+
+describe("cardStyle in the cache key", () => {
+  const keyOf = async (item: BoardState["items"][number], opts?: Parameters<typeof exportBoardJson>[1]) =>
+    JSON.parse(await exportBoardJson(board([item]), opts)).items[0];
+  const plainItem = { id: "a", nl: "Cmaj7", display: "both" } as const;
+
+  it("leaves cache keys unchanged without a style or with simple", async () => {
+    const plain = await keyOf(plainItem);
+    for (const cardStyle of [undefined, {}, { theme: "simple" }, { theme: "nope" }]) {
+      const out = await keyOf(plainItem, { cardStyle: cardStyle as never });
+      expect(out.cacheKey).toBe(plain.cacheKey);
+      expect(out.renderConfig).not.toHaveProperty("cardStyle");
+    }
+  });
+
+  it("splits the key for a styled keyboard card", async () => {
+    const plain = await keyOf(plainItem);
+    const style = { theme: "crf", showNoteNames: true, noteNameSize: "xl" } as const;
+    const out = await keyOf(plainItem, { cardStyle: style });
+    expect(out.cacheKey).not.toBe(plain.cacheKey);
+    expect(out.renderConfig.cardStyle).toEqual(style);
+  });
+
+  it("does not touch guitar cards", async () => {
+    const g = { id: "g", nl: "C", display: "guitar" } as const;
+    const plain = await keyOf(g);
+    const out = await keyOf(g, { cardStyle: { theme: "crf" } });
+    expect(out.cacheKey).toBe(plain.cacheKey);
+  });
+
+  it("is not read back on import", async () => {
+    const json = await exportBoardJson(board([plainItem]), { cardStyle: { theme: "crf" } });
+    const back = importBoardJson(json);
+    expect(back.items[0]).not.toHaveProperty("cardStyle");
+    expect(back.items[0]).not.toHaveProperty("renderConfig");
+    expect(back.meta).toEqual({});
+  });
+});
