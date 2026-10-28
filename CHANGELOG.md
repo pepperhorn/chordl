@@ -13,9 +13,9 @@ it exactly). `chordl-core` stays 0.5.2. Hosts pin both exactly.
   simple/crf/boomwhacker, `showNoteNames`, `noteNameSize`, `noteNameMode`
   pitch-class/midi) on `ChordBoard`, `BoardPlayer` and `BoardEditor` styles every
   keyboard card. A card's own chord text wins over the board style, and text can
-  only turn note names on, never off. Guitar cards, staff-only cards and
-  all-inversions cards (chord text "all inversions", rendered as a chord group)
-  are not styled. Use `normalizeCardStyle(value)` on CMS input; the components
+  only turn note names on, never off. All-inversions cards (chord text "all inversions", rendered as a chord
+  group) take the board theme but not its note names; guitar and staff-only
+  cards take neither. Use `normalizeCardStyle(value)` on CMS input; the components
   also normalise it. The style is never stored as a board field and
   `importBoardJson` never reads it (still `chordl.board/v3`); PNG/PDF export
   includes it, and JSON export records it only in each keyboard card's

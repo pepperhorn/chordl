@@ -671,12 +671,12 @@ import { useMemo, useRef, useState } from "react";
 import {
   BoardEditor, BoardPlayer, memoryStorageAdapter, normalizeCardStyle, useChordBoard,
 } from "@pepperhorn/chordl-board";
-import type { BoardEditorHandle, BoardState } from "@pepperhorn/chordl-board";
+import type { BoardCardStyle, BoardEditorHandle, BoardState } from "@pepperhorn/chordl-board";
 import "@pepperhorn/chordl-board/editor.css";
 
 export function MessageBoardEditor({ initialState, onChange, cardStyle }: {
   initialState: BoardState;
-  cardStyle?: unknown; // e.g. block.card_style from the CMS
+  cardStyle?: BoardCardStyle; // built by the host, see below
   onChange: (state: BoardState) => void;
 }) {
   // Mount with key={messageId + blockId} when switching message drafts.
@@ -695,16 +695,16 @@ export function MessageBoardEditor({ initialState, onChange, cardStyle }: {
         later setChord without one. */}
     <button type="button" onClick={() => editor.current?.setChord("Dm7", { ref: { source: "chords", id: chordId } })}>Open Dm7</button>
     <BoardEditor ref={editor} board={board} enableListening={false}
-      cardStyle={normalizeCardStyle(cardStyle)} />
+      cardStyle={cardStyle} />
   </>;
 }
 
-export function MessageBoardPlayer({ state, cardStyle }: { state: BoardState; cardStyle?: unknown }) {
+export function MessageBoardPlayer({ state, cardStyle }: { state: BoardState; cardStyle?: BoardCardStyle }) {
   const [playing, setPlaying] = useState(false);
   return <>
     <BoardPlayer items={state.items} meta={state.meta}
       playing={playing} onPlayingChange={setPlaying}
-      cardStyle={normalizeCardStyle(cardStyle)} />
+      cardStyle={cardStyle} />
   </>;
 }
 ```
@@ -714,12 +714,29 @@ export function MessageBoardPlayer({ state, cardStyle }: { state: BoardState; ca
 `ChordBoard`, `BoardPlayer` and `BoardEditor`. Run CMS input through
 `normalizeCardStyle`, which drops anything invalid. A card's own chord text wins
 over the board style, and text can only turn note names on, never off, so a style
-with names on shows them on every keyboard card. Guitar cards, staff-only cards
-and cards whose chord text asks for "all inversions" (which render as a chord
-group) are not styled. The style is never stored as a board field and
+with names on shows them on each regular keyboard card. Cards whose chord text asks
+for "all inversions" (rendered as a chord group) take the board theme but not its
+note names; guitar and staff-only cards take neither. The style is never stored as a board field and
 `importBoardJson` never reads it; it appears only in each exported keyboard
 card's `renderConfig.cardStyle` (part of the cache key). The schema stays
 `chordl.board/v3`.
+
+Map your CMS fields and layer host defaults under the normalised value:
+
+```ts
+const cardStyle: BoardCardStyle = {
+  theme: "crf", showNoteNames: true, noteNameSize: "xl",
+  ...normalizeCardStyle({
+    theme: block.card_theme,
+    showNoteNames: block.note_names,
+    noteNameSize: block.note_names_size,
+  }),
+};
+```
+
+Normalise before merging defaults: merging first lets an invalid value such as
+`"CRF"` survive, and the component then normalises it away to `"simple"` instead
+of your host default.
 
 The editor seeds its Theme and note-name controls from `cardStyle`. It saves
 only note-name settings that differ from the board's, keeps a card's own names
