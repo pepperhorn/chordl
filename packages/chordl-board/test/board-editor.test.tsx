@@ -12,15 +12,18 @@ const initial: BoardState = {
   meta: { title: "Lesson" },
 };
 
-function Host({ onSave = () => {}, editorRef }: {
+const REF = { source: "chords", id: "3f2a9c1e-7b4d-4e8a-9f00-1c2d3e4f5a6b" };
+
+function Host({ onSave = () => {}, editorRef, initialState = initial }: {
   onSave?: (state: BoardState) => void;
   editorRef?: React.Ref<BoardEditorHandle>;
+  initialState?: BoardState;
 }) {
-  const [draft, setDraft] = useState(initial);
-  const storage = useMemo(() => memoryStorageAdapter(initial), []);
+  const [draft, setDraft] = useState(initialState);
+  const storage = useMemo(() => memoryStorageAdapter(initialState), [initialState]);
   const board = useChordBoard({
-    initialItems: initial.items,
-    initialMeta: initial.meta,
+    initialItems: initialState.items,
+    initialMeta: initialState.meta,
     storage,
     // Deliberately inline: updating the parent's draft must not cause a
     // notify/render loop or save again merely because this identity changed.
@@ -100,5 +103,130 @@ describe("BoardEditor embedded in a message draft", () => {
     fireEvent.keyDown(editors[0], { key: "p" });
     await waitFor(() => expect(editors[0].querySelector(".board-player")).toBeTruthy());
     expect(editors[1].querySelector(".board-player")).toBeNull();
+  });
+
+  describe("host ref", () => {
+    const last = (save: ReturnType<typeof vi.fn>) => (save.mock.lastCall?.[0] as BoardState).items;
+    // Storage hydration is async and replaces items with the stored copy; act
+    // before it settles and the board snaps back, dropping what was just added.
+    const mount = async (node: React.ReactElement) => {
+      const view = render(node);
+      await act(async () => { await Promise.resolve(); });
+      return view;
+    };
+    const add = (container: HTMLElement) => fireEvent.click(container.querySelector(".btn-add-to-board")!);
+    const openFirst = async (container: HTMLElement) => {
+      fireEvent.click(container.querySelector("[data-board-id]")!);
+      fireEvent.click(document.querySelector(".chordl-board-action-edit")!);
+      await waitFor(() => expect(chordBox(container).value).not.toBe(""));
+    };
+    const seeded: BoardState = {
+      items: [{ id: "saved", nl: "C", display: "keyboard", ref: REF }],
+      meta: {},
+    };
+
+    it("attaches a host ref to the next added card only", async () => {
+      const ref = createRef<BoardEditorHandle>();
+      const save = vi.fn();
+      const { container } = await mount(<Host onSave={save} editorRef={ref} />);
+      act(() => ref.current!.setChord("Dm7", { ref: REF }));
+      add(container);
+      await waitFor(() => expect(last(save)).toHaveLength(2));
+      expect(last(save)[1].nl).toBe("Dm7");
+      expect(last(save)[1].ref).toEqual(REF);
+      expect(chordBox(container).value).toBe("Dm7");
+      add(container);
+
+      await waitFor(() => expect(last(save)).toHaveLength(3));
+      expect(last(save)[2].ref).toBeUndefined();
+    });
+
+    it("drops the ref when the chord box is edited before adding", async () => {
+      const ref = createRef<BoardEditorHandle>();
+      const save = vi.fn();
+      const { container } = await mount(<Host onSave={save} editorRef={ref} />);
+      act(() => ref.current!.setChord("Dm7", { ref: REF }));
+      fireEvent.change(chordBox(container), { target: { value: "Dm9" } });
+      add(container);
+      await waitFor(() => expect(last(save)).toHaveLength(2));
+      expect(last(save)[1].nl).toBe("Dm9");
+      expect(last(save)[1].ref).toBeUndefined();
+    });
+
+    it("drops a pending ref when setChord is called again without one", async () => {
+      const ref = createRef<BoardEditorHandle>();
+      const save = vi.fn();
+      const { container } = await mount(<Host onSave={save} editorRef={ref} />);
+      act(() => ref.current!.setChord("Dm7", { ref: REF }));
+      act(() => ref.current!.setChord("G7"));
+      add(container);
+      await waitFor(() => expect(last(save)).toHaveLength(2));
+      expect(last(save)[1].ref).toBeUndefined();
+    });
+
+    it("attaches the ref to the new card, not the card that was being edited", async () => {
+      const ref = createRef<BoardEditorHandle>();
+      const save = vi.fn();
+      const { container } = await mount(<Host onSave={save} editorRef={ref} />);
+      await openFirst(container);
+      act(() => ref.current!.setChord("Dm7", { ref: REF }));
+      add(container);
+      await waitFor(() => expect(last(save)).toHaveLength(2));
+      expect(last(save)[0].ref).toBeUndefined();
+      expect(last(save)[0].title).toBe("Original");
+      expect(last(save)[1].ref).toEqual(REF);
+    });
+
+    it("keeps a card's ref while it is open for editing and only annotations change", async () => {
+      const save = vi.fn();
+      const { container } = await mount(<Host onSave={save} initialState={seeded} />);
+      await openFirst(container);
+      fireEvent.click(within(container).getByText("Note names").parentElement!.querySelector("button")!);
+      await waitFor(() => expect(last(save)[0].nl).not.toBe("C"));
+      expect(last(save)[0].ref).toEqual(REF);
+    });
+
+    it("clears a card's ref when its chord text is retyped", async () => {
+      const save = vi.fn();
+      const { container } = await mount(<Host onSave={save} initialState={seeded} />);
+      await openFirst(container);
+      fireEvent.change(chordBox(container), { target: { value: "Am" } });
+      await waitFor(() => expect(last(save)[0].nl).toBe("Am"));
+      expect(last(save)[0].ref).toBeUndefined();
+    });
+    it("ignores an invalid ref with a warning and stores a fresh copy of a valid one", async () => {
+      const ref = createRef<BoardEditorHandle>();
+      const save = vi.fn();
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const { container } = await mount(<Host onSave={save} editorRef={ref} />);
+      act(() => ref.current!.setChord("Dm7", { ref: { source: "chords", id: 42 as any } }));
+      add(container);
+      await waitFor(() => expect(last(save)).toHaveLength(2));
+      expect(last(save)[1].ref).toBeUndefined();
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(warn.mock.calls[0][0]).toBe("chordl-board: setChord ignored an invalid ref");
+      warn.mockRestore();
+
+      const mine = { ...REF };
+      act(() => ref.current!.setChord("G7", { ref: mine }));
+      add(container);
+      await waitFor(() => expect(last(save)).toHaveLength(3));
+      expect(last(save)[2].ref).toEqual(REF);
+      expect(last(save)[2].ref).not.toBe(mine);
+    });
+  });
+
+  describe("play mode transport", () => {
+    it("shows exactly one Stop (the player's) and Stop/Next work", async () => {
+      const { container } = render(<Host />);
+      await act(async () => { await Promise.resolve(); });
+      fireEvent.click(container.querySelector(".btn-board-play")!);
+      await waitFor(() => expect(container.querySelector(".board-player")).toBeTruthy());
+      expect(within(container).getAllByRole("button", { name: /stop/i })).toHaveLength(1);
+      expect(within(container).getByRole("button", { name: /next/i })).toBeTruthy();
+      fireEvent.click(within(container).getByRole("button", { name: /stop/i }));
+      await waitFor(() => expect(container.querySelector(".board-player")).toBeNull());
+      expect(container.querySelector(".btn-board-play")).toBeTruthy();
+    });
   });
 });

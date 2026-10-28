@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useRef, useState } from "react";
+import { Fragment, forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, TouchEvent as ReactTouchEvent } from "react";
 import { startPlayback, preloadInstruments } from "@pepperhorn/chordl-react";
 import type { PlaybackController, UIThemeMode } from "@pepperhorn/chordl-react";
@@ -60,6 +60,36 @@ const PLAYER_STYLES = `
   border-radius: 4px;
   align-self: center;
 }
+/* Transport for touch screens, where there are no keys. 44px is the minimum
+   comfortable touch target; white fill keeps it on the board's light paper. */
+.chordl-player-controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+}
+.chordl-player-controls button {
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0 14px;
+  background: #fff;
+  color: #1a1a2e;
+  border: 1px solid var(--btn-border, #ddd);
+  border-radius: 999px;
+  font-family: Poppins, sans-serif;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+.chordl-player-controls button:hover:not(:disabled) { background: rgba(56,189,248,0.12); }
+.chordl-player-controls button:disabled { opacity: 0.45; cursor: default; }
+.chordl-player-controls button[aria-pressed="true"] { border-color: ${CURSOR_RING}; }
 .board-player-more:hover { color: inherit; background: rgba(56,189,248,0.12); }
 /* The board's own title/subtitle type, from the one place that defines it.
    ChordBoard's <style> unmounts when play mode replaces it, so without this
@@ -96,6 +126,22 @@ export interface BoardPlayerProps {
   onShowMore?: (item: BoardItem) => void;
   className?: string;
   style?: CSSProperties;
+  /**
+   * Draw Play/Stop and Prev/Replay/Next buttons above the board (default
+   * `true`). Touch users have no keyboard; a host that draws its own transport
+   * passes `false`.
+   */
+  showControls?: boolean;
+}
+
+/** Imperative transport for hosts that draw their own controls. */
+export interface BoardPlayerHandle {
+  play(): void;
+  stop(): void;
+  /** Like ArrowRight: does nothing while not playing. */
+  next(): void;
+  prev(): void;
+  replay(): void;
 }
 
 /**
@@ -130,7 +176,7 @@ function nextPlayable(items: BoardItem[], from: number, direction: 1 | -1): numb
  * voice per repeat, and a second of that is a cluster rather than a
  * progression.
  */
-export function BoardPlayer({
+export const BoardPlayer = forwardRef<BoardPlayerHandle, BoardPlayerProps>(function BoardPlayer({
   items,
   meta,
   scale = DEFAULT_SCALE,
@@ -141,7 +187,8 @@ export function BoardPlayer({
   onShowMore,
   className,
   style,
-}: BoardPlayerProps) {
+  showControls = true,
+}, ref) {
   const [cursor, setCursor] = useState(() => nextPlayable(items, -1, 1));
   /** Sounding notes of the card under the cursor, by position in its voicing. */
   const [active, setActive] = useState<number[] | null>(null);
@@ -223,6 +270,25 @@ export function BoardPlayer({
     play(cursorIndex);
   }, [cursorIndex, play]);
 
+  /**
+   * The one play toggle, shared by the `p` key, the button and the handle.
+   * Stopping cancels the sounding chord now rather than waiting for the host to
+   * re-render with `playing=false`, so a tap on Stop is silent at once.
+   */
+  const setPlaying = useCallback((next: boolean) => {
+    if (!next) cancelCurrent();
+    onPlayingChange(next);
+  }, [cancelCurrent, onPlayingChange]);
+
+  // Same guards as the keys: transport does nothing outside play mode.
+  useImperativeHandle(ref, () => ({
+    play: () => setPlaying(true),
+    stop: () => setPlaying(false),
+    next: () => { if (playing) step(1); },
+    prev: () => { if (playing) step(-1); },
+    replay: () => { if (playing) replay(); },
+  }), [playing, setPlaying, step, replay]);
+
   /*
    * Keep the cursor on a card that still exists and is still playable — a host
    * may hand over a different board while play mode is on.
@@ -291,7 +357,7 @@ export function BoardPlayer({
       // caught by the listener it had itself brought back, and the board would
       // never leave.
       event.stopPropagation();
-      onPlayingChange(!playing);
+      setPlaying(!playing);
       return;
     }
     // Outside play mode the arrows and Space are the page's: this is a board
@@ -400,6 +466,36 @@ export function BoardPlayer({
     >
       <style>{PLAYER_STYLES}</style>
 
+      {showControls && (
+        <div className="chordl-player-controls" role="toolbar" aria-label="Playback">
+          <button
+            type="button"
+            className="chordl-player-play"
+            aria-label={playing ? "Stop playing" : "Play board"}
+            aria-pressed={playing}
+            onClick={() => {
+              setPlaying(!playing);
+              // The button holds the focus after a click, and the keys are
+              // heard by the root only — so hand focus over when turning on,
+              // or the arrow keys would go to the button.
+              if (!playing) rootRef.current?.focus();
+            }}
+          >
+            {playing ? "Stop" : "Play"}
+          </button>
+          {playing && (
+            <>
+              <button type="button" className="chordl-player-prev" onMouseDown={(e) => e.preventDefault()} aria-label="Previous chord"
+                disabled={cursorIndex < 0} onClick={() => step(-1)}>Prev</button>
+              <button type="button" className="chordl-player-replay" onMouseDown={(e) => e.preventDefault()} aria-label="Replay chord"
+                disabled={cursorIndex < 0} onClick={() => replay()}>Replay</button>
+              <button type="button" className="chordl-player-next" onMouseDown={(e) => e.preventDefault()} aria-label="Next chord"
+                disabled={cursorIndex < 0} onClick={() => step(1)}>Next</button>
+            </>
+          )}
+        </div>
+      )}
+
       {/* The board's paper, heading and footer, all three of them ChordBoard's
           own — the region play mode is showing is the same document, so it is
           drawn by the same code rather than by a lookalike. */}
@@ -481,4 +577,4 @@ export function BoardPlayer({
       </div>
     </div>
   );
-}
+});

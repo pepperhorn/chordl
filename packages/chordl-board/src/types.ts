@@ -72,6 +72,16 @@ export const BOARD_CARD_SIZE_FACTORS: Record<BoardCardSize, number> = {
   "2xl": 3,
 };
 
+/**
+ * Host provenance: which record in the host's own data a card came from
+ * (e.g. `{ source: "chords", id: "<Directus row id>" }`). Both halves are
+ * opaque tokens to this package.
+ */
+export interface BoardItemRef {
+  source: string;
+  id: string;
+}
+
 /** A single card on the board — a chord diagram, or text with an icon/image. */
 export interface BoardItem {
   /** Stable identifier for keys and drag-drop. */
@@ -136,6 +146,14 @@ export interface BoardItem {
    * decided here.
    */
   bundleId?: string;
+  /**
+   * Host provenance, so a host app can record which of its rows a card came
+   * from. Opaque to this package and validated on import (`normalizeRef` in
+   * io.ts) because an untrusted file supplies it. Not part of the render cache
+   * key: it never changes the drawn image. Distinct from `bundleId`, which
+   * names hosted chord content rather than where the card was picked from.
+   */
+  ref?: BoardItemRef;
   /** Ordered MIDI pitches for the exact voicing captured in the editor. */
   playbackNotes?: number[];
   playbackInstrument?: string;

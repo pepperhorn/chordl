@@ -4,6 +4,7 @@ import type {
   BoardDisplayMode,
   BoardItem,
   BoardItemKind,
+  BoardItemRef,
   BoardMeta,
   BoardState,
 } from "./types.js";
@@ -93,6 +94,8 @@ export async function exportBoardJson(state: BoardState): Promise<string> {
       // the cache key for every existing card silently becomes wrong (two
       // different levels of the same chord would collide on one cached
       // image) unless this line is added then, not before.
+      // `ref` is absent for a different reason: it is provenance and never
+      // changes the drawn image, so it must not split the cache.
       let cacheKey: string | undefined;
       try {
         // `nl` is optional on the type so a text card is constructible; a chord
@@ -169,6 +172,22 @@ function parseBundleId(value: unknown): string | undefined {
     : undefined;
 }
 
+const REF_TOKEN = /^(?!\.+$)[A-Za-z0-9_.:-]{1,64}$/;
+
+/**
+ * Provenance is a plain `{ source, id }` pair of URL-safe-ish tokens (same
+ * all-dots guard as `parseBundleId`, plus `:` for namespaced sources). A
+ * malformed ref is dropped silently, like every other field here, and the
+ * result is rebuilt so no extra or `__proto__` key from the file survives.
+ */
+export function normalizeRef(value: unknown): BoardItemRef | undefined {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const { source, id } = value as Record<string, unknown>;
+  return typeof source === "string" && typeof id === "string" && REF_TOKEN.test(source) && REF_TOKEN.test(id)
+    ? { source, id }
+    : undefined;
+}
+
 function parsePlaybackNotes(value: unknown): number[] | undefined {
   if (!Array.isArray(value) || value.length === 0) return undefined;
   return value.every((note) => typeof note === "number" && Number.isInteger(note) && note >= 0 && note <= 127)
@@ -208,11 +227,26 @@ function parseIcon(value: unknown): string | undefined {
 
 /**
  * Security boundary: an imported board is untrusted and `image` ends up in a
- * `src`. Only an inline image passes — `data:text/html`, `javascript:` and
- * remote URLs are all ways to make a card fetch or execute something.
+ * `src`. Only an inline base64 raster (png, jpeg, webp, gif) passes —
+ * `data:text/html`, `javascript:` and remote URLs are all ways to make a card
+ * fetch or execute something, and SVG is refused on import as well as on
+ * upload: it is a document format that can carry script and external
+ * references. The pattern is one anchored character class, so it runs in
+ * linear time even over a multi-megabyte string.
  */
 function parseImage(value: unknown): string | undefined {
-  return typeof value === "string" && value.startsWith("data:image/") ? value : undefined;
+  return typeof value === "string" && /^data:image\/(?:png|jpeg|webp|gif);base64,[A-Za-z0-9+/]+={0,2}$/.test(value)
+    ? value
+    : undefined;
+}
+
+/**
+ * Card and meta text reaches React as a child, so anything but a string
+ * (a number, `{ x: 1 }`, an array) would throw "Objects are not valid as a
+ * React child" at render. Dropped silently, like every other bad field.
+ */
+function parseText(value: unknown): string | undefined {
+  return typeof value === "string" ? value : undefined;
 }
 
 /**
@@ -223,11 +257,21 @@ function parseImage(value: unknown): string | undefined {
  * either reflows as "auto" rather than being clamped to 4.
  */
 function parseMeta(value: unknown): BoardMeta {
-  const raw = (value ?? {}) as BoardMeta;
+  // A string, number or array would spread into index keys (or nothing), so
+  // anything that is not a plain object is replaced rather than repaired.
+  const plain = value !== null && typeof value === "object" && !Array.isArray(value);
+  const raw = (plain ? value : {}) as BoardMeta;
   const columns = raw.columns;
   const usable = columns === "auto"
     || (typeof columns === "number" && Number.isInteger(columns) && columns >= 1 && columns <= MAX_COLUMNS);
-  return usable ? raw : { ...raw, columns: undefined };
+  // Header text is rendered as React children, so only strings survive.
+  return {
+    ...raw,
+    title: parseText(raw.title),
+    subtitle: parseText(raw.subtitle),
+    footer: parseText(raw.footer),
+    columns: usable ? columns : undefined,
+  };
 }
 
 export function importBoardJson(text: string): BoardState {
@@ -252,9 +296,9 @@ export function importBoardJson(text: string): BoardState {
       id: typeof raw.id === "string" && raw.id ? raw.id : `chord-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
       kind,
       nl: typeof raw.nl === "string" ? raw.nl : undefined,
-      title: raw.title,
-      subheading: raw.subheading,
-      footerText: raw.footerText,
+      title: parseText(raw.title),
+      subheading: parseText(raw.subheading),
+      footerText: parseText(raw.footerText),
       display: parseDisplayMode(raw.display),
       instrument: typeof raw.instrument === "string" && raw.instrument ? raw.instrument : undefined,
       position: parsePosition(raw.position),
@@ -266,6 +310,7 @@ export function importBoardJson(text: string): BoardState {
       arpeggioBpm: parseArpeggioBpm(raw.arpeggioBpm),
       playbackHighlightColor: parsePlaybackHighlightColor(raw.playbackHighlightColor),
       bundleId: parseBundleId(raw.bundleId),
+      ref: normalizeRef(raw.ref),
       icon: parseIcon(raw.icon),
       image: parseImage(raw.image),
       size: parseSize(raw.size),

@@ -1,3 +1,4 @@
+import { useState, createRef } from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, fireEvent, waitFor } from "@testing-library/react";
 import type { BoardItem } from "../src/types";
@@ -49,6 +50,7 @@ vi.mock("@pepperhorn/chordl-react", async (importOriginal) => {
 // body, so a static import of BoardPlayer would run the mock factory before
 // the consts above are initialised and die in the temporal dead zone.
 const { BoardPlayer } = await import("../src/BoardPlayer");
+import type { BoardPlayerHandle } from "../src/BoardPlayer";
 
 const items: BoardItem[] = [
   { id: "a", kind: "chord", nl: "C", display: "keyboard", playbackNotes: [60, 64, 67] },
@@ -405,5 +407,126 @@ describe("BoardPlayer", () => {
     render(<BoardPlayer items={[items[0]]} playing={false} onPlayingChange={noop} />);
     // `rg` is the default size, whose factor is 1, so this is the raw default.
     expect(scales[0]).toBeCloseTo(0.6);
+  });
+});
+
+describe("BoardPlayer on-screen controls", () => {
+  const btn = (cls: string) => document.querySelector(`.${cls}`) as HTMLButtonElement;
+  const cursorId = () => document.querySelector(".board-player-cursor")!.getAttribute("data-board-id");
+
+  beforeEach(() => {
+    startPlayback.mockClear();
+    cancel.mockClear();
+  });
+
+  it("draws a labelled Play toggle that asks the host to start", () => {
+    const onPlayingChange = vi.fn();
+    render(<BoardPlayer items={items} playing={false} onPlayingChange={onPlayingChange} />);
+    expect(btn("chordl-player-play").getAttribute("aria-label")).toBe("Play board");
+    expect(btn("chordl-player-next")).toBeNull();
+    fireEvent.click(btn("chordl-player-play"));
+    expect(onPlayingChange).toHaveBeenCalledWith(true);
+  });
+
+  it("Next steps over the text card to the second chord and sounds it", async () => {
+    render(<BoardPlayer items={items} playing onPlayingChange={noop} />);
+    fireEvent.click(btn("chordl-player-next"));
+    await waitFor(() => expect(startPlayback).toHaveBeenLastCalledWith([55, 59, 62], expect.anything()));
+    expect(cursorId()).toBe("b");
+  });
+
+  it("Prev and Replay drive the same cursor as the keys", async () => {
+    render(<BoardPlayer items={items} playing onPlayingChange={noop} />);
+    fireEvent.click(btn("chordl-player-next"));
+    await waitFor(() => expect(cursorId()).toBe("b"));
+    fireEvent.click(btn("chordl-player-prev"));
+    await waitFor(() => expect(startPlayback).toHaveBeenLastCalledWith([60, 64, 67], expect.anything()));
+    expect(cursorId()).toBe("a");
+    startPlayback.mockClear();
+    fireEvent.click(btn("chordl-player-replay"));
+    await waitFor(() => expect(startPlayback).toHaveBeenCalledTimes(1));
+    expect(cursorId()).toBe("a");
+  });
+
+  it("Stop cancels the sounding chord and asks the host to stop", async () => {
+    const onPlayingChange = vi.fn();
+    render(<BoardPlayer items={items} playing onPlayingChange={onPlayingChange} />);
+    fireEvent.click(btn("chordl-player-replay"));
+    await waitFor(() => expect(startPlayback).toHaveBeenCalledTimes(1));
+    cancel.mockClear();
+    expect(btn("chordl-player-play").getAttribute("aria-label")).toBe("Stop playing");
+    fireEvent.click(btn("chordl-player-play"));
+    expect(cancel).toHaveBeenCalled();
+    expect(onPlayingChange).toHaveBeenCalledWith(false);
+  });
+
+  it("arrow keys work right after the on-screen Play", () => {
+    function Host() {
+      const [playing, setPlaying] = useState(false);
+      return <BoardPlayer items={items} playing={playing} onPlayingChange={setPlaying} />;
+    }
+    render(<Host />);
+    fireEvent.click(btn("chordl-player-play"));
+    expect(document.activeElement).toBe(player());
+    fireEvent.keyDown(player(), { key: "ArrowRight" });
+    expect(startPlayback).toHaveBeenLastCalledWith([55, 59, 62], expect.anything());
+  });
+
+  it("keeps arrow keys working after tapping Next (buttons do not take focus)", async () => {
+    render(<BoardPlayer items={items} playing onPlayingChange={noop} />);
+    player().focus();
+    fireEvent.keyDown(player(), { key: "ArrowRight" });
+    const next = btn("chordl-player-next");
+    expect(fireEvent.mouseDown(next)).toBe(false); // default prevented
+    expect(fireEvent.mouseDown(btn("chordl-player-prev"))).toBe(false);
+    expect(fireEvent.mouseDown(btn("chordl-player-replay"))).toBe(false);
+  });
+
+  it("gives control buttons an explicit dark text colour", () => {
+    render(<BoardPlayer items={items} playing onPlayingChange={noop} />);
+    const css = document.querySelector(".board-player style")!.textContent!;
+    expect(css).toMatch(/\.chordl-player-controls button \{[^}]*color: #1a1a2e/);
+  });
+
+  it("meets the 44px touch target and hides with showControls={false}", () => {
+    const { rerender } = render(<BoardPlayer items={items} playing onPlayingChange={noop} />);
+    const css = document.querySelector(".board-player style")!.textContent!;
+    expect(css).toMatch(/\.chordl-player-controls button[^}]*min-width: 44px/);
+    expect(css).toMatch(/\.chordl-player-controls button[^}]*min-height: 44px/);
+    const toolbar = document.querySelector(".chordl-player-controls")!;
+    expect(toolbar.getAttribute("role")).toBe("toolbar");
+    expect(toolbar.getAttribute("aria-label")).toBe("Playback");
+    expect(toolbar.textContent).toMatch(/Stop.*Prev.*Replay.*Next/);
+    const onPlayingChange = vi.fn();
+    rerender(<BoardPlayer items={items} playing onPlayingChange={onPlayingChange} showControls={false} />);
+    expect(document.querySelector(".chordl-player-controls")).toBeNull();
+    fireEvent.keyDown(player(), { key: "p" });
+    expect(onPlayingChange).toHaveBeenCalledWith(false);
+  });
+
+  it("exposes play/stop/next/prev/replay through a ref", async () => {
+    const ref = createRef<BoardPlayerHandle>();
+    const onPlayingChange = vi.fn();
+    const { rerender } = render(
+      <BoardPlayer ref={ref} items={items} playing={false} onPlayingChange={onPlayingChange} />,
+    );
+    ref.current!.next();
+    expect(startPlayback).not.toHaveBeenCalled();
+    ref.current!.play();
+    expect(onPlayingChange).toHaveBeenCalledWith(true);
+    rerender(<BoardPlayer ref={ref} items={items} playing onPlayingChange={onPlayingChange} />);
+    ref.current!.next();
+    await waitFor(() => expect(cursorId()).toBe("b"));
+    cancel.mockClear();
+    ref.current!.stop();
+    expect(cancel).toHaveBeenCalled();
+    expect(onPlayingChange).toHaveBeenLastCalledWith(false);
+  });
+
+  it("disables the transport on a board of only text cards", () => {
+    render(<BoardPlayer items={[{ id: "t", kind: "text", title: "Verse" }]} playing onPlayingChange={noop} />);
+    for (const cls of ["chordl-player-prev", "chordl-player-replay", "chordl-player-next"]) {
+      expect(btn(cls).disabled).toBe(true);
+    }
   });
 });

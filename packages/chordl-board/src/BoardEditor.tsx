@@ -8,7 +8,8 @@ import { ChordBoard } from "./ChordBoard.js";
 import type { ChordBoardController } from "./ChordBoard.js";
 import { BoardPlayer } from "./BoardPlayer.js";
 import { isTextCard } from "./types.js";
-import type { BoardDisplayMode, BoardItem } from "./types.js";
+import type { BoardDisplayMode, BoardItem, BoardItemRef } from "./types.js";
+import { normalizeRef } from "./io.js";
 import { BoardIcon, BOARD_ICONS } from "./icons.js";
 import { fileToCardImage, imageBytesUsed, IMAGE_BUDGET_CHARS } from "./image.js";
 
@@ -34,8 +35,13 @@ export interface BoardEditorProps {
 }
 
 export interface BoardEditorHandle {
-  /** Open a catalogue chord in the form without adding it until the user chooses Add. */
-  setChord: (chord: string) => void;
+  /**
+   * Open a catalogue chord in the form without adding it until the user chooses Add.
+   * `opts.ref` is attached to the card created by the next "+ Add to board". It
+   * is dropped if the chord box is edited first, on "Done", or by a later
+   * `setChord` without one.
+   */
+  setChord: (chord: string, opts?: { ref?: BoardItemRef }) => void;
 }
 
 const SCALE_OPTIONS = [
@@ -590,6 +596,10 @@ export const BoardEditor = forwardRef<BoardEditorHandle, BoardEditorProps>(funct
   const editorRoot = useRef<HTMLDivElement>(null);
   const controlId = useId();
   const [input, setInput] = useState(initialChord);
+  // Provenance for the card the form currently describes. It lives only as long
+  // as the chord text is the one it was attached to: any retyping, Done, or one
+  // Add clears it, so a ref can never end up on a card it does not describe.
+  const [pendingRef, setPendingRef] = useState<BoardItemRef | null>(null);
   const [theme, setTheme] = useState<string>("simple");
   const [keyFormat, setKeyFormat] = useState<"compact" | "exact">("compact");
   const [displayMode, setDisplayMode] = useState<DisplayMode>("keyboard");
@@ -838,10 +848,13 @@ export const BoardEditor = forwardRef<BoardEditorHandle, BoardEditorProps>(funct
       playbackInstrument: playbackSpec?.instrument,
       arpeggioBpm,
       playbackHighlightColor,
+      // An explicit key, even when undefined: `updateItem` merges, so this is
+      // what lets a retyped chord clear the ref (as `icon` does for text cards).
+      ref: pendingRef ?? undefined,
     };
   }, [input, octaveShift, detailsModifiers, title, subheading, footerText,
       displayMode, guitarInstrument, guitarPosition, frameOrientation, frameLineStyle, pianoVariantNl, level,
-      playbackSpec, arpeggioBpm, playbackHighlightColor]);
+      playbackSpec, arpeggioBpm, playbackHighlightColor, pendingRef]);
 
   // A text card is text, and deliberately nothing else: no `nl`, no `display`,
   // no instrument. `updateItem` merges a patch, so a chord key that appeared
@@ -884,6 +897,7 @@ export const BoardEditor = forwardRef<BoardEditorHandle, BoardEditorProps>(funct
     // The input too, or "go back to creating a new chord" leaves the finished
     // card's chord in the box and "+ Add to board" quietly duplicates it.
     setChordInput("");
+    setPendingRef(null);
     board.clearSelection();
   };
 
@@ -921,6 +935,8 @@ export const BoardEditor = forwardRef<BoardEditorHandle, BoardEditorProps>(funct
     // Drops the reported voicing rather than carry it onto a different chord —
     // see `setChordInput`.
     setChordInput(next);
+    // A different chord is no longer the catalogue record the ref points at.
+    setPendingRef(null);
     setError(null);
     if (!editingItemId && !cardTextTouched) clearCardText();
   };
@@ -930,6 +946,8 @@ export const BoardEditor = forwardRef<BoardEditorHandle, BoardEditorProps>(funct
     // Always a chord card. "+ Text" on the board toolbar is the only route to a
     // text card, so a text edit in progress must not leak into this button.
     board.addItem(chordCardFields);
+    // One Add consumes the ref; adding the same chord again is a new card.
+    setPendingRef(null);
     // Any edit in progress ends here, not just a text one: the new card is what
     // the form now describes, and staying bound to the old one would silently
     // rewrite it on the next keystroke.
@@ -1017,6 +1035,9 @@ export const BoardEditor = forwardRef<BoardEditorHandle, BoardEditorProps>(funct
     // appended a clause the string already carried.
     const details = splitChordDetails(item.nl ?? "");
     setChordInput(details.input);
+    // `setChordInput` leaves `pendingRef` alone, so this is where an opened
+    // card's own ref is picked up for the live-edit mirror to write back.
+    setPendingRef(isTextCard(item) ? null : item.ref ?? null);
     setTitle(item.title ?? "");
     setSubheading(item.subheading ?? "");
     setFooterText(item.footerText ?? "");
@@ -1075,9 +1096,16 @@ export const BoardEditor = forwardRef<BoardEditorHandle, BoardEditorProps>(funct
   }, [editingItemId, cardFields]);
 
   useImperativeHandle(ref, () => ({
-    setChord(chord: string) {
+    setChord(chord: string, opts?: { ref?: BoardItemRef }) {
       if (editingItemId) stopEditing();
       handleChordInputChange(chord);
+      // After the change handler, which clears it; batched, so this write wins.
+      let safe: BoardItemRef | undefined;
+      if (opts?.ref !== undefined) {
+        safe = normalizeRef(opts.ref);
+        if (!safe) console.warn("chordl-board: setChord ignored an invalid ref", opts.ref);
+      }
+      setPendingRef(safe ?? null);
     },
   }));
 
@@ -1651,7 +1679,7 @@ export const BoardEditor = forwardRef<BoardEditorHandle, BoardEditorProps>(funct
                 ▶ Follow along
               </button>
             )}
-            {board.items.length >= 1 && (
+            {board.items.length >= 1 && !boardPlaying && (
               <button type="button"
                 className="btn-board-play"
                 onClick={() => setBoardPlaying((on) => !on)}
@@ -1669,7 +1697,7 @@ export const BoardEditor = forwardRef<BoardEditorHandle, BoardEditorProps>(funct
                 }}
                 title="Walk the board's chords with the arrow keys and hear each one"
               >
-                {boardPlaying ? "■ Stop" : "▶ Play"}
+                ▶ Play
               </button>
             )}
           </div>

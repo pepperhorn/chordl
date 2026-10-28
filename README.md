@@ -657,7 +657,7 @@ to back the board with a remote API or IndexedDB.
 
 ### Embedded board editor and player
 
-`chordl-board@0.2.0` exports the same `BoardEditor` used by the playground,
+`chordl-board@0.2.1` exports the same `BoardEditor` used by the playground,
 plus the display-only `BoardPlayer`. Import the editor stylesheet once. It is
 scoped to `.chordl-board-editor` and does not reset the host page or fetch fonts.
 The editor accepts the controller returned by `useChordBoard`; persistence,
@@ -685,8 +685,11 @@ export function MessageBoardEditor({ initialState, onChange }: {
   const editor = useRef<BoardEditorHandle>(null);
   return <>
     {/* A host catalogue picker calls setChord with the selected chord name.
-        This opens it in the form; Add to board captures the chosen voicing. */}
-    <button type="button" onClick={() => editor.current?.setChord("Dm7")}>Open Dm7</button>
+        This opens it in the form; Add to board captures the chosen voicing.
+        The optional ref ({ source, id }) lands on the card that Add creates;
+        it is dropped if the chord box is edited first, on Done, or by a
+        later setChord without one. */}
+    <button type="button" onClick={() => editor.current?.setChord("Dm7", { ref: { source: "chords", id: chordId } })}>Open Dm7</button>
     <BoardEditor ref={editor} board={board} enableListening={false} />
   </>;
 }
@@ -694,12 +697,13 @@ export function MessageBoardEditor({ initialState, onChange }: {
 export function MessageBoardPlayer({ state }: { state: BoardState }) {
   const [playing, setPlaying] = useState(false);
   return <>
-    <button type="button" onClick={() => setPlaying(!playing)}>{playing ? "Stop" : "Play"}</button>
     <BoardPlayer items={state.items} meta={state.meta}
       playing={playing} onPlayingChange={setPlaying} />
   </>;
 }
 ```
+
+The player draws its own Play/Stop and Prev/Replay/Next buttons (44px touch targets). Pass `showControls={false}` to draw your own instead, and drive the player through a `ref` typed `BoardPlayerHandle` (`play`, `stop`, `next`, `prev`, `replay`).
 
 `BoardEditor` starts with an empty chord box unless `initialChord` is supplied.
 Its `header` and `children` slots accommodate host controls, and `uiTheme`

@@ -1,6 +1,6 @@
 {
   "name": "@pepperhorn/chordl-board",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Stateful chord board for chordl \u2014 reorderable list of chord cards with storage adapter",
   "repository": {
     "type": "git",
