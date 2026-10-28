@@ -2,7 +2,7 @@
 // without workspace links or Vite aliases, before a coordinated npm release.
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -28,6 +28,19 @@ for (const dir of ["chordl-guitar", "chordl-react", "chordl-board"]) {
   assert(!packed.includes("workspace:"), `${dir} contains an unresolved workspace dependency`);
   dependencies[manifest.name] = `file:${tarball}`;
 }
+
+// The read-only player shares ChordBoard.js, so the export libraries must only
+// ever be reached through import(), never a static import in dist.
+const distDir = join(root, "packages", "chordl-board", "dist");
+const staticExportImport = /^\s*import\s+(?:[^;]*?\sfrom\s+)?["'](?:html2canvas|jspdf)["']/m;
+const distJs = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
+  e.isDirectory() ? distJs(join(dir, e.name)) : e.name.endsWith(".js") ? [join(dir, e.name)] : []);
+for (const file of distJs(distDir)) {
+  assert(!staticExportImport.test(readFileSync(file, "utf8")), `${file} statically imports html2canvas or jspdf`);
+}
+const boardJs = readFileSync(join(distDir, "ChordBoard.js"), "utf8");
+assert(boardJs.includes('import("html2canvas")'), "dist/ChordBoard.js must load html2canvas with import()");
+assert(boardJs.includes('import("jspdf")'), "dist/ChordBoard.js must load jspdf with import()");
 
 writeFileSync(join(consumer, "package.json"), JSON.stringify({
   private: true, type: "module", dependencies,

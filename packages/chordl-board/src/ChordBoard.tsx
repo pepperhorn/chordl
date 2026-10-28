@@ -10,8 +10,9 @@ import { CardToolbar, CARD_TOOLBAR_CSS } from "./CardToolbar.js";
 import type { MeasureToolbar } from "./CardToolbar.js";
 import { localStorageAdapter } from "./storage.js";
 import { exportBoardJson, importBoardJson } from "./io.js";
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
+// html2canvas and jspdf are loaded with import() inside captureBoard and
+// handleDownloadPdf: BoardPlayer shares this module, and a read-only player must
+// not ship ~600 KB of export code it can never run.
 
 // Imported eagerly on purpose. A lazy() here bought nothing — chordl-react ships
 // as one bundle, so PianoChord already drags svguitar and chords-db in — while
@@ -746,6 +747,7 @@ export function ChordBoard({
     if (!node) return null;
     // Wait one frame so the exporting=true render commits before capture.
     await new Promise<void>((r) => requestAnimationFrame(() => r()));
+    const html2canvas = (await import("html2canvas")).default;
     return await html2canvas(node, {
       backgroundColor: "#ffffff",
       scale: 2,
@@ -780,6 +782,7 @@ export function ChordBoard({
     try {
       const canvas = await captureBoard();
       if (!canvas) return;
+      const { jsPDF } = await import("jspdf");
       const imgData = canvas.toDataURL("image/png");
       const orientation = canvas.width >= canvas.height ? "landscape" : "portrait";
       const pdf = new jsPDF({
