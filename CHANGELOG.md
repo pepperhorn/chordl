@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-10-29 — chordl-react 0.5.1, chordl-board 0.2.2
+
+Publish `chordl-react@0.5.1` first, then `chordl-board@0.2.2` (which depends on
+it exactly). `chordl-core` stays 0.5.2. Hosts pin both exactly.
+
+- **PianoChord note-name defaults:** `showNoteNames`, `noteNameSize` and
+  `noteNameMode` props apply when the chord text does not set them; the text wins.
+  A degrees-only chord gains the default names beside its degrees. Chord text
+  cannot turn names off. `VoicingVariantToggle` passes them through.
+- **Board card style:** `cardStyle?: BoardCardStyle` (`theme`
+  simple/crf/boomwhacker, `showNoteNames`, `noteNameSize`, `noteNameMode`
+  pitch-class/midi) on `ChordBoard`, `BoardPlayer` and `BoardEditor` styles every
+  keyboard card. Guitar and staff-only cards are unchanged. Use
+  `normalizeCardStyle(value)` on CMS input; the components also normalise it.
+  The style is not saved in the board (still `chordl.board/v3`); PNG/PDF export
+  includes it, and JSON export records it in `renderConfig.cardStyle`, so styled
+  cards get their own `cacheKey`. Unstyled boards keep their keys.
+- **Editor:** the Theme pill and Note names controls start from `cardStyle`.
+  Cards store only note-name settings that differ from the board's, and the Note
+  names toggle is locked on while the board shows names.
+
 ## 2026-10-28 — chordl-board 0.2.1
 
 Only `@pepperhorn/chordl-board` is published. It depends on the already-published

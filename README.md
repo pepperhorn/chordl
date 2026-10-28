@@ -550,6 +550,9 @@ Behaviour worth knowing:
 | `chord` | `string` | required | Natural language chord description |
 | `format` | `"compact" \| "exact"` | `"compact"` | Key height mode |
 | `theme` | `string \| ColorTheme` | `"simple"` | Color theme |
+| `showNoteNames` | `boolean` | — | Default note names when the chord text asks for none; text wins |
+| `noteNameSize` | `TextSize` | — | Default size when the text gives none |
+| `noteNameMode` | `NoteNameMode` | — | Default mode when the default turns names on |
 | `highlightColor` | `string` | `"#a0c6e8"` | Shortcut for simple theme color |
 | `padding` | `number` | `1` | Extra white keys on each side |
 | `scale` | `number` | `1` | Display scale (0.5–1.0) |
@@ -657,7 +660,7 @@ to back the board with a remote API or IndexedDB.
 
 ### Embedded board editor and player
 
-`chordl-board@0.2.1` exports the same `BoardEditor` used by the playground,
+`chordl-board@0.2.2` exports the same `BoardEditor` used by the playground,
 plus the display-only `BoardPlayer`. Import the editor stylesheet once. It is
 scoped to `.chordl-board-editor` and does not reset the host page or fetch fonts.
 The editor accepts the controller returned by `useChordBoard`; persistence,
@@ -666,7 +669,7 @@ catalogue lookup and message submission stay with the host.
 ```tsx
 import { useMemo, useRef, useState } from "react";
 import {
-  BoardEditor, BoardPlayer, memoryStorageAdapter, useChordBoard,
+  BoardEditor, BoardPlayer, memoryStorageAdapter, normalizeCardStyle, useChordBoard,
 } from "@pepperhorn/chordl-board";
 import type { BoardEditorHandle, BoardState } from "@pepperhorn/chordl-board";
 import "@pepperhorn/chordl-board/editor.css";
@@ -690,7 +693,8 @@ export function MessageBoardEditor({ initialState, onChange }: {
         it is dropped if the chord box is edited first, on Done, or by a
         later setChord without one. */}
     <button type="button" onClick={() => editor.current?.setChord("Dm7", { ref: { source: "chords", id: chordId } })}>Open Dm7</button>
-    <BoardEditor ref={editor} board={board} enableListening={false} />
+    <BoardEditor ref={editor} board={board} enableListening={false}
+      cardStyle={normalizeCardStyle(block.card_style)} />
   </>;
 }
 
@@ -698,10 +702,20 @@ export function MessageBoardPlayer({ state }: { state: BoardState }) {
   const [playing, setPlaying] = useState(false);
   return <>
     <BoardPlayer items={state.items} meta={state.meta}
-      playing={playing} onPlayingChange={setPlaying} />
+      playing={playing} onPlayingChange={setPlaying}
+      cardStyle={normalizeCardStyle(block.card_style)} />
   </>;
 }
 ```
+
+`cardStyle` (`BoardCardStyle`: `theme` simple/crf/boomwhacker, `showNoteNames`,
+`noteNameSize`, `noteNameMode` pitch-class/midi) styles every keyboard card on
+`ChordBoard`, `BoardPlayer` and `BoardEditor`. Run CMS input through
+`normalizeCardStyle`, which drops anything invalid. A card's own chord text wins
+over the board style, but chord text cannot turn note names off, so a style with
+names on shows them on every keyboard card (the editor locks its toggle on).
+Guitar and staff-only cards are not styled. The style is never stored in the
+board: it stays `chordl.board/v3`, and the editor never writes `cardStyle`.
 
 The player draws its own Play/Stop and Prev/Replay/Next buttons (44px touch targets). Pass `showControls={false}` to draw your own instead, and drive the player through a `ref` typed `BoardPlayerHandle` (`play`, `stop`, `next`, `prev`, `replay`).
 
@@ -718,7 +732,7 @@ Use `exportBoardJson` / `importBoardJson` for portable JSON with schema validati
 playback notes. Older imported cards without them retain the player's documented
 fallback voicing limits; re-save those cards in the editor to capture their voicing.
 
-This release requires `chordl-guitar@0.3.0` and `chordl-react@0.5.0`, published
+This release requires `chordl-guitar@0.3.0` and `chordl-react@0.5.1`, published
 before `chordl-board@0.2.0`. Consumers can install the board package alone; its
 published dependencies pin the matching package versions.
 
