@@ -603,10 +603,9 @@ function TextCardArtControls({
 /** The same editor used by the playground, with persistence owned by its host. */
 export const BoardEditor = forwardRef<BoardEditorHandle, BoardEditorProps>(function BoardEditor({
   board, uiTheme = "light", initialChord = "", header, children, enableListening = true,
-  storageWarning, onDismissStorageWarning, onExportStatus, className, style: rootStyle, cardStyle,
+  storageWarning, onDismissStorageWarning, onExportStatus, className, style, cardStyle,
 }, ref) {
-  // `style` here is the board's card style; the root element's CSS is `rootStyle`.
-  const style = normalizeCardStyle(cardStyle);
+  const boardStyle = normalizeCardStyle(cardStyle);
   const editorRoot = useRef<HTMLDivElement>(null);
   const controlId = useId();
   const [input, setInput] = useState(initialChord);
@@ -614,7 +613,7 @@ export const BoardEditor = forwardRef<BoardEditorHandle, BoardEditorProps>(funct
   // as the chord text is the one it was attached to: any retyping, Done, or one
   // Add clears it, so a ref can never end up on a card it does not describe.
   const [pendingRef, setPendingRef] = useState<BoardItemRef | null>(null);
-  const [theme, setTheme] = useState<string>(style.theme ?? "simple");
+  const [theme, setTheme] = useState<string>(boardStyle.theme ?? "simple");
   const [keyFormat, setKeyFormat] = useState<"compact" | "exact">("compact");
   const [displayMode, setDisplayMode] = useState<DisplayMode>("keyboard");
   const [scale, setScale] = useState(0.7);
@@ -687,9 +686,18 @@ export const BoardEditor = forwardRef<BoardEditorHandle, BoardEditorProps>(funct
   // Seeded from the board style so the preview matches the board. That state
   // is serialised into each card's text, so `detailsModifiers` strips what the
   // board already draws — otherwise every card would carry a copy of the style.
-  const [showNoteNames, setShowNoteNames] = useState(() => boardNoteNameDetails(style).showNoteNames);
-  const [noteNameMode, setNoteNameMode] = useState<NoteNameMode>(() => boardNoteNameDetails(style).noteNameMode);
-  const [noteNameSize, setNoteNameSize] = useState<TextSize>(() => boardNoteNameDetails(style).noteNameSize);
+  const [showNoteNames, setShowNoteNames] = useState(() => boardNoteNameDetails(boardStyle).showNoteNames);
+  const [noteNameMode, setNoteNameMode] = useState<NoteNameMode>(() => boardNoteNameDetails(boardStyle).noteNameMode);
+  const [noteNameSize, setNoteNameSize] = useState<TextSize>(() => boardNoteNameDetails(boardStyle).noteNameSize);
+  /**
+   * The note names in the form were read from the opened card's own text. The
+   * card's author wrote them, so they are saved back as written even when they
+   * match the board: stripping them would quietly make the card depend on the
+   * host's style, and lose the names when the host turned them off. Touching
+   * any note-name control ends this, and the "save only what differs from the
+   * board" rule applies again.
+   */
+  const [noteNamesFromCard, setNoteNamesFromCard] = useState(false);
   const [showDegrees, setShowDegrees] = useState(false);
   const [degreeSize, setDegreeSize] = useState<TextSize>("lg");
   const [fingeringMode, setFingeringMode] = useState<"none" | "auto" | "custom">("none");
@@ -698,7 +706,7 @@ export const BoardEditor = forwardRef<BoardEditorHandle, BoardEditorProps>(funct
 
   // The board's note names for the preview, which draws them the way the
   // board's cards do now that the card text leaves them out.
-  const { theme: _styleTheme, ...styleNoteNames } = cardStyleChordProps(style);
+  const boardChordProps = cardStyleChordProps(boardStyle);
 
   const isProg = isProgressionRequest(input);
   const handlePlaybackSpecChange = useCallback((next: PlaybackSpecSnapshot) => {
@@ -759,15 +767,15 @@ export const BoardEditor = forwardRef<BoardEditorHandle, BoardEditorProps>(funct
   // a fresh object with the same values leaves the user's choices alone. A card
   // being edited keeps its note-name form: that describes the card, not the board.
   useEffect(() => {
-    setTheme(style.theme ?? "simple");
+    setTheme(boardStyle.theme ?? "simple");
     if (editingItemId === null) {
-      const names = boardNoteNameDetails(style);
+      const names = boardNoteNameDetails(boardStyle);
       setShowNoteNames(names.showNoteNames);
       setNoteNameMode(names.noteNameMode);
       setNoteNameSize(names.noteNameSize);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [style.theme, style.showNoteNames, style.noteNameSize, style.noteNameMode]);
+  }, [boardStyle.theme, boardStyle.showNoteNames, boardStyle.noteNameSize, boardStyle.noteNameMode]);
   // What the editor is currently editing. The chord fields and the text fields
   // are different shapes written through the same form, so this decides which.
   const [editingKind, setEditingKind] = useState<"chord" | "text">("chord");
@@ -838,17 +846,20 @@ export const BoardEditor = forwardRef<BoardEditorHandle, BoardEditorProps>(funct
   // Names the board style already draws are left out, so a card's text holds
   // only what it adds to the board and follows the style when the host changes it.
   const detailsModifiers = useMemo(
-    () => composeChordDetails(withoutBoardNoteNames({
-      showNoteNames, noteNameMode, noteNameSize,
-      showDegrees, degreeSize,
-      fingeringMode, fingeringValues, fingeringSize,
-      octaveShift,
-    }, style)),
+    () => {
+      const state = {
+        showNoteNames, noteNameMode, noteNameSize,
+        showDegrees, degreeSize,
+        fingeringMode, fingeringValues, fingeringSize,
+        octaveShift,
+      };
+      return composeChordDetails(noteNamesFromCard ? state : withoutBoardNoteNames(state, boardStyle));
+    },
     // The style's fields, not the object: it is rebuilt every render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [showNoteNames, noteNameMode, noteNameSize, showDegrees, degreeSize,
      fingeringMode, fingeringValues, fingeringSize, octaveShift,
-     style.showNoteNames, style.noteNameSize, style.noteNameMode],
+     noteNamesFromCard, boardStyle.showNoteNames, boardStyle.noteNameSize, boardStyle.noteNameMode],
   );
 
   // One definition of "what the current editor state means as a card", used by
@@ -938,6 +949,14 @@ export const BoardEditor = forwardRef<BoardEditorHandle, BoardEditorProps>(funct
     // card's chord in the box and "+ Add to board" quietly duplicates it.
     setChordInput("");
     setPendingRef(null);
+    // The form described the card; a new chord starts from the board again.
+    // The style may also have changed mid-edit, when the effect left the form
+    // alone, and a stale "Off" on a toggle the board now locks would be a lie.
+    const names = boardNoteNameDetails(boardStyle);
+    setShowNoteNames(names.showNoteNames);
+    setNoteNameMode(names.noteNameMode);
+    setNoteNameSize(names.noteNameSize);
+    setNoteNamesFromCard(false);
     board.clearSelection();
   };
 
@@ -1091,7 +1110,8 @@ export const BoardEditor = forwardRef<BoardEditorHandle, BoardEditorProps>(funct
     // A card without its own names shows the board's: the form says what is on
     // screen, and `detailsModifiers` keeps it out of the card's text, so
     // opening the card does not rewrite its `nl`.
-    const names = details.showNoteNames ? details : boardNoteNameDetails(style);
+    const names = details.showNoteNames ? details : boardNoteNameDetails(boardStyle);
+    setNoteNamesFromCard(details.showNoteNames);
     setShowNoteNames(names.showNoteNames);
     setNoteNameMode(names.noteNameMode);
     setNoteNameSize(names.noteNameSize);
@@ -1170,7 +1190,7 @@ export const BoardEditor = forwardRef<BoardEditorHandle, BoardEditorProps>(funct
 
   return (
     <div ref={editorRoot} className={["chordl-board-editor", className].filter(Boolean).join(" ")}
-      data-bc-theme={uiTheme} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "1.25rem", ...rootStyle }}>
+      data-bc-theme={uiTheme} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "1.25rem", ...style }}>
       {header}
 
       {/* A text card has no chord, so the chord input and everything that
@@ -1547,18 +1567,18 @@ export const BoardEditor = forwardRef<BoardEditorHandle, BoardEditorProps>(funct
           <AnnotationControl
             label="Note names"
             active={showNoteNames}
-            onToggle={() => setShowNoteNames((value) => !value)}
+            onToggle={() => { setNoteNamesFromCard(false); setShowNoteNames((value) => !value); }}
             size={noteNameSize}
-            onSizeChange={setNoteNameSize}
+            onSizeChange={(value) => { setNoteNamesFromCard(false); setNoteNameSize(value); }}
             disabled={displayMode === "guitar"}
             // Card text cannot say "no note names", so a card on a board that
             // shows them cannot turn them off; size and kind remain its own.
-            toggleLockedReason={style.showNoteNames === true ? "This board shows note names on every card" : undefined}
+            toggleLockedReason={boardStyle.showNoteNames === true ? "This board shows note names on every card" : undefined}
           >
             <fieldset className="annotation-option-group">
               <legend>Names</legend>
-              <label><input type="radio" name="nnmode" checked={noteNameMode === "pitch-class"} onChange={() => setNoteNameMode("pitch-class")} /> Pitch class</label>
-              <label><input type="radio" name="nnmode" checked={noteNameMode === "midi"} onChange={() => setNoteNameMode("midi")} /> MIDI</label>
+              <label><input type="radio" name="nnmode" checked={noteNameMode === "pitch-class"} onChange={() => { setNoteNamesFromCard(false); setNoteNameMode("pitch-class"); }} /> Pitch class</label>
+              <label><input type="radio" name="nnmode" checked={noteNameMode === "midi"} onChange={() => { setNoteNamesFromCard(false); setNoteNameMode("midi"); }} /> MIDI</label>
             </fieldset>
           </AnnotationControl>
           <AnnotationControl
@@ -1670,9 +1690,9 @@ export const BoardEditor = forwardRef<BoardEditorHandle, BoardEditorProps>(funct
               subheading={subheading || undefined}
               footerText={footerText || undefined}
               onVariantChange={setPianoVariantNl}
-              showNoteNames={styleNoteNames.showNoteNames}
-              noteNameSize={styleNoteNames.noteNameSize}
-              noteNameMode={styleNoteNames.noteNameMode}
+              showNoteNames={boardChordProps.showNoteNames}
+              noteNameSize={boardChordProps.noteNameSize}
+              noteNameMode={boardChordProps.noteNameMode}
               arpeggioBpm={arpeggioBpm}
               playbackHighlightColor={playbackHighlightColor}
               onPlaybackSpecChange={handlePlaybackSpecChange}
@@ -1795,11 +1815,11 @@ export const BoardEditor = forwardRef<BoardEditorHandle, BoardEditorProps>(funct
               canShowMore={false}
               uiTheme={uiTheme}
               scale={0.5}
-              cardStyle={style}
+              cardStyle={boardStyle}
             />
           ) : (
           <ChordBoard
-            cardStyle={style}
+            cardStyle={boardStyle}
             items={board.items}
             meta={board.meta}
             onMetaChange={board.setMeta}

@@ -131,4 +131,49 @@ describe("BoardEditor cardStyle", () => {
     expect(namesToggle(container).getAttribute("aria-pressed")).toBe("false");
     expect(namesToggle(container).disabled).toBe(false);
   });
+
+  describe("opening a card keeps its own note-name text", () => {
+    const NAMES = { showNoteNames: true, noteNameSize: "xl" } as const;
+    const withCard = (nl: string): BoardState => ({ items: [{ id: "saved", nl, display: "keyboard" }], meta: {} });
+    const open = async (c: HTMLElement) => {
+      fireEvent.click(c.querySelector('[data-board-id="saved"]')!);
+      fireEvent.click(document.querySelector(".chordl-board-action-edit")!);
+      await waitFor(() => expect(chordBox(c).value).toBe("C"));
+      await act(async () => { await new Promise((r) => setTimeout(r, 0)); });
+    };
+    const lastNl = (save: ReturnType<typeof vi.fn>) => (save.mock.lastCall?.[0] as BoardState).items[0].nl;
+
+    it("a card whose names match the board still saves them on open", async () => {
+      const save = vi.fn();
+      const state = withCard("C note names in xl");
+      const { container } = await mount(<Host onSave={save} initialState={state} cardStyle={NAMES} />);
+      await open(container);
+      for (const [s] of save.mock.calls as [BoardState][]) expect(s.items[0].nl).toBe("C note names in xl");
+      expect(draft(container).items[0].nl).toBe("C note names in xl");
+
+      // Touching a note-name control hands the card back to the normal rule:
+      // save only what differs from the board.
+      fireEvent.change(namesSize(container), { target: { value: "lg" } });
+      await waitFor(() => expect(lastNl(save)).toBe("C note names in lg"));
+    });
+
+    it("a plain card on the same board stays plain on open", async () => {
+      const save = vi.fn();
+      const { container } = await mount(<Host onSave={save} initialState={withCard("C")} cardStyle={NAMES} />);
+      await open(container);
+      for (const [s] of save.mock.calls as [BoardState][]) expect(s.items[0].nl).toBe("C");
+      expect(draft(container).items[0].nl).toBe("C");
+    });
+  });
+
+  it("re-seeds the note-name form from a style that changed mid-edit once editing ends", async () => {
+    const { container, rerender } = await mount(<Host />);
+    fireEvent.click(container.querySelector('[data-board-id="saved"]')!);
+    fireEvent.click(document.querySelector(".chordl-board-action-edit")!);
+    await waitFor(() => expect(chordBox(container).value).toBe("C"));
+    rerender(<Host cardStyle={{ showNoteNames: true }} />);
+    fireEvent.click(within(container).getByRole("button", { name: "Done" }));
+    await waitFor(() => expect(namesToggle(container).getAttribute("aria-pressed")).toBe("true"));
+    expect(namesToggle(container).disabled).toBe(true);
+  });
 });
