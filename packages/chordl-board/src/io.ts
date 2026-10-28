@@ -3,6 +3,7 @@ import type {
   BoardCardSize,
   BoardDisplayMode,
   BoardItem,
+  BoardItemRef,
   BoardItemKind,
   BoardMeta,
   BoardState,
@@ -93,6 +94,8 @@ export async function exportBoardJson(state: BoardState): Promise<string> {
       // the cache key for every existing card silently becomes wrong (two
       // different levels of the same chord would collide on one cached
       // image) unless this line is added then, not before.
+      // `ref` is absent for a different reason: it is provenance and never
+      // changes the drawn image, so it must not split the cache.
       let cacheKey: string | undefined;
       try {
         // `nl` is optional on the type so a text card is constructible; a chord
@@ -166,6 +169,22 @@ function parseLevel(value: unknown): string | undefined {
 function parseBundleId(value: unknown): string | undefined {
   return typeof value === "string" && /^(?!\.+$)[A-Za-z0-9._~-]{1,64}$/.test(value)
     ? value
+    : undefined;
+}
+
+const REF_TOKEN = /^(?!\.+$)[A-Za-z0-9_.:-]{1,64}$/;
+
+/**
+ * Provenance is a plain `{ source, id }` pair of URL-safe-ish tokens (same
+ * all-dots guard as `parseBundleId`, plus `:` for namespaced sources). A
+ * malformed ref is dropped silently, like every other field here, and the
+ * result is rebuilt so no extra or `__proto__` key from the file survives.
+ */
+function parseRef(value: unknown): BoardItemRef | undefined {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const { source, id } = value as Record<string, unknown>;
+  return typeof source === "string" && typeof id === "string" && REF_TOKEN.test(source) && REF_TOKEN.test(id)
+    ? { source, id }
     : undefined;
 }
 
@@ -266,6 +285,7 @@ export function importBoardJson(text: string): BoardState {
       arpeggioBpm: parseArpeggioBpm(raw.arpeggioBpm),
       playbackHighlightColor: parsePlaybackHighlightColor(raw.playbackHighlightColor),
       bundleId: parseBundleId(raw.bundleId),
+      ref: parseRef(raw.ref),
       icon: parseIcon(raw.icon),
       image: parseImage(raw.image),
       size: parseSize(raw.size),

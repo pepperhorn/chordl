@@ -22,6 +22,7 @@ describe("useChordBoard", () => {
       display: "guitar",
       instrument: "ukulele",
       position: 2,
+      ref: { source: "chords", id: "42" },
     };
     act(() => { result.current.addItem(card); });
     expect(result.current.items[0]).toMatchObject(card);
@@ -43,13 +44,14 @@ describe("useChordBoard", () => {
   it("keeps every field through copy and paste", () => {
     const { result } = board();
     act(() => {
-      result.current.addItem({ nl: "Am", display: "guitar", instrument: "ukulele", position: 1 });
+      result.current.addItem({ nl: "Am", display: "guitar", instrument: "ukulele", position: 1, ref: { source: "chords", id: "42" } });
     });
     act(() => { result.current.copyItem(result.current.items[0].id); });
     act(() => { result.current.pasteItem(); });
     expect(result.current.items).toHaveLength(2);
     expect(result.current.items[1]).toMatchObject({
       nl: "Am", display: "guitar", instrument: "ukulele", position: 1,
+      ref: { source: "chords", id: "42" },
     });
     // A pasted card is a new card, not an alias of the original.
     expect(result.current.items[1].id).not.toBe(result.current.items[0].id);
@@ -58,11 +60,12 @@ describe("useChordBoard", () => {
   it("keeps every field through duplicateItem, inserted after the source", () => {
     const { result } = board();
     act(() => {
-      result.current.addItem({ nl: "C", display: "staff" });
+      result.current.addItem({ nl: "C", display: "staff", ref: { source: "chords", id: "42" } });
       result.current.addItem({ nl: "G", display: "keyboard" });
     });
     act(() => { result.current.duplicateItem(result.current.items[0].id); });
     expect(result.current.items.map((i) => i.nl)).toEqual(["C", "C", "G"]);
     expect(result.current.items[1].display).toBe("staff");
+    expect(result.current.items[1].ref).toEqual({ source: "chords", id: "42" });
   });
 });

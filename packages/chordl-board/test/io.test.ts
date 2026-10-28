@@ -465,6 +465,61 @@ describe("bundleId", () => {
   });
 });
 
+describe("ref", () => {
+  const uuid = "3f2a9c1e-7b4d-4e8a-9f00-1c2d3e4f5a6b";
+  const withRef = (ref: unknown) => JSON.stringify({
+    schema: BOARD_SCHEMA, meta: {}, items: [{ id: "a", nl: "C", ref }],
+  });
+
+  it("survives an export/import round trip", async () => {
+    const state = board([{ id: "a", nl: "Dm7", ref: { source: "chords", id: uuid } }]);
+    const json = JSON.parse(await exportBoardJson(state));
+    expect(json.schema).toBe("chordl.board/v3");
+    expect(json.items[0].ref).toEqual({ source: "chords", id: uuid });
+    expect(importBoardJson(JSON.stringify(json)).items[0].ref).toEqual({ source: "chords", id: uuid });
+  });
+
+  it("accepts a stringified integer id and a namespaced source", () => {
+    expect(importBoardJson(withRef({ source: "directus:chords", id: "42" })).items[0].ref)
+      .toEqual({ source: "directus:chords", id: "42" });
+  });
+
+  it("keeps only source and id", () => {
+    // An object literal's `__proto__` sets the prototype; splice the JSON by
+    // hand so the file really carries an own "__proto__" key.
+    const raw = withRef("PLACEHOLDER").replace(
+      '"PLACEHOLDER"',
+      '{"source":"chords","id":"42","extra":"x","__proto__":{"polluted":1}}',
+    );
+    const ref = importBoardJson(raw).items[0].ref;
+    expect(ref).toEqual({ source: "chords", id: "42" });
+    expect(Object.keys(ref!)).toEqual(["source", "id"]);
+    expect((ref as Record<string, unknown>).polluted).toBeUndefined();
+  });
+
+  it("drops a malformed ref without throwing", () => {
+    for (const bad of [
+      null, "chords:42", ["chords", "42"], { source: "chords" }, { id: "42" },
+      { source: "chords", id: 42 }, { source: "", id: "42" }, { source: "chords", id: "" },
+      { source: "chords", id: "a".repeat(65) }, { source: "chords/../x", id: "42" },
+      { source: "chords", id: ".." }, { source: "chords", id: "a b" },
+    ]) expect(importBoardJson(withRef(bad)).items[0].ref).toBeUndefined();
+    expect(importBoardJson(withRef({ source: "chords", id: "a".repeat(64) })).items[0].ref?.id).toBe("a".repeat(64));
+  });
+
+  it("stays out of the render cache key", async () => {
+    const plain = JSON.parse(await exportBoardJson(board([{ id: "a", nl: "C" }])));
+    const reffed = JSON.parse(await exportBoardJson(board([{ id: "a", nl: "C", ref: { source: "chords", id: "42" } }])));
+    expect(reffed.items[0].cacheKey).toBe(plain.items[0].cacheKey);
+    expect(reffed.items[0].renderConfig).not.toHaveProperty("ref");
+  });
+
+  it("is kept on a text card", () => {
+    const raw = JSON.stringify({ schema: BOARD_SCHEMA, meta: {}, items: [{ id: "t", kind: "text", title: "Intro", ref: { source: "lessons", id: "7" } }] });
+    expect(importBoardJson(raw).items[0].ref).toEqual({ source: "lessons", id: "7" });
+  });
+});
+
 describe("frame appearance persistence", () => {
   it("round-trips orientation and lines and gives each appearance its own cache key", async () => {
     const items = [

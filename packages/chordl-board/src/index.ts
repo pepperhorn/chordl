@@ -23,6 +23,7 @@ export type {
   BoardDisplayMode,
   BoardItem,
   BoardItemKind,
+  BoardItemRef,
   BoardMeta,
   BoardState,
   StorageAdapter,
