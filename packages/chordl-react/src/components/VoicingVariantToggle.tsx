@@ -349,7 +349,7 @@ export function VoicingVariantToggle({
         {visible.map((i, shown) => {
           const v = variants[i];
           return (
-          <button
+          <button type="button"
             key={v.id}
             className="variant-pill"
             data-active={i === activeIdx}
@@ -390,7 +390,7 @@ export function VoicingVariantToggle({
         })}
 
         {/* + button — hide when all variants exhausted */}
-        {variants.length >= totalCount && <button
+        {variants.length >= totalCount && <button type="button"
           className="variant-pill-add"
           onClick={() => setTotalCount((c) => c + 3)}
           style={{
@@ -417,7 +417,7 @@ export function VoicingVariantToggle({
 
         {/* ZIP export button with This/All popup */}
         <div className="zip-export-container" style={{ position: "relative" }}>
-          <button
+          <button type="button"
             className="variant-pill-zip"
             onClick={() => setZipMenu((v) => !v)}
             style={{
@@ -464,7 +464,7 @@ export function VoicingVariantToggle({
                 zIndex: 10,
               }}
             >
-              <button
+              <button type="button"
                 className="zip-menu-btn"
                 onClick={() => handleZipExport("this")}
                 style={{
@@ -483,7 +483,7 @@ export function VoicingVariantToggle({
               >
                 This
               </button>
-              <button
+              <button type="button"
                 className="zip-menu-btn"
                 onClick={() => handleZipExport("all")}
                 style={{

@@ -1,0 +1,387 @@
+/* Editor styles are local to this component; no page globals or remote fonts. */
+
+      .chordl-board-editor {
+        /* Tells the UA which palette to draw the bits we do not: <select>
+           option lists, form control internals, scrollbars. Without it those
+           are always drawn light, so the annotation size select's
+           --pill-active-text (near-white in dark theme) landed on a white
+           popup. Themes here are explicit (data-bc-theme), never "auto", so
+           this is a plain declaration rather than a media query. */
+        color-scheme: light;
+        --bg: #f8f9fc;
+        --bg-mesh-1: rgba(200, 220, 250, 0.3);
+        --bg-mesh-2: rgba(240, 220, 210, 0.2);
+        --bg-mesh-3: rgba(210, 240, 220, 0.15);
+        --glass-bg: rgba(255, 255, 255, 0.72);
+        --glass-border: rgba(255, 255, 255, 0.85);
+        --glass-shadow: rgba(0, 0, 0, 0.03);
+        --text: #1a1a2e;
+        --text-muted: #5a6374;
+        --text-dim: #8b95a5;
+        --accent: #2d6cb5;
+        --accent-soft: rgba(45, 108, 181, 0.07);
+        --input-bg: rgba(255, 255, 255, 0.85);
+        --input-border: rgba(45, 108, 181, 0.15);
+        --input-focus: rgba(45, 108, 181, 0.3);
+        --input-floating-bg: #fff;
+        --panel-bg: #e9edf3;
+        --input-floating-border: rgba(0, 0, 0, 0.08);
+        --input-floating-shadow: 0 4px 24px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.06);
+        --input-floating-shadow-focus: 0 4px 24px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.06), 0 0 0 3px var(--accent-soft);
+        --pill-bg: rgba(0, 0, 0, 0.03);
+        --pill-active-bg: #fff;
+        --pill-active-shadow: rgba(0, 0, 0, 0.06);
+        --pill-text: #3d4554;
+        --pill-active-text: #1a1a2e;
+        --tag-bg: rgba(45, 108, 181, 0.08);
+        --tag-text: #2d6cb5;
+        --error: #dc4545;
+        --collapsible-arrow: #9ca3af;
+        --btn-border: rgba(0, 0, 0, 0.08);
+      }
+
+      .chordl-board-editor[data-bc-theme="dark"] {
+        color-scheme: dark;
+        --bg: #0f1219;
+        --bg-mesh-1: rgba(30, 60, 120, 0.25);
+        --bg-mesh-2: rgba(50, 30, 70, 0.15);
+        --bg-mesh-3: rgba(20, 55, 55, 0.12);
+        --glass-bg: rgba(22, 27, 42, 0.65);
+        --glass-border: rgba(255, 255, 255, 0.06);
+        --glass-shadow: rgba(0, 0, 0, 0.35);
+        --text: #e4e6ee;
+        --text-muted: #8892a4;
+        --text-dim: #555e70;
+        --accent: #6ea8e6;
+        --accent-soft: rgba(110, 168, 230, 0.1);
+        --input-bg: rgba(20, 26, 42, 0.7);
+        --input-border: rgba(110, 168, 230, 0.18);
+        --input-focus: rgba(110, 168, 230, 0.35);
+        --input-floating-bg: rgba(24, 30, 48, 0.88);
+        --panel-bg: rgba(24, 30, 48, 0.88);
+        --input-floating-border: rgba(110, 168, 230, 0.12);
+        --input-floating-shadow: 0 0 20px rgba(80, 130, 200, 0.08), 0 4px 32px rgba(0, 0, 0, 0.3), 0 1px 4px rgba(0, 0, 0, 0.2);
+        --input-floating-shadow-focus: 0 0 28px rgba(80, 130, 200, 0.15), 0 4px 32px rgba(0, 0, 0, 0.35), 0 0 0 3px var(--accent-soft);
+        --pill-bg: rgba(255, 255, 255, 0.06);
+        --pill-active-bg: rgba(35, 40, 55, 0.95);
+        --pill-active-shadow: rgba(0, 0, 0, 0.35);
+        --pill-text: #9aa2b4;
+        --pill-active-text: #e4e6ee;
+        --tag-bg: rgba(110, 168, 230, 0.12);
+        --tag-text: #6ea8e6;
+        --error: #f87171;
+        --collapsible-arrow: #555e70;
+        --btn-border: rgba(255, 255, 255, 0.1);
+      }
+
+
+      .chordl-board-editor, .chordl-board-editor * { box-sizing: border-box; margin: 0; padding: 0; }
+      /* Glass card */
+      .chordl-board-editor .glass-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(24px) saturate(1.4);
+        -webkit-backdrop-filter: blur(24px) saturate(1.4);
+        border: 1px solid var(--glass-border);
+        border-radius: 16px;
+        box-shadow: 0 2px 20px var(--glass-shadow), 0 0 0 0.5px var(--glass-border);
+        padding: 1.25rem 1.5rem;
+        transition: background 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
+      }
+
+      /* Pill segmented control */
+      .chordl-board-editor .pill-group {
+        display: inline-flex;
+        background: var(--pill-bg);
+        border-radius: 10px;
+        padding: 3px;
+        gap: 2px;
+      }
+
+      .chordl-board-editor .pill-btn {
+        font-family: 'DM Sans', system-ui, sans-serif;
+        font-size: 0.8rem;
+        font-weight: 500;
+        padding: 6px 14px;
+        border: none;
+        border-radius: 8px;
+        background: transparent;
+        color: var(--pill-text);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+        letter-spacing: 0.01em;
+      }
+
+      .chordl-board-editor .pill-btn:hover {
+        color: var(--pill-active-text);
+      }
+
+      .chordl-board-editor .pill-btn[data-active="true"] {
+        background: var(--pill-active-bg);
+        color: var(--pill-active-text);
+        box-shadow: 0 1px 4px var(--pill-active-shadow);
+        font-weight: 600;
+      }
+
+      /* Control items: fixed label row + flexible centered content row */
+      .chordl-board-editor .control-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .chordl-board-editor .control-label {
+        font-size: 0.7rem;
+        color: var(--text-dim);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        font-weight: 500;
+        line-height: 1;
+      }
+
+      .chordl-board-editor .control-content {
+        flex: 1;
+        display: flex;
+        align-items: center;
+      }
+
+      .chordl-board-editor .interactive-controls-line {
+        display: flex;
+        gap: 0.75rem;
+        align-items: stretch;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+
+      .chordl-board-editor .interactive-controls-line-annotations {
+        padding-top: 0.75rem;
+        border-top: 1px solid var(--btn-border);
+      }
+
+      .chordl-board-editor .annotation-control-content {
+        position: relative;
+        gap: 6px;
+      }
+
+      /* Greyed, not hidden: the control stays in place when the display mode
+         changes to guitar, which ignores note names, degrees and fingering
+         entirely. Hiding it would make the control row jump and leave the
+         user hunting for a control that vanished. */
+      .chordl-board-editor .annotation-control--disabled { opacity: 0.45; }
+      .chordl-board-editor .annotation-control--disabled .pill-btn,
+      .chordl-board-editor .annotation-control--disabled .annotation-size { cursor: not-allowed; }
+
+      .chordl-board-editor .annotation-toggle {
+        background: var(--pill-bg);
+      }
+
+      /* Looks like the badge it replaced, but it is a real <select>, so the
+         size list is one click away and keyboard/screen-reader support is the
+         browser's rather than ours. */
+      .chordl-board-editor .annotation-size {
+        min-width: 26px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--pill-active-text);
+        text-align: center;
+        appearance: none;
+        -webkit-appearance: none;
+        padding: 6px 6px;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        background: transparent;
+        font-family: inherit;
+        cursor: pointer;
+        transition: background 0.2s ease, border-color 0.2s ease;
+      }
+
+      .chordl-board-editor .annotation-size:hover { background: var(--pill-bg); border-color: var(--btn-border); }
+      .chordl-board-editor .annotation-size:focus-visible { outline: none; border-color: var(--accent); }
+
+      /* The closed control is transparent so it reads as a badge; the open list
+         is a UA popup and needs a ground of its own. Belt and braces with the
+         color-scheme above, since some platforms ignore one or the other. */
+      .chordl-board-editor .annotation-size option {
+        background: var(--panel-bg);
+        color: var(--text);
+      }
+
+      .chordl-board-editor .annotation-options {
+        position: relative;
+        font-size: 0.75rem;
+        color: var(--text-muted);
+      }
+
+      .chordl-board-editor .annotation-options > summary {
+        padding: 6px 8px;
+        border-radius: 8px;
+        cursor: pointer;
+        list-style: none;
+        user-select: none;
+      }
+
+      .chordl-board-editor .annotation-options > summary::-webkit-details-marker { display: none; }
+      .chordl-board-editor .annotation-options > summary:hover { color: var(--pill-active-text); background: var(--pill-bg); }
+
+      .chordl-board-editor .annotation-options-menu {
+        position: absolute;
+        z-index: 20;
+        top: calc(100% + 6px);
+        right: 0;
+        width: max-content;
+        min-width: 180px;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        border: 1px solid var(--btn-border);
+        border-radius: 10px;
+        background: var(--input-floating-bg);
+        color: var(--text);
+        box-shadow: var(--input-floating-shadow);
+      }
+
+
+      .chordl-board-editor .annotation-option-group {
+        margin: 0;
+        padding: 0;
+        display: flex;
+        gap: 10px;
+        border: 0;
+      }
+
+      .chordl-board-editor .annotation-option-group legend {
+        margin-bottom: 5px;
+        padding: 0;
+        color: var(--text-dim);
+      }
+
+      .chordl-board-editor .annotation-option-group label { white-space: nowrap; }
+
+      /* Guitar experience-level radios, first in the annotations row. Reuses
+         .control-item/.control-label/.control-content (the same
+         label-over-content layout every other control in the row uses) so it
+         lines up with its row-mates in `.interactive-controls-line`, which is
+         `align-items: stretch` — `.control-content`'s `flex: 1` is what
+         vertically centres a control's content against a taller neighbour,
+         and a bespoke class here without it would sit high. The bespoke
+         classes below are only what a plain <fieldset>/<legend> need reset
+         (default border/margin/padding) plus the radio row's own gap and
+         font, not a parallel copy of the shared layout. */
+      .chordl-board-editor .level-control {
+        margin: 0;
+        padding: 0;
+        border: 0;
+      }
+
+      .chordl-board-editor .level-control-legend {
+        padding: 0;
+        /* A <legend> is laid out by the fieldset, not as a flex item, so
+           `.control-item`'s `align-items: center` never reaches it and the
+           heading sat left while every other label in the row was centred.
+           Width plus text-align centres it without taking it out of flow. */
+        width: 100%;
+        text-align: center;
+      }
+
+      .chordl-board-editor .level-control-options {
+        gap: 10px;
+        font-size: 0.8rem;
+        color: var(--text-muted);
+      }
+
+      .chordl-board-editor .level-control-options label {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        white-space: nowrap;
+        cursor: pointer;
+      }
+
+      .chordl-board-editor .fingering-values {
+        display: flex;
+        gap: 4px;
+      }
+
+      .chordl-board-editor .fingering-values input {
+        width: 32px;
+        height: 28px;
+        padding: 0;
+        border: 1px solid var(--btn-border);
+        border-radius: 6px;
+        background: var(--pill-bg);
+        color: var(--text);
+        font: inherit;
+        text-align: center;
+      }
+
+      .chordl-board-editor .inline-card-text-fields {
+        width: 100%;
+        max-width: 640px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .chordl-board-editor .inline-card-text-field {
+        display: flex;
+        align-items: baseline;
+        gap: 4px;
+        min-width: 0;
+        flex: 1 1 0;
+      }
+
+      .chordl-board-editor .inline-card-text-label {
+        flex: 0 0 auto;
+        color: var(--text-dim);
+        opacity: 0.75;
+        font: 400 0.75rem 'DM Sans', system-ui, sans-serif;
+        white-space: nowrap;
+      }
+
+      .chordl-board-editor .inline-card-text-input {
+        min-width: 0;
+        flex: 1 1 0;
+        padding: 5px 2px;
+        border: 0;
+        border-bottom: 1px solid transparent;
+        outline: none;
+        background: transparent;
+        color: var(--text);
+        font: 400 0.8rem 'DM Sans', system-ui, sans-serif;
+        /* Left, not centred: the value now reads as a continuation of the
+           "Title:" label sitting immediately before it. */
+        text-align: left;
+        transition: border-color 0.2s ease;
+      }
+
+      .chordl-board-editor .inline-card-text-input::placeholder { color: var(--text-dim); opacity: 0.75; }
+      .chordl-board-editor .inline-card-text-input:hover { border-bottom-color: var(--btn-border); }
+      .chordl-board-editor .inline-card-text-input:focus { border-bottom-color: var(--accent); }
+
+      .chordl-board-editor .inline-card-text-separator {
+        color: var(--text-dim);
+        opacity: 0.55;
+        font-size: 0.75rem;
+      }
+
+      /* Chord output area */
+      .chordl-board-editor .chord-output {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-top: 1rem;
+      }
+
+      @keyframes chordl-editor-input-edit-pulse {
+        0%   { box-shadow: var(--input-floating-shadow); border-color: var(--input-floating-border); }
+        35%  { box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.35), 0 0 28px 6px rgba(56, 189, 248, 0.55); border-color: rgba(56, 189, 248, 0.6); }
+        100% { box-shadow: var(--input-floating-shadow); border-color: var(--input-floating-border); }
+      }
+      .chordl-board-editor .chordl-input--edit-pulse {
+        animation: chordl-editor-input-edit-pulse 1.1s ease-out;
+      }
+    
+.chordl-board-editor { font-family: "DM Sans", system-ui, sans-serif; color: var(--text); width: 100%; min-width: 0; }

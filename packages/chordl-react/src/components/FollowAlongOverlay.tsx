@@ -99,7 +99,7 @@ export function FollowAlongOverlay({
             <span style={{ fontSize: "1.05rem", fontWeight: 600 }}>Follow along</span>
             {status === "listening" && <LiveDot />}
           </div>
-          <button onClick={onClose} aria-label="Close" style={iconButton}>✕</button>
+          <button type="button" onClick={onClose} aria-label="Close" style={iconButton}>✕</button>
         </div>
 
         {status === "denied" && (
@@ -147,7 +147,7 @@ export function FollowAlongOverlay({
 
           {/* Page controls */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <button
+            <button type="button"
               onClick={() => setViewPage((p) => Math.max(1, p - 1))}
               disabled={viewPage <= 1}
               style={{ ...secondaryButton, opacity: viewPage <= 1 ? 0.5 : 1 }}
@@ -157,7 +157,7 @@ export function FollowAlongOverlay({
             <span data-testid="follow-page-indicator" style={{ fontSize: "0.85rem", fontWeight: 600 }}>
               Page {viewPage} of {pages}
               {activePage !== viewPage && status === "listening" && (
-                <button
+                <button type="button"
                   onClick={() => setViewPage(activePage)}
                   style={{ ...linkButton, marginLeft: 8 }}
                 >
@@ -165,7 +165,7 @@ export function FollowAlongOverlay({
                 </button>
               )}
             </span>
-            <button
+            <button type="button"
               onClick={() => setViewPage((p) => Math.min(pages, p + 1))}
               disabled={viewPage >= pages}
               style={{ ...secondaryButton, opacity: viewPage >= pages ? 0.5 : 1 }}

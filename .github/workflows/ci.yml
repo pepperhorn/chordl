@@ -41,3 +41,6 @@ jobs:
 
       - name: Test
         run: pnpm test:run
+
+      - name: Packed board consumer
+        run: node scripts/verify-board-package.mjs

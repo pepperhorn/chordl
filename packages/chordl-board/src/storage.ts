@@ -73,9 +73,9 @@ export function localStorageAdapter(
   };
 }
 
-/** No-op adapter for tests or unsigned-in / ephemeral usage. */
-export const memoryStorageAdapter = (): StorageAdapter => {
-  let state: BoardState = { items: [], meta: {} };
+/** In-memory persistence, optionally seeded with a host's saved message draft. */
+export const memoryStorageAdapter = (initialState: BoardState = { items: [], meta: {} }): StorageAdapter => {
+  let state = initialState;
   return {
     load: () => state,
     save: (next) => { state = next; },
