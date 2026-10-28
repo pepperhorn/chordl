@@ -194,5 +194,39 @@ describe("BoardEditor embedded in a message draft", () => {
       await waitFor(() => expect(last(save)[0].nl).toBe("Am"));
       expect(last(save)[0].ref).toBeUndefined();
     });
+    it("ignores an invalid ref with a warning and stores a fresh copy of a valid one", async () => {
+      const ref = createRef<BoardEditorHandle>();
+      const save = vi.fn();
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const { container } = await mount(<Host onSave={save} editorRef={ref} />);
+      act(() => ref.current!.setChord("Dm7", { ref: { source: "chords", id: 42 as any } }));
+      add(container);
+      await waitFor(() => expect(last(save)).toHaveLength(2));
+      expect(last(save)[1].ref).toBeUndefined();
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(warn.mock.calls[0][0]).toBe("chordl-board: setChord ignored an invalid ref");
+      warn.mockRestore();
+
+      const mine = { ...REF };
+      act(() => ref.current!.setChord("G7", { ref: mine }));
+      add(container);
+      await waitFor(() => expect(last(save)).toHaveLength(3));
+      expect(last(save)[2].ref).toEqual(REF);
+      expect(last(save)[2].ref).not.toBe(mine);
+    });
+  });
+
+  describe("play mode transport", () => {
+    it("shows exactly one Stop (the player's) and Stop/Next work", async () => {
+      const { container } = render(<Host />);
+      await act(async () => { await Promise.resolve(); });
+      fireEvent.click(container.querySelector(".btn-board-play")!);
+      await waitFor(() => expect(container.querySelector(".board-player")).toBeTruthy());
+      expect(within(container).getAllByRole("button", { name: /stop/i })).toHaveLength(1);
+      expect(within(container).getByRole("button", { name: /next/i })).toBeTruthy();
+      fireEvent.click(within(container).getByRole("button", { name: /stop/i }));
+      await waitFor(() => expect(container.querySelector(".board-player")).toBeNull());
+      expect(container.querySelector(".btn-board-play")).toBeTruthy();
+    });
   });
 });

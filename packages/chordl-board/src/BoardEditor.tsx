@@ -9,6 +9,7 @@ import type { ChordBoardController } from "./ChordBoard.js";
 import { BoardPlayer } from "./BoardPlayer.js";
 import { isTextCard } from "./types.js";
 import type { BoardDisplayMode, BoardItem, BoardItemRef } from "./types.js";
+import { normalizeRef } from "./io.js";
 import { BoardIcon, BOARD_ICONS } from "./icons.js";
 import { fileToCardImage, imageBytesUsed, IMAGE_BUDGET_CHARS } from "./image.js";
 
@@ -1099,7 +1100,12 @@ export const BoardEditor = forwardRef<BoardEditorHandle, BoardEditorProps>(funct
       if (editingItemId) stopEditing();
       handleChordInputChange(chord);
       // After the change handler, which clears it; batched, so this write wins.
-      setPendingRef(opts?.ref ?? null);
+      let safe: BoardItemRef | undefined;
+      if (opts?.ref !== undefined) {
+        safe = normalizeRef(opts.ref);
+        if (!safe) console.warn("chordl-board: setChord ignored an invalid ref", opts.ref);
+      }
+      setPendingRef(safe ?? null);
     },
   }));
 
@@ -1673,7 +1679,7 @@ export const BoardEditor = forwardRef<BoardEditorHandle, BoardEditorProps>(funct
                 ▶ Follow along
               </button>
             )}
-            {board.items.length >= 1 && (
+            {board.items.length >= 1 && !boardPlaying && (
               <button type="button"
                 className="btn-board-play"
                 onClick={() => setBoardPlaying((on) => !on)}
@@ -1691,7 +1697,7 @@ export const BoardEditor = forwardRef<BoardEditorHandle, BoardEditorProps>(funct
                 }}
                 title="Walk the board's chords with the arrow keys and hear each one"
               >
-                {boardPlaying ? "■ Stop" : "▶ Play"}
+                ▶ Play
               </button>
             )}
           </div>

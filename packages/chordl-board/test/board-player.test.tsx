@@ -472,6 +472,22 @@ describe("BoardPlayer on-screen controls", () => {
     expect(startPlayback).toHaveBeenLastCalledWith([55, 59, 62], expect.anything());
   });
 
+  it("keeps arrow keys working after tapping Next (buttons do not take focus)", async () => {
+    render(<BoardPlayer items={items} playing onPlayingChange={noop} />);
+    player().focus();
+    fireEvent.keyDown(player(), { key: "ArrowRight" });
+    const next = btn("chordl-player-next");
+    expect(fireEvent.mouseDown(next)).toBe(false); // default prevented
+    expect(fireEvent.mouseDown(btn("chordl-player-prev"))).toBe(false);
+    expect(fireEvent.mouseDown(btn("chordl-player-replay"))).toBe(false);
+  });
+
+  it("gives control buttons an explicit dark text colour", () => {
+    render(<BoardPlayer items={items} playing onPlayingChange={noop} />);
+    const css = document.querySelector(".board-player style")!.textContent!;
+    expect(css).toMatch(/\.chordl-player-controls button \{[^}]*color: #1a1a2e/);
+  });
+
   it("meets the 44px touch target and hides with showControls={false}", () => {
     const { rerender } = render(<BoardPlayer items={items} playing onPlayingChange={noop} />);
     const css = document.querySelector(".board-player style")!.textContent!;

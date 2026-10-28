@@ -148,7 +148,7 @@ export interface BoardItem {
   bundleId?: string;
   /**
    * Host provenance, so a host app can record which of its rows a card came
-   * from. Opaque to this package and validated on import (`parseRef` in
+   * from. Opaque to this package and validated on import (`normalizeRef` in
    * io.ts) because an untrusted file supplies it. Not part of the render cache
    * key: it never changes the drawn image. Distinct from `bundleId`, which
    * names hosted chord content rather than where the card was picked from.

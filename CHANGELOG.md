@@ -13,6 +13,10 @@ Only `@pepperhorn/chordl-board` is published. It depends on the already-publishe
 - **`BoardEditorHandle.setChord(chord, { ref })`:** the ref attaches to the next
   "+ Add to board" of that chord, and is dropped if the chord box is edited first.
   Retyping an existing card's chord clears its ref; annotation and voicing changes keep it.
+  An invalid ref is ignored with a `console.warn`; a valid one is stored as a copy.
+- **Editor play mode:** `BoardEditor`'s own Stop button is hidden while playing; the
+  player's toolbar (Stop, Prev, Replay, Next) is the only transport. Toolbar buttons
+  no longer steal focus from the arrow keys and use a fixed dark text colour.
 - **Smaller player bundles:** `html2canvas` and `jspdf` load only when a PNG/PDF
   export starts, so `BoardPlayer` no longer bundles them.
 - **Player controls:** `BoardPlayer` draws Play/Stop, and while playing Prev, Replay

@@ -180,7 +180,7 @@ const REF_TOKEN = /^(?!\.+$)[A-Za-z0-9_.:-]{1,64}$/;
  * malformed ref is dropped silently, like every other field here, and the
  * result is rebuilt so no extra or `__proto__` key from the file survives.
  */
-function parseRef(value: unknown): BoardItemRef | undefined {
+export function normalizeRef(value: unknown): BoardItemRef | undefined {
   if (value === null || typeof value !== "object" || Array.isArray(value)) return undefined;
   const { source, id } = value as Record<string, unknown>;
   return typeof source === "string" && typeof id === "string" && REF_TOKEN.test(source) && REF_TOKEN.test(id)
@@ -310,7 +310,7 @@ export function importBoardJson(text: string): BoardState {
       arpeggioBpm: parseArpeggioBpm(raw.arpeggioBpm),
       playbackHighlightColor: parsePlaybackHighlightColor(raw.playbackHighlightColor),
       bundleId: parseBundleId(raw.bundleId),
-      ref: parseRef(raw.ref),
+      ref: normalizeRef(raw.ref),
       icon: parseIcon(raw.icon),
       image: parseImage(raw.image),
       size: parseSize(raw.size),

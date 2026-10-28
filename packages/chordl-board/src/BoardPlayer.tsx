@@ -79,7 +79,7 @@ const PLAYER_STYLES = `
   margin: 0;
   padding: 0 14px;
   background: #fff;
-  color: inherit;
+  color: #1a1a2e;
   border: 1px solid var(--btn-border, #ddd);
   border-radius: 999px;
   font-family: Poppins, sans-serif;
@@ -485,11 +485,11 @@ export const BoardPlayer = forwardRef<BoardPlayerHandle, BoardPlayerProps>(funct
           </button>
           {playing && (
             <>
-              <button type="button" className="chordl-player-prev" aria-label="Previous chord"
+              <button type="button" className="chordl-player-prev" onMouseDown={(e) => e.preventDefault()} aria-label="Previous chord"
                 disabled={cursorIndex < 0} onClick={() => step(-1)}>Prev</button>
-              <button type="button" className="chordl-player-replay" aria-label="Replay chord"
+              <button type="button" className="chordl-player-replay" onMouseDown={(e) => e.preventDefault()} aria-label="Replay chord"
                 disabled={cursorIndex < 0} onClick={() => replay()}>Replay</button>
-              <button type="button" className="chordl-player-next" aria-label="Next chord"
+              <button type="button" className="chordl-player-next" onMouseDown={(e) => e.preventDefault()} aria-label="Next chord"
                 disabled={cursorIndex < 0} onClick={() => step(1)}>Next</button>
             </>
           )}
