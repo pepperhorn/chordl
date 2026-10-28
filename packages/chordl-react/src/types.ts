@@ -158,6 +158,15 @@ export interface ChordProps {
   voicingId?: string;
   /** Position in a progression; defaults to 0. */
   chordIndex?: number;
+  /**
+   * Draw note names on the keys. Default when the chord text does not set it;
+   * the text wins. Text cannot turn names off.
+   */
+  showNoteNames?: boolean;
+  /** Note-name text size. Default when the chord text does not set it; the text wins. Text cannot turn names off. */
+  noteNameSize?: TextSize;
+  /** Note-name labelling (pitch class, MIDI). Default when the chord text does not set it; the text wins. Text cannot turn names off. */
+  noteNameMode?: NoteNameMode;
 }
 
 export type PianoChordProps = ChordProps | KeyboardProps;

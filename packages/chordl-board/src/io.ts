@@ -1,3 +1,5 @@
+import { cardStyleRenderConfig, normalizeCardStyle } from "./cardStyle.js";
+import type { BoardCardStyle } from "./cardStyle.js";
 import { BOARD_CARD_SIZES, BOARD_DISPLAY_MODES, BOARD_EXPERIENCE_LEVELS, BOARD_ICON_PREFIXES, BOARD_ITEM_KINDS, BOARD_PLAYBACK_INSTRUMENTS, MAX_COLUMNS, isTextCard } from "./types.js";
 import type {
   BoardCardSize,
@@ -62,7 +64,8 @@ export async function computeCacheKey(input: {
     .join("");
 }
 
-export async function exportBoardJson(state: BoardState): Promise<string> {
+export async function exportBoardJson(state: BoardState, opts?: { cardStyle?: BoardCardStyle }): Promise<string> {
+  const cardStyle = normalizeCardStyle(opts?.cardStyle);
   const items: BoardItemJsonV1[] = await Promise.all(
     state.items.map(async (it) => {
       // A text card draws no chord, so there is nothing to cache and nothing a
@@ -85,6 +88,9 @@ export async function exportBoardJson(state: BoardState): Promise<string> {
       if (it.position !== undefined) renderConfig.position = it.position;
       if (it.frameOrientation !== undefined) renderConfig.frameOrientation = it.frameOrientation;
       if (it.frameLineStyle !== undefined) renderConfig.frameLineStyle = it.frameLineStyle;
+      // Changes the drawn image, and is a snapshot of the host's style, not a stored setting.
+      const styleConfig = cardStyleRenderConfig(it, cardStyle);
+      if (Object.keys(styleConfig).length > 0) renderConfig.cardStyle = styleConfig;
       // `level` is deliberately absent here, unlike every other field above
       // it: today every card that reaches this point has `showControls={false}`
       // in the renderer, which bypasses the level filter entirely, so `level`

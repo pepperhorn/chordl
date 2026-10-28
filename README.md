@@ -550,6 +550,9 @@ Behaviour worth knowing:
 | `chord` | `string` | required | Natural language chord description |
 | `format` | `"compact" \| "exact"` | `"compact"` | Key height mode |
 | `theme` | `string \| ColorTheme` | `"simple"` | Color theme |
+| `showNoteNames` | `boolean` | — | Default note names when the chord text asks for none; text wins |
+| `noteNameSize` | `TextSize` | — | Default size when the text gives none |
+| `noteNameMode` | `NoteNameMode` | — | Default mode when the default turns names on |
 | `highlightColor` | `string` | `"#a0c6e8"` | Shortcut for simple theme color |
 | `padding` | `number` | `1` | Extra white keys on each side |
 | `scale` | `number` | `1` | Display scale (0.5–1.0) |
@@ -657,7 +660,7 @@ to back the board with a remote API or IndexedDB.
 
 ### Embedded board editor and player
 
-`chordl-board@0.2.1` exports the same `BoardEditor` used by the playground,
+`chordl-board@0.2.2` exports the same `BoardEditor` used by the playground,
 plus the display-only `BoardPlayer`. Import the editor stylesheet once. It is
 scoped to `.chordl-board-editor` and does not reset the host page or fetch fonts.
 The editor accepts the controller returned by `useChordBoard`; persistence,
@@ -666,13 +669,14 @@ catalogue lookup and message submission stay with the host.
 ```tsx
 import { useMemo, useRef, useState } from "react";
 import {
-  BoardEditor, BoardPlayer, memoryStorageAdapter, useChordBoard,
+  BoardEditor, BoardPlayer, memoryStorageAdapter, normalizeCardStyle, useChordBoard,
 } from "@pepperhorn/chordl-board";
-import type { BoardEditorHandle, BoardState } from "@pepperhorn/chordl-board";
+import type { BoardCardStyle, BoardEditorHandle, BoardState } from "@pepperhorn/chordl-board";
 import "@pepperhorn/chordl-board/editor.css";
 
-export function MessageBoardEditor({ initialState, onChange }: {
+export function MessageBoardEditor({ initialState, onChange, cardStyle }: {
   initialState: BoardState;
+  cardStyle?: BoardCardStyle; // built by the host, see below
   onChange: (state: BoardState) => void;
 }) {
   // Mount with key={messageId + blockId} when switching message drafts.
@@ -690,18 +694,54 @@ export function MessageBoardEditor({ initialState, onChange }: {
         it is dropped if the chord box is edited first, on Done, or by a
         later setChord without one. */}
     <button type="button" onClick={() => editor.current?.setChord("Dm7", { ref: { source: "chords", id: chordId } })}>Open Dm7</button>
-    <BoardEditor ref={editor} board={board} enableListening={false} />
+    <BoardEditor ref={editor} board={board} enableListening={false}
+      cardStyle={cardStyle} />
   </>;
 }
 
-export function MessageBoardPlayer({ state }: { state: BoardState }) {
+export function MessageBoardPlayer({ state, cardStyle }: { state: BoardState; cardStyle?: BoardCardStyle }) {
   const [playing, setPlaying] = useState(false);
   return <>
     <BoardPlayer items={state.items} meta={state.meta}
-      playing={playing} onPlayingChange={setPlaying} />
+      playing={playing} onPlayingChange={setPlaying}
+      cardStyle={cardStyle} />
   </>;
 }
 ```
+
+`cardStyle` (`BoardCardStyle`: `theme` simple/crf/boomwhacker, `showNoteNames`,
+`noteNameSize`, `noteNameMode` pitch-class/midi) styles every keyboard card on
+`ChordBoard`, `BoardPlayer` and `BoardEditor`. Run CMS input through
+`normalizeCardStyle`, which drops anything invalid. A card's own chord text wins
+over the board style, and text can only turn note names on, never off, so a style
+with names on shows them on each regular keyboard card. Cards whose chord text asks
+for "all inversions" (rendered as a chord group) take the board theme but not its
+note names; guitar and staff-only cards take neither. The style is never stored as a board field and
+`importBoardJson` never reads it; it appears only in each exported keyboard
+card's `renderConfig.cardStyle` (part of the cache key). The schema stays
+`chordl.board/v3`.
+
+Map your CMS fields and layer host defaults under the normalised value:
+
+```ts
+const cardStyle: BoardCardStyle = {
+  theme: "crf", showNoteNames: true, noteNameSize: "xl",
+  ...normalizeCardStyle({
+    theme: block.card_theme,
+    showNoteNames: block.note_names,
+    noteNameSize: block.note_names_size,
+  }),
+};
+```
+
+Normalise before merging defaults: merging first lets an invalid value such as
+`"CRF"` survive, and the component then normalises it away to `"simple"` instead
+of your host default.
+
+The editor seeds its Theme and note-name controls from `cardStyle`. It saves
+only note-name settings that differ from the board's, keeps a card's own names
+when you open it until you touch a note-name control, locks the Note names toggle
+on when the board has names on, and never writes `cardStyle`.
 
 The player draws its own Play/Stop and Prev/Replay/Next buttons (44px touch targets). Pass `showControls={false}` to draw your own instead, and drive the player through a `ref` typed `BoardPlayerHandle` (`play`, `stop`, `next`, `prev`, `replay`).
 
@@ -718,7 +758,7 @@ Use `exportBoardJson` / `importBoardJson` for portable JSON with schema validati
 playback notes. Older imported cards without them retain the player's documented
 fallback voicing limits; re-save those cards in the editor to capture their voicing.
 
-This release requires `chordl-guitar@0.3.0` and `chordl-react@0.5.0`, published
+This release requires `chordl-guitar@0.3.0` and `chordl-react@0.5.1`, published
 before `chordl-board@0.2.0`. Consumers can install the board package alone; its
 published dependencies pin the matching package versions.
 

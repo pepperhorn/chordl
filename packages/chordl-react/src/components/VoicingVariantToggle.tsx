@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useCallback, useEffect } from "react";
-import type { DisplayMode, OnVariation, RenderVariationExtras, PlaybackSpecSnapshot } from "../types";
+import type { DisplayMode, OnVariation, RenderVariationExtras, PlaybackSpecSnapshot, TextSize, NoteNameMode } from "../types";
 import type { UIThemeMode } from "../config";
 import { PianoChord } from "./PianoChord";
 import {
@@ -61,6 +61,10 @@ export interface VoicingVariantToggleProps {
   arpeggioBpm?: number;
   playbackHighlightColor?: string;
   onPlaybackSpecChange?: (spec: PlaybackSpecSnapshot) => void;
+  /** Note-name defaults, forwarded to every variant. The chord text wins; it cannot turn names off. */
+  showNoteNames?: boolean;
+  noteNameSize?: TextSize;
+  noteNameMode?: NoteNameMode;
 }
 
 const LABELS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -85,6 +89,9 @@ export function VoicingVariantToggle({
   arpeggioBpm,
   playbackHighlightColor,
   onPlaybackSpecChange,
+  showNoteNames,
+  noteNameSize,
+  noteNameMode,
 }: VoicingVariantToggleProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [totalCount, setTotalCount] = useState(3);
@@ -263,6 +270,9 @@ export function VoicingVariantToggle({
           arpeggioBpm={arpeggioBpm}
           playbackHighlightColor={playbackHighlightColor}
           onPlaybackSpecChange={onPlaybackSpecChange}
+          showNoteNames={showNoteNames}
+          noteNameSize={noteNameSize}
+          noteNameMode={noteNameMode}
           onVariation={onVariation}
           renderVariationExtras={renderVariationExtras}
           voicingId="default"
@@ -322,6 +332,9 @@ export function VoicingVariantToggle({
           arpeggioBpm={arpeggioBpm}
           playbackHighlightColor={playbackHighlightColor}
           onPlaybackSpecChange={onPlaybackSpecChange}
+          showNoteNames={showNoteNames}
+          noteNameSize={noteNameSize}
+          noteNameMode={noteNameMode}
           onVariation={onVariation}
           renderVariationExtras={renderVariationExtras}
           voicingId={variants[activeIdx]?.label ?? "default"}

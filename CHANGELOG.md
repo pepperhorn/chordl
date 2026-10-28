@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-10-29 — chordl-react 0.5.1, chordl-board 0.2.2
+
+Publish `chordl-react@0.5.1` first, then `chordl-board@0.2.2` (which depends on
+it exactly). `chordl-core` stays 0.5.2. Hosts pin both exactly.
+
+- **PianoChord note-name defaults:** `showNoteNames`, `noteNameSize` and
+  `noteNameMode` props apply when the chord text does not set them; the text wins.
+  A degrees-only chord gains the default names beside its degrees. Chord text
+  cannot turn names off. `VoicingVariantToggle` passes them through.
+- **Board card style:** `cardStyle?: BoardCardStyle` (`theme`
+  simple/crf/boomwhacker, `showNoteNames`, `noteNameSize`, `noteNameMode`
+  pitch-class/midi) on `ChordBoard`, `BoardPlayer` and `BoardEditor` styles every
+  keyboard card. A card's own chord text wins over the board style, and text can
+  only turn note names on, never off. All-inversions cards (chord text "all inversions", rendered as a chord
+  group) take the board theme but not its note names; guitar and staff-only
+  cards take neither. Use `normalizeCardStyle(value)` on CMS input; the components
+  also normalise it. The style is never stored as a board field and
+  `importBoardJson` never reads it (still `chordl.board/v3`); PNG/PDF export
+  includes it, and JSON export records it only in each keyboard card's
+  `renderConfig.cardStyle`, so styled cards get their own `cacheKey`. Unstyled
+  boards keep their keys.
+- **Editor:** seeds the Theme and Note names controls from `cardStyle`. It saves
+  only note-name settings that differ from the board's, keeps a card's own names
+  when opened until a note-name control is touched, locks the Note names toggle
+  on while the board shows names, and never writes `cardStyle`.
+
 ## 2026-10-28 — chordl-board 0.2.1
 
 Only `@pepperhorn/chordl-board` is published. It depends on the already-published

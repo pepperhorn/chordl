@@ -10,6 +10,8 @@ import { CardToolbar, CARD_TOOLBAR_CSS } from "./CardToolbar.js";
 import type { MeasureToolbar } from "./CardToolbar.js";
 import { localStorageAdapter } from "./storage.js";
 import { exportBoardJson, importBoardJson } from "./io.js";
+import { cardStyleChordProps, normalizeCardStyle } from "./cardStyle.js";
+import type { BoardCardStyle } from "./cardStyle.js";
 // html2canvas and jspdf are loaded with import() inside captureBoard and
 // handleDownloadPdf: BoardPlayer shares this module, and a read-only player must
 // not ship ~600 KB of export code it can never run.
@@ -106,10 +108,13 @@ export function BoardCardContent({
   scale,
   uiTheme,
   activePlaybackIndices,
+  cardStyle,
 }: {
   item: BoardItem;
   scale?: number;
   uiTheme?: UIThemeMode;
+  /** Board-wide defaults for keyboard cards; a card's own text still wins. Already normalised by the board. */
+  cardStyle?: BoardCardStyle;
   /**
    * Notes of this card's voicing that are sounding right now, by position in
    * the card's own playback order. Undefined means "nothing sounding", which
@@ -144,6 +149,8 @@ export function BoardCardContent({
     );
   }
   if (item.display === "guitar") {
+    // cardStyle is deliberately not applied: GuitarChordPanel has no colour
+    // theme or note-name props.
     return (
       <GuitarChordPanel
         className="chordl-board-card-guitar"
@@ -186,6 +193,7 @@ export function BoardCardContent({
       showPlayback={false}
       activePlaybackIndices={activePlaybackIndices}
       playbackHighlightColor={item.playbackHighlightColor}
+      {...cardStyleChordProps(cardStyle ?? {})}
     />
   );
 }
@@ -573,6 +581,12 @@ export interface ChordBoardProps {
   /** Render scale forwarded to each card's PianoChord. */
   scale?: number;
   /**
+   * Board-wide defaults for every keyboard card: colour theme and note names.
+   * A card's own text wins ("boomwhacker", "with note names in xl"). The host
+   * owns it; it is never saved in the board. Guitar and text cards ignore it.
+   */
+  cardStyle?: BoardCardStyle;
+  /**
    * Which notes are sounding, per card: `{ [item.id]: indices }`, where each
    * index is a position in that card's playback order. A player passes this
    * while a chord rings so the card lights the notes it is playing.
@@ -693,6 +707,7 @@ export function ChordBoard({
   onNew,
   uiTheme,
   scale = 0.6,
+  cardStyle,
   activePlaybackIndices,
   editingId,
   editPulseKey,
@@ -730,6 +745,7 @@ export function ChordBoard({
   );
 
   const safeMeta: BoardMeta = meta ?? {};
+  const cardStyleNorm = normalizeCardStyle(cardStyle);
   const patchMeta = (patch: Partial<BoardMeta>) => onMetaChange?.(patch);
   // `patchMeta` is a no-op without a handler, so the board text controls would
   // look editable and silently swallow typing. Present them as read-only
@@ -805,7 +821,7 @@ export function ChordBoard({
   };
 
   const handleExportJson = async () => {
-    const text = await exportBoardJson({ items, meta: safeMeta });
+    const text = await exportBoardJson({ items, meta: safeMeta }, { cardStyle: cardStyleNorm });
     const blob = new Blob([text], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -891,7 +907,7 @@ export function ChordBoard({
   const useGrid = typeof columns === "number" && Number.isInteger(columns)
     && columns >= 1 && columns <= MAX_COLUMNS;
 
-  const cardStyle: CSSProperties = {
+  const cardFrameStyle: CSSProperties = {
     position: "relative",
     border: "1px solid var(--btn-border, #ddd)",
     borderRadius: 12,
@@ -1293,7 +1309,7 @@ export function ChordBoard({
                 tabIndex={0}
                 className={cardClass}
                 style={{
-                  ...cardStyle,
+                  ...cardFrameStyle,
                   opacity: isDragging ? 0.7 : 1,
                   ...(useGrid
                     ? {
@@ -1375,6 +1391,7 @@ export function ChordBoard({
                     item={item}
                     scale={(scale ?? 1) * BOARD_CARD_SIZE_FACTORS[item.size ?? "rg"]}
                     uiTheme={uiTheme}
+                    cardStyle={cardStyleNorm}
                     activePlaybackIndices={activePlaybackIndices?.[item.id]}
                   />
                 </CardErrorBoundary>

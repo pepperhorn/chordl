@@ -4,6 +4,8 @@ import {
   composeOctaveShift,
   splitChordDetails,
   DEFAULT_CHORD_DETAILS,
+  boardNoteNameDetails,
+  withoutBoardNoteNames,
 } from "../src/editor/chordDetails";
 
 const compose = (base: string, state: Partial<typeof DEFAULT_CHORD_DETAILS>) => {
@@ -146,5 +148,36 @@ describe("composeChordDetails keeps midi across every midi mode", () => {
   it("still writes plain note names for pitch-class modes", () => {
     expect(compose("C", { showNoteNames: true, noteNameMode: "pitch-class+degree" }))
       .not.toContain("midi");
+  });
+});
+
+/**
+ * The editor seeds its note-name form from the board's style so the preview
+ * matches the board, but a card must not end up carrying names the board
+ * already draws: that would freeze the board's style into every card.
+ */
+describe("board note names", () => {
+  const on = { showNoteNames: true, noteNameSize: "xl" } as const;
+  it("drops note names the board already draws", () => {
+    const s = { ...DEFAULT_CHORD_DETAILS, ...boardNoteNameDetails(on) };
+    expect(composeChordDetails(withoutBoardNoteNames(s, on))).toBe("");
+  });
+  it("keeps a size or mode the board does not use", () => {
+    const s = { ...DEFAULT_CHORD_DETAILS, showNoteNames: true, noteNameSize: "base" as const };
+    expect(composeChordDetails(withoutBoardNoteNames(s, on))).toBe(" note names in base");
+    const m = { ...DEFAULT_CHORD_DETAILS, showNoteNames: true, noteNameMode: "midi" as const, noteNameSize: "xl" as const };
+    expect(composeChordDetails(withoutBoardNoteNames(m, on))).toBe(" midi note names in xl");
+  });
+  it("keeps degrees when the names are inherited", () => {
+    const s = { ...DEFAULT_CHORD_DETAILS, ...boardNoteNameDetails(on), showDegrees: true };
+    expect(composeChordDetails(withoutBoardNoteNames(s, on))).toBe(" with degrees in lg");
+  });
+  it("strips nothing when the board shows no names", () => {
+    const s = { ...DEFAULT_CHORD_DETAILS, showNoteNames: true };
+    expect(withoutBoardNoteNames(s, {})).toBe(s);
+  });
+  it("uses the keyboard's lg default when the board gives no size", () => {
+    expect(boardNoteNameDetails({ showNoteNames: true }).noteNameSize).toBe("lg");
+    expect(boardNoteNameDetails({}).noteNameSize).toBe("xl");
   });
 });
