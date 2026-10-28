@@ -674,8 +674,9 @@ import {
 import type { BoardEditorHandle, BoardState } from "@pepperhorn/chordl-board";
 import "@pepperhorn/chordl-board/editor.css";
 
-export function MessageBoardEditor({ initialState, onChange }: {
+export function MessageBoardEditor({ initialState, onChange, cardStyle }: {
   initialState: BoardState;
+  cardStyle?: unknown; // e.g. block.card_style from the CMS
   onChange: (state: BoardState) => void;
 }) {
   // Mount with key={messageId + blockId} when switching message drafts.
@@ -694,16 +695,16 @@ export function MessageBoardEditor({ initialState, onChange }: {
         later setChord without one. */}
     <button type="button" onClick={() => editor.current?.setChord("Dm7", { ref: { source: "chords", id: chordId } })}>Open Dm7</button>
     <BoardEditor ref={editor} board={board} enableListening={false}
-      cardStyle={normalizeCardStyle(block.card_style)} />
+      cardStyle={normalizeCardStyle(cardStyle)} />
   </>;
 }
 
-export function MessageBoardPlayer({ state }: { state: BoardState }) {
+export function MessageBoardPlayer({ state, cardStyle }: { state: BoardState; cardStyle?: unknown }) {
   const [playing, setPlaying] = useState(false);
   return <>
     <BoardPlayer items={state.items} meta={state.meta}
       playing={playing} onPlayingChange={setPlaying}
-      cardStyle={normalizeCardStyle(block.card_style)} />
+      cardStyle={normalizeCardStyle(cardStyle)} />
   </>;
 }
 ```
@@ -712,10 +713,18 @@ export function MessageBoardPlayer({ state }: { state: BoardState }) {
 `noteNameSize`, `noteNameMode` pitch-class/midi) styles every keyboard card on
 `ChordBoard`, `BoardPlayer` and `BoardEditor`. Run CMS input through
 `normalizeCardStyle`, which drops anything invalid. A card's own chord text wins
-over the board style, but chord text cannot turn note names off, so a style with
-names on shows them on every keyboard card (the editor locks its toggle on).
-Guitar and staff-only cards are not styled. The style is never stored in the
-board: it stays `chordl.board/v3`, and the editor never writes `cardStyle`.
+over the board style, and text can only turn note names on, never off, so a style
+with names on shows them on every keyboard card. Guitar cards, staff-only cards
+and cards whose chord text asks for "all inversions" (which render as a chord
+group) are not styled. The style is never stored as a board field and
+`importBoardJson` never reads it; it appears only in each exported keyboard
+card's `renderConfig.cardStyle` (part of the cache key). The schema stays
+`chordl.board/v3`.
+
+The editor seeds its Theme and note-name controls from `cardStyle`. It saves
+only note-name settings that differ from the board's, keeps a card's own names
+when you open it until you touch a note-name control, locks the Note names toggle
+on when the board has names on, and never writes `cardStyle`.
 
 The player draws its own Play/Stop and Prev/Replay/Next buttons (44px touch targets). Pass `showControls={false}` to draw your own instead, and drive the player through a `ref` typed `BoardPlayerHandle` (`play`, `stop`, `next`, `prev`, `replay`).
 

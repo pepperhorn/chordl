@@ -12,14 +12,19 @@ it exactly). `chordl-core` stays 0.5.2. Hosts pin both exactly.
 - **Board card style:** `cardStyle?: BoardCardStyle` (`theme`
   simple/crf/boomwhacker, `showNoteNames`, `noteNameSize`, `noteNameMode`
   pitch-class/midi) on `ChordBoard`, `BoardPlayer` and `BoardEditor` styles every
-  keyboard card. Guitar and staff-only cards are unchanged. Use
-  `normalizeCardStyle(value)` on CMS input; the components also normalise it.
-  The style is not saved in the board (still `chordl.board/v3`); PNG/PDF export
-  includes it, and JSON export records it in `renderConfig.cardStyle`, so styled
-  cards get their own `cacheKey`. Unstyled boards keep their keys.
-- **Editor:** the Theme pill and Note names controls start from `cardStyle`.
-  Cards store only note-name settings that differ from the board's, and the Note
-  names toggle is locked on while the board shows names.
+  keyboard card. A card's own chord text wins over the board style, and text can
+  only turn note names on, never off. Guitar cards, staff-only cards and
+  all-inversions cards (chord text "all inversions", rendered as a chord group)
+  are not styled. Use `normalizeCardStyle(value)` on CMS input; the components
+  also normalise it. The style is never stored as a board field and
+  `importBoardJson` never reads it (still `chordl.board/v3`); PNG/PDF export
+  includes it, and JSON export records it only in each keyboard card's
+  `renderConfig.cardStyle`, so styled cards get their own `cacheKey`. Unstyled
+  boards keep their keys.
+- **Editor:** seeds the Theme and Note names controls from `cardStyle`. It saves
+  only note-name settings that differ from the board's, keeps a card's own names
+  when opened until a note-name control is touched, locks the Note names toggle
+  on while the board shows names, and never writes `cardStyle`.
 
 ## 2026-10-28 — chordl-board 0.2.1
 
