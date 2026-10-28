@@ -544,3 +544,44 @@ describe("frame appearance persistence", () => {
     }
   });
 });
+
+describe("import text and image sanitising", () => {
+  const metaBoard = (meta: unknown) => JSON.stringify({
+    schema: "chordl.board/v2",
+    meta,
+    items: [{ id: "a", nl: "C" }],
+  });
+
+  it("drops non-string card text", () => {
+    const back = importBoardJson(rawBoard([
+      { id: "a", nl: "C", title: 5, subheading: { x: 1 }, footerText: ["f"] },
+      { id: "b", kind: "text", title: null, subheading: true, footerText: "kept" },
+    ], BOARD_SCHEMA));
+    expect(back.items[0]).toMatchObject({ title: undefined, subheading: undefined, footerText: undefined });
+    expect(back.items[1]).toMatchObject({ title: undefined, subheading: undefined, footerText: "kept" });
+  });
+  it("keeps string card text, including the empty string", () => {
+    const back = importBoardJson(rawBoard([{ id: "a", nl: "C", title: "", subheading: "Shell", footerText: "Let ring" }]));
+    expect(back.items[0]).toMatchObject({ title: "", subheading: "Shell", footerText: "Let ring" });
+  });
+  it("drops non-string meta text and keeps the rest", () => {
+    const meta = importBoardJson(metaBoard({ title: { x: 1 }, subtitle: 7, footer: "Practice daily", columns: 3, extra: "kept" })).meta;
+    expect(meta).toMatchObject({ title: undefined, subtitle: undefined, footer: "Practice daily", columns: 3, extra: "kept" });
+  });
+  it("replaces a meta that is not an object with an empty one", () => {
+    for (const bad of ["x", [], null, 5]) expect(importBoardJson(metaBoard(bad)).meta, String(bad)).toEqual({ columns: undefined });
+  });
+  it("keeps only base64 png, jpeg, webp and gif images", () => {
+    const ok = ["png", "jpeg", "webp", "gif"].map((t) => `data:image/${t};base64,AAAA`);
+    const bad = [
+      "data:image/svg+xml;base64,PHN2Zz48L3N2Zz4=",
+      "data:image/svg+xml,<svg onload=alert(1)>",
+      "data:image/png,AAAA",
+      "data:image/png;base64,AA AA",
+      "data:image/bmp;base64,AAAA",
+      "DATA:image/png;base64,AAAA",
+    ];
+    const back = importBoardJson(rawBoard([...ok, ...bad].map((image, i) => ({ id: `t${i}`, kind: "text", image }))));
+    expect(back.items.map((i) => i.image)).toEqual([...ok, ...bad.map(() => undefined)]);
+  });
+});

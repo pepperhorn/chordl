@@ -227,11 +227,26 @@ function parseIcon(value: unknown): string | undefined {
 
 /**
  * Security boundary: an imported board is untrusted and `image` ends up in a
- * `src`. Only an inline image passes — `data:text/html`, `javascript:` and
- * remote URLs are all ways to make a card fetch or execute something.
+ * `src`. Only an inline base64 raster (png, jpeg, webp, gif) passes —
+ * `data:text/html`, `javascript:` and remote URLs are all ways to make a card
+ * fetch or execute something, and SVG is refused on import as well as on
+ * upload: it is a document format that can carry script and external
+ * references. The pattern is one anchored character class, so it runs in
+ * linear time even over a multi-megabyte string.
  */
 function parseImage(value: unknown): string | undefined {
-  return typeof value === "string" && value.startsWith("data:image/") ? value : undefined;
+  return typeof value === "string" && /^data:image\/(?:png|jpeg|webp|gif);base64,[A-Za-z0-9+/]+={0,2}$/.test(value)
+    ? value
+    : undefined;
+}
+
+/**
+ * Card and meta text reaches React as a child, so anything but a string
+ * (a number, `{ x: 1 }`, an array) would throw "Objects are not valid as a
+ * React child" at render. Dropped silently, like every other bad field.
+ */
+function parseText(value: unknown): string | undefined {
+  return typeof value === "string" ? value : undefined;
 }
 
 /**
@@ -242,11 +257,21 @@ function parseImage(value: unknown): string | undefined {
  * either reflows as "auto" rather than being clamped to 4.
  */
 function parseMeta(value: unknown): BoardMeta {
-  const raw = (value ?? {}) as BoardMeta;
+  // A string, number or array would spread into index keys (or nothing), so
+  // anything that is not a plain object is replaced rather than repaired.
+  const plain = value !== null && typeof value === "object" && !Array.isArray(value);
+  const raw = (plain ? value : {}) as BoardMeta;
   const columns = raw.columns;
   const usable = columns === "auto"
     || (typeof columns === "number" && Number.isInteger(columns) && columns >= 1 && columns <= MAX_COLUMNS);
-  return usable ? raw : { ...raw, columns: undefined };
+  // Header text is rendered as React children, so only strings survive.
+  return {
+    ...raw,
+    title: parseText(raw.title),
+    subtitle: parseText(raw.subtitle),
+    footer: parseText(raw.footer),
+    columns: usable ? columns : undefined,
+  };
 }
 
 export function importBoardJson(text: string): BoardState {
@@ -271,9 +296,9 @@ export function importBoardJson(text: string): BoardState {
       id: typeof raw.id === "string" && raw.id ? raw.id : `chord-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
       kind,
       nl: typeof raw.nl === "string" ? raw.nl : undefined,
-      title: raw.title,
-      subheading: raw.subheading,
-      footerText: raw.footerText,
+      title: parseText(raw.title),
+      subheading: parseText(raw.subheading),
+      footerText: parseText(raw.footerText),
       display: parseDisplayMode(raw.display),
       instrument: typeof raw.instrument === "string" && raw.instrument ? raw.instrument : undefined,
       position: parsePosition(raw.position),

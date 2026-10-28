@@ -199,9 +199,8 @@ export async function fileToCardImage(
   // It is inert inside an `<img>`, but accepting it means the board stores
   // markup it cannot audit — and canvas cannot rasterise it reliably across
   // browsers anyway, so it would skip the downscale that makes storage safe.
-  // Note the asymmetry with io.ts's `parseImage`, which does accept
-  // `data:image/svg+xml`: that is the import path, kept permissive so an older
-  // export still loads. This is the upload path, where we choose what enters.
+  // io.ts's `parseImage` refuses SVG on import for the same reason, so both
+  // paths now agree: only png, jpeg, webp and gif ever enter a card.
   if (type === "image/svg+xml" || type.startsWith("image/svg")) {
     throw new Error("SVG pictures cannot be added to a card. Please choose a JPG, PNG or WebP picture instead.");
   }
