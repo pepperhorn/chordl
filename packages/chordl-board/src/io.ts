@@ -3,8 +3,8 @@ import type {
   BoardCardSize,
   BoardDisplayMode,
   BoardItem,
-  BoardItemRef,
   BoardItemKind,
+  BoardItemRef,
   BoardMeta,
   BoardState,
 } from "./types.js";

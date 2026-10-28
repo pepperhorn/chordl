@@ -72,7 +72,6 @@ export const BOARD_CARD_SIZE_FACTORS: Record<BoardCardSize, number> = {
   "2xl": 3,
 };
 
-/** A single card on the board — a chord diagram, or text with an icon/image. */
 /**
  * Host provenance: which record in the host's own data a card came from
  * (e.g. `{ source: "chords", id: "<Directus row id>" }`). Both halves are
@@ -83,6 +82,7 @@ export interface BoardItemRef {
   id: string;
 }
 
+/** A single card on the board — a chord diagram, or text with an icon/image. */
 export interface BoardItem {
   /** Stable identifier for keys and drag-drop. */
   id: string;
