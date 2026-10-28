@@ -657,7 +657,7 @@ to back the board with a remote API or IndexedDB.
 
 ### Embedded board editor and player
 
-`chordl-board@0.2.0` exports the same `BoardEditor` used by the playground,
+`chordl-board@0.2.1` exports the same `BoardEditor` used by the playground,
 plus the display-only `BoardPlayer`. Import the editor stylesheet once. It is
 scoped to `.chordl-board-editor` and does not reset the host page or fetch fonts.
 The editor accepts the controller returned by `useChordBoard`; persistence,

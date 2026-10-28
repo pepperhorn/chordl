@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-10-28 — chordl-board 0.2.1
+
+Only `@pepperhorn/chordl-board` is published. It depends on the already-published
+`chordl-core@0.5.2` and `chordl-react@0.5.0`; neither changes. Hosts pin `0.2.1` exactly.
+
+- **Card provenance `ref`:** `BoardItem.ref?: { source, id }` records where a card
+  came from (e.g. a Directus `chords` row). Validated on import (each part 1–64 of
+  `A-Za-z0-9_.:-`, not all dots; anything else is dropped), written on export, kept
+  by copy/paste/duplicate, and not part of the render cache key. Boards stay
+  `chordl.board/v3`; 0.2.0 reads them and ignores `ref`.
+- **`BoardEditorHandle.setChord(chord, { ref })`:** the ref attaches to the next
+  "+ Add to board" of that chord, and is dropped if the chord box is edited first.
+  Retyping an existing card's chord clears its ref; annotation and voicing changes keep it.
+- **Smaller player bundles:** `html2canvas` and `jspdf` load only when a PNG/PDF
+  export starts, so `BoardPlayer` no longer bundles them.
+- **Player controls:** `BoardPlayer` draws Play/Stop, and while playing Prev, Replay
+  and Next (44px targets, labelled, `chordl-player-*` classes). Hide them with
+  `showControls={false}`. A `ref` exposes `BoardPlayerHandle { play, stop, next,
+  prev, replay }`. Hosts that drew their own Play button should drop it or hide these.
+- **Safer import:** `importBoardJson` drops non-string card and board text, a
+  non-object `meta`, and any image that is not a base64 PNG, JPEG, WebP or GIF data
+  URI. SVG pictures in old exports no longer load.
+
 ## 2026-10-28 — embedded board editor and player
 
 Publish in this order: `chordl-guitar@0.3.0`, `chordl-react@0.5.0`, then
