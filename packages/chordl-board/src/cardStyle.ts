@@ -1,4 +1,4 @@
-import type { NoteNameMode, TextSize } from "@pepperhorn/chordl-core";
+import type { TextSize } from "@pepperhorn/chordl-core";
 import { isTextCard } from "./types.js";
 import type { BoardItem } from "./types.js";
 
@@ -40,13 +40,8 @@ export function normalizeCardStyle(value: unknown): BoardCardStyle {
   return out;
 }
 
-export function cardStyleChordProps(style: BoardCardStyle): {
-  theme?: string;
-  showNoteNames?: boolean;
-  noteNameSize?: TextSize;
-  noteNameMode?: NoteNameMode;
-} {
-  const out: { theme?: string; showNoteNames?: boolean; noteNameSize?: TextSize; noteNameMode?: NoteNameMode } = {};
+export function cardStyleChordProps(style: BoardCardStyle): BoardCardStyle {
+  const out: BoardCardStyle = {};
   // "simple" is today's look, which is what passing no theme draws.
   if (style.theme !== undefined && style.theme !== "simple") out.theme = style.theme;
   if (style.showNoteNames !== undefined) out.showNoteNames = style.showNoteNames;
@@ -56,8 +51,8 @@ export function cardStyleChordProps(style: BoardCardStyle): {
 }
 
 /** What of the style a card's rendered image actually depends on. */
-export function cardStyleRenderConfig(item: BoardItem, style: BoardCardStyle): Partial<BoardCardStyle> {
+export function cardStyleRenderConfig(item: BoardItem, style: BoardCardStyle): BoardCardStyle {
   // Guitar frames have no theme/note-name props; staff-only cards draw no keyboard.
   if (isTextCard(item) || item.display === "guitar" || item.display === "staff") return {};
-  return cardStyleChordProps(style) as Partial<BoardCardStyle>;
+  return cardStyleChordProps(style);
 }

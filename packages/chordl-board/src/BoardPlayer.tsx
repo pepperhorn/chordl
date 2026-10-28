@@ -10,6 +10,8 @@ import { GRID_TRACKS, computeRowSpans } from "./layout.js";
 import { resolveCardPlayback } from "./cardPlayback.js";
 import { BOARD_CARD_SIZE_FACTORS, MAX_COLUMNS, isTextCard } from "./types.js";
 import type { BoardItem, BoardMeta } from "./types.js";
+import { normalizeCardStyle } from "./cardStyle.js";
+import type { BoardCardStyle } from "./cardStyle.js";
 
 /** Same gutter the editing board puts on its cards. See ChordBoard. */
 const CARD_GUTTER = 6;
@@ -113,6 +115,8 @@ export interface BoardPlayerProps {
    * two modes rather than cards that jump on entering play mode.
    */
   scale?: number;
+  /** Board-wide defaults for keyboard cards; same meaning as on `ChordBoard`. */
+  cardStyle?: BoardCardStyle;
   uiTheme?: UIThemeMode;
   /** Play mode is the host's state, so a page can put the toggle where it likes. */
   playing: boolean;
@@ -180,6 +184,7 @@ export const BoardPlayer = forwardRef<BoardPlayerHandle, BoardPlayerProps>(funct
   items,
   meta,
   scale = DEFAULT_SCALE,
+  cardStyle,
   uiTheme,
   playing,
   onPlayingChange,
@@ -189,6 +194,7 @@ export const BoardPlayer = forwardRef<BoardPlayerHandle, BoardPlayerProps>(funct
   style,
   showControls = true,
 }, ref) {
+  const cardStyleNorm = normalizeCardStyle(cardStyle);
   const [cursor, setCursor] = useState(() => nextPlayable(items, -1, 1));
   /** Sounding notes of the card under the cursor, by position in its voicing. */
   const [active, setActive] = useState<number[] | null>(null);
@@ -431,7 +437,7 @@ export const BoardPlayer = forwardRef<BoardPlayerHandle, BoardPlayerProps>(funct
       }
     : { display: "flex", flexWrap: "wrap", gap: 12, alignItems: "flex-start", justifyContent: "center" };
 
-  const cardStyle: CSSProperties = {
+  const cardFrameStyle: CSSProperties = {
     position: "relative",
     border: "1px solid var(--btn-border, #ddd)",
     borderRadius: 12,
@@ -511,7 +517,7 @@ export const BoardPlayer = forwardRef<BoardPlayerHandle, BoardPlayerProps>(funct
                 data-board-id={item.id}
                 className={`board-player-card${isCursor ? " board-player-card--cursor board-player-cursor" : ""}`}
                 style={{
-                  ...cardStyle,
+                  ...cardFrameStyle,
                   ...(useGrid
                     ? {
                         gridColumn: rowStarts[index] !== undefined
@@ -543,6 +549,7 @@ export const BoardPlayer = forwardRef<BoardPlayerHandle, BoardPlayerProps>(funct
                     item={item}
                     scale={scale * BOARD_CARD_SIZE_FACTORS[item.size ?? "rg"]}
                     uiTheme={uiTheme}
+                    cardStyle={cardStyleNorm}
                     // Only the card that is sounding: every other card falls
                     // back to its own renderer's state, which is "nothing lit".
                     activePlaybackIndices={isCursor && active ? active : undefined}

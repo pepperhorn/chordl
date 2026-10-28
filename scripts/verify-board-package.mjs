@@ -50,7 +50,7 @@ run("npm", ["install", "--ignore-scripts", "--no-audit", "--no-fund"]);
 
 writeFileSync(join(consumer, "App.tsx"), `
 import { useMemo, useRef, useState } from "react";
-import { BoardEditor, BoardPlayer, useChordBoard, memoryStorageAdapter } from "@pepperhorn/chordl-board";
+import { BoardEditor, BoardPlayer, useChordBoard, memoryStorageAdapter, normalizeCardStyle } from "@pepperhorn/chordl-board";
 import type { BoardEditorHandle, BoardPlayerHandle, BoardState } from "@pepperhorn/chordl-board";
 import "@pepperhorn/chordl-board/editor.css";
 const initial: BoardState = { items: [{ id: "c", nl: "C", playbackNotes: [60,64,67] }], meta: { title: "Lesson" } };
@@ -58,11 +58,12 @@ export default function App() {
   const storage = useMemo(() => memoryStorageAdapter(initial), []);
   const [draft, setDraft] = useState(initial);
   const board = useChordBoard({ initialItems: initial.items, initialMeta: initial.meta, storage, onChange: setDraft });
+  const cardStyle = normalizeCardStyle({ theme: "crf", showNoteNames: true, noteNameSize: "xl" });
   const editor = useRef<BoardEditorHandle>(null);
   const playerRef = useRef<BoardPlayerHandle>(null);
   return <><button type="button" onClick={() => editor.current?.setChord("Dm7", { ref: { source: "chords", id: "42" } })}>Catalogue</button>
     <BoardEditor ref={editor} board={board} enableListening={false} />
-    <BoardPlayer ref={playerRef} items={draft.items} meta={draft.meta} playing={false} onPlayingChange={() => {}} /></>;
+    <BoardPlayer ref={playerRef} items={draft.items} meta={draft.meta} playing={false} onPlayingChange={() => {}} cardStyle={cardStyle} /></>;
 }
 `);
 writeFileSync(join(consumer, "main.tsx"), `import { createRoot } from "react-dom/client"; import App from "./App"; createRoot(document.getElementById("root")!).render(<App />);`);
@@ -88,6 +89,8 @@ const player = renderToString(el(BoardPlayer, { ...initial, playing: false, onPl
 assert(player.includes("board-player"));
 assert(player.includes("chordl-player-play"));
 assert(!player.includes("chordl-board-action-edit"));
+const styled = renderToString(el(BoardPlayer, { ...initial, playing: false, onPlayingChange() {}, cardStyle: { showNoteNames: true } }));
+assert(styled.includes("bc-note-name"), "cardStyle note names reach the packed player");
 const css = readFileSync(import.meta.resolve("@pepperhorn/chordl-board/editor.css").replace("file://", ""), "utf8");
 const unscoped = [];
 postcss.parse(css).walkRules(rule => {
