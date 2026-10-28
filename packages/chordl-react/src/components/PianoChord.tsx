@@ -1,4 +1,5 @@
 import { cloneElement, useCallback, useEffect, useRef, useState } from "react";
+import { resolveNoteNames } from "../note-name-defaults";
 import { Note } from "tonal";
 import type { ChordProps, KeyboardProps, HandBracket, WhiteNote, DisplayMode } from "../types";
 import type { VariationContext } from "../types";
@@ -37,7 +38,7 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
     return <PianoKeyboard {...props} />;
   }
 
-  const { chord, format, theme: themeProp, highlightColor, padding, scale: scaleProp, display = "keyboard", uiTheme, showPlayback = true, showChordName, title, subheading, footerText, className, style, arpeggioBpm, playbackHighlightColor, onPlaybackSpecChange, activePlaybackIndices: controlledActiveIndices } =
+  const { chord, format, theme: themeProp, highlightColor, padding, scale: scaleProp, display = "keyboard", uiTheme, showPlayback = true, showChordName, title, subheading, footerText, className, style, arpeggioBpm, playbackHighlightColor, onPlaybackSpecChange, activePlaybackIndices: controlledActiveIndices, showNoteNames: showNoteNamesProp, noteNameSize: noteNameSizeProp, noteNameMode: noteNameModeProp } =
     props;
   const { onVariation, renderVariationExtras, voicingId = "default", chordIndex = 0 } = props;
   const uiCtx = resolveUITheme(uiTheme);
@@ -82,6 +83,8 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
   });
 
   const parsed = parseChordDescription(chord);
+  // Host defaults fill what the chord text leaves out; the text wins.
+  const names = resolveNoteNames(parsed, { showNoteNames: showNoteNamesProp, noteNameSize: noteNameSizeProp, noteNameMode: noteNameModeProp });
   // Text-parsed overrides for theme and scale
   const theme = parsed.colorTheme ?? themeProp;
   const scale = parsed.scale ?? scaleProp;
@@ -185,10 +188,10 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
           showHeading={parsed.showHeading}
           showChordName={showChordName}
           scale={scale}
-          showNoteNames={parsed.showNoteNames}
-          noteNameSize={parsed.noteNameSize}
+          showNoteNames={names.showNoteNames}
+          noteNameSize={names.noteNameSize}
           degreeSize={parsed.degreeSize}
-          noteNameMode={parsed.noteNameMode}
+          noteNameMode={names.noteNameMode}
           midiBaseOctave={midiBase}
           degreeLabels={degreeLabels}
           fingering={scaleFingering && scaleFingering.length > 0 ? scaleFingering : undefined}
@@ -372,10 +375,10 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
               playbackHighlightColor={playbackHighlightColor}
               onPlaybackSpecChange={reportPlaybackSpec}
               activePlaybackIndices={controlledActiveIndices}
-              showNoteNames={parsed.showNoteNames}
-              noteNameSize={parsed.noteNameSize}
+              showNoteNames={names.showNoteNames}
+              noteNameSize={names.noteNameSize}
               degreeSize={parsed.degreeSize}
-              noteNameMode={parsed.noteNameMode}
+              noteNameMode={names.noteNameMode}
               midiBaseOctave={minOctave}
               fingeringSize={parsed.fingeringSize}
               showPlayback={showPlayback}
@@ -540,7 +543,7 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
   // Must stay below the rotation and the arpeggio expansion above: the result
   // is index-parallel to `notes`, which is what the highlight rows index into.
   const chordDegreeLabels: (string | undefined)[] | undefined = (() => {
-    const mode = parsed.noteNameMode;
+    const mode = names.noteNameMode;
     if (mode !== "degree" && mode !== "pitch-class+degree" && mode !== "midi+degree") return undefined;
     const intervals = resolved.intervals;
     if (!intervals || intervals.length === 0) return undefined;
@@ -795,10 +798,10 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
         showChordName={showChordName}
         handBrackets={handBrackets}
         scale={scale}
-        showNoteNames={parsed.showNoteNames}
-        noteNameSize={parsed.noteNameSize}
+        showNoteNames={names.showNoteNames}
+        noteNameSize={names.noteNameSize}
         degreeSize={parsed.degreeSize}
-        noteNameMode={parsed.noteNameMode}
+        noteNameMode={names.noteNameMode}
         // The keyboard numbers its octaves from the drawn window; `lhOctave`
         // is where the bass note fell inside it. Anchoring on that puts every
         // MIDI label at the octave the staff engraves it at.
@@ -1058,10 +1061,10 @@ export function PianoChord(props: ChordProps | KeyboardProps) {
       showChordName={showChordName}
       handBrackets={autoHandBrackets}
       scale={scale}
-      showNoteNames={parsed.showNoteNames}
-      noteNameSize={parsed.noteNameSize}
+      showNoteNames={names.showNoteNames}
+      noteNameSize={names.noteNameSize}
       degreeSize={parsed.degreeSize}
-      noteNameMode={parsed.noteNameMode}
+      noteNameMode={names.noteNameMode}
       // Carries the shift the keys no longer do: same keys, named an octave up.
       midiBaseOctave={4 + chordShift - windowOffset}
       fingering={resolvedFingering}
