@@ -51,7 +51,7 @@ run("npm", ["install", "--ignore-scripts", "--no-audit", "--no-fund"]);
 writeFileSync(join(consumer, "App.tsx"), `
 import { useMemo, useRef, useState } from "react";
 import { BoardEditor, BoardPlayer, useChordBoard, memoryStorageAdapter } from "@pepperhorn/chordl-board";
-import type { BoardEditorHandle, BoardState } from "@pepperhorn/chordl-board";
+import type { BoardEditorHandle, BoardPlayerHandle, BoardState } from "@pepperhorn/chordl-board";
 import "@pepperhorn/chordl-board/editor.css";
 const initial: BoardState = { items: [{ id: "c", nl: "C", playbackNotes: [60,64,67] }], meta: { title: "Lesson" } };
 export default function App() {
@@ -59,9 +59,10 @@ export default function App() {
   const [draft, setDraft] = useState(initial);
   const board = useChordBoard({ initialItems: initial.items, initialMeta: initial.meta, storage, onChange: setDraft });
   const editor = useRef<BoardEditorHandle>(null);
+  const playerRef = useRef<BoardPlayerHandle>(null);
   return <><button type="button" onClick={() => editor.current?.setChord("Dm7", { ref: { source: "chords", id: "42" } })}>Catalogue</button>
     <BoardEditor ref={editor} board={board} enableListening={false} />
-    <BoardPlayer items={draft.items} meta={draft.meta} playing={false} onPlayingChange={() => {}} /></>;
+    <BoardPlayer ref={playerRef} items={draft.items} meta={draft.meta} playing={false} onPlayingChange={() => {}} /></>;
 }
 `);
 writeFileSync(join(consumer, "main.tsx"), `import { createRoot } from "react-dom/client"; import App from "./App"; createRoot(document.getElementById("root")!).render(<App />);`);
@@ -85,6 +86,7 @@ assert(html.includes("Lesson"));
 assert(!html.includes('class="listen-mic-btn"'));
 const player = renderToString(el(BoardPlayer, { ...initial, playing: false, onPlayingChange() {} }));
 assert(player.includes("board-player"));
+assert(player.includes("chordl-player-play"));
 assert(!player.includes("chordl-board-action-edit"));
 const css = readFileSync(import.meta.resolve("@pepperhorn/chordl-board/editor.css").replace("file://", ""), "utf8");
 const unscoped = [];

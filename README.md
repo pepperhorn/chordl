@@ -697,12 +697,13 @@ export function MessageBoardEditor({ initialState, onChange }: {
 export function MessageBoardPlayer({ state }: { state: BoardState }) {
   const [playing, setPlaying] = useState(false);
   return <>
-    <button type="button" onClick={() => setPlaying(!playing)}>{playing ? "Stop" : "Play"}</button>
     <BoardPlayer items={state.items} meta={state.meta}
       playing={playing} onPlayingChange={setPlaying} />
   </>;
 }
 ```
+
+The player draws its own Play/Stop and Prev/Replay/Next buttons (44px touch targets). Pass `showControls={false}` to draw your own instead, and drive the player through a `ref` typed `BoardPlayerHandle` (`play`, `stop`, `next`, `prev`, `replay`).
 
 `BoardEditor` starts with an empty chord box unless `initialChord` is supplied.
 Its `header` and `children` slots accommodate host controls, and `uiTheme`
