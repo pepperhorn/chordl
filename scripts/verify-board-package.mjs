@@ -62,7 +62,7 @@ export default function App() {
   const editor = useRef<BoardEditorHandle>(null);
   const playerRef = useRef<BoardPlayerHandle>(null);
   return <><button type="button" onClick={() => editor.current?.setChord("Dm7", { ref: { source: "chords", id: "42" } })}>Catalogue</button>
-    <BoardEditor ref={editor} board={board} enableListening={false} />
+    <BoardEditor ref={editor} board={board} enableListening={false} cardStyle={cardStyle} />
     <BoardPlayer ref={playerRef} items={draft.items} meta={draft.meta} playing={false} onPlayingChange={() => {}} cardStyle={cardStyle} /></>;
 }
 `);

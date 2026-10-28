@@ -1,4 +1,6 @@
 import type { NoteNameMode, TextSize } from "@pepperhorn/chordl-core";
+import { DEFAULT_NOTE_NAME_SIZE } from "../cardStyle.js";
+import type { BoardCardStyle } from "../cardStyle.js";
 
 /**
  * The annotation state an editor form holds, and the chord text it decorates.
@@ -151,4 +153,41 @@ export function splitChordDetails(nl: string): ChordDetailState & { input: strin
   }
 
   return { ...state, input: input.replace(/\s+/g, " ").trim() };
+}
+
+/**
+ * The note-name form state a board's style implies, so the editor's preview
+ * starts out looking like the board. Off, the size falls back to the form's own
+ * default rather than the keyboard's, matching an editor with no style at all.
+ */
+export function boardNoteNameDetails(
+  style: BoardCardStyle,
+): Pick<ChordDetailState, "showNoteNames" | "noteNameMode" | "noteNameSize"> {
+  if (style.showNoteNames === true) {
+    return {
+      showNoteNames: true,
+      noteNameMode: style.noteNameMode ?? "pitch-class",
+      noteNameSize: style.noteNameSize ?? DEFAULT_NOTE_NAME_SIZE,
+    };
+  }
+  return {
+    showNoteNames: false,
+    noteNameMode: "pitch-class",
+    noteNameSize: style.noteNameSize ?? DEFAULT_CHORD_DETAILS.noteNameSize,
+  };
+}
+
+/**
+ * Drop note names from the state the card would serialise when the board
+ * already draws exactly those names. Without this, seeding the form from the
+ * board style would copy the style into every card's text, and the card would
+ * keep it after the host changed the style. A size or kind the board does not
+ * use is the card's own choice and stays.
+ */
+export function withoutBoardNoteNames(state: ChordDetailState, style: BoardCardStyle): ChordDetailState {
+  if (style.showNoteNames !== true || !state.showNoteNames) return state;
+  if (state.noteNameSize !== (style.noteNameSize ?? DEFAULT_NOTE_NAME_SIZE)) return state;
+  const kind = state.noteNameMode.startsWith("midi") ? "midi" : "pitch-class";
+  if (kind !== (style.noteNameMode ?? "pitch-class")) return state;
+  return { ...state, showNoteNames: false };
 }
