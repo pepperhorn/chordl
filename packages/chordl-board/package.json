@@ -1,6 +1,6 @@
 {
   "name": "@pepperhorn/chordl-board",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Stateful chord board for chordl \u2014 reorderable list of chord cards with storage adapter",
   "repository": {
     "type": "git",
@@ -16,11 +16,13 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
-    }
+    },
+    "./editor.css": "./editor.css"
   },
   "files": [
     "dist",
-    "NOTICE.md"
+    "NOTICE.md",
+    "editor.css"
   ],
   "scripts": {
     "build": "tsc",
@@ -52,5 +54,8 @@
   "publishConfig": {
     "access": "public"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "sideEffects": [
+    "*.css"
+  ]
 }

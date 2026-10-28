@@ -88,14 +88,14 @@ export function ProgressionView({
         </span>
         <div className="bc-progression__controls-row" style={{ display: "flex", gap: "0.75rem", alignItems: "center", flexWrap: "wrap", justifyContent: "center" }}>
           <div className="bc-progression__group-toggle" style={pillGroupStyle}>
-            <button
+            <button type="button"
               className="bc-progression__btn"
               style={pillBtnStyle(groupMode === "by-progression")}
               onClick={() => setGroupMode("by-progression")}
             >
               By Progression
             </button>
-            <button
+            <button type="button"
               className="bc-progression__btn"
               style={pillBtnStyle(groupMode === "by-chord")}
               onClick={() => setGroupMode("by-chord")}
@@ -104,14 +104,14 @@ export function ProgressionView({
             </button>
           </div>
           <div className="bc-progression__format-toggle" style={pillGroupStyle}>
-            <button
+            <button type="button"
               className="bc-progression__btn"
               style={pillBtnStyle(keyFormat === "compact")}
               onClick={() => setKeyFormat("compact")}
             >
               Compact
             </button>
-            <button
+            <button type="button"
               className="bc-progression__btn"
               style={pillBtnStyle(keyFormat === "exact")}
               onClick={() => setKeyFormat("exact")}
@@ -121,7 +121,7 @@ export function ProgressionView({
           </div>
           <div className="bc-progression__display-toggle" style={pillGroupStyle}>
             {(["keyboard", "staff", "both"] as DisplayMode[]).map((mode) => (
-              <button
+              <button type="button"
                 key={mode}
                 className="bc-progression__btn"
                 style={pillBtnStyle(displayMode === mode)}
@@ -133,7 +133,7 @@ export function ProgressionView({
           </div>
           <div className="bc-progression__scale-toggle" style={pillGroupStyle}>
             {SCALE_OPTIONS.map((opt) => (
-              <button
+              <button type="button"
                 key={opt.value}
                 className="bc-progression__btn"
                 style={pillBtnStyle(scale === opt.value)}
@@ -144,21 +144,21 @@ export function ProgressionView({
             ))}
           </div>
           <div className="bc-progression__names-toggle" style={pillGroupStyle}>
-            <button
+            <button type="button"
               className="bc-progression__btn"
               style={pillBtnStyle(noteNames === "off")}
               onClick={() => setNoteNames("off")}
             >
               Names Off
             </button>
-            <button
+            <button type="button"
               className="bc-progression__btn"
               style={pillBtnStyle(noteNames === "notes")}
               onClick={() => setNoteNames("notes")}
             >
               Notes
             </button>
-            <button
+            <button type="button"
               className="bc-progression__btn"
               style={pillBtnStyle(noteNames === "midi")}
               onClick={() => setNoteNames("midi")}
@@ -167,14 +167,14 @@ export function ProgressionView({
             </button>
           </div>
           <div className="bc-progression__fingering-toggle" style={pillGroupStyle}>
-            <button
+            <button type="button"
               className="bc-progression__btn"
               style={pillBtnStyle(!showFingering)}
               onClick={() => setShowFingering(false)}
             >
               No Fingering
             </button>
-            <button
+            <button type="button"
               className="bc-progression__btn"
               style={pillBtnStyle(showFingering)}
               onClick={() => setShowFingering(true)}

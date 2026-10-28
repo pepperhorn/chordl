@@ -144,7 +144,7 @@ export function ListenOverlay({ open, onClose, onSaveChord, onAddChords, uiTheme
             <span style={{ fontSize: "1.05rem", fontWeight: 600 }}>Listen for chords</span>
             {status === "listening" && <LiveDot recording={recording} />}
           </div>
-          <button onClick={onClose} aria-label="Close" style={iconButton}>✕</button>
+          <button type="button" onClick={onClose} aria-label="Close" style={iconButton}>✕</button>
         </div>
 
         {status === "denied" && (
@@ -188,14 +188,14 @@ export function ListenOverlay({ open, onClose, onSaveChord, onAddChords, uiTheme
             {/* Actions */}
             {!recording ? (
               <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
-                <button
+                <button type="button"
                   onClick={() => currentSymbol && onSaveChord(currentSymbol)}
                   disabled={!currentSymbol}
                   style={{ ...primaryButton, opacity: currentSymbol ? 1 : 0.5, cursor: currentSymbol ? "pointer" : "default" }}
                 >
                   + Save to board
                 </button>
-                <button onClick={startRecording} style={secondaryButton}>
+                <button type="button" onClick={startRecording} style={secondaryButton}>
                   ● Record up to 60s
                 </button>
               </div>
@@ -205,7 +205,7 @@ export function ListenOverlay({ open, onClose, onSaveChord, onAddChords, uiTheme
                   <span style={{ fontSize: "0.85rem", fontWeight: 500 }}>
                     Recording… {(remaining / 1000).toFixed(0)}s left
                   </span>
-                  <button onClick={finishRecording} style={primaryButton}>
+                  <button type="button" onClick={finishRecording} style={primaryButton}>
                     Stop &amp; build board ({recorded.length})
                   </button>
                 </div>

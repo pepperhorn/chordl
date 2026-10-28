@@ -386,6 +386,10 @@ export function useChordBoard(opts?: {
   onChange?: (state: BoardState) => void;
 }) {
   const { initialItems, initialMeta, storage, onChange } = opts ?? {};
+  // Hosts often pass an inline callback that writes their message draft. A new
+  // callback identity is not a board change and must not notify/save in a loop.
+  const onChangeRef = useRef(onChange);
+  useEffect(() => { onChangeRef.current = onChange; }, [onChange]);
   const adapterRef = useRef<StorageAdapter>(storage ?? localStorageAdapter());
   useEffect(() => { adapterRef.current = storage ?? localStorageAdapter(); }, [storage]);
 
@@ -416,8 +420,8 @@ export function useChordBoard(opts?: {
     if (firstRunRef.current) { firstRunRef.current = false; return; }
     const state: BoardState = { items, meta };
     adapterRef.current.save(state);
-    onChange?.(state);
-  }, [items, meta, onChange]);
+    onChangeRef.current?.(state);
+  }, [items, meta]);
 
   const setMeta = useCallback((patch: Partial<BoardMeta> | ((prev: BoardMeta) => BoardMeta)) => {
     setMetaState((prev) => (typeof patch === "function" ? patch(prev) : { ...prev, ...patch }));
@@ -511,6 +515,9 @@ export function useChordBoard(opts?: {
     replaceState,
   };
 }
+
+/** Board state and actions supplied to BoardEditor; the host owns saving and catalogue imports. */
+export type ChordBoardController = ReturnType<typeof useChordBoard>;
 
 // ── Stateless renderer ────────────────────────────────────────────
 
@@ -1397,16 +1404,16 @@ export function ChordBoard({
           measure={measureToolbar}
           label={`Card actions: ${cardLabel(selectedItem)}`}
         >
-          <button className="chordl-board-action-edit" style={iconBtnStyle} onClick={() => onEdit?.(selectedItem)} title="Edit">edit</button>
+          <button type="button" className="chordl-board-action-edit" style={iconBtnStyle} onClick={() => onEdit?.(selectedItem)} title="Edit">edit</button>
           {/* One control, not two. "copy" put a card on a clipboard the user
               then had to paste, and "repeat" did the whole job in a click — so
               the clipboard round-trip was a longer road to the same card. */}
-          <button className="chordl-board-action-duplicate" style={iconBtnStyle} onClick={() => onDuplicate?.(selectedItem.id)} title="Duplicate">duplicate</button>
-          <button className="chordl-board-action-cut" style={iconBtnStyle} onClick={() => onCut?.(selectedItem.id)} title="Cut">cut</button>
+          <button type="button" className="chordl-board-action-duplicate" style={iconBtnStyle} onClick={() => onDuplicate?.(selectedItem.id)} title="Duplicate">duplicate</button>
+          <button type="button" className="chordl-board-action-cut" style={iconBtnStyle} onClick={() => onCut?.(selectedItem.id)} title="Cut">cut</button>
           {/* The only card state in this row with a value to read back, so it
               has to look different when on — a break is invisible otherwise,
               and an invisible toggle gets pressed twice. */}
-          <button
+          <button type="button"
             className={`chordl-board-action-break${selectedItem.breakAfter ? " chordl-board-action-break--on" : ""}`}
             style={selectedItem.breakAfter ? activeIconBtnStyle : iconBtnStyle}
             aria-pressed={selectedItem.breakAfter ? "true" : "false"}
@@ -1415,7 +1422,7 @@ export function ChordBoard({
           >
             break
           </button>
-          <button className="chordl-board-action-delete" style={iconBtnStyle} onClick={() => onDelete?.(selectedItem.id)} title="Delete">delete</button>
+          <button type="button" className="chordl-board-action-delete" style={iconBtnStyle} onClick={() => onDelete?.(selectedItem.id)} title="Delete">delete</button>
           {onResize && (
             <div
               className="chordl-board-sizes"
@@ -1470,8 +1477,8 @@ export function ChordBoard({
           gap: 10,
         }}>
           clipboard: <code className="chordl-board-clipboard-label">{cardLabel(clipboard)}</code>
-          <button className="chordl-board-clipboard-paste" style={iconBtnStyle} onClick={() => onPaste?.()}>paste</button>
-          <button className="chordl-board-clipboard-clear" style={iconBtnStyle} onClick={() => onClearClipboard?.()}>clear</button>
+          <button type="button" className="chordl-board-clipboard-paste" style={iconBtnStyle} onClick={() => onPaste?.()}>paste</button>
+          <button type="button" className="chordl-board-clipboard-clear" style={iconBtnStyle} onClick={() => onClearClipboard?.()}>clear</button>
         </div>
       )}
     </div>

@@ -655,6 +655,75 @@ Swap the default `localStorageAdapter` for any `StorageAdapter`
 (`{ load(): Items | Promise<Items>; save(items): void | Promise<void> }`)
 to back the board with a remote API or IndexedDB.
 
+### Embedded board editor and player
+
+`chordl-board@0.2.0` exports the same `BoardEditor` used by the playground,
+plus the display-only `BoardPlayer`. Import the editor stylesheet once. It is
+scoped to `.chordl-board-editor` and does not reset the host page or fetch fonts.
+The editor accepts the controller returned by `useChordBoard`; persistence,
+catalogue lookup and message submission stay with the host.
+
+```tsx
+import { useMemo, useRef, useState } from "react";
+import {
+  BoardEditor, BoardPlayer, memoryStorageAdapter, useChordBoard,
+} from "@pepperhorn/chordl-board";
+import type { BoardEditorHandle, BoardState } from "@pepperhorn/chordl-board";
+import "@pepperhorn/chordl-board/editor.css";
+
+export function MessageBoardEditor({ initialState, onChange }: {
+  initialState: BoardState;
+  onChange: (state: BoardState) => void;
+}) {
+  // Mount with key={messageId + blockId} when switching message drafts.
+  // A stable adapter seeded with this draft keeps unrelated messages separate.
+  const storage = useMemo(() => memoryStorageAdapter(initialState), []);
+  const board = useChordBoard({
+    initialItems: initialState.items, initialMeta: initialState.meta,
+    storage, onChange,
+  });
+  const editor = useRef<BoardEditorHandle>(null);
+  return <>
+    {/* A host catalogue picker calls setChord with the selected chord name.
+        This opens it in the form; Add to board captures the chosen voicing. */}
+    <button type="button" onClick={() => editor.current?.setChord("Dm7")}>Open Dm7</button>
+    <BoardEditor ref={editor} board={board} enableListening={false} />
+  </>;
+}
+
+export function MessageBoardPlayer({ state }: { state: BoardState }) {
+  const [playing, setPlaying] = useState(false);
+  return <>
+    <button type="button" onClick={() => setPlaying(!playing)}>{playing ? "Stop" : "Play"}</button>
+    <BoardPlayer items={state.items} meta={state.meta}
+      playing={playing} onPlayingChange={setPlaying} />
+  </>;
+}
+```
+
+`BoardEditor` starts with an empty chord box unless `initialChord` is supplied.
+Its `header` and `children` slots accommodate host controls, and `uiTheme`
+selects light or dark controls without changing the document theme. Keyboard
+shortcuts act only on events inside that editor. `enableListening={false}` hides
+the microphone and follow-along actions; the separate listening work in progress
+is not included in this release. Every host button rendered inside an HTML form
+should use `type="button"` (the library's editor controls do so too).
+
+Use `exportBoardJson` / `importBoardJson` for portable JSON with schema validation;
+`onChange` receives the in-memory `{ items, meta }` state. New cards capture exact
+playback notes. Older imported cards without them retain the player's documented
+fallback voicing limits; re-save those cards in the editor to capture their voicing.
+
+This release requires `chordl-guitar@0.3.0` and `chordl-react@0.5.0`, published
+before `chordl-board@0.2.0`. Consumers can install the board package alone; its
+published dependencies pin the matching package versions.
+
+Before publishing, run `pnpm build` followed by
+`node scripts/verify-board-package.mjs`. The latter packs guitar, React and board,
+installs them into a fresh temporary consumer with registry core/voicings/listen,
+and checks public TypeScript declarations, server rendering, CSS scope and a
+Vite production build. CI runs this check too.
+
 ## Development
 
 ```bash

@@ -1,3 +1,6 @@
+export { BoardEditor } from "./BoardEditor.js";
+export type { BoardEditorProps, BoardEditorHandle } from "./BoardEditor.js";
+export type { ChordBoardController } from "./ChordBoard.js";
 export { ChordBoard, useChordBoard, newId } from "./ChordBoard.js";
 export type { ChordBoardProps } from "./ChordBoard.js";
 // `BoardCardContent` is exported from ChordBoard.tsx for BoardPlayer to share,

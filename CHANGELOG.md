@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-10-28 — embedded board editor and player
+
+Publish in this order: `chordl-guitar@0.3.0`, `chordl-react@0.5.0`, then
+`chordl-board@0.2.0`. The guitar and React versions were prepared in the
+2026-10-23 release section below but had not reached npm as of this release's
+registry preflight. `chordl-cards` is not needed or published by this release.
+
+- **BoardEditor:** the playground's full chord form, voicing and annotation
+  controls, card editing, text/image cards, import/export and play mode are now
+  an exported component. The playground uses that same component. A host supplies
+  a `useChordBoard` controller and owns draft persistence; `BoardEditorHandle.setChord`
+  opens a catalogue selection in the form without overwriting an edited card.
+- **Embeds:** scoped `@pepperhorn/chordl-board/editor.css`, unique control IDs,
+  local keyboard shortcuts, optional microphone/follow-along controls and host
+  slots. `memoryStorageAdapter(initialState)` can seed an isolated message draft.
+  Inline `onChange` callbacks no longer trigger repeated saves on parent renders.
+- **Player:** publishes the existing `BoardPlayer`, exact stored playback notes,
+  native instrument patches, arrow/space/swipe navigation and note highlighting
+  that were absent from npm's board 0.1.0. No listening-worktree changes included.
+
 ## Unreleased
 
 ### Added

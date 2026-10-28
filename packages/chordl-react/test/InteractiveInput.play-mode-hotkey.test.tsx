@@ -57,7 +57,7 @@ describe("dev app — p enters play mode", () => {
     // listener is unbound and BoardPlayer listens on its own element, so a
     // repeated press on the document cannot toggle it back off.
     await waitFor(() => {
-      fireEvent.keyDown(document, { key: "p" });
+      fireEvent.keyDown(document.querySelector(".chordl-board-editor") ?? document, { key: "p" });
       expect(player()).toBeTruthy();
     }, { timeout: 5000 });
   }, 10_000);
@@ -80,9 +80,9 @@ describe("dev app — p enters play mode", () => {
     renderApp();
     await waitForBoard();
 
-    fireEvent.keyDown(document, { key: "p", ctrlKey: true });
-    fireEvent.keyDown(document, { key: "p", metaKey: true });
-    fireEvent.keyDown(document, { key: "p", altKey: true });
+    fireEvent.keyDown(document.querySelector(".chordl-board-editor") ?? document, { key: "p", ctrlKey: true });
+    fireEvent.keyDown(document.querySelector(".chordl-board-editor") ?? document, { key: "p", metaKey: true });
+    fireEvent.keyDown(document.querySelector(".chordl-board-editor") ?? document, { key: "p", altKey: true });
 
     await waitFor(() => expect(playButton()).toBeTruthy());
     expect(player()).toBeNull();
@@ -93,7 +93,7 @@ describe("dev app — p enters play mode", () => {
     await waitFor(() => expect(chordBox(document.body as HTMLElement)).toBeTruthy());
     expect(playButton()).toBeNull();
 
-    fireEvent.keyDown(document, { key: "p" });
+    fireEvent.keyDown(document.querySelector(".chordl-board-editor") ?? document, { key: "p" });
 
     expect(player()).toBeNull();
   });
@@ -114,7 +114,7 @@ describe("dev app — p enters play mode", () => {
     fireEvent.click(document.querySelector<HTMLButtonElement>(".listen-mic-btn")!);
     await waitFor(() => expect(document.querySelector("[role='dialog']")).toBeTruthy());
 
-    fireEvent.keyDown(document, { key: "p" });
+    fireEvent.keyDown(document.querySelector(".chordl-board-editor") ?? document, { key: "p" });
 
     expect(player()).toBeNull();
   });
@@ -134,7 +134,7 @@ describe("dev app — p enters play mode", () => {
     fireEvent.click(document.querySelector<HTMLButtonElement>(".btn-follow-along")!);
     await waitFor(() => expect(document.querySelector("[role='dialog']")).toBeTruthy());
 
-    fireEvent.keyDown(document, { key: "p" });
+    fireEvent.keyDown(document.querySelector(".chordl-board-editor") ?? document, { key: "p" });
 
     expect(player()).toBeNull();
   });
@@ -155,7 +155,7 @@ describe("dev app — p enters play mode", () => {
     // renders for a chord card, so its absence is the mode having changed.
     await waitFor(() => expect(document.querySelector(".btn-add-to-board")).toBeNull());
 
-    fireEvent.keyDown(document, { key: "p" });
+    fireEvent.keyDown(document.querySelector(".chordl-board-editor") ?? document, { key: "p" });
 
     expect(player()).toBeNull();
   });
@@ -180,7 +180,7 @@ describe("dev app — p enters play mode", () => {
     add.mockRestore();
     remove.mockRestore();
 
-    fireEvent.keyDown(document, { key: "p" });
+    fireEvent.keyDown(document.querySelector(".chordl-board-editor") ?? document, { key: "p" });
     expect(player()).toBeNull();
   });
 });
