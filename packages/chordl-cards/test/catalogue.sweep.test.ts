@@ -117,13 +117,36 @@ describe("catalogue sweep: six-string guitar", () => {
     return { tally, impossible };
   }
 
+  // Unavailable under the default root-preserving policy (level 2): these need
+  // the stricter ninth AND a root, which no playable grip holds. Not impossible
+  // at every level: the explicit rootless opt-in (level 3) voices each, omitting
+  // only the root. Consumers do not forward a teaching level yet.
+  const NINTH_NEEDS_LEVEL_3 = [
+    "C#maj9(#11,#5)", "Dbmaj9(#11,#5)", "F#maj9(#11,#5)", "Gbmaj9(#11,#5)", "Gmaj9(#11,#5)",
+    "A9(#11,#5)", "Amaj9(#11,#5)", "B9(#11,#5)", "Bmaj9(#11,#5)",
+  ];
+
+  it("the nine ninth-policy symbols: no default position, a rootless one only at level 3", () => {
+    for (const chord of NINTH_NEEDS_LEVEL_3) {
+      const s = spelledChord(chord, { strict: true });
+      expect(guitarPositionFor(s), chord).toBeNull();
+      const p = guitarPositionFor(s, { level: 3 });
+      expect(p, chord).not.toBeNull();
+      if (!p?.generated) throw new Error(`${chord}: expected a generated position`);
+      expect(p.rootless, chord).toBe(true);
+      expect(p.omitted, chord).toEqual(["1"]);
+    }
+    const { impossible } = survey(ROOT_CHORDS.map((c) => c.chord));
+    for (const chord of NINTH_NEEDS_LEVEL_3) expect(impossible).toContain(chord);
+  });
+
   it("catalogue chords: a position, or a documented impossibility", () => {
     const { tally, impossible } = survey(ROOT_CHORDS.map((c) => c.chord));
     expect(tally).toMatchInlineSnapshot(`
       {
         "db": 539,
-        "generated": 700,
-        "impossible": 36,
+        "generated": 691,
+        "impossible": 45,
         "power": 15,
       }
     `);
@@ -134,15 +157,20 @@ describe("catalogue sweep: six-string guitar", () => {
         "C13(b9,#5)",
         "C13(#11,b9)",
         "C#13(b9,#5)",
+        "C#maj9(#11,#5)",
         "Db13(b9,#5)",
+        "Dbmaj9(#11,#5)",
         "D7(#11,b9,#5)",
         "Dmaj9(#11,#5)",
         "F13(b9,#5)",
         "F13(#9,#5)",
         "F13(#11,#5)",
+        "F#maj9(#11,#5)",
         "F#maj13(#11,#5)",
+        "Gbmaj9(#11,#5)",
         "Gbmaj13(#11,#5)",
         "G13(b9,#5)",
+        "Gmaj9(#11,#5)",
         "G#13(b9,b5)",
         "G#13(#9,b5)",
         "G#13(#9,#5)",
@@ -153,6 +181,7 @@ describe("catalogue sweep: six-string guitar", () => {
         "Ab13(#9,#5)",
         "Ab13(#11,b9)",
         "Ab13(#11,#9)",
+        "A9(#11,#5)",
         "A7(#11,b9,#5)",
         "A7(#11,#9,#5)",
         "A13(b9,b5)",
@@ -161,10 +190,13 @@ describe("catalogue sweep: six-string guitar", () => {
         "A13(#11,#5)",
         "A13(#11,b9)",
         "A13(#11,#9)",
+        "Amaj9(#11,#5)",
         "Amaj13(#11,#5)",
+        "B9(#11,#5)",
         "B7(#11,b9,#5)",
         "B13(b9,b5)",
         "B13(#11,b9)",
+        "Bmaj9(#11,#5)",
       ]
     `);
   }, 120_000);
