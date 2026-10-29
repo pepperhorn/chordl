@@ -105,8 +105,10 @@ export function chordsDbSuffixFor(chord: SpelledChord): string | null {
  * chords-db has no entry for the chord or none of its positions spells it.
  */
 export function guitarLibraryPositionsFor(chord: SpelledChord, options: ToneOptions = {}): LibraryPosition[] {
-  const bass = isSlash(chord) ? chord.bass : undefined;
-  const analysis = analyzeChordTones(chord.root, chord.pitchClasses, bass, options);
+  // The written bass (even one equal to the root) stays in the analysis: it is
+  // what stops rootless level 3 from dropping the root. Only suffix lookup and
+  // the power-chord template treat a root bass as root position.
+  const analysis = analyzeChordTones(chord.root, chord.pitchClasses, chord.bass, options);
   const suffix = chordsDbSuffixFor(chord);
   if (!suffix) return [];
   const entry = GUITAR_DB.chords[DB_KEY_BY_PC[pcOf(chord.root)]].find((e) => e.suffix === suffix)!;
@@ -123,18 +125,17 @@ export function guitarLibraryPositionsFor(chord: SpelledChord, options: ToneOpti
  * under the generator's constraints.
  */
 export function guitarPositionFor(chord: SpelledChord, options: ToneOptions = {}): GuitarPosition | null {
-  const bass = isSlash(chord) ? chord.bass : undefined;
   const library = guitarLibraryPositionsFor(chord, options)[0];
   if (library) return library;
-  const analysis = analyzeChordTones(chord.root, chord.pitchClasses, bass, options);
-  if (!bass && sameSet(relativeSet(chord), [0, 7])) {
+  const analysis = analyzeChordTones(chord.root, chord.pitchClasses, chord.bass, options);
+  if (!isSlash(chord) && sameSet(relativeSet(chord), [0, 7])) {
     const pos = powerChordPosition(pcOf(chord.root), { stringSet: "E" });
     if (pos) return {
       ...pos, generated: false, source: "power-chord",
       review: reviewGuitarPosition(pos, analysis, { level: options.level, origin: "template:power-chord" }),
     };
   }
-  const p = generateGuitarVoicings(chord.pitchClasses, { ...options, root: chord.root, bass, limit: 1 })[0];
+  const p = generateGuitarVoicings(chord.pitchClasses, { ...options, root: chord.root, bass: chord.bass, limit: 1 })[0];
   if (!p) return null;
   if (chordsDbSuffixFor(chord)) {
     p.review = reviewGuitarPosition(p, analysis, {

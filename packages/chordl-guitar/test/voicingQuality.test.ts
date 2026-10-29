@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { analyzeChordTones, generateGuitarVoicings, positionSpellsChord } from "../src/voicingGenerator.js";
-import { guitarPositionFor } from "../src/guitarPosition.js";
+import { guitarLibraryPositionsFor, guitarPositionFor } from "../src/guitarPosition.js";
 import { reviewGuitarPosition } from "../src/voicingReview.js";
 import { SHEET_ROOTS, spell } from "./fixtures/sheetCatalogue.js";
 import missing38 from "./fixtures/missing38.json";
@@ -134,4 +134,50 @@ it("distinguishes a non-chord slash bass from a chord seventh in review policy",
   const halfDim = guitarPositionFor({root:"D",pitchClasses:["D","F","Ab","C"],bass:"C"})!;
   const policy = (key:string) => key.split(":").slice(0,-3).join(":");
   expect(policy(dim.review.reviewKey)).not.toBe(policy(halfDim.review.reviewKey));
+});
+describe("a written bass equal to the root is never dropped by the public selectors", () => {
+  const notes = ["C","E","G#","B","D","F#"];
+  for (const bass of ["C","B#"]) {
+    it(`bass ${bass}: root sounds lowest at level 3, via guitarPositionFor and guitarLibraryPositionsFor`, () => {
+      const chord = {root:"C",pitchClasses:notes,bass};
+      const p = guitarPositionFor(chord,{level:3});
+      expect(p).not.toBeNull();
+      const m = midi(p!);
+      expect(Math.min(...m) % 12).toBe(0);
+      expect(m.some(x => x % 12 === 0)).toBe(true);
+      if (p!.generated) {
+        expect(p!.rootless).toBeFalsy();
+        expect(p!.omitted).not.toContain("1");
+      }
+      expect(p!.review.reasons).not.toContain("rootless");
+      for (const lib of guitarLibraryPositionsFor(chord,{level:3}))
+        expect(midi(lib).some(x => x % 12 === 0)).toBe(true);
+    });
+  }
+  it("the unwritten-bass chord is still allowed to go rootless at level 3", () => {
+    const p = guitarPositionFor({root:"C",pitchClasses:notes},{level:3});
+    expect(p).not.toBeNull();
+    expect(p!.generated && p!.rootless).toBe(true);
+  });
+});
+describe("reviewGuitarPosition level", () => {
+  const chord = {root:"C",pitchClasses:["C","E","G#","B","D","F#"]};
+  it("defaults to the supplied analysis level, preserving the generated review key", () => {
+    const p = guitarPositionFor(chord,{level:3});
+    if (!p?.generated) throw Error("expected a generated position");
+    const analysis = analyzeChordTones(chord.root,chord.pitchClasses,undefined,{level:3});
+    const again = reviewGuitarPosition(p,analysis);
+    expect(p.review.level).toBe(3);
+    expect(again.level).toBe(3);
+    expect(again.reviewKey).toBe(p.review.reviewKey);
+    expect(again.reviewKey.startsWith("guitar:v1:3:")).toBe(true);
+  });
+  it("an explicit level still overrides the analysis", () => {
+    const p = guitarPositionFor(chord,{level:3});
+    if (!p?.generated) throw Error("expected a generated position");
+    const analysis = analyzeChordTones(chord.root,chord.pitchClasses,undefined,{level:3});
+    const r = reviewGuitarPosition(p,analysis,{level:1});
+    expect(r.level).toBe(1);
+    expect(r.reviewKey.startsWith("guitar:v1:1:")).toBe(true);
+  });
 });

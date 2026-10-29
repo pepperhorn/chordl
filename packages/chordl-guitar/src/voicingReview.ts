@@ -66,7 +66,8 @@ export function voicingSignals(abs: number[], fingers: number[], analysis: Chord
   return { lo, hi, midi, counts, first: abs.findIndex(f => f >= 0), lowIntervals, lowThirds, minorNinths, lowMinorNinths, unisons, fingerSpacing, barreStrings, doubledTensions };
 }
 export function reviewGuitarPosition(pos: ChordsDbPosition, analysis: ChordToneAnalysis, options: ReviewOptions = {}): GuitarReview {
-  const level = options.level ?? 2;
+  // Re-reviewing keeps the analysis's level, so one grip has one review identity.
+  const level = options.level ?? analysis.level;
   const origin = options.origin ?? "search";
   const abs = pos.frets.map(f => f <= 0 ? f : f + pos.baseFret - 1);
   const s = voicingSignals(abs, pos.fingers, analysis);
