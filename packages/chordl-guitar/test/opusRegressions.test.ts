@@ -3,6 +3,7 @@ import { analyzeChordTones, fingeringFor, generateGuitarVoicings, positionSpells
 import { guitarPositionFor } from "../src/guitarPosition.js";
 import { spell } from "./fixtures/sheetCatalogue.js";
 import regressions from "./fixtures/opus-regressions.json";
+import { dbPositionToChord } from "../src/instruments.js";
 
 const tuning = [40, 45, 50, 55, 59, 64];
 const absolute = (p: {frets: number[]; baseFret: number}) => p.frets.map(f => f <= 0 ? f : f + p.baseFret - 1);
@@ -56,6 +57,12 @@ describe("Opus musical regressions", () => {
     expect(p).not.toBeNull();
     expect(p?.generated && p.rootless).toBe(false);
     expect(generateGuitarVoicings(c.pitchClasses, {...c, limit: 100000}).some(p => absolute(p).join() === frets.join())).toBe(true);
+  });
+
+  it("draws only the two mini-barre contacts, retaining a separate finger at the same fret", () => {
+    const chord = dbPositionToChord({frets: [-1, 2, 2, 1, 3, 2], baseFret: 5, fingers: [0, 2, 2, 1, 4, 3], barres: [2]}, 6);
+    expect(chord.barres).toEqual([{fromString: 5, toString: 4, fret: 2, text: "2"}]);
+    expect(chord.fingers).toContainEqual([1, 2, "3"]);
   });
 
   it("4: keeps the fifth in 6/m6 and the minor third in m11(b5)", () => {
