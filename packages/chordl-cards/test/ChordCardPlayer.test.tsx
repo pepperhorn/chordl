@@ -228,7 +228,7 @@ describe("ChordCardPlayer — guitar (six strings)", () => {
   });
 
   it("explains a chord with no position instead of drawing one", () => {
-    render(<ChordCardPlayer chord="C13(b9,b5)" face="guitar" theme={THEME} />);
+    render(<ChordCardPlayer chord="C13(b9,#5)" face="guitar" theme={THEME} />);
     expect(screen.getByRole("alert").textContent).toMatch(/no six-string guitar position/);
   });
 });

@@ -44,7 +44,7 @@ describe("guitar face (six strings)", () => {
   });
 
   it("throws, naming the chord, where no position exists", () => {
-    expect(() => guitar("C13(b9,b5)")).toThrow(/no six-string guitar position for "C13\(b9,b5\)"/);
+    expect(() => guitar("C13(b9,#5)")).toThrow(/no six-string guitar position for "C13\(b9,#5\)"/);
     expect(() => guitar("Cfoo")).toThrow(/unsupported/);
   });
 });
