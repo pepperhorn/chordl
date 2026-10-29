@@ -47,7 +47,7 @@ Underneath that sits a bigger need: one flat, open JSON format that spells a voi
    - **Start fresh:** the builder opens empty, chord and instrument preset from where they came from. The draft still records which voicing it's an alternative to (`alternativeTo: id@rev`).
    - If the overlay is opened without a source chord, skip the question and start fresh with a chord picker.
 3. The draft's author is the signed-in user, or `system` when signed out (the anonymous case — see visibility below).
-4. The user builds the voicing (by hand or plain text), sees the code checks live, optionally adds a short note on why it's better, and submits.
+4. The user builds the voicing (by hand or plain text), sees the code checks live, optionally adds a short note on why it's better, agrees to publish under CC0, chooses credit by display name or anonymous, and submits.
 5. On submit the voicing is stored as a user submission and queued for AI review.
 
 ### Visibility on submit
@@ -95,6 +95,9 @@ One instrument per voicing, many voicings per file. A guitar Cmaj7 and a piano C
         "baseFret": 1, "barres": [], "capo": null
       },
       "level": "beginner",
+      "tier": "community",
+      "licence": "CC0-1.0",
+      "externalIds": { "crf": "…chord_data uuid…" },
       "provenance": {
         "source": "user", "authorId": "ph:user:123", "createdAt": "2026-10-29T10:00:00Z",
         "basedOn": "v_01JBX4…@3", "alternativeTo": null, "note": "easier for small hands"
@@ -142,7 +145,7 @@ Rules:
 | Format: JSON Schema, types, validators, hashes, code checks, scorecard and review-record types | new package `@pepperhorn/chordl-voicing` in this monorepo |
 | Editor overlay: onboarding question, fretted and keyboard builders, plain-text box, live checks, submit | new package `@pepperhorn/chordl-voicing-editor` in this monorepo |
 | Submission adapter: ph-apps implementation; AI review runner; text-to-voicing endpoint | ph-apps (server side) |
-| Published catalogue data | `chord-catalogue` repo — next design |
+| Published catalogue data | `chord-catalogue` repo — see `2026-10-30-chord-catalogue-publishing-design.md` |
 
 Both new packages are open source and must be usable with a local/memory adapter and no server.
 
@@ -203,7 +206,7 @@ Stored per submission revision, append-only:
 
 The review prompt lives in the repo, versioned, so scoring is transparent. Staff overrides are the improvement loop's main signal; nothing in this project acts on them.
 
-*(My call:)* staff review in the stock Directus admin on the submission and review-record collections, with the decision and per-item overrides captured as a structured field (a JSON object keyed by scorecard item) via a simple Directus interface. No custom staff app, and no submitter notification, in this release.
+**Superseded 2026-10-30:** the final human review now happens in the `chord-catalogue` pull request, with decisions written back to the intake record. Intake staff only clear hard-failed or flagged submissions for promotion. See `2026-10-30-chord-catalogue-publishing-design.md`.
 
 ## Constraints
 
