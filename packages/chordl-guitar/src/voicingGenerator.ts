@@ -23,7 +23,7 @@
  *
  * | id                     | when                                       | effect                          |
  * |------------------------|--------------------------------------------|---------------------------------|
- * | root                   | always (no catalogue type is rootless)     | 1 required                      |
+ * | root                   | always (level 3 dense/comping chords may omit root)     | 1 required                      |
  * | third                  | a 3rd is spelled                           | 3 / b3 required                 |
  * | sus                    | no 3rd; a 2nd or 4th is spelled            | 2 / 4 required (replaces the 3rd) |
  * | seventh                | a 7th is spelled (7, b7, bb7)              | required                        |
@@ -31,14 +31,15 @@
  * | add-tension            | 9 / 11 with no 7th (add9, m(add9), 6/9)    | required                        |
  * | altered                | b9 #9 #11 b5 #5 b13                        | required, always                |
  * | omit-unaltered-5th     | perfect 5th in a chord of 4+ tones         | 5 optional                      |
- * | ninth-under-11-or-13   | natural 9 with a 7th and an 11, #11 or 13  | 9 optional                      |
+ * | ninth-under-11-or-13   | natural 9 with a 7th and a natural 11 or 13  | 9 optional                      |
  * | eleventh-under-13      | natural 11 with a 7th and a 13             | 11 optional; excluded against a major 3rd |
  * | thirteenth             | 13 / b13 with a 7th                        | required                        |
  * | dominant-11-drops-3    | major 3rd + b7 + natural 11                | 3 excluded (b9 clash with 11)   |
  * | minor-11-prefers-b3    | minor 3rd + b7 + natural 11                | b3 preferred, not required      |
  * | slash-bass             | a bass is given                            | bass required and lowest; a bass outside the chord is not doubled |
  *
- * 13ths therefore always keep 1 3 b7 13; 11ths keep 1 b7 11.
+ * 13ths keep 3 b7 13; only explicit level-3 policy may omit the root.
+ * 11ths keep 1 b7 11.
  *
  * ── What a hand can play ──────────────────────────────────────────────────
  *
@@ -50,12 +51,14 @@
  *     lowest fretted fret is above 5
  *   - at least 3 sounding strings
  *   - the lowest sounding string carries the bass (root, or the slash bass),
- *     and it is the lowest pitch
+ *     and it is the lowest pitch (rootless level 3 permits a guide-tone bass)
  *   - interior mutes: only one, directly above a bass on string 6 or 5 (the
  *     jazz "root, skip, shell" pattern, e.g. 8x89(10)x); anything else is a
  *     pick-hand problem
  *   - open strings only when they are chord tones (every sounding note must be)
  */
+import { reviewGuitarPosition, voicingSignals } from "./voicingReview.js";
+import type { GuitarReview, TeachingLevel } from "./voicingReview.js";
 import type { ChordsDbPosition } from "./instruments.js";
 import { INSTRUMENTS } from "./instruments.js";
 
@@ -71,10 +74,13 @@ export interface ChordTone {
 
 export interface ChordToneAnalysis {
   tones: ChordTone[];
-  /** Pitch class that must be lowest. */
+  /** Written root/slash bass; rootless policy may permit guide-tone basses. */
   bassPc: number;
   /** VOICING_RULES ids that applied. */
   rules: string[];
+  /** Permitted lowest pitch classes; rootless shapes are further checked at evaluation. */
+  bassPcs: number[];
+  level: TeachingLevel;
 }
 
 export interface VoicingRule {
@@ -84,7 +90,8 @@ export interface VoicingRule {
 
 /** The rule table above, as data — `rule` on every GeneratedPosition cites these ids. */
 export const VOICING_RULES: VoicingRule[] = [
-  { id: "root", description: "1 required (no catalogue type is rootless)" },
+  { id: "root", description: "1 required except explicit level-3 rootless policy" },
+  { id: "rootless-level-3", description: "level 3: dense/comping chords may omit root; guide tone or written slash bass lowest" },
   { id: "third", description: "3 / b3 required" },
   { id: "sus", description: "no 3rd: the 2 or 4 replaces it and is required" },
   { id: "seventh", description: "7, b7 or bb7 required" },
@@ -92,7 +99,7 @@ export const VOICING_RULES: VoicingRule[] = [
   { id: "add-tension", description: "9 or 11 with no 7th (add chords) is required" },
   { id: "altered", description: "b9, #9, #11, b5, #5, b13 are always required" },
   { id: "omit-unaltered-5th", description: "perfect 5th optional in chords of 4+ tones" },
-  { id: "ninth-under-11-or-13", description: "natural 9 optional when an 11, #11 or 13 sits above a 7th" },
+  { id: "ninth-under-11-or-13", description: "natural 9 optional only under natural 11 or 13 above a 7th" },
   { id: "eleventh-under-13", description: "natural 11 optional in a 13th chord; excluded against a major 3rd" },
   { id: "thirteenth", description: "13 / b13 with a 7th is required" },
   { id: "dominant-11-drops-3", description: "major 3rd excluded against b7 + natural 11" },
@@ -108,9 +115,18 @@ export interface GeneratedPosition extends ChordsDbPosition {
   omitted: string[];
   /** Lower is better; results are sorted ascending. */
   score: number;
+  rootless: boolean;
+  review: GuitarReview;
 }
 
-export interface GenerateOptions {
+export interface ToneOptions {
+  /** Default 2. Only level 3 permits root omissions. */
+  level?: TeachingLevel;
+  /** Explicit comping context: permit root omission in 5+-tone chords at level 3. */
+  comping?: boolean;
+}
+
+export interface GenerateOptions extends ToneOptions {
   /** Chord root; defaults to pitchClasses[0]. */
   root?: string;
   /** Slash bass; defaults to the root. */
@@ -164,7 +180,7 @@ function rawDegree(root: { letter: number; pc: number }, note: { letter: number;
  * @param notes - chord tones, spelled (the root may or may not be included)
  * @param bass - slash bass, spelled; omit for root position
  */
-export function analyzeChordTones(root: string, notes: string[], bass?: string): ChordToneAnalysis {
+export function analyzeChordTones(root: string, notes: string[], bass?: string, options: ToneOptions = {}): ChordToneAnalysis {
   const r = parseNote(root);
   const seen = new Set<number>();
   const raw: Array<{ note: string; pc: number; step: number; alter: number }> = [];
@@ -184,7 +200,6 @@ export function analyzeChordTones(root: string, notes: string[], bass?: string):
   const hasSeventh = has(6, -1) || has(6, 0); // b7 / maj7 — dim7's bb7 acts as a 6
   const hasDim7 = has(6, -2);
   const natural11 = has(3, 0) && hasThird;
-  const any11 = has(3) && hasThird;
   const has13 = hasSeventh && has(5);
   const rules = new Set<string>(["root"]);
 
@@ -209,7 +224,7 @@ export function analyzeChordTones(root: string, notes: string[], bass?: string):
         if (t.alter !== 0) return tone(`${acc}9`, "required", "altered");
         if (!hasThird && !has(3)) return tone("2", "required", "sus");
         if (!hasSeventh) return tone("9", "required", "add-tension");
-        if (has13 || any11) return tone("9", "optional", "ninth-under-11-or-13");
+        if (has13 || natural11) return tone("9", "optional", "ninth-under-11-or-13");
         return tone("9", "required", "seventh");
       }
       case 3: {
@@ -250,7 +265,22 @@ export function analyzeChordTones(root: string, notes: string[], bass?: string):
     else tones.push({ note: bass, pc: b.pc, degree: `bass ${bass}`, role: "required" });
   }
 
-  return { tones, bassPc, rules: VOICING_RULES.map((v) => v.id).filter((id) => rules.has(id)) };
+  const level = options.level ?? 2;
+  const rootTone = tones.find(t => t.degree === "1")!;
+  const guides = tones.filter(t => /^(b?3|b?b?7)$/.test(t.degree) && t.role !== "excluded");
+  const slash = bass !== undefined && bassPc !== r.pc;
+  // A written slash bass must still sound. Its promotion can make a ninth
+  // impossible even with only five required tones (Ab9/Eb in the review).
+  const slashNinth = slash && raw.length >= 5;
+  const dense = tones.filter(t => t.role === "required").length >= 6;
+  if (level === 3 && guides.length >= 2 &&
+      (dense || (tones.length >= 5 && (options.comping || slashNinth))) && (!bass || slash)) {
+    rootTone.role = "optional";
+    rules.add("rootless-level-3");
+    for (const guide of guides) guide.role = "required";
+  }
+  const bassPcs = rootTone.role === "optional" && !slash ? [bassPc, ...guides.map(t => t.pc)] : [bassPc];
+  return { tones, bassPc, bassPcs, level, rules: VOICING_RULES.map((v) => v.id).filter((id) => rules.has(id)) };
 }
 
 // ── fingering ───────────────────────────────────────────────────────────────
@@ -380,21 +410,33 @@ function score(abs: number[], fingering: Fingering, analysis: ChordToneAnalysis,
   const shellBonus =
     analysis.tones.length >= 5 && hasSeventh && midi.length <= 5 && counts.size === midi.length ? 3 : 0;
   // Low-interval limit: a second directly above the bass is mud.
-  const lowSecond = sorted.length >= 2 && sorted[1] - sorted[0] <= 2 ? 4 : 0;
+  const signals = voicingSignals(abs, fingering.fingers, analysis);
+  // Low thirds cost less: open G7 is idiomatic. Semitones/minor ninths
+  // below their register limits need much stronger separation.
+  const lowSecond = 12 * signals.lowIntervals + 3 * signals.lowThirds + 18 * signals.lowMinorNinths;
+  const bassRegister = Math.max(0, firstPlayed - 1) * (analysis.rules.includes("slash-bass") ? 12 : 6);
+  const minorNinth = 4 * signals.minorNinths;
+  const spacing = 6 * signals.fingerSpacing;
   // Open strings ringing under a hand that has moved up the neck.
-  const openAway = opens * Math.max(0, lo - 2) * 0.8;
+  const openAway = opens * Math.max(0, lo - 3) * 3 + (opens && lo >= 5 ? 30 : 0);
 
   return (
     2 * fingering.count +
     1.5 * (hi - lo) +
-    0.4 * Math.max(0, lo - 1) +
-    (fingering.barre !== null ? 3 : 0) +
+    0.9 * Math.max(0, lo - 1) +
+    1.5 * Math.max(0, hi - 9) ** 2 +
+    40 * Math.max(0, lo - 9) +
+    (fingering.barre !== null ? 2 + 0.75 * signals.barreStrings : 0) +
     omittedCost +
     doubling +
     2.5 * interiorMutes +
-    2.5 * (STRINGS - played.length) +
+    (analysis.tones.length >= 5 ? Math.max(0, 4 - played.length) : 2.5 * (STRINGS - played.length)) +
     openAway +
-    lowSecond -
+    lowSecond +
+    bassRegister +
+    minorNinth +
+    spacing +
+    2 * signals.unisons -
     guideBonus -
     shellBonus
   );
@@ -413,7 +455,7 @@ export function generateGuitarVoicings(
   const root = options.root ?? pitchClasses[0];
   const limit = options.limit ?? 8;
   const maxFret = options.maxFret ?? 15;
-  const analysis = analyzeChordTones(root, pitchClasses, options.bass);
+  const analysis = analyzeChordTones(root, pitchClasses, options.bass, options);
   const allowed = new Set(analysis.tones.filter((t) => t.role !== "excluded").map((t) => t.pc));
   const required = analysis.tones.filter((t) => t.role === "required").map((t) => t.pc);
   const bassIsChordTone = analysis.tones.some(
@@ -440,11 +482,15 @@ export function generateGuitarVoicings(
 
     const midi = played.map((i) => OPEN_MIDI[i] + abs[i]);
     const bassMidi = midi[0];
-    if (bassMidi % 12 !== analysis.bassPc) return null;
+    if (!analysis.bassPcs.includes(bassMidi % 12)) return null;
     for (let k = 1; k < midi.length; k++) if (midi[k] <= bassMidi) return null;
     if (!bassIsChordTone && midi.slice(1).some((m) => m % 12 === analysis.bassPc)) return null;
     const pcs = new Set(midi.map((m) => m % 12));
     for (const p of required) if (!pcs.has(p)) return null;
+    const rootTone = analysis.tones.find(t => t.degree === "1")!;
+    // A rooted grip retains the written root/slash bass. Only a genuinely
+    // rootless grip may start on a guide tone.
+    if (pcs.has(rootTone.pc) && bassMidi % 12 !== analysis.bassPc) return null;
 
     const fingering = fingeringFor(abs);
     if (!fingering) return null;
@@ -452,7 +498,7 @@ export function generateGuitarVoicings(
     const missing = analysis.tones.filter(
       (t) => (t.role === "optional" || t.role === "preferred") && !pcs.has(t.pc),
     );
-    const omittedCost = missing.reduce((s, t) => s + OMIT_COST[t.role], 0);
+    const omittedCost = missing.reduce((s, t) => s + (t.degree === "1" ? 3 : OMIT_COST[t.role]), 0);
     return {
       abs,
       fingering,
@@ -460,7 +506,6 @@ export function generateGuitarVoicings(
       score: score(abs, fingering, analysis, omittedCost),
     };
   };
-
   // Every window [w, w + reach]: fretted notes stay inside it, open strings may
   // join any window. Duplicates across windows are collapsed by `found`.
   for (let w = 1; w <= maxFret; w++) {
@@ -499,7 +544,7 @@ export function generateGuitarVoicings(
         if (phase === "after") continue;
         const m = OPEN_MIDI[s] + f;
         if (phase === "before") {
-          if (m % 12 !== analysis.bassPc) continue;
+          if (!analysis.bassPcs.includes(m % 12)) continue;
           walk(s + 1, "sounding", skipped, m);
         } else {
           if (m <= bassMidi) continue;
@@ -532,6 +577,11 @@ function toPosition(c: Candidate, analysis: ChordToneAnalysis): GeneratedPositio
     rule: analysis.rules.join("+"),
     omitted: c.omitted,
     score: Math.round(c.score * 100) / 100,
+    rootless: c.omitted.includes("1"),
+    review: reviewGuitarPosition({
+      frets: c.abs, baseFret: 1, fingers: c.fingering.fingers,
+      barres: c.fingering.barre === null ? [] : [c.fingering.barre],
+    }, analysis, { level: analysis.level }),
   };
 }
 
@@ -545,7 +595,10 @@ export function positionSpellsChord(pos: ChordsDbPosition, analysis: ChordToneAn
     .map((f, i) => (f < 0 ? -1 : f === 0 ? OPEN_MIDI[i] : OPEN_MIDI[i] + pos.baseFret + f - 1))
     .filter((m) => m >= 0);
   if (midi.length === 0) return false;
-  if (Math.min(...midi) % 12 !== analysis.bassPc) return false;
+  const lowestPc = Math.min(...midi) % 12;
+  if (!analysis.bassPcs.includes(lowestPc)) return false;
+  const rootPc = analysis.tones.find(t => t.degree === "1")!.pc;
+  if (midi.some(m => m % 12 === rootPc) && lowestPc !== analysis.bassPc) return false;
   const allowed = new Set(analysis.tones.filter((t) => t.role !== "excluded").map((t) => t.pc));
   const pcs = new Set(midi.map((m) => m % 12));
   for (const p of pcs) if (!allowed.has(p)) return false;

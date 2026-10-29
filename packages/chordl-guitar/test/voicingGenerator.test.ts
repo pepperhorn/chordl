@@ -63,8 +63,8 @@ describe("analyzeChordTones — the rule table", () => {
     });
   });
 
-  it("a #11 implies the 9 beneath it, like a 13 does", () => {
-    expect(roles("C", ["C", "E", "G", "B", "D", "F#"])).toMatchObject({ "9": "optional", "#11": "required" });
+  it("a #11 alone keeps the named 9 required", () => {
+    expect(roles("C", ["C", "E", "G", "B", "D", "F#"])).toMatchObject({ "9": "required", "#11": "required" });
   });
 
   it("altered tensions are never optional", () => {

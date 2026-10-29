@@ -75,6 +75,7 @@ export {
 export type {
   GeneratedPosition,
   GenerateOptions,
+  ToneOptions,
   ChordTone,
   ChordToneAnalysis,
   Fingering,
@@ -84,3 +85,6 @@ export type {
 
 export { guitarPositionFor, guitarLibraryPositionsFor, chordsDbSuffixFor } from "./guitarPosition.js";
 export type { GuitarPosition, LibraryPosition, SpelledChord } from "./guitarPosition.js";
+
+export { reviewGuitarPosition } from "./voicingReview.js";
+export type { GuitarReview, ReasonCode, TeachingLevel, ReviewOptions } from "./voicingReview.js";
