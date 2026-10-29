@@ -16,7 +16,9 @@ import {
   generateGuitarVoicings,
   positionSpellsChord,
 } from "./voicingGenerator.js";
-import type { GeneratedPosition } from "./voicingGenerator.js";
+import { reviewGuitarPosition } from "./voicingReview.js";
+import type { GuitarReview } from "./voicingReview.js";
+import type { ToneOptions, GeneratedPosition } from "./voicingGenerator.js";
 
 const GUITAR_DB = guitarDb as unknown as ChordsDb;
 
@@ -34,6 +36,7 @@ export interface LibraryPosition extends ChordsDbPosition {
   source: "chords-db" | "power-chord";
   /** chords-db suffix the shape came from. */
   suffix?: string;
+  review: GuitarReview;
 }
 
 export type GuitarPosition = LibraryPosition | GeneratedPosition;
@@ -101,31 +104,42 @@ export function chordsDbSuffixFor(chord: SpelledChord): string | null {
  * the neck. The first is the one `guitarPositionFor` prints. Empty when
  * chords-db has no entry for the chord or none of its positions spells it.
  */
-export function guitarLibraryPositionsFor(chord: SpelledChord): LibraryPosition[] {
+export function guitarLibraryPositionsFor(chord: SpelledChord, options: ToneOptions = {}): LibraryPosition[] {
   const bass = isSlash(chord) ? chord.bass : undefined;
-  const analysis = analyzeChordTones(chord.root, chord.pitchClasses, bass);
+  const analysis = analyzeChordTones(chord.root, chord.pitchClasses, bass, options);
   const suffix = chordsDbSuffixFor(chord);
   if (!suffix) return [];
   const entry = GUITAR_DB.chords[DB_KEY_BY_PC[pcOf(chord.root)]].find((e) => e.suffix === suffix)!;
   return entry.positions
     .filter((p) => positionSpellsChord(p, analysis))
-    .map((p) => ({ ...p, generated: false as const, source: "chords-db" as const, suffix }));
+    .map((p) => ({
+      ...p, generated: false as const, source: "chords-db" as const, suffix,
+      review: reviewGuitarPosition(p, analysis, { level: options.level, origin: "chords-db" }),
+    }));
 }
 
 /**
  * The best guitar position for a spelled chord, or null if none is playable
  * under the generator's constraints.
  */
-export function guitarPositionFor(chord: SpelledChord): GuitarPosition | null {
+export function guitarPositionFor(chord: SpelledChord, options: ToneOptions = {}): GuitarPosition | null {
   const bass = isSlash(chord) ? chord.bass : undefined;
-
-  const library = guitarLibraryPositionsFor(chord)[0];
+  const library = guitarLibraryPositionsFor(chord, options)[0];
   if (library) return library;
-
+  const analysis = analyzeChordTones(chord.root, chord.pitchClasses, bass, options);
   if (!bass && sameSet(relativeSet(chord), [0, 7])) {
     const pos = powerChordPosition(pcOf(chord.root), { stringSet: "E" });
-    if (pos) return { ...pos, generated: false, source: "power-chord" };
+    if (pos) return {
+      ...pos, generated: false, source: "power-chord",
+      review: reviewGuitarPosition(pos, analysis, { level: options.level, origin: "template:power-chord" }),
+    };
   }
-
-  return generateGuitarVoicings(chord.pitchClasses, { root: chord.root, bass, limit: 1 })[0] ?? null;
+  const p = generateGuitarVoicings(chord.pitchClasses, { ...options, root: chord.root, bass, limit: 1 })[0];
+  if (!p) return null;
+  if (chordsDbSuffixFor(chord)) {
+    p.review = reviewGuitarPosition(p, analysis, {
+      level: options.level, origin: "search", dbPositionRejected: true,
+    });
+  }
+  return p;
 }
