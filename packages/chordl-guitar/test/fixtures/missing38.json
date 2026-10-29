@@ -1,0 +1,471 @@
+[
+  {
+    "name": "C7(#11,b9,#5)",
+    "root": "C",
+    "pitchClasses": [
+      "C",
+      "E",
+      "G#",
+      "Bb",
+      "Db",
+      "F#"
+    ]
+  },
+  {
+    "name": "D7(#11,b9,#5)",
+    "root": "D",
+    "pitchClasses": [
+      "D",
+      "F#",
+      "A#",
+      "C",
+      "Eb",
+      "G#"
+    ]
+  },
+  {
+    "name": "A7(#11,b9,#5)",
+    "root": "A",
+    "pitchClasses": [
+      "A",
+      "C#",
+      "E#",
+      "G",
+      "Bb",
+      "D#"
+    ]
+  },
+  {
+    "name": "B7(#11,b9,#5)",
+    "root": "B",
+    "pitchClasses": [
+      "B",
+      "D#",
+      "F##",
+      "A",
+      "C",
+      "E#"
+    ]
+  },
+  {
+    "name": "A7(#11,#9,#5)",
+    "root": "A",
+    "pitchClasses": [
+      "A",
+      "C#",
+      "E#",
+      "G",
+      "B#",
+      "D#"
+    ]
+  },
+  {
+    "name": "C13(b9,b5)",
+    "root": "C",
+    "pitchClasses": [
+      "C",
+      "E",
+      "Gb",
+      "Bb",
+      "Db",
+      "A"
+    ]
+  },
+  {
+    "name": "G#13(b9,b5)",
+    "root": "G#",
+    "pitchClasses": [
+      "G#",
+      "B#",
+      "D",
+      "F#",
+      "A",
+      "E#"
+    ]
+  },
+  {
+    "name": "Ab13(b9,b5)",
+    "root": "Ab",
+    "pitchClasses": [
+      "Ab",
+      "C",
+      "Ebb",
+      "Gb",
+      "Bbb",
+      "F"
+    ]
+  },
+  {
+    "name": "A13(b9,b5)",
+    "root": "A",
+    "pitchClasses": [
+      "A",
+      "C#",
+      "Eb",
+      "G",
+      "Bb",
+      "F#"
+    ]
+  },
+  {
+    "name": "B13(b9,b5)",
+    "root": "B",
+    "pitchClasses": [
+      "B",
+      "D#",
+      "F",
+      "A",
+      "C",
+      "G#"
+    ]
+  },
+  {
+    "name": "C13(b9,#5)",
+    "root": "C",
+    "pitchClasses": [
+      "C",
+      "E",
+      "G#",
+      "Bb",
+      "Db",
+      "A"
+    ]
+  },
+  {
+    "name": "C#13(b9,#5)",
+    "root": "C#",
+    "pitchClasses": [
+      "C#",
+      "E#",
+      "G##",
+      "B",
+      "D",
+      "A#"
+    ]
+  },
+  {
+    "name": "Db13(b9,#5)",
+    "root": "Db",
+    "pitchClasses": [
+      "Db",
+      "F",
+      "A",
+      "Cb",
+      "Ebb",
+      "Bb"
+    ]
+  },
+  {
+    "name": "F13(b9,#5)",
+    "root": "F",
+    "pitchClasses": [
+      "F",
+      "A",
+      "C#",
+      "Eb",
+      "Gb",
+      "D"
+    ]
+  },
+  {
+    "name": "G13(b9,#5)",
+    "root": "G",
+    "pitchClasses": [
+      "G",
+      "B",
+      "D#",
+      "F",
+      "Ab",
+      "E"
+    ]
+  },
+  {
+    "name": "G#13(#9,b5)",
+    "root": "G#",
+    "pitchClasses": [
+      "G#",
+      "B#",
+      "D",
+      "F#",
+      "A##",
+      "E#"
+    ]
+  },
+  {
+    "name": "Ab13(#9,b5)",
+    "root": "Ab",
+    "pitchClasses": [
+      "Ab",
+      "C",
+      "Ebb",
+      "Gb",
+      "B",
+      "F"
+    ]
+  },
+  {
+    "name": "A13(#9,b5)",
+    "root": "A",
+    "pitchClasses": [
+      "A",
+      "C#",
+      "Eb",
+      "G",
+      "B#",
+      "F#"
+    ]
+  },
+  {
+    "name": "F13(#9,#5)",
+    "root": "F",
+    "pitchClasses": [
+      "F",
+      "A",
+      "C#",
+      "Eb",
+      "G#",
+      "D"
+    ]
+  },
+  {
+    "name": "G#13(#9,#5)",
+    "root": "G#",
+    "pitchClasses": [
+      "G#",
+      "B#",
+      "D##",
+      "F#",
+      "A##",
+      "E#"
+    ]
+  },
+  {
+    "name": "Ab13(#9,#5)",
+    "root": "Ab",
+    "pitchClasses": [
+      "Ab",
+      "C",
+      "E",
+      "Gb",
+      "B",
+      "F"
+    ]
+  },
+  {
+    "name": "A13(#9,#5)",
+    "root": "A",
+    "pitchClasses": [
+      "A",
+      "C#",
+      "E#",
+      "G",
+      "B#",
+      "F#"
+    ]
+  },
+  {
+    "name": "F13(#11,#5)",
+    "root": "F",
+    "pitchClasses": [
+      "F",
+      "A",
+      "C#",
+      "Eb",
+      "G",
+      "B",
+      "D"
+    ]
+  },
+  {
+    "name": "A13(#11,#5)",
+    "root": "A",
+    "pitchClasses": [
+      "A",
+      "C#",
+      "E#",
+      "G",
+      "B",
+      "D#",
+      "F#"
+    ]
+  },
+  {
+    "name": "C13(#11,b9)",
+    "root": "C",
+    "pitchClasses": [
+      "C",
+      "E",
+      "G",
+      "Bb",
+      "Db",
+      "F#",
+      "A"
+    ]
+  },
+  {
+    "name": "G#13(#11,b9)",
+    "root": "G#",
+    "pitchClasses": [
+      "G#",
+      "B#",
+      "D#",
+      "F#",
+      "A",
+      "C##",
+      "E#"
+    ]
+  },
+  {
+    "name": "Ab13(#11,b9)",
+    "root": "Ab",
+    "pitchClasses": [
+      "Ab",
+      "C",
+      "Eb",
+      "Gb",
+      "Bbb",
+      "D",
+      "F"
+    ]
+  },
+  {
+    "name": "A13(#11,b9)",
+    "root": "A",
+    "pitchClasses": [
+      "A",
+      "C#",
+      "E",
+      "G",
+      "Bb",
+      "D#",
+      "F#"
+    ]
+  },
+  {
+    "name": "B13(#11,b9)",
+    "root": "B",
+    "pitchClasses": [
+      "B",
+      "D#",
+      "F#",
+      "A",
+      "C",
+      "E#",
+      "G#"
+    ]
+  },
+  {
+    "name": "G#13(#11,#9)",
+    "root": "G#",
+    "pitchClasses": [
+      "G#",
+      "B#",
+      "D#",
+      "F#",
+      "A##",
+      "C##",
+      "E#"
+    ]
+  },
+  {
+    "name": "Ab13(#11,#9)",
+    "root": "Ab",
+    "pitchClasses": [
+      "Ab",
+      "C",
+      "Eb",
+      "Gb",
+      "B",
+      "D",
+      "F"
+    ]
+  },
+  {
+    "name": "A13(#11,#9)",
+    "root": "A",
+    "pitchClasses": [
+      "A",
+      "C#",
+      "E",
+      "G",
+      "B#",
+      "D#",
+      "F#"
+    ]
+  },
+  {
+    "name": "Dmaj9(#11,#5)",
+    "root": "D",
+    "pitchClasses": [
+      "D",
+      "F#",
+      "A#",
+      "C#",
+      "E",
+      "G#"
+    ]
+  },
+  {
+    "name": "F#maj13(#11,#5)",
+    "root": "F#",
+    "pitchClasses": [
+      "F#",
+      "A#",
+      "C##",
+      "E#",
+      "G#",
+      "B#",
+      "D#"
+    ]
+  },
+  {
+    "name": "Gbmaj13(#11,#5)",
+    "root": "Gb",
+    "pitchClasses": [
+      "Gb",
+      "Bb",
+      "D",
+      "F",
+      "Ab",
+      "C",
+      "Eb"
+    ]
+  },
+  {
+    "name": "Amaj13(#11,#5)",
+    "root": "A",
+    "pitchClasses": [
+      "A",
+      "C#",
+      "E#",
+      "G#",
+      "B",
+      "D#",
+      "F#"
+    ]
+  },
+  {
+    "name": "Ab9/Eb",
+    "root": "Ab",
+    "pitchClasses": [
+      "Ab",
+      "C",
+      "Eb",
+      "Gb",
+      "Bb"
+    ],
+    "bass": "Eb"
+  },
+  {
+    "name": "G#9/B",
+    "root": "G#",
+    "pitchClasses": [
+      "G#",
+      "B#",
+      "D#",
+      "F#",
+      "A#"
+    ],
+    "bass": "B"
+  }
+]
