@@ -30,12 +30,12 @@
  * | sixth                  | 6 with no 7th (6, m6, 6/9)                 | 6 required                      |
  * | add-tension            | 9 / 11 with no 7th (add9, m(add9), 6/9)    | required                        |
  * | altered                | b9 #9 #11 b5 #5 b13                        | required, always                |
- * | omit-unaltered-5th     | perfect 5th in a chord of 4+ tones         | 5 optional                      |
+ * | omit-unaltered-5th     | perfect 5th in a chord of 4+ tones, except 6/m6 | 5 optional                      |
  * | ninth-under-11-or-13   | natural 9 with a 7th and a natural 11 or 13  | 9 optional                      |
  * | eleventh-under-13      | natural 11 with a 7th and a 13             | 11 optional; excluded against a major 3rd |
  * | thirteenth             | 13 / b13 with a 7th                        | required                        |
  * | dominant-11-drops-3    | major 3rd + b7 + natural 11                | 3 excluded (b9 clash with 11)   |
- * | minor-11-prefers-b3    | minor 3rd + b7 + natural 11                | b3 preferred, not required      |
+ * | minor-11-prefers-b3    | plain m11 (not m11(b5))                    | b3 preferred, not required      |
  * | slash-bass             | a bass is given                            | bass required and lowest; a bass outside the chord is not doubled |
  *
  * 13ths keep 3 b7 13; only explicit level-3 policy may omit the root.
@@ -43,8 +43,9 @@
  *
  * ── What a hand can play ──────────────────────────────────────────────────
  *
- *   - at most 4 fretting fingers; a barre is one finger, only at the lowest
- *     fretted fret, across strings that are all fretted at or above it;
+ *   - at most 4 fretting fingers; a barre is one finger at the lowest
+ *     fretted fret, or a two-string middle/ring mini-barre above it;
+ *     every string inside a barre is fretted at or above it;
  *     fretted strings below a partial barre sit at most one fret above it
  *     (x32233 yes, 858555 no)
  *   - stretch: highest − lowest fretted fret ≤ 3 (a 4-fret box), ≤ 4 when the
@@ -91,19 +92,19 @@ export interface VoicingRule {
 /** The rule table above, as data — `rule` on every GeneratedPosition cites these ids. */
 export const VOICING_RULES: VoicingRule[] = [
   { id: "root", description: "1 required except explicit level-3 rootless policy" },
-  { id: "rootless-level-3", description: "level 3: dense/comping chords may omit root; guide tone or written slash bass lowest" },
+  { id: "rootless-level-3", description: "level 3: dense/comping chords without a written bass may omit root; guide tone lowest, at least A2 (major 7th at least C3)" },
   { id: "third", description: "3 / b3 required" },
   { id: "sus", description: "no 3rd: the 2 or 4 replaces it and is required" },
   { id: "seventh", description: "7, b7 or bb7 required" },
   { id: "sixth", description: "6 with no 7th is required" },
   { id: "add-tension", description: "9 or 11 with no 7th (add chords) is required" },
   { id: "altered", description: "b9, #9, #11, b5, #5, b13 are always required" },
-  { id: "omit-unaltered-5th", description: "perfect 5th optional in chords of 4+ tones" },
+  { id: "omit-unaltered-5th", description: "perfect 5th optional in chords of 4+ tones, except 6/m6 and 6/9" },
   { id: "ninth-under-11-or-13", description: "natural 9 optional only under natural 11 or 13 above a 7th" },
   { id: "eleventh-under-13", description: "natural 11 optional in a 13th chord; excluded against a major 3rd" },
   { id: "thirteenth", description: "13 / b13 with a 7th is required" },
   { id: "dominant-11-drops-3", description: "major 3rd excluded against b7 + natural 11" },
-  { id: "minor-11-prefers-b3", description: "b3 preferred (droppable at a cost) against b7 + natural 11" },
+  { id: "minor-11-prefers-b3", description: "b3 preferred in plain m11; always required with a diminished fifth" },
   { id: "slash-bass", description: "bass required and lowest; a non-chord bass is not doubled" },
 ];
 
@@ -216,7 +217,7 @@ export function analyzeChordTones(root: string, notes: string[], bass?: string, 
         const degree = `${acc}3`;
         if (majorThird && t.alter === 0 && has(6, -1) && natural11 && !has13)
           return tone(degree, "excluded", "dominant-11-drops-3");
-        if (minorThird && t.alter === -1 && hasSeventh && natural11 && !has13)
+        if (minorThird && t.alter === -1 && hasSeventh && natural11 && !has13 && !has(4, -1))
           return tone(degree, "preferred", "minor-11-prefers-b3");
         return tone(degree, "required", "third");
       }
@@ -237,6 +238,7 @@ export function analyzeChordTones(root: string, notes: string[], bass?: string, 
       }
       case 4: {
         if (t.alter !== 0) return tone(`${acc}5`, "required", "altered");
+        if (!hasSeventh && has(5, 0)) return tone("5", "required", "sixth");
         if (raw.length >= 4) return tone("5", "optional", "omit-unaltered-5th");
         return tone("5", "required");
       }
@@ -268,18 +270,14 @@ export function analyzeChordTones(root: string, notes: string[], bass?: string, 
   const level = options.level ?? 2;
   const rootTone = tones.find(t => t.degree === "1")!;
   const guides = tones.filter(t => /^(b?3|b?b?7)$/.test(t.degree) && t.role !== "excluded");
-  const slash = bass !== undefined && bassPc !== r.pc;
-  // A written slash bass must still sound. Its promotion can make a ninth
-  // impossible even with only five required tones (Ab9/Eb in the review).
-  const slashNinth = slash && raw.length >= 5;
   const dense = tones.filter(t => t.role === "required").length >= 6;
   if (level === 3 && guides.length >= 2 &&
-      (dense || (tones.length >= 5 && (options.comping || slashNinth))) && (!bass || slash)) {
+      (dense || (tones.length >= 5 && options.comping)) && bass === undefined) {
     rootTone.role = "optional";
     rules.add("rootless-level-3");
     for (const guide of guides) guide.role = "required";
   }
-  const bassPcs = rootTone.role === "optional" && !slash ? [bassPc, ...guides.map(t => t.pc)] : [bassPc];
+  const bassPcs = rootTone.role === "optional" ? [bassPc, ...guides.map(t => t.pc)] : [bassPc];
   return { tones, bassPc, bassPcs, level, rules: VOICING_RULES.map((v) => v.id).filter((id) => rules.has(id)) };
 }
 
@@ -298,7 +296,7 @@ export interface Fingering {
  * Fingers for absolute frets, or null if a hand cannot hold it. Individual
  * fingers when four suffice; otherwise one barre at the lowest fret.
  */
-function fingerFor(abs: number[]): Fingering | null {
+function lowestBarreFingering(abs: number[]): Fingering | null {
   const fretted = abs.map((f, i) => ({ f, i })).filter((x) => x.f > 0);
   if (fretted.length === 0) return { fingers: abs.map(() => 0), barre: null, count: 0 };
   const lo = Math.min(...fretted.map((x) => x.f));
@@ -341,10 +339,42 @@ function fingerFor(abs: number[]): Fingering | null {
   return { fingers, barre, count: groups.length };
 }
 
+/** Retain the usual index-barre assignment where possible. A two-string
+ * middle/ring-finger barre can also share a fret above the index finger,
+ * without flattening across intervening open or lower-fretted strings. */
+function fingerFor(abs: number[]): Fingering | null {
+  const usual = lowestBarreFingering(abs);
+  if (usual) return usual;
+  const fretted = abs.map((f, i) => ({f, i})).filter(x => x.f > 0);
+  const lo = Math.min(...fretted.map(x => x.f));
+  for (let from = 0; from < abs.length - 1; from++) {
+    const fret = abs[from];
+    if (fret <= lo || abs[from + 1] !== fret) continue;
+    const groups = [
+      {fret, strings: [from, from + 1]},
+      ...fretted.filter(x => x.i !== from && x.i !== from + 1).map(x => ({fret: x.f, strings: [x.i]})),
+    ].sort((a, b) => a.fret - b.fret || a.strings[0] - b.strings[0]);
+    if (groups.length > 4) continue;
+    const fingers = abs.map(() => 0);
+    let prev = 0;
+    for (let k = 0; k < groups.length; k++) {
+      const g = groups[k];
+      const desired = Math.min(4, 1 + g.fret - lo);
+      const finger = Math.max(prev + 1, Math.min(desired, 4 - (groups.length - 1 - k)));
+      for (const i of g.strings) fingers[i] = finger;
+      prev = finger;
+    }
+    // Non-index mini-barres need the remaining fingers free above them.
+    if (fingers[from] > 3) continue;
+    return {fingers, barre: fret, count: groups.length};
+  }
+  return null;
+}
+
 /**
  * Whether a hand can hold these frets, and with which fingers — the generator's
- * "What a hand can play" rules (stretch, at most four fingers, one barre at
- * the lowest fret) applied to any shape, so a shape moved up the neck can be
+ * "What a hand can play" rules (stretch, at most four fingers, one lowest-fret
+ * index barre or a two-string mini-barre above it) applied to any shape, so a shape moved up the neck can be
  * checked by the same rule that produced it. Null when it cannot be held.
  *
  * Instrument-neutral: strings are listed low to high, as `abs` indices.
@@ -365,7 +395,7 @@ export function fingeringFor(abs: number[]): Fingering | null {
 const OPEN_MIDI = INSTRUMENTS.guitar.openMidi;
 const STRINGS = 6;
 
-const OMIT_COST: Record<ToneRole, number> = { required: 0, preferred: 12, optional: 1, excluded: 0 };
+const OMIT_COST: Record<ToneRole, number> = { required: 0, preferred: 12, optional: 4, excluded: 0 };
 
 interface Candidate {
   abs: number[];
@@ -390,7 +420,9 @@ function score(abs: number[], fingering: Fingering, analysis: ChordToneAnalysis,
   for (const [p, n] of counts) {
     if (n < 2) continue;
     const degree = analysis.tones.find((t) => t.pc === p)?.degree ?? "";
-    const cost = p === analysis.bassPc || degree === "1" || degree === "5" ? 0 : /^b?3$/.test(degree) ? 0.5 : 2;
+    const repeatedSlashColour = analysis.rules.includes("slash-bass") && p === analysis.bassPc &&
+      !/^(1|b?3|b?b?7)$/.test(degree);
+    const cost = repeatedSlashColour ? 2.5 : p === analysis.bassPc || degree === "1" || degree === "5" ? 0 : /^b?3$/.test(degree) ? 0.5 : 2;
     doubling += (n - 1) * cost;
   }
 
@@ -413,10 +445,24 @@ function score(abs: number[], fingering: Fingering, analysis: ChordToneAnalysis,
   const signals = voicingSignals(abs, fingering.fingers, analysis);
   // Low thirds cost less: open G7 is idiomatic. Semitones/minor ninths
   // below their register limits need much stronger separation.
-  const lowSecond = 12 * signals.lowIntervals + 3 * signals.lowThirds + 18 * signals.lowMinorNinths;
+  const lowSecond = 12 * signals.lowIntervals + (!analysis.rules.includes("slash-bass") && analysis.tones.length >= 5 ? 100 : 3) * signals.lowThirds + 100 * signals.lowMinorNinths;
+  // Semitone clusters, doubled dominant thirds and adjacent minor ninths
+  // take precedence over position comfort, including for fretted notes.
+  let musicalRisk = 0;
+  const dominantThird = analysis.tones.find(t => t.degree === "3");
+  if (!analysis.rules.includes("slash-bass") && analysis.tones.length >= 5 && dominantThird && analysis.tones.some(t => t.degree === "b7"))
+    musicalRisk += 100 * Math.max(0, (counts.get(dominantThird.pc) ?? 0) - 1);
+  for (let i = 0; i < sorted.length - 1; i++) {
+    const gap = sorted[i + 1] - sorted[i];
+    if (gap === 1 && sorted[i] < 52) musicalRisk += 100;
+    if (gap >= 13 && gap % 12 === 1 && !analysis.rules.includes("slash-bass")) musicalRisk += 100;
+  }
+  const barreFinger = fingering.barre === null ? 0 : fingering.fingers.find((f, i) =>
+    f > 0 && abs[i] === fingering.barre && fingering.fingers.filter(v => v === f).length > 1) ?? 0;
+  const miniBarreCost = barreFinger > 1 ? 40 : 0;
   const bassRegister = Math.max(0, firstPlayed - 1) * (analysis.rules.includes("slash-bass") ? 12 : 6);
   const minorNinth = 4 * signals.minorNinths;
-  const spacing = 6 * signals.fingerSpacing;
+  const spacing = 20 * signals.fingerSpacing;
   // Open strings ringing under a hand that has moved up the neck.
   const openAway = opens * Math.max(0, lo - 3) * 3 + (opens && lo >= 5 ? 30 : 0);
 
@@ -425,21 +471,51 @@ function score(abs: number[], fingering: Fingering, analysis: ChordToneAnalysis,
     1.5 * (hi - lo) +
     0.9 * Math.max(0, lo - 1) +
     1.5 * Math.max(0, hi - 9) ** 2 +
-    40 * Math.max(0, lo - 9) +
+    4 * Math.max(0, lo - 9) +
     (fingering.barre !== null ? 2 + 0.75 * signals.barreStrings : 0) +
     omittedCost +
     doubling +
-    2.5 * interiorMutes +
-    (analysis.tones.length >= 5 ? Math.max(0, 4 - played.length) : 2.5 * (STRINGS - played.length)) +
+    4 * interiorMutes +
+    (hasSeventh ? Math.max(0, 4 - played.length) : 2.5 * (STRINGS - played.length)) +
     openAway +
     lowSecond +
+    musicalRisk +
+    miniBarreCost +
     bassRegister +
     minorNinth +
     spacing +
-    2 * signals.unisons -
+    2 * signals.unisons +
+    3 * midi.filter((m, i) => i > 0 && m < midi[i - 1]).length -
+    (lo <= 3 ? opens : 0) -
     guideBonus -
     shellBonus
   );
+}
+
+/** Register and doubling constraints apply equally to search and library grips. */
+function registerSafe(abs: number[], analysis: ChordToneAnalysis): boolean {
+  const voices = abs.flatMap((f, i) => f < 0 ? [] : [{midi: OPEN_MIDI[i] + f, open: f === 0}]);
+  if (!voices.length) return false;
+  const root = analysis.tones.find(t => t.degree === "1")!;
+  const bass = Math.min(...voices.map(v => v.midi));
+  if (!voices.some(v => v.midi % 12 === root.pc)) {
+    if (bass < 45) return false;
+    if (bass < 48 && analysis.tones.some(t => t.degree === "7" && t.pc === bass % 12)) return false;
+  }
+  const third = analysis.tones.find(t => t.degree === "3");
+  const dominant = third && analysis.tones.some(t => t.degree === "b7");
+  for (let i = 0; i < voices.length; i++) {
+    for (let j = i + 1; j < voices.length; j++) {
+      const a = voices[i], b = voices[j];
+      const interval = Math.abs(a.midi - b.midi);
+      if ((a.open || b.open) && Math.min(a.midi, b.midi) < 52 && (interval === 1 || interval === 13)) return false;
+      if ((a.open || b.open) && interval === 0 && dominant && a.midi % 12 === third.pc) return false;
+    }
+  }
+  for (const tone of analysis.tones.filter(t => /^(b|#)?13$/.test(t.degree))) {
+    if (voices.filter(v => v.midi % 12 === tone.pc).length > 1) return false;
+  }
+  return true;
 }
 
 /**
@@ -492,13 +568,14 @@ export function generateGuitarVoicings(
     // rootless grip may start on a guide tone.
     if (pcs.has(rootTone.pc) && bassMidi % 12 !== analysis.bassPc) return null;
 
+    if (!registerSafe(abs, analysis)) return null;
     const fingering = fingeringFor(abs);
     if (!fingering) return null;
 
     const missing = analysis.tones.filter(
       (t) => (t.role === "optional" || t.role === "preferred") && !pcs.has(t.pc),
     );
-    const omittedCost = missing.reduce((s, t) => s + (t.degree === "1" ? 3 : OMIT_COST[t.role]), 0);
+    const omittedCost = missing.reduce((s, t) => s + (t.degree === "1" ? 3 : t.degree === "5" ? 6 : OMIT_COST[t.role]), 0);
     return {
       abs,
       fingering,
@@ -588,9 +665,12 @@ function toPosition(c: Candidate, analysis: ChordToneAnalysis): GeneratedPositio
 /**
  * True when a position (any source) sounds the chord under the rule table:
  * every required tone, nothing outside the chord or excluded, and the bass
- * lowest. chords-db positions are checked with this before they are trusted.
+ * lowest, plus the same register/doubling safety limits as generated grips.
+ * chords-db positions are checked with this before they are trusted.
  */
 export function positionSpellsChord(pos: ChordsDbPosition, analysis: ChordToneAnalysis): boolean {
+  const abs = pos.frets.map(f => f <= 0 ? f : f + pos.baseFret - 1);
+  if (!registerSafe(abs, analysis)) return false;
   const midi = pos.frets
     .map((f, i) => (f < 0 ? -1 : f === 0 ? OPEN_MIDI[i] : OPEN_MIDI[i] + pos.baseFret + f - 1))
     .filter((m) => m >= 0);

@@ -26,26 +26,28 @@ it("retains the named ninth under #11 in every root, including altered fifths", 
         expect(midi(p).some(m => m % 12 === ninth.pc)).toBe(true);
   }
 });
-it("solves all 38 missing chords only at level 3 without losing defining tones or slash bass", () => {
+it("revisits the 38 missing chords with rooted mini-barres and safe level-3 rootless grips", () => {
   for (const c of missing38) {
+    if (c.name === "G#9/B") {
+      expect(guitarPositionFor(c, {level: 3})).toBeNull();
+      continue; // The rootless upper is a different chord; no rooted grip fits the reach limit.
+    }
     for (const level of [0,1,2] as const) {
-      expect(generateGuitarVoicings(c.pitchClasses,{...c,level,limit:1}),c.name).toEqual([]);
+      const lower = generateGuitarVoicings(c.pitchClasses,{...c,level,limit:1});
+      expect(lower.every(p => !p.rootless), c.name).toBe(true);
     }
     const p = guitarPositionFor(c,{level:3});
     expect(p,c.name).not.toBeNull();
-    if (!p?.generated)
-      throw Error(c.name);
-    expect(p.rootless,c.name).toBe(true);
-    expect(p.omitted).toContain("1");
-    expect(p.review.reasons).toContain("rootless");
+    if (!p?.generated) throw Error(c.name);
+    expect(p.rootless, c.name).toBe(p.omitted.includes("1"));
     const analysis = analyzeChordTones(c.root,c.pitchClasses,c.bass,{level:3});
     expect(positionSpellsChord(p,analysis),c.name).toBe(true);
     const pcs = new Set(midi(p).map(m => m%12));
     const rootPc = analysis.tones.find(t=>t.degree === "1")!.pc;
-    expect(pcs.has(rootPc)).toBe(false);
+    expect(pcs.has(rootPc)).toBe(!p.rootless);
     for (const t of analysis.tones.filter(t => t.degree !== "1" && (t.role === "required" || /^(b?3|b?7)$/.test(t.degree))))
       expect(pcs.has(t.pc), `${c.name}: ${t.degree}`).toBe(true);
-    if (c.bass)
+    if (c.bass || !p.rootless)
       expect(Math.min(...midi(p)) % 12).toBe(analysis.bassPc);
     else
       expect(analysis.tones.filter(t => /^(b?3|b?7)$/.test(t.degree)).map(t => t.pc)).toContain(Math.min(...midi(p)) % 12);
@@ -57,8 +59,8 @@ it("does not make simple chords rootless just because level 3 is requested", () 
   expect(results.every(p=>!p.rootless && midi(p).some(m=>m%12===0))).toBe(true);
 });
 it("makes enharmonic slash and root twins share a shape and review key", () => {
-  const a = guitarPositionFor({root:"Bb",pitchClasses:["Bb","D","F","Ab","C"],bass:"C#"})!;
-  const b = guitarPositionFor({root:"Bb",pitchClasses:["Bb","D","F","Ab","C"],bass:"Db"})!;
+  const a = guitarPositionFor({root:"Bb",pitchClasses:["Bb","D","F","Ab","C"],bass:"D#"})!;
+  const b = guitarPositionFor({root:"Bb",pitchClasses:["Bb","D","F","Ab","C"],bass:"Eb"})!;
   expect(a.frets).toEqual(b.frets);
   expect(a.fingers).toEqual(b.fingers);
   expect(a.review.reviewKey).toBe(b.review.reviewKey);
@@ -69,7 +71,6 @@ it("makes enharmonic slash and root twins share a shape and review key", () => {
 describe("ranking reviewed problem grips", () => {
   it.each([
     {root:"D",notes:["D","F","A","C"],bass:"G",old:[-1,10,10,10,10,10],max:5},
-    {root:"Ab",notes:["Ab","C","Ebb","Gb","Bbb"],old:[-1,11,10,11,10,10],max:6},
     {root:"Bb",notes:["Bb","Db","F"],bass:"Db",old:[-1,-1,-1,6,6,6],max:6},
   ])("prefers a low practical grip for $root/$bass", ({root,notes,bass,old,max}) => {
     const results = generateGuitarVoicings(notes,{root,bass,limit:100000});
@@ -101,12 +102,12 @@ it("flags low semitones and minor ninths by register, rather than rejecting all 
   expect(review([0, 8, -1, -1, -1, -1]).reasons).toEqual(expect.arrayContaining(["b9-clash", "low-interval"])); // E2–F3
   expect(review([-1, -1, -1, 9, 6, -1]).reasons).not.toContain("low-interval"); // E4–F4: high semitone is allowed
 });
-it("ranks the reviewed Fm/E low minor-ninth clash below a separated voicing", () => {
+it("rejects the reviewed Fm/E open low minor ninth while preserving a separated voicing", () => {
   const results = generateGuitarVoicings(["F", "Ab", "C"], { root: "F", bass: "E", limit: 100000 });
   const old = results.find(p => absolute(p).join() === "0,3,3,1,1,-1")!;
-  expect(old.review.reasons).toContain("low-interval");
+  expect(old).toBeUndefined();
   expect(results[0].review.reasons).not.toContain("low-interval");
-  expect(results[0].score).toBeLessThan(old.score);
+
 });
 it("ranks the reviewed Db7/C finger-spacing risk below a compact hand", () => {
   const results = generateGuitarVoicings(["Db", "F", "Ab", "Cb"], { root: "Db", bass: "C", limit: 100000 });

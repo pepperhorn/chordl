@@ -140,7 +140,15 @@ export function dbPositionToChord(
   title?: string,
 ): Chord {
   const fingers: Chord["fingers"] = [];
-  const barreFrets = new Set(pos.barres);
+  const barreContacts = pos.barres.map(fret => {
+    const atFret = pos.frets.flatMap((f, i) => f === fret ? [i] : []);
+    const repeated = atFret.find(i => pos.fingers[i] > 0 &&
+      atFret.filter(j => pos.fingers[j] === pos.fingers[i]).length > 1);
+    // A mini-barre can share a fret with another finger. Older database
+    // entries without finger labels retain their fret-based bounds.
+    return repeated === undefined ? atFret : atFret.filter(i => pos.fingers[i] === pos.fingers[repeated]);
+  });
+  const covered = new Set(barreContacts.flat());
 
   pos.frets.forEach((fret, dbIdx) => {
     // chords-db lists strings low→high; svguitar numbers strings high→low.
@@ -154,16 +162,14 @@ export function dbPositionToChord(
       return;
     }
     // Skip strings covered by a barre — the barre draws them.
-    if (barreFrets.has(fret)) return;
+    if (covered.has(dbIdx)) return;
     const fingerNum = pos.fingers[dbIdx];
     const text = fingerNum && fingerNum > 0 ? String(fingerNum) : undefined;
     fingers.push(text ? [stringNum, fret, text] : [stringNum, fret]);
   });
 
-  const barres: Chord["barres"] = pos.barres.map((fret) => {
-    const playingIdxs = pos.frets
-      .map((f, i) => (f === fret ? i : -1))
-      .filter((i) => i >= 0);
+  const barres: Chord["barres"] = pos.barres.map((fret, index) => {
+    const playingIdxs = barreContacts[index];
     const stringNums = playingIdxs.map((i) => stringCount - i);
     const fromString = Math.max(...stringNums);
     const toString = Math.min(...stringNums);

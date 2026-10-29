@@ -35,7 +35,7 @@ export function voicingSignals(abs: number[], fingers: number[], analysis: Chord
       const gap = midi[j] - midi[i];
       if (gap > 0 && gap <= 2 && midi[i] < 52)
         lowIntervals++;
-      if (gap >= 3 && gap <= 4 && midi[i] < 45)
+      if ((gap === 3 && midi[i] < 48) || (gap === 4 && midi[i] < 46))
         lowThirds++;
       if (gap === 13) {
         minorNinths++;

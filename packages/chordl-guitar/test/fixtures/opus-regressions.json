@@ -148,8 +148,17 @@
         3,
         2,
         3
+      ],
+      [
+        -1,
+        0,
+        5,
+        6,
+        7,
+        6
       ]
-    ]
+    ],
+    "approvalNote": "Opus audit_x/compare unchanged: same versus old, 12.52 vs 10.43. Old and original proposal are now forbidden by the requested open A2-Bb3 minor-ninth rule."
   },
   {
     "symbol": "G#7(b9,b5)",
