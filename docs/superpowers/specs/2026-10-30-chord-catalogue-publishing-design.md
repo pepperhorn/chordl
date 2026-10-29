@@ -2,6 +2,7 @@
 
 **Date:** 2026-10-30
 **Status:** design agreed in conversation; ready for a plan
+**Owner decisions 2026-10-30:** CC0; display names never committed; server side written as Directus v12-ready extensions in `ph-apps-extensions`, deployed to current ph-apps.
 **Builds on:** `2026-10-29-voicing-submissions-design.md` (the `chordl.chord/1` / `chordl.voicing/1` format, IDs, hashes, code checks, AI scorecard).
 **Supersedes in that design:** "staff review in the stock Directus admin" — the final human gate is now the GitHub pull request (below).
 
@@ -115,7 +116,7 @@ Each app pins a release and imports at build time or by sync job, filtering by i
 
 ### 10. Withdrawal and personal-data removal
 
-Nothing is deleted. A bad voicing gets a new revision with status `retired` or `superseded`; consumers drop it on their next import. A personal-data request removes the display name from the author registry (below); the opaque ID stays.
+Nothing is deleted. A bad voicing gets a new revision with status `retired` or `superseded`; consumers drop it on their next import. Display names are **never committed** (owner decision 2026-10-30). The repo holds only prefixed opaque IDs. Release builds resolve opt-in display names from each intake's records and bake them into the release bundles only. A removal request applies from the next release; earlier published npm versions keep the name. The opaque ID stays.
 
 ## Builder-check calls (2026-10-30, mine — check these)
 
@@ -145,7 +146,6 @@ chord-catalogue/
   CONTRIBUTING.md              the four routes, DCO, format, review
   CODEOWNERS
   chords/<root>/<chord-id>.json   one file per chord (filename-safe encoding of the ID)
-  authors.json                 prefixed ID → optional display name (opt-in credit)
   licences.json                import licence allow-list
   .github/workflows/           validate.yml, release.yml
   .github/pull_request_template.md, review template

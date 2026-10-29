@@ -208,6 +208,12 @@ The review prompt lives in the repo, versioned, so scoring is transparent. Staff
 
 **Superseded 2026-10-30:** the final human review now happens in the `chord-catalogue` pull request, with decisions written back to the intake record. Intake staff only clear hard-failed or flagged submissions for promotion. See `2026-10-30-chord-catalogue-publishing-design.md`.
 
+## Owner decisions 2026-10-30
+
+- **Sign-in:** ph-apps (Directus) member accounts, with ph-chordl as the server between the board and ph-apps; ph-chordl also holds the AI key for plain-English input.
+- **Server side:** AI review runner, plain-English endpoint and catalogue-bot hook are Directus extensions in `ph-apps-extensions`, written to v12 APIs, deployed to current ph-apps.
+- **Card display:** not in this build. "Live" means stored and listable; the overlay shows the user their own submission's status. Showing other users' options on cards comes later.
+
 ## Constraints
 
 - Monorepo conventions: TypeScript, React 19, Vitest, `@pepperhorn/` scope, contextual class names alongside Tailwind utilities, Poppins, the note-text SVG style from the global instructions for any note-letter-on-dot rendering.
