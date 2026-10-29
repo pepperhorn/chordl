@@ -90,7 +90,7 @@ describe("analyzeChordTones — the rule table", () => {
   });
 
   it("6 without a 7th, 13 with one; dim7's bb7 is required", () => {
-    expect(roles("C", ["C", "E", "G", "A"])).toMatchObject({ "6": "required", "5": "optional" });
+    expect(roles("C", ["C", "E", "G", "A"])).toMatchObject({ "6": "required", "5": "required" });
     expect(roles("C", ["C", "Eb", "Gb", "Bbb"])).toEqual({
       "1": "required", b3: "required", b5: "required", bb7: "required",
     });
@@ -223,7 +223,11 @@ function checkInvariants(p: GeneratedPosition, root: string, notes: string[], ba
   for (const finger of used) {
     const strings = abs.map((f, i) => (f > 0 && p.fingers[i] === finger ? i : -1)).filter((i) => i >= 0);
     if (strings.length > 1) {
-      expect(finger).toBe(1);
+      if (finger !== 1) {
+        expect(strings).toHaveLength(2);
+        expect(strings[1] - strings[0]).toBe(1);
+        expect(finger).toBeLessThanOrEqual(3);
+      }
       expect(p.barres).toHaveLength(1);
     }
   }
@@ -231,8 +235,10 @@ function checkInvariants(p: GeneratedPosition, root: string, notes: string[], ba
   expect(p.barres.length).toBeLessThanOrEqual(1);
   for (const b of p.barres) {
     const barreFret = b + p.baseFret - 1;
-    expect(barreFret).toBe(Math.min(...fretted));
-    const on = abs.map((f, i) => (f === barreFret ? i : -1)).filter((i) => i >= 0);
+    const repeatedFinger = p.fingers.find(f => f > 0 && p.fingers.filter(v => v === f).length > 1)!;
+    const on = abs.flatMap((f, i) => f === barreFret && p.fingers[i] === repeatedFinger ? [i] : []);
+    if (repeatedFinger === 1) expect(barreFret).toBe(Math.min(...fretted));
+    else expect(barreFret).toBeGreaterThan(Math.min(...fretted));
     expect(on.length).toBeGreaterThanOrEqual(2);
     for (let i = on[0]; i <= on[on.length - 1]; i++) expect(abs[i]).toBeGreaterThanOrEqual(barreFret);
   }
@@ -280,6 +286,7 @@ describe("generateGuitarVoicings — constraints are never violated", () => {
     let partial = 0;
     for (const p of generateGuitarVoicings(["C", "E", "G", "Bb", "D", "A"], { limit: 200 })) {
       if (!p.barres.length) continue;
+      if (Math.min(...p.frets.filter(f => f > 0)) !== p.barres[0]) continue;
       const on = p.frets.map((f, i) => (f === p.barres[0] ? i : -1)).filter((i) => i >= 0);
       p.frets.slice(0, on[0]).forEach((f) => {
         if (f > 0) {

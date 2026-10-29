@@ -1,0 +1,516 @@
+[
+  {
+    "symbol": "G#9/E",
+    "chord": {
+      "root": "G#",
+      "pitchClasses": [
+        "G#",
+        "B#",
+        "D#",
+        "F#",
+        "A#"
+      ],
+      "bass": "E"
+    },
+    "oldFrets": [
+      0,
+      1,
+      1,
+      1,
+      1,
+      2
+    ],
+    "approvedFrets": [
+      [
+        0,
+        1,
+        1,
+        1,
+        1,
+        2
+      ]
+    ]
+  },
+  {
+    "symbol": "Db9/F",
+    "chord": {
+      "root": "Db",
+      "pitchClasses": [
+        "Db",
+        "F",
+        "Ab",
+        "Cb",
+        "Eb"
+      ],
+      "bass": "F"
+    },
+    "oldFrets": [
+      1,
+      2,
+      1,
+      1,
+      2,
+      -1
+    ],
+    "approvedFrets": [
+      [
+        1,
+        2,
+        1,
+        1,
+        2,
+        -1
+      ],
+      [
+        1,
+        4,
+        1,
+        1,
+        0,
+        -1
+      ]
+    ]
+  },
+  {
+    "symbol": "E9/A",
+    "chord": {
+      "root": "E",
+      "pitchClasses": [
+        "E",
+        "G#",
+        "B",
+        "D",
+        "F#"
+      ],
+      "bass": "A"
+    },
+    "oldFrets": [
+      5,
+      5,
+      4,
+      4,
+      5,
+      4
+    ],
+    "approvedFrets": [
+      [
+        5,
+        5,
+        4,
+        4,
+        5,
+        4
+      ],
+      [
+        -1,
+        0,
+        4,
+        1,
+        3,
+        0
+      ]
+    ]
+  },
+  {
+    "symbol": "A13(b9)",
+    "chord": {
+      "root": "A",
+      "pitchClasses": [
+        "A",
+        "C#",
+        "E",
+        "G",
+        "Bb",
+        "F#"
+      ]
+    },
+    "oldFrets": [
+      -1,
+      0,
+      5,
+      3,
+      2,
+      2
+    ],
+    "approvedFrets": [
+      [
+        -1,
+        0,
+        5,
+        3,
+        2,
+        2
+      ],
+      [
+        -1,
+        0,
+        4,
+        3,
+        2,
+        3
+      ],
+      [
+        -1,
+        0,
+        5,
+        6,
+        7,
+        6
+      ]
+    ],
+    "approvalNote": "Opus audit_x/compare unchanged: same versus old, 12.52 vs 10.43. Old and original proposal are now forbidden by the requested open A2-Bb3 minor-ninth rule."
+  },
+  {
+    "symbol": "G#7(b9,b5)",
+    "chord": {
+      "root": "G#",
+      "pitchClasses": [
+        "G#",
+        "B#",
+        "D",
+        "F#",
+        "A"
+      ]
+    },
+    "oldFrets": [
+      -1,
+      11,
+      10,
+      11,
+      10,
+      10
+    ],
+    "approvedFrets": [
+      [
+        -1,
+        11,
+        10,
+        11,
+        10,
+        10
+      ]
+    ]
+  },
+  {
+    "symbol": "Aaug/G#",
+    "chord": {
+      "root": "A",
+      "pitchClasses": [
+        "A",
+        "C#",
+        "E#"
+      ],
+      "bass": "G#"
+    },
+    "oldFrets": [
+      -1,
+      -1,
+      6,
+      6,
+      6,
+      5
+    ],
+    "approvedFrets": [
+      [
+        -1,
+        -1,
+        6,
+        6,
+        6,
+        5
+      ]
+    ]
+  },
+  {
+    "symbol": "Cm11(b5)",
+    "chord": {
+      "root": "C",
+      "pitchClasses": [
+        "C",
+        "Eb",
+        "Gb",
+        "Bb",
+        "D",
+        "F"
+      ]
+    },
+    "oldFrets": [
+      8,
+      8,
+      8,
+      11,
+      11,
+      11
+    ],
+    "approvedFrets": [
+      [
+        8,
+        8,
+        8,
+        11,
+        11,
+        11
+      ],
+      [
+        -1,
+        6,
+        4,
+        3,
+        6,
+        -1
+      ]
+    ]
+  },
+  {
+    "symbol": "G7(b9,b5)",
+    "chord": {
+      "root": "G",
+      "pitchClasses": [
+        "G",
+        "B",
+        "Db",
+        "F",
+        "Ab"
+      ]
+    },
+    "oldFrets": [
+      -1,
+      10,
+      9,
+      10,
+      9,
+      9
+    ],
+    "approvedFrets": [
+      [
+        -1,
+        10,
+        9,
+        10,
+        9,
+        9
+      ]
+    ]
+  },
+  {
+    "symbol": "Em7/C",
+    "chord": {
+      "root": "E",
+      "pitchClasses": [
+        "E",
+        "G",
+        "B",
+        "D"
+      ],
+      "bass": "C"
+    },
+    "oldFrets": [
+      -1,
+      3,
+      0,
+      0,
+      0,
+      0
+    ],
+    "approvedFrets": [
+      [
+        -1,
+        3,
+        0,
+        0,
+        0,
+        0
+      ]
+    ]
+  },
+  {
+    "symbol": "G9/A",
+    "chord": {
+      "root": "G",
+      "pitchClasses": [
+        "G",
+        "B",
+        "D",
+        "F",
+        "A"
+      ],
+      "bass": "A"
+    },
+    "oldFrets": [
+      -1,
+      0,
+      0,
+      0,
+      0,
+      1
+    ],
+    "approvedFrets": [
+      [
+        -1,
+        0,
+        0,
+        0,
+        0,
+        1
+      ]
+    ]
+  },
+  {
+    "symbol": "Dm6/C",
+    "chord": {
+      "root": "D",
+      "pitchClasses": [
+        "D",
+        "F",
+        "A",
+        "B"
+      ],
+      "bass": "C"
+    },
+    "oldFrets": [
+      -1,
+      3,
+      3,
+      4,
+      3,
+      5
+    ],
+    "approvedFrets": [
+      [
+        -1,
+        3,
+        3,
+        4,
+        3,
+        5
+      ]
+    ]
+  },
+  {
+    "symbol": "Ab9/C",
+    "chord": {
+      "root": "Ab",
+      "pitchClasses": [
+        "Ab",
+        "C",
+        "Eb",
+        "Gb",
+        "Bb"
+      ],
+      "bass": "C"
+    },
+    "oldFrets": [
+      -1,
+      3,
+      4,
+      3,
+      4,
+      4
+    ],
+    "approvedFrets": [
+      [
+        -1,
+        3,
+        4,
+        3,
+        4,
+        4
+      ]
+    ]
+  },
+  {
+    "symbol": "Bb9/D",
+    "chord": {
+      "root": "Bb",
+      "pitchClasses": [
+        "Bb",
+        "D",
+        "F",
+        "Ab",
+        "C"
+      ],
+      "bass": "D"
+    },
+    "oldFrets": [
+      -1,
+      5,
+      6,
+      5,
+      6,
+      6
+    ],
+    "approvedFrets": [
+      [
+        -1,
+        5,
+        6,
+        5,
+        6,
+        6
+      ]
+    ]
+  },
+  {
+    "symbol": "Dbm6/F",
+    "chord": {
+      "root": "Db",
+      "pitchClasses": [
+        "Db",
+        "Fb",
+        "Ab",
+        "Bb"
+      ],
+      "bass": "F"
+    },
+    "oldFrets": [
+      1,
+      1,
+      2,
+      1,
+      2,
+      0
+    ],
+    "approvedFrets": [
+      [
+        1,
+        1,
+        2,
+        1,
+        2,
+        0
+      ]
+    ]
+  },
+  {
+    "symbol": "A9/B",
+    "chord": {
+      "root": "A",
+      "pitchClasses": [
+        "A",
+        "C#",
+        "E",
+        "G",
+        "B"
+      ],
+      "bass": "B"
+    },
+    "oldFrets": [
+      -1,
+      2,
+      2,
+      2,
+      2,
+      3
+    ],
+    "approvedFrets": [
+      [
+        -1,
+        2,
+        2,
+        2,
+        2,
+        3
+      ]
+    ]
+  }
+]

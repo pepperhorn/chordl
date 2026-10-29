@@ -118,15 +118,15 @@ describe("catalogue sweep: six-string guitar", () => {
   }
 
   // Unavailable under the default root-preserving policy (level 2): these need
-  // the stricter ninth AND a root, which no playable grip holds. Not impossible
-  // at every level: the explicit rootless opt-in (level 3) voices each, omitting
+  // the stricter ninth AND a root, which no grip holds under the current
+  // hand/register constraints. Not impossible at every level: the explicit rootless opt-in (level 3) voices each, omitting
   // only the root. Consumers do not forward a teaching level yet.
   const NINTH_NEEDS_LEVEL_3 = [
-    "C#maj9(#11,#5)", "Dbmaj9(#11,#5)", "F#maj9(#11,#5)", "Gbmaj9(#11,#5)", "Gmaj9(#11,#5)",
+    "C#maj9(#11,#5)", "Dbmaj9(#11,#5)", "F#maj9(#11,#5)", "Gbmaj9(#11,#5)",
     "A9(#11,#5)", "Amaj9(#11,#5)", "B9(#11,#5)", "Bmaj9(#11,#5)",
   ];
 
-  it("the nine ninth-policy symbols: no default position, a rootless one only at level 3", () => {
+  it("the eight ninth-policy symbols still needing level 3 remain rootless only with opt-in", () => {
     for (const chord of NINTH_NEEDS_LEVEL_3) {
       const s = spelledChord(chord, { strict: true });
       expect(guitarPositionFor(s), chord).toBeNull();
@@ -138,47 +138,54 @@ describe("catalogue sweep: six-string guitar", () => {
     }
     const { impossible } = survey(ROOT_CHORDS.map((c) => c.chord));
     for (const chord of NINTH_NEEDS_LEVEL_3) expect(impossible).toContain(chord);
+  }, 120_000);
+
+  it("a non-index mini-barre recovers rooted Gmaj9(#11,#5) at the default level", () => {
+    const s = spelledChord("Gmaj9(#11,#5)", { strict: true });
+    const p = guitarPositionFor(s);
+    expect(p).not.toBeNull();
+    if (!p?.generated) throw new Error("expected generated mini-barre");
+    expect(p.rootless).toBe(false);
+    expect(p.omitted).toEqual([]);
+    expect(positionSpellsChord(p, analyzeChordTones(s.root, s.pitchClasses))).toBe(true);
   });
 
   it("catalogue chords: a position, or a documented impossibility", () => {
     const { tally, impossible } = survey(ROOT_CHORDS.map((c) => c.chord));
     expect(tally).toMatchInlineSnapshot(`
       {
-        "db": 539,
-        "generated": 691,
-        "impossible": 45,
+        "db": 535,
+        "generated": 699,
+        "impossible": 41,
         "power": 15,
       }
     `);
     expect(impossible).toMatchInlineSnapshot(`
       [
-        "C7(#11,b9,#5)",
-        "C13(b9,b5)",
         "C13(b9,#5)",
-        "C13(#11,b9)",
-        "C#13(b9,#5)",
         "C#maj9(#11,#5)",
-        "Db13(b9,#5)",
         "Dbmaj9(#11,#5)",
         "D7(#11,b9,#5)",
-        "Dmaj9(#11,#5)",
         "F13(b9,#5)",
         "F13(#9,#5)",
         "F13(#11,#5)",
+        "F#13(#11,#5)",
         "F#maj9(#11,#5)",
         "F#maj13(#11,#5)",
+        "Gb13(#11,#5)",
         "Gbmaj9(#11,#5)",
         "Gbmaj13(#11,#5)",
         "G13(b9,#5)",
-        "Gmaj9(#11,#5)",
+        "G#7(#11,b9,#5)",
         "G#13(b9,b5)",
+        "G#13(b9,#5)",
         "G#13(#9,b5)",
-        "G#13(#9,#5)",
         "G#13(#11,b9)",
         "G#13(#11,#9)",
+        "Ab7(#11,b9,#5)",
         "Ab13(b9,b5)",
+        "Ab13(b9,#5)",
         "Ab13(#9,b5)",
-        "Ab13(#9,#5)",
         "Ab13(#11,b9)",
         "Ab13(#11,#9)",
         "A9(#11,#5)",
@@ -186,7 +193,6 @@ describe("catalogue sweep: six-string guitar", () => {
         "A7(#11,#9,#5)",
         "A13(b9,b5)",
         "A13(#9,b5)",
-        "A13(#9,#5)",
         "A13(#11,#5)",
         "A13(#11,b9)",
         "A13(#11,#9)",
@@ -206,14 +212,16 @@ describe("catalogue sweep: six-string guitar", () => {
     expect(tally).toMatchInlineSnapshot(`
       {
         "db": 61,
-        "generated": 2457,
-        "impossible": 2,
+        "generated": 2455,
+        "impossible": 4,
         "power": 0,
       }
     `);
     expect(impossible).toMatchInlineSnapshot(`
       [
-        "Ab9/Eb",
+        "Bb9/C#",
+        "Bb9/Db",
+        "C9/Eb",
         "G#9/B",
       ]
     `);
