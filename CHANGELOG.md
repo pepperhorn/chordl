@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-10-31 — chordl-voicing (unreleased)
+
+- **Chord ids:** seven new base qualities (`7omit3`, `9sus4`, `13sus4`, `m#5`, `m7add11`,
+  `m7sus4`, `mmaj9`), so every chord type in the chordl-cards catalogue has an id.
+  `mmaj9b5` and `mmaj9#5` parse through the new `mmaj9` base.
+- **Checks:** `missing-third` no longer fires on `bass4`, which outlines root and fifth.
+
 ## 2026-10-30 — chordl-voicing 0.1.0
 
 New package `@pepperhorn/chordl-voicing`, first release. No other package changes.

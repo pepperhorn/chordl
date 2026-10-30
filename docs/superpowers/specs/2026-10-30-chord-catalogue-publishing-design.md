@@ -8,7 +8,7 @@
 
 ## Intent
 
-One public, open-data GitHub repo holds every published chord voicing — keyboard, fretted and bowed — in the shared JSON format. It is the published record. chordl.app, chords.creativeranges.org and be.creativeranges.org each import from it and take what they want (everything, or a filtered subset). Third parties can use it and contribute to it.
+One public, open-data GitHub repo holds every published chord voicing — keyboard, fretted and bowed — in the shared JSON format. It is the published record. chordl.app, chords.creativeranges.org, be.creativeranges.org and chordcards each import from it and take what they want (everything, or a filtered subset). Third parties can use it and contribute to it.
 
 The hard part isn't storage, it's the **publish process**: getting a voicing from a user's submission (or a third party's pull request) into the repo safely, reviewed, attributed, and released in versions consumers can pin.
 
@@ -112,7 +112,11 @@ Voicings carry `tier: "curated" | "community"`. Consumers filter on it. Promotio
 
 ### 9. Consumers
 
-Each app pins a release and imports at build time or by sync job, filtering by instrument, level and tier, and maps voicings into its own store keeping `id@rev`. A new release opens a bump PR in each consumer repo (Renovate/Dependabot on the npm package, or a small workflow). chordl.app, chords.creativeranges.org and be.creativeranges.org are the first three consumers; their import code is each app's own work, not this repo's.
+Each app pins a release and imports at build time or by sync job, filtering by instrument, level and tier, and maps voicings into its own store keeping `id@rev`. A new release opens a bump PR in each consumer repo (Renovate/Dependabot on the npm package, or a small workflow). chordl.app, chords.creativeranges.org, be.creativeranges.org and chordcards are the first four consumers; their import code is each app's own work, not this repo's.
+
+chordcards prints, so it doesn't filter a release directly: it pins an allow-list of `id@rev` per card face, and default order and print labels live in that list, not in the format. A new release can't change a printed face without a reviewed bump PR. See [chordcards ADR 0001](https://github.com/pepperhorn/chordcards/blob/master/docs/decisions/0001-openchords-format-rulings.md).
+
+The catalogue holds strict spelling, with `C:dim7` as C Eb Gb Bbb. House display spelling (double accidentals simplified, dim7 shown with the major 6th) is applied by consumers and never changes published data.
 
 ### 10. Withdrawal and personal-data removal
 

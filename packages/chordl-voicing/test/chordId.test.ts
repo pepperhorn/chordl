@@ -56,7 +56,7 @@ describe("chord ids", () => {
     expect(() => chordIntervals("nope")).toThrow();
   });
   it("exposes tokens", () => {
-    expect(Object.keys(BASE_QUALITIES)).toHaveLength(29);
+    expect(Object.keys(BASE_QUALITIES)).toHaveLength(36);
     expect(ALTERATIONS).toEqual(["b5", "#5", "b9", "#9", "#11", "b13"]);
   });
   it("round-trips every valid id", () => {
@@ -66,5 +66,26 @@ describe("chord ids", () => {
       expect(p, id).not.toBeNull();
       expect(formatChordId(p!)).toBe(id);
     }
+  });
+
+  it.each([
+    ["C:7omit3", ["1P", "5P", "7m"]],
+    ["C:9sus4", ["1P", "4P", "5P", "7m", "9M"]],
+    ["C:13sus4", ["1P", "4P", "5P", "7m", "9M", "13M"]],
+    ["C:m#5", ["1P", "3m", "5A"]],
+    ["C:m7add11", ["1P", "3m", "5P", "7m", "11P"]],
+    ["C:m7sus4", ["1P", "3m", "4P", "7m"]],
+    ["C:mmaj9", ["1P", "3m", "5P", "7M", "9M"]],
+    ["C:mmaj9b5", ["1P", "3m", "5d", "7M", "9M"]],
+    ["C:mmaj9#5", ["1P", "3m", "5A", "7M", "9M"]],
+  ])("covers the card catalogue quality %s", (id, intervals) => {
+    expect(chordIntervals(id)).toEqual(intervals);
+  });
+
+  it("does not let an added quality swallow a neighbouring token", () => {
+    expect(parseChordId("C:m7b5")!.base).toBe("m7b5");
+    expect(parseChordId("C:m7")!.base).toBe("m7");
+    expect(parseChordId("C:mmaj7")!.base).toBe("mmaj7");
+    expect(parseChordId("C:7sus4")!.base).toBe("7sus4");
   });
 });
