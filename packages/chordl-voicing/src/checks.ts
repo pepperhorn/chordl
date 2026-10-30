@@ -15,6 +15,8 @@ export interface CheckResult {
 }
 
 const NO_THIRD_CHECK = new Set(["5", "sus2", "sus4", "7sus4"]);
+// Bass parts outline root and fifth, so a missing third is normal, not a wrong voicing.
+const NO_THIRD_INSTRUMENTS = new Set(["bass4"]);
 const MAX_HAND_SPAN = 14;
 const STRETCH = 4;
 // Alterations a `7alt` chord leaves unspecified: tensions on these are not additions.
@@ -100,7 +102,8 @@ export function checkVoicing(v: Voicing): CheckResult {
 
   // Chord completeness.
   const third = intervals.find((i) => degreeNumber(i.iv) === 3);
-  if (third && !NO_THIRD_CHECK.has(parsed.base) && !pcs.has(third.pc)) {
+  const thirdOptional = NO_THIRD_CHECK.has(parsed.base) || (r.kind === "fretted" && NO_THIRD_INSTRUMENTS.has(r.instrument));
+  if (third && !thirdOptional && !pcs.has(third.pc)) {
     hards.push(hard("missing-third", `${v.chordId} has a 3rd (${third.label}) but none sounds`, { degree: third.label }));
   }
   const seventh = intervals.find((i) => degreeNumber(i.iv) === 7);

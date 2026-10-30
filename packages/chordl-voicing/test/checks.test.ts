@@ -100,6 +100,13 @@ describe("checkVoicing", () => {
     const v = voicing("C:maj", ["C3", "Fb3", "G3"], { kind: "keyboard", hands: { left: ["C3"], right: ["Fb3", "G3"] } });
     expect(codes(v).hard).toContain("wrong-note");
   });
+  it("does not require a third on bass4, but still does on other fretted instruments", () => {
+    const bass = fretted({ instrument: "bass4", tuning: ["E1", "A1", "D2", "G2"], strings: [null, 3, 5, 5], fingers: [null, 1, 3, 4] });
+    const notes = ["C2", "G2", "C3"];
+    expect(codes(voicing("C:maj", notes, bass)).hard).not.toContain("missing-third");
+    expect(codes(voicing("C:maj", ["C3", "G3", "C4"], fretted({ strings: [null, 3, 5, 5, null, null], fingers: [null, 1, 3, 4, null, null] }))).hard).toContain("missing-third");
+  });
+
   it("notes-mismatch and unknown-instrument come through", () => {
     expect(codes(voicing("C:maj7", ["C3"], fretted({}))).hard).toContain("notes-mismatch");
     expect(codes(voicing("C:maj7", ["C3", "E3", "G3", "B3", "E4"], fretted({ instrument: "banjo" }))).hard).toContain("unknown-instrument");
