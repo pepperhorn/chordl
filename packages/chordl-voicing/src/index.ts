@@ -9,3 +9,6 @@ export { BASE_QUALITIES, ALTERATIONS, parseChordId, formatChordId, chordInterval
 export type { ParsedChordId } from "./chordId.js";
 export { parsePitch, labelNotes, degreeLabel } from "./pitch.js";
 export type { ParsedPitch, LabelledNote } from "./pitch.js";
+export { BOWED_INSTRUMENTS } from "./instruments.js";
+export { soundingMidi, notesMatchRealization } from "./realization.js";
+export type { Finding } from "./realization.js";
