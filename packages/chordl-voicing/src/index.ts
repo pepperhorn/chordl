@@ -14,3 +14,5 @@ export { soundingMidi, notesMatchRealization } from "./realization.js";
 export type { Finding } from "./realization.js";
 export { shapeHash, pitchHash, withHashes } from "./hash.js";
 export { formatChordFile, isCanonical, KEY_ORDER } from "./canonical.js";
+export { checkVoicing } from "./checks.js";
+export type { CheckResult } from "./checks.js";
