@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-10-30 — chordl-voicing 0.1.0
+
+New package `@pepperhorn/chordl-voicing`, first release. No other package changes.
+
+- **Format:** an open JSON format for chord voicings. `chordl.chord/1` (one chord and
+  its voicings) and `chordl.voicing/1` (notes, a fretted, keyboard or bowed
+  realization, provenance, relations, hashes), as JSON Schema draft 2020-12 files
+  plus TypeScript types and `validateChordFileSchema`.
+- **Library:** chord ids (`C:maj7`, `C:7/E`), pitch and degree labelling,
+  `soundingMidi`, `notesMatchRealization`, `shapeHash`/`pitchHash`/`withHashes`,
+  `checkVoicing` (hard errors and review flags), `formatChordFile`/`isCanonical`, and
+  `validateCatalogue` (schema, canonical form, hashes, licences, append-only history).
+  Canonical form and hash rules are in `docs/CANONICAL.md`.
+- **CLI:** `chordl-voicing new | format | validate | bundle`. `new` takes `--frets`
+  (with repeatable `--barre <fret>:<from>-<to>`, strings numbered from 0) or, for
+  keyboard, `--notes "<left> | <right>"`.
+
 ## 2026-10-29 — chordl-react 0.5.1, chordl-board 0.2.2
 
 Publish `chordl-react@0.5.1` first, then `chordl-board@0.2.2` (which depends on
