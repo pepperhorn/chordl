@@ -330,6 +330,24 @@ export function spellChord(root: string, type: ChordType | string): string[] {
   return spellChordStrict(root, type).map(simplifyDoubleAccidental);
 }
 
+/**
+ * The name to show for one note of a catalogue voicing. Catalogue data is strict
+ * (`C:dim7` holds Bbb), so this takes a chord id and a strict pitch class and
+ * applies the same house spelling as `spellChord`. A dim7's top note is shown as
+ * root + major 6th, which simplifying alone gets wrong on roots whose strict note
+ * has no double accidental (D:dim7 holds Cb, shown B). Pitch classes only: a name
+ * with an octave could cross it (Cb4 sounds as B3).
+ */
+export function displayNoteName(chordId: string, pitchClass: string): string {
+  const [root, quality = ""] = chordId.split(":");
+  const r = noteParts(root);
+  const n = noteParts(pitchClass);
+  if (!r || !n) throw new Error(`unknown note in "${chordId}", "${pitchClass}"`);
+  const isDim7 = quality.split("/")[0] === "dim7";
+  if (isDim7 && n.pc === (r.pc + 9) % 12) return simplifyDoubleAccidental(spellInterval(root, "6"));
+  return simplifyDoubleAccidental(pitchClass);
+}
+
 const DEGREE_WORDS = new Map([
   [2, "second"], [3, "third"], [4, "fourth"], [5, "fifth"], [6, "sixth"], [7, "seventh"],
   [9, "ninth"], [11, "eleventh"], [13, "thirteenth"],

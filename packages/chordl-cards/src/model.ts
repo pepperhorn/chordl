@@ -51,7 +51,7 @@ export type {
 export {
   CHORD_TYPES, ROOTS, SHEET_ERRATA, chordTypeById, parseChordSymbol, spellChord,
   spellInterval, noteParts, chordSpelling, spelledChord,
-  spellChordStrict, simplifyDoubleAccidental, teachingNoteFor,
+  displayNoteName, spellChordStrict, simplifyDoubleAccidental, teachingNoteFor,
 } from "./catalogue";
 export type { ChordType, CatalogueFace, ParsedChord, Root } from "./catalogue";
 
