@@ -347,11 +347,13 @@ describe("displayNoteName", () => {
     expect(displayNoteName("Ab:m", "Cb")).toBe("Cb");
   });
 
-  it("keeps a written slash bass as spelled", () => {
-    expect(displayNoteName("E:dim7/Db", "Db")).toBe("Db");
-    expect(displayNoteName("A:dim7/Gb", "Gb")).toBe("Gb");
-    expect(displayNoteName("B:dim7/Ab", "Ab")).toBe("Ab");
-    expect(displayNoteName("E:dim7/C#", "C#")).toBe("C#");
+  it("keeps a written slash bass as spelled, and still spells the same note above it", () => {
+    expect(displayNoteName("E:dim7/Db", "Db", { isBass: true })).toBe("Db");
+    expect(displayNoteName("E:dim7/Db", "Db")).toBe("C#");
+    expect(displayNoteName("A:dim7/Gb", "Gb", { isBass: true })).toBe("Gb");
+    expect(displayNoteName("A:dim7/Gb", "Gb")).toBe("F#");
+    expect(displayNoteName("B:dim7/Ab", "Ab", { isBass: true })).toBe("Ab");
+    expect(displayNoteName("B:dim7/Ab", "Ab")).toBe("G#");
   });
 
   it("rejects a malformed chord id", () => {
