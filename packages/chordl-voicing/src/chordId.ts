@@ -98,11 +98,9 @@ export function formatChordId(parts: { root: string; quality: string; bass?: str
 export function chordIntervals(id: string): string[] {
   const p = parseChordId(id);
   if (!p) throw new Error(`Invalid chord id: ${id}`);
-  let intervals = [...BASE_QUALITIES[p.base]];
-  for (const alt of p.alterations) {
-    const added = ALTERATION_INTERVAL[alt];
-    intervals = intervals.filter((i) => degreeOf(i) !== degreeOf(added));
-    intervals.push(added);
-  }
+  // An alteration replaces only the base's natural of that degree; alterations never replace each other.
+  const added = p.alterations.map((a) => ALTERATION_INTERVAL[a]);
+  const replaced = new Set(added.map(degreeOf));
+  const intervals = [...BASE_QUALITIES[p.base].filter((i) => !replaced.has(degreeOf(i))), ...added];
   return intervals.sort((a, b) => degreeOf(a) - degreeOf(b));
 }

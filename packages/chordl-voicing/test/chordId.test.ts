@@ -17,6 +17,9 @@ describe("chord ids", () => {
   it("applies alterations in order", () => {
     expect(chordIntervals("C:7#9b13")).toEqual(["1P", "3M", "5P", "7m", "9A", "13m"]);
     expect(parseChordId("C:7#9b13")!.alterations).toEqual(["#9", "b13"]);
+    expect(chordIntervals("C:7b9#9")).toEqual(["1P", "3M", "5P", "7m", "9m", "9A"]);
+    expect(chordIntervals("C:7b5#5")).toEqual(["1P", "3M", "5d", "5A", "7m"]);
+    expect(chordIntervals("E:7b5#5b9")).toEqual(["1P", "3M", "5d", "5A", "7m", "9m"]);
     expect(chordIntervals("C:7b5")).toEqual(["1P", "3M", "5d", "7m"]);
     expect(chordIntervals("C:13b13")).toEqual(["1P", "3M", "5P", "7m", "9M", "13m"]);
     expect(chordIntervals("C:9#11")).toEqual(["1P", "3M", "5P", "7m", "9M", "11A"]);
