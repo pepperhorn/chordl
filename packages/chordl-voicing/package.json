@@ -20,6 +20,9 @@
     "./schema/chord.schema.json": "./schema/chord.schema.json",
     "./schema/voicing.schema.json": "./schema/voicing.schema.json"
   },
+  "bin": {
+    "chordl-voicing": "./dist/cli/index.js"
+  },
   "engines": {
     "node": ">=20.10"
   },
@@ -46,6 +49,7 @@
     "ulid": "^2.3.0"
   },
   "devDependencies": {
+    "@types/node": "^22.0.0",
     "typescript": "^5.7.0",
     "vitest": "^4.1.1"
   },
