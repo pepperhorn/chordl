@@ -17,7 +17,7 @@ function midiOf(pitch: string): number {
 function shapeString(r: Realization): string {
   if (r.kind === "fretted") {
     const frets = r.strings.map((f) => (f === null ? "x" : String(f))).join(",");
-    return `shape/1|fretted|${r.instrument}|${r.tuning.join(",")}|capo=${r.capo ?? 0}|${frets}`;
+    return `shape/1|fretted|${r.instrument}|${r.tuning.map(midiOf).join(",")}|capo=${r.capo ?? 0}|${frets}`;
   }
   if (r.kind === "keyboard") {
     const side = (h: string[]) => asc(h.map(midiOf)).join(",");
@@ -27,7 +27,7 @@ function shapeString(r: Realization): string {
     .map((s) => ({ string: s.string, midi: midiOf(s.pitch) }))
     .sort((a, b) => a.string - b.string || a.midi - b.midi)
     .map((s) => `${s.string}:${s.midi}`);
-  return `shape/1|bowed|${r.instrument}|${r.tuning.join(",")}|${pairs.join(",")}`;
+  return `shape/1|bowed|${r.instrument}|${r.tuning.map(midiOf).join(",")}|${pairs.join(",")}`;
 }
 
 export const shapeHash = (r: Realization): string => digest(shapeString(r));

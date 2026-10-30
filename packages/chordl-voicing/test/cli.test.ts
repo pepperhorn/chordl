@@ -87,6 +87,9 @@ describe("new", () => {
     expect(bowed.err).toMatch(/by hand/);
     const len = await cli(["new", "--chord", "C:maj7", "--instrument", "guitar", "--frets", "x320", "--author", "gh:a"]);
     expect(len.code).toBe(1);
+    const email = await cli(["new", "--chord", "C:maj7", "--instrument", "guitar", "--frets", "x32000", "--author", "gh:alice@example.com"]);
+    expect(email.code).toBe(1);
+    expect(email.err).toMatch(/author/);
     expect(readdirSync(dir)).toEqual([]);
   });
 

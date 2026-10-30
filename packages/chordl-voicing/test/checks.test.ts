@@ -130,6 +130,26 @@ describe("checkVoicing", () => {
     })));
     expect(c.flags).toContain("guitar:three-strings");
   });
+  it("guitar review and level are skipped for non-standard tuning (drop D)", () => {
+    const drop = (strings: (number | null)[]) => voicing("C:maj", ["G3", "B3", "E4"], fretted({
+      tuning: ["D2", ...GUITAR.slice(1)], strings, fingers: [null, null, null, null, 1, null],
+    }));
+    const c = codes(drop([null, null, null, 0, 1, 0]));
+    expect(c.flags.some((f) => f.startsWith("guitar:"))).toBe(false);
+    expect(c.facts.some((f) => f.startsWith("level:"))).toBe(false);
+    const wide = codes(voicing("C:maj", ["F#3", "C4", "G4"], fretted({
+      tuning: ["D2", ...GUITAR.slice(1)], strings: [null, null, null, 3, 5, 3], fingers: [null, null, null, 1, 3, 1],
+    })));
+    expect(wide.flags).not.toContain("stretch");
+    const stretch = codes(voicing("C:maj", ["G3", "C4", "A4"], fretted({
+      tuning: ["D2", ...GUITAR.slice(1)], strings: [null, null, null, 0, 1, 5], fingers: [null, null, null, null, 1, 4],
+    })));
+    expect(stretch.flags).toContain("stretch");
+  });
+  it("bass-mismatch message names the note, not a pitch class number", () => {
+    const f = checkVoicing(kb("C:maj", ["E3"], ["G3", "C4"])).flags.find((x) => x.code === "bass-mismatch")!;
+    expect(f.message).toContain("E3");
+  });
   it("non-guitar fretted gets stretch and no level fact", () => {
     const c = codes(voicing("C:maj", ["G4", "C4", "F4", "D5"], {
       kind: "fretted", instrument: "ukulele", tuning: UKE, strings: [0, 0, 1, 5], fingers: [null, null, 1, 4],

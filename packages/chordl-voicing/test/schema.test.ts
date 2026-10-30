@@ -76,3 +76,20 @@ describe("validateChordFileSchema", () => {
     expect(validateChordFileSchema(d).ok).toBe(true);
   });
 });
+
+describe("authorId and externalIds patterns", () => {
+  const withAuthor = (a: string) => { const d = load(); voicing(d).provenance.authorId = a; return d; };
+  it.each(["system:chordl-guitar@0.3.0", "ai:review@prompt-v2", "ph:user:123", "gh:12345", "system"])("accepts authorId %s", (a) => {
+    expect(validateChordFileSchema(withAuthor(a)).ok).toBe(true);
+  });
+  it.each(["gh:alice@example.com", "ph:bob@mail.org", "alice@example.com", "Gh:alice"])("rejects authorId %s", (a) => {
+    expectInvalid(withAuthor(a));
+  });
+  const withExt = (ids: Record<string, string>) => { const d = load(); voicing(d).externalIds = ids; return d; };
+  it("accepts well-formed externalIds", () => {
+    expect(validateChordFileSchema(withExt({ "chords-db": "C/maj7/1", musicxml: "abc_1" })).ok).toBe(true);
+  });
+  it.each([[{ "Bad Key": "x" }], [{ k_1: "x" }], [{ a: "me@example.com" }], [{ a: "has space" }]])("rejects externalIds %j", (ids) => {
+    expectInvalid(withExt(ids));
+  });
+});

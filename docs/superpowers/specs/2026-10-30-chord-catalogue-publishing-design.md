@@ -81,7 +81,7 @@ Every PR, any source:
 - schema valid (`chordl-voicing` JSON Schema)
 - hashes recomputed and equal to the stored ones
 - code checks pass (no hard fails; flags are reported, not blocking)
-- no duplicate `shape` hash against the rest of the repo (same `pitch` hash reported, not blocking)
+- no duplicate `shape` hash for the same chord ID against the rest of the repo; the same shape under a different chord ID (e.g. symmetric `dim7` shapes) and the same `pitch` hash are reported as warnings, not blocking
 - canonical formatting (fixed key order, voicings sorted by ID, 2-space JSON, trailing newline) — CI fails with a diff; the CLI fixes it
 - **append-only**: compared with the base branch, no existing `id@rev` changed or removed; new revisions must be `rev + 1` with `previous` set; IDs never reused
 - licence: every voicing is CC0, or for imports a recorded licence on the allow-list

@@ -79,7 +79,13 @@ export function validateCatalogue(
     if (!isCanonical(head.get(path)!).ok) err(path, "not-canonical", "File is not in canonical form; run the formatter");
     const chordOk = parseChordId(file.chord.id) !== null;
     if (!chordOk) err(path, "chord-id", `Invalid chord id "${file.chord.id}"`);
-    else if (chordFilePath(file.chord.id) !== path) err(path, "path-mismatch", `Expected path ${chordFilePath(file.chord.id)}`);
+    else {
+      const p = parseChordId(file.chord.id)!;
+      if (file.chord.root !== p.root || file.chord.quality !== p.quality || file.chord.bass !== p.bass) {
+        err(path, "chord-id", `chord root/quality/bass (${file.chord.root}, ${file.chord.quality}, ${file.chord.bass}) disagree with id "${file.chord.id}"`);
+      }
+    }
+    if (chordOk && chordFilePath(file.chord.id) !== path) err(path, "path-mismatch", `Expected path ${chordFilePath(file.chord.id)}`);
 
     const revs = new Map<string, Voicing[]>();
     for (const v of file.voicings) {
@@ -124,7 +130,10 @@ export function validateCatalogue(
       else seen.set(k, e);
     }
   };
-  group((v) => v.hashes.shape, (e, f) => err(e.path, "duplicate-shape", `${e.v.id} has the same shape as ${f.v.id}`));
+  group((v) => `${v.chordId}\u0000${v.hashes.shape}`, (e, f) => err(e.path, "duplicate-shape", `${e.v.id} has the same shape as ${f.v.id} for ${e.v.chordId}`));
+  group((v) => v.hashes.shape, (e, f) => {
+    if (e.v.chordId !== f.v.chordId) warn(e.path, "same-shape-other-chord", `${e.v.id} (${e.v.chordId}) has the same shape as ${f.v.id} (${f.v.chordId})`);
+  });
   group((v) => v.hashes.pitch, (e, f) => {
     if (e.v.hashes.shape !== f.v.hashes.shape) {
       warn(e.path, "same-pitch", `${e.v.id} sounds the same pitches as ${f.v.id}`);

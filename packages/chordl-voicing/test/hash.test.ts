@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { sha256 } from "@noble/hashes/sha256";
+import { bytesToHex, utf8ToBytes } from "@noble/hashes/utils";
 import { shapeHash, pitchHash, withHashes } from "../src/index.js";
 import type { Realization, Voicing } from "../src/index.js";
 
@@ -28,6 +30,9 @@ describe("shapeHash", () => {
   });
   it("uses strings as absolute frets, not baseFret (R2)", () => {
     expect(shapeHash(fretted({ baseFret: 5 }))).toBe(shapeHash(fretted()));
+  });
+  it("tuning is hashed as MIDI: Eb2 and D#2 are equal", () => {
+    expect(shapeHash(fretted({ tuning: ["Eb2", ...GUITAR.slice(1)] }))).toBe(shapeHash(fretted({ tuning: ["D#2", ...GUITAR.slice(1)] })));
   });
   it("keyboard: order within hand is irrelevant; hand split matters", () => {
     expect(shapeHash(keys(["C3", "G3"], ["E4"]))).toBe(shapeHash(keys(["G3", "C3"], ["E4"])));
@@ -78,5 +83,36 @@ describe("withHashes", () => {
     const b = withHashes({ ...base(), rev: 2, previous: 1, status: "retired", tier: "community",
       provenance: { ...base().provenance, changeNote: "x", source: "other" } });
     expect(b.hashes).toEqual(a.hashes);
+  });
+});
+
+describe("golden vectors", () => {
+  const sha = (s: string) => "sha256:" + bytesToHex(sha256(utf8ToBytes(s)));
+  const bowed: Realization = {
+    kind: "bowed", instrument: "violin", tuning: ["G3", "D4", "A4", "E5"], position: null,
+    stops: [{ string: 1, pitch: "F4", finger: null }, { string: 0, pitch: "G3", finger: null }],
+  };
+  const cases: [string, Realization, string, string, string, string][] = [
+    ["fretted", fretted(),
+      "shape/1|fretted|guitar|40,45,50,55,59,64|capo=0|x,3,2,0,0,0",
+      "sha256:0cf8b0b60521984fc5a169e22556964e72418a9fd6dc1bbf80b1800ce7b7bf88",
+      "pitch/1|48,52,55,59,64",
+      "sha256:9cb75abba89d486c5344fb4378a6e96c9b4a3176680219aaad26271ef33d3e40"],
+    ["keyboard", keys(["G3", "C3"], ["B4", "Eb4"]),
+      "shape/1|keyboard|L=48,55|R=63,71",
+      "sha256:2deb6ff8f875934bbb8cbe2ed4f3e9728cb921dd566d7f1b865f50eb780b32b5",
+      "pitch/1|48,55,63,71",
+      "sha256:70b5b3ce1f51ed123f2962eb110e1baa47bd2900ce064d88d78eea29a396ba63"],
+    ["bowed", bowed,
+      "shape/1|bowed|violin|55,62,69,76|0:55,1:65",
+      "sha256:5843edb5a85aa8a362afa14ec0b3a830194c1009853bf1c7772858406d6c1576",
+      "pitch/1|55,65",
+      "sha256:0fae030df9869de03b144ca42da8a69c9862e4776366378463bf6dc0570fae72"],
+  ];
+  it.each(cases)("%s", (_k, r, shapeStr, shapeDigest, pitchStr, pitchDigest) => {
+    expect(sha(shapeStr)).toBe(shapeDigest);
+    expect(sha(pitchStr)).toBe(pitchDigest);
+    expect(shapeHash(r)).toBe(shapeDigest);
+    expect(pitchHash(r)).toBe(pitchDigest);
   });
 });

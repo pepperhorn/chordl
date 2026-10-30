@@ -101,6 +101,31 @@ describe("validateCatalogue", () => {
     expect(split.ok).toBe(true);
     expect(split.warnings.map((w) => w.code)).toContain("same-pitch");
   });
+  it("same shape under another chord id is a warning; same chord id still errors", () => {
+    const dim = (chordId: string, id: string, left: string[], right: string[]) =>
+      voicing({
+        id, chordId,
+        notes: labelNotes(chordId, [...left, ...right]).map((n) => ({ pitch: n.pitch, degree: n.degree })),
+        realization: { kind: "keyboard", hands: { left, right } },
+      });
+    const c = dim("C:dim7", ID1, ["C3"], ["Eb4", "Gb4", "Bbb4"]);
+    const eb = dim("Eb:dim7", ID2, ["Dbb3"], ["Eb4", "Gb4", "Bbb4"]);
+    const files = map({
+      "chords/C/C__dim7.json": text([c], { id: "C:dim7", symbol: "Cdim7", quality: "dim7" }),
+      "chords/Eb/Eb__dim7.json": text([eb], { id: "Eb:dim7", symbol: "Ebdim7", root: "Eb", quality: "dim7" }),
+    });
+    const r = validateCatalogue(files);
+    expect(errs(r)).toEqual([]);
+    expect(r.warnings.map((w) => w.code)).toContain("same-shape-other-chord");
+    const same = validateCatalogue(map({ [PATH]: text([voicing(), voicing({ id: ID2 })]) }));
+    expect(errs(same)).toEqual(["duplicate-shape"]);
+  });
+  it("chord-id error when chord.root/quality/bass disagree with the id", () => {
+    for (const over of [{ root: "D" }, { quality: "m7" }, { bass: "E" }]) {
+      const r = validateCatalogue(map({ [PATH]: text([voicing()], over) }));
+      expect(errs(r)).toContain("chord-id");
+    }
+  });
   it("duplicate-shape ignores non-live latest revs", () => {
     const r = validateCatalogue(map({ [PATH]: text([voicing(), voicing({ id: ID2, status: "retired" })]) }));
     expect(r.errors).toEqual([]);

@@ -23,11 +23,11 @@ Hashes cover musical content only: the realization's positions and pitches. Stat
 
 | Kind | Canonical string |
 | --- | --- |
-| fretted | `shape/1\|fretted\|<instrument>\|<tuning joined ",">\|capo=<n, 0 if null>\|<frets joined ",", "x" for null>` |
+| fretted | `shape/1\|fretted\|<instrument>\|<tuning MIDI numbers in string order, ",">\|capo=<n, 0 if null>\|<frets joined ",", "x" for null>` |
 | keyboard | `shape/1\|keyboard\|L=<left MIDI numbers ascending, ",">\|R=<right MIDI numbers ascending, ",">` |
-| bowed | `shape/1\|bowed\|<instrument>\|<tuning joined ",">\|<string:midi pairs, sorted by string then midi, ",">` |
+| bowed | `shape/1\|bowed\|<instrument>\|<tuning MIDI numbers in string order, ",">\|<string:midi pairs, sorted by string then midi, ",">` |
 
-Fretted `strings` and `tuning` stay in chordl-guitar string order (not pitch order). Keyboard pitches are converted to MIDI, so `Eb4` and `D#4` are equal.
+Fretted `strings` and `tuning` stay in chordl-guitar string order (not pitch order). Tuning and keyboard pitches are hashed as MIDI numbers, so `Eb2` and `D#2` are equal.
 
 ### Pitch hash (`pitch/1`)
 

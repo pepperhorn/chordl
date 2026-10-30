@@ -39,11 +39,11 @@ export function notesMatchRealization(v: Voicing): Finding[] {
     if (!Object.prototype.hasOwnProperty.call(INSTRUMENTS, r.instrument)) {
       findings.push({ code: "unknown-instrument", severity: "hard", message: `Unknown fretted instrument "${r.instrument}"`, data: { instrument: r.instrument } });
     }
-    if (r.strings.length !== r.tuning.length) {
+    if (r.strings.length !== r.tuning.length || r.fingers.length !== r.strings.length) {
       findings.push({
         code: "tuning-length", severity: "hard",
-        message: `strings has ${r.strings.length} entries but tuning has ${r.tuning.length}`,
-        data: { strings: r.strings.length, tuning: r.tuning.length },
+        message: `strings has ${r.strings.length} entries, tuning has ${r.tuning.length}, fingers has ${r.fingers.length}; they must match`,
+        data: { strings: r.strings.length, tuning: r.tuning.length, fingers: r.fingers.length },
       });
       return findings;
     }

@@ -111,9 +111,9 @@ export function checkVoicing(v: Voicing): CheckResult {
     }
   }
   if (!pcs.has(rootPc)) flags.push(flag("root-omitted", "The root does not sound"));
-  const lowest = Math.min(...midis);
+  const lowest = midis.reduce((a, b) => Math.min(a, b), Infinity);
   if (midis.length > 0 && lowest % 12 !== bassPcExpected) {
-    flags.push(flag("bass-mismatch", `Lowest note ${lowest % 12} is not the expected bass`, { lowestMidi: lowest, expectedPc: bassPcExpected }));
+    flags.push(flag("bass-mismatch", `Lowest note ${v.notes.find((n) => parsePitch(n.pitch)!.midi === lowest)!.pitch} is not the expected bass`, { lowestMidi: lowest, expectedPc: bassPcExpected }));
   }
 
   const names = chordIntervals(v.chordId).map((iv) => Note.transpose(parsed.root, iv));
@@ -121,8 +121,9 @@ export function checkVoicing(v: Voicing): CheckResult {
   if (r.kind === "keyboard") {
     for (const hand of ["left", "right"] as const) {
       const m = r.hands[hand].map((p) => parsePitch(p)!.midi);
-      if (m.length > 0 && Math.max(...m) - Math.min(...m) > MAX_HAND_SPAN) {
-        hards.push(hard("keyboard-hand-span", `${hand} hand spans ${Math.max(...m) - Math.min(...m)} semitones (max ${MAX_HAND_SPAN})`, { hand }));
+      const span = m.length > 0 ? m.reduce((a, b) => Math.max(a, b), -Infinity) - m.reduce((a, b) => Math.min(a, b), Infinity) : 0;
+      if (span > MAX_HAND_SPAN) {
+        hards.push(hard("keyboard-hand-span", `${hand} hand spans ${span} semitones (max ${MAX_HAND_SPAN})`, { hand }));
       }
     }
     if (midis.length > 0) {
@@ -143,13 +144,16 @@ export function checkVoicing(v: Voicing): CheckResult {
     flags.push(flag("interior-mute", "A muted string sits between sounding strings"));
   }
   if (sounded.length > 0 && !sounded.includes(0)) facts.push(fact("movable", "No open strings; the shape can be moved"));
-  if (r.instrument === "guitar") {
+  const standard = r.instrument === "guitar" && r.tuning.length === INSTRUMENTS.guitar.openMidi.length
+    && r.tuning.every((t, i) => parsePitch(t)?.midi === INSTRUMENTS.guitar.openMidi[i]);
+  if (standard) {
     const g = guitarFindings(v, r, names, rootPc);
     flags.push(...g.flags);
     facts.push(...g.facts);
   } else {
+    // Non-guitar instruments and non-standard guitar tunings get the generic stretch flag.
     const f = sounded.filter((x) => x > 0);
-    if (f.length > 0 && Math.max(...f) - Math.min(...f) >= STRETCH) flags.push(flag("stretch", "Fretted notes span four or more frets"));
+    if (f.length > 0 && f.reduce((a, b) => Math.max(a, b), -Infinity) - f.reduce((a, b) => Math.min(a, b), Infinity) >= STRETCH) flags.push(flag("stretch", "Fretted notes span four or more frets"));
   }
   return finish();
 }

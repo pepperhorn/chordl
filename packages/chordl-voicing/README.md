@@ -104,7 +104,7 @@ Create a voicing and add it to the chord's file (creating the file if needed):
 chordl-voicing new --chord C:maj7 --instrument guitar --frets x32000 --author gh:alice
 
 # Barre chords: --barre <fret>:<fromString>-<toString>, repeatable.
-# Strings are numbered from 0 (the lowest-pitched string in the tuning).
+# Strings are numbered from 0 (the first string in the tuning, thickest on guitar).
 # A barre counts as one finger, so a full F shape passes the four-finger check.
 chordl-voicing new --chord F:maj --instrument guitar --frets 133211 \
   --barre 1:0-5 --author gh:alice
@@ -125,7 +125,7 @@ hand.
 ```sh
 chordl-voicing format            # rewrite every file under chords/ to canonical form
 chordl-voicing format --check    # print a diff and exit 1 if any file is not canonical
-chordl-voicing format chords/C/maj7.json
+chordl-voicing format chords/C/C__maj7.json
 ```
 
 ### validate
@@ -144,8 +144,9 @@ appended, not edited). Exits 1 on any error.
 chordl-voicing bundle --out dist --version v2026.10.1
 ```
 
-Writes `manifest.json`, `catalogue.json` and `by-instrument/<instrument>.json` for the
-live voicings.
+Writes `manifest.json`, `catalogue.json` and `by-instrument/<instrument>.json`.
+`catalogue.json` holds every revision of every voicing, including retired ones;
+`by-instrument/<instrument>.json` and the manifest counts cover live voicings only.
 
 Exit codes: 0 success, 1 failure, 2 usage error.
 

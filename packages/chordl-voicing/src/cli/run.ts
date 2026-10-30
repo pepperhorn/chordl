@@ -6,13 +6,13 @@ import { Note } from "tonal";
 import { ulid } from "ulid";
 import {
   BOWED_INSTRUMENTS, checkVoicing, chordFilePath, chordIntervals, formatChordFile, isCanonical,
-  labelNotes, parseChordId, parsePitch, validateCatalogue, validateChordFileSchema, withHashes,
+  labelNotes, parseChordId, parsePitch, validateCatalogue, validateChordFileSchema, voicingSchema, withHashes,
 } from "../index.js";
 import type { ChordFile, Realization, Voicing } from "../index.js";
 
 export interface CliIo { cwd: string; stdout(s: string): void; stderr(s: string): void }
 
-const USAGE = `Usage:
+const USAGE = `Usage (string indexes are 0-based):
   chordl-voicing new --chord <id> --instrument <id> (--frets <code> | --notes "<pitches>") --author <prefixed id> [--tier community|curated] [--barre <fret>:<from>-<to>]...
   chordl-voicing format [--check] [paths...]
   chordl-voicing validate [--base <dir>] [--licences <file>]
@@ -200,7 +200,10 @@ function cmdNew(args: Args, io: CliIo): number {
   const tier = opt(args, "tier") ?? "community";
   if (tier !== "community" && tier !== "curated") throw new Failure(`--tier must be community or curated, not "${tier}"`);
   const colon = author.indexOf(":");
-  if (colon < 1 || colon === author.length - 1) throw new Failure(`--author must be a prefixed id such as gh:alice, not "${author}"`);
+  const authorPattern = new RegExp(((voicingSchema as any).properties.provenance.properties.authorId as { pattern: string }).pattern);
+  if (colon < 1 || colon === author.length - 1 || !authorPattern.test(author)) {
+    throw new Failure(`--author must be a prefixed opaque id such as gh:alice (no emails or display names), not "${author}"`);
+  }
   const parsed = parseChordId(chordId);
   if (!parsed) throw new Failure(`Invalid chord id "${chordId}"; expected <root>:<quality>[/<bass>] such as C:maj7`);
 

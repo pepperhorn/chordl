@@ -59,6 +59,9 @@ describe("notesMatchRealization", () => {
   it("flags tuning-length", () => {
     expect(codes(voicing(["C3"], fretted({ strings: [0, 0, 0] })))).toEqual(["hard:tuning-length"]);
   });
+  it("flags fingers length differing from strings", () => {
+    expect(codes(voicing(["C3", "E3", "G3", "B3", "E4"], fretted({ fingers: [null, 3, 2] })))).toEqual(["hard:tuning-length"]);
+  });
   const cello = (string: number) => voicing(["E2"], {
     kind: "bowed", instrument: "cello", tuning: BOWED_INSTRUMENTS.cello.tuning,
     stops: [{ string, pitch: "E2", finger: 1 }], position: 1,
