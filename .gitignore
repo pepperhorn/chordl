@@ -16,3 +16,6 @@ tmp/
 .gstack/browse-dialog.log
 .gstack/claude-available.json
 .gstack/qa-reports/
+
+# copied from packages/chordl-voicing/schema by scripts/copy-schema.mjs
+packages/chordl-voicing/src/generated/

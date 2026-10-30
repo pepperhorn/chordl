@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://chordl.pepperhorn.com/schema/chord.schema.json",
+  "title": "chordl.chord/1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "chord", "voicings"],
+  "properties": {
+    "schema": { "const": "chordl.chord/1" },
+    "chord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "symbol", "root", "quality", "bass", "aliases"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "symbol": { "type": "string", "minLength": 1 },
+        "root": { "type": "string", "pattern": "^[A-G](bb|b|##|#)?$" },
+        "quality": { "type": "string", "minLength": 1 },
+        "bass": { "type": ["string", "null"], "pattern": "^[A-G](bb|b|##|#)?$" },
+        "aliases": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "voicings": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "https://chordl.pepperhorn.com/schema/voicing.schema.json" }
+    }
+  }
+}

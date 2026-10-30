@@ -1,0 +1,163 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://chordl.pepperhorn.com/schema/voicing.schema.json",
+  "title": "chordl.voicing/1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "id", "rev", "previous", "chordId", "status", "tier", "licence", "notes", "realization", "provenance", "relations", "hashes"],
+  "properties": {
+    "schema": { "const": "chordl.voicing/1" },
+    "id": { "type": "string", "pattern": "^v_[0-9A-HJKMNP-TV-Z]{26}$" },
+    "rev": { "type": "integer", "minimum": 1 },
+    "previous": { "type": ["integer", "null"], "minimum": 1 },
+    "chordId": { "type": "string", "minLength": 1 },
+    "status": { "enum": ["live", "retired", "superseded"] },
+    "tier": { "enum": ["curated", "community"] },
+    "licence": { "type": "string", "minLength": 1 },
+    "level": { "enum": ["beginner", "emerging", "established"] },
+    "notes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["pitch", "degree"],
+        "properties": {
+          "pitch": { "$ref": "#/$defs/pitch" },
+          "degree": { "type": "string", "pattern": "^(bb|b|##|#)?(I|II|III|IV|V|VI|VII|IX|XI|XIII)$" }
+        }
+      }
+    },
+    "realization": {
+      "oneOf": [
+        { "$ref": "#/$defs/fretted" },
+        { "$ref": "#/$defs/keyboard" },
+        { "$ref": "#/$defs/bowed" }
+      ]
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "authorId", "createdAt", "changeNote", "basedOn", "alternativeTo"],
+      "properties": {
+        "source": { "type": "string", "minLength": 1 },
+        "authorId": { "type": "string", "pattern": "^[a-z][a-z0-9-]*(:[A-Za-z0-9._@-]+)*$" },
+        "createdAt": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?Z$" },
+        "changeNote": { "type": ["string", "null"] },
+        "basedOn": { "oneOf": [{ "$ref": "#/$defs/voicingRef" }, { "type": "null" }] },
+        "alternativeTo": { "oneOf": [{ "$ref": "#/$defs/voicingRef" }, { "type": "null" }] }
+      }
+    },
+    "relations": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["supersedes", "supersededBy", "duplicateOf"],
+      "properties": {
+        "supersedes": { "$ref": "#/$defs/voicingIdOrNull" },
+        "supersededBy": { "$ref": "#/$defs/voicingIdOrNull" },
+        "duplicateOf": { "$ref": "#/$defs/voicingIdOrNull" }
+      }
+    },
+    "externalIds": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
+    "hashes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["shape", "pitch"],
+      "properties": {
+        "shape": { "$ref": "#/$defs/hash" },
+        "pitch": { "$ref": "#/$defs/hash" }
+      }
+    }
+  },
+  "$defs": {
+    "pitch": { "type": "string", "pattern": "^[A-G](bb|b|##|#)?-?\\d$" },
+    "hash": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "voicingRef": { "type": "string", "pattern": "^v_[0-9A-HJKMNP-TV-Z]{26}@[1-9]\\d*$" },
+    "voicingIdOrNull": {
+      "oneOf": [
+        { "type": "string", "pattern": "^v_[0-9A-HJKMNP-TV-Z]{26}$" },
+        { "type": "null" }
+      ]
+    },
+    "fretted": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "instrument", "tuning", "strings", "fingers", "baseFret", "barres", "capo"],
+      "properties": {
+        "kind": { "const": "fretted" },
+        "instrument": { "type": "string", "minLength": 1 },
+        "tuning": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/pitch" } },
+        "strings": { "type": "array", "minItems": 1, "items": { "type": ["integer", "null"], "minimum": 0 } },
+        "fingers": { "type": "array", "minItems": 1, "items": { "type": ["integer", "null"], "minimum": 0, "maximum": 4 } },
+        "baseFret": { "type": "integer", "minimum": 1 },
+        "barres": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["fret", "fromString", "toString"],
+            "properties": {
+              "fret": { "type": "integer", "minimum": 1 },
+              "fromString": { "type": "integer", "minimum": 0 },
+              "toString": { "type": "integer", "minimum": 0 }
+            }
+          }
+        },
+        "capo": { "type": ["integer", "null"], "minimum": 1 }
+      }
+    },
+    "keyboard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "hands"],
+      "properties": {
+        "kind": { "const": "keyboard" },
+        "hands": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["left", "right"],
+          "properties": {
+            "left": { "type": "array", "items": { "$ref": "#/$defs/pitch" } },
+            "right": { "type": "array", "items": { "$ref": "#/$defs/pitch" } }
+          }
+        },
+        "fingering": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "left": { "type": "array", "items": { "type": "integer", "minimum": 1, "maximum": 5 } },
+            "right": { "type": "array", "items": { "type": "integer", "minimum": 1, "maximum": 5 } }
+          }
+        }
+      }
+    },
+    "bowed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "instrument", "tuning", "stops", "position"],
+      "properties": {
+        "kind": { "const": "bowed" },
+        "instrument": { "enum": ["violin", "viola", "cello", "double-bass"] },
+        "tuning": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/pitch" } },
+        "stops": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["string", "pitch", "finger"],
+            "properties": {
+              "string": { "type": "integer", "minimum": 0 },
+              "pitch": { "$ref": "#/$defs/pitch" },
+              "finger": { "type": ["integer", "null"], "minimum": 0, "maximum": 4 }
+            }
+          }
+        },
+        "position": { "type": ["integer", "null"], "minimum": 1 }
+      }
+    }
+  }
+}

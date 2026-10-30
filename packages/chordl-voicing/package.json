@@ -1,0 +1,55 @@
+{
+  "name": "@pepperhorn/chordl-voicing",
+  "version": "0.1.0",
+  "description": "Open JSON format for chord voicings: types, JSON Schemas and validation",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pepperhorn/chordl.git",
+    "directory": "packages/chordl-voicing"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./schema/chord.schema.json": "./schema/chord.schema.json",
+    "./schema/voicing.schema.json": "./schema/voicing.schema.json"
+  },
+  "engines": {
+    "node": ">=20.10"
+  },
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "schema"
+  ],
+  "scripts": {
+    "prepare:schema": "node scripts/copy-schema.mjs",
+    "build": "pnpm run prepare:schema && tsc",
+    "lint": "pnpm run prepare:schema && tsc --noEmit",
+    "test": "pnpm run prepare:schema && vitest",
+    "test:run": "pnpm run prepare:schema && vitest run"
+  },
+  "dependencies": {
+    "@noble/hashes": "^1.8.0",
+    "@pepperhorn/chordl-core": "workspace:*",
+    "@pepperhorn/chordl-guitar": "workspace:*",
+    "@pepperhorn/chordl-voicings": "workspace:*",
+    "ajv": "^8.17.1",
+    "tonal": "~6.4.3",
+    "ulid": "^2.3.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "vitest": "^4.1.1"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "MIT"
+}
