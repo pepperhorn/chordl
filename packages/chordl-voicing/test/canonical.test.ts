@@ -87,9 +87,31 @@ describe("isCanonical", () => {
   });
 });
 
-import { formatChordFile as _fmt } from "../src/index.js";
-import { it as _it, expect as _expect } from "vitest";
-_it("keeps a barre's toString field as data (not Object.prototype.toString)", () => {
-  const f = { schema: "chordl.chord/1", chord: { id: "C:7" }, voicings: [{ id: "a", rev: 1, realization: { kind: "fretted", barres: [{ fret: 3, fromString: 1, toString: 5 }] } }] };
-  _expect(_fmt(f as never)).toContain('"toString": 5');
+describe("prototype-named keys", () => {
+  const base = { schema: "chordl.chord/1", chord: { id: "C:7" }, voicings: [{ id: "a", rev: 1, realization: { kind: "fretted", barres: [{ fret: 3, fromString: 1, toString: 5 }] } }] };
+
+  it("keeps a barre's toString field as data", () => {
+    expect(formatChordFile(base as never)).toContain('"toString": 5');
+  });
+
+  it("does not copy an inherited toString onto a barre that lacks one", () => {
+    const f = structuredClone(base);
+    delete (f.voicings[0].realization.barres[0] as Record<string, unknown>).toString;
+    expect(formatChordFile(f as never)).not.toContain('"toString"');
+  });
+
+  it("keeps an unknown own key named constructor", () => {
+    const f = JSON.parse('{"schema":"chordl.chord/1","constructor":7,"chord":{"id":"C:7"},"voicings":[]}');
+    expect(JSON.parse(formatChordFile(f)).constructor).toBe(7);
+  });
+
+  it("keeps a __proto__ own key from JSON.parse without changing the prototype", () => {
+    const f = JSON.parse('{"schema":"chordl.chord/1","__proto__":{"polluted":true},"chord":{"id":"C:7"},"voicings":[]}');
+    const text = formatChordFile(f);
+    expect(text).toContain('"__proto__"');
+    const back = JSON.parse(text);
+    expect(Object.prototype.hasOwnProperty.call(back, "__proto__")).toBe(true);
+    expect(Object.getPrototypeOf(back)).toBe(Object.prototype);
+    expect(({} as Record<string, unknown>).polluted).toBeUndefined();
+  });
 });

@@ -28,10 +28,13 @@ type Obj = Record<string, unknown>;
 function order(o: unknown, keys: readonly string[], children: Record<string, (v: unknown) => unknown> = {}): unknown {
   if (o === null || typeof o !== "object" || Array.isArray(o)) return o;
   const src = o as Obj;
-  const out: Obj = {};
-  const emit = (k: string) => { out[k] = Object.prototype.hasOwnProperty.call(children, k) ? children[k](src[k]) : src[k]; };
-  for (const k of keys) if (k in src && src[k] !== undefined) emit(k);
-  for (const k of Object.keys(src)) if (!(k in out) && src[k] !== undefined) emit(k);
+  // Null-prototype so a `__proto__` key from JSON.parse is plain data, and own-property checks
+  // so inherited names (`toString`, `constructor`) are never mistaken for keys.
+  const out: Obj = Object.create(null);
+  const has = (x: object, k: string) => Object.prototype.hasOwnProperty.call(x, k);
+  const emit = (k: string) => { out[k] = has(children, k) ? children[k](src[k]) : src[k]; };
+  for (const k of keys) if (has(src, k) && src[k] !== undefined) emit(k);
+  for (const k of Object.keys(src)) if (!has(out, k) && src[k] !== undefined) emit(k);
   return out;
 }
 
