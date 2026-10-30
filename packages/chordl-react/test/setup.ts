@@ -14,6 +14,20 @@ if (typeof SVGElement !== "undefined" && !("getBBox" in SVGElement.prototype)) {
   });
 }
 
+// Node 25+ defines its own global localStorage and sessionStorage, and vitest's
+// jsdom environment will not overwrite a global that already exists, so tests
+// would see Node's stubs instead of jsdom's working storage. Put jsdom's back.
+const { jsdom } = globalThis as unknown as { jsdom?: { window: Window } };
+if (jsdom) {
+  for (const name of ["localStorage", "sessionStorage"] as const) {
+    Object.defineProperty(globalThis, name, {
+      writable: true,
+      configurable: true,
+      value: jsdom.window[name],
+    });
+  }
+}
+
 // Testing Library only auto-cleans when the test runner exposes globals.
 // This package runs vitest without `globals: true`, so without this the DOM
 // from one render() leaks into the next test in the same file — document-wide
