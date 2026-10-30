@@ -16,3 +16,5 @@ export { shapeHash, pitchHash, withHashes } from "./hash.js";
 export { formatChordFile, isCanonical, KEY_ORDER } from "./canonical.js";
 export { checkVoicing } from "./checks.js";
 export type { CheckResult } from "./checks.js";
+export { chordFilePath, validateCatalogue } from "./catalogue.js";
+export type { CatalogueIssue, CatalogueReport } from "./catalogue.js";
