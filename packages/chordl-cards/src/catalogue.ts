@@ -339,12 +339,12 @@ export function spellChord(root: string, type: ChordType | string): string[] {
  * with an octave could cross it (Cb4 sounds as B3).
  */
 export function displayNoteName(chordId: string, pitchClass: string): string {
-  const [root, quality = ""] = chordId.split(":");
-  const r = noteParts(root);
+  const [, root, quality, bass] = /^([A-G][b#]?):([^:/]+)(?:\/([A-G][b#]?))?$/.exec(chordId) ?? [];
+  const r = root ? noteParts(root) : undefined;
   const n = noteParts(pitchClass);
   if (!r || !n) throw new Error(`unknown note in "${chordId}", "${pitchClass}"`);
-  const isDim7 = quality.split("/")[0] === "dim7";
-  if (isDim7 && n.pc === (r.pc + 9) % 12) return simplifyDoubleAccidental(spellInterval(root, "6"));
+  if (pitchClass === bass) return pitchClass; // the written slash bass keeps its spelling
+  if (quality === "dim7" && n.pc === (r.pc + 9) % 12) return simplifyDoubleAccidental(spellInterval(root, "6"));
   return simplifyDoubleAccidental(pitchClass);
 }
 

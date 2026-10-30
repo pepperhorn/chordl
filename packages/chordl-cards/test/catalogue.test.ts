@@ -347,6 +347,20 @@ describe("displayNoteName", () => {
     expect(displayNoteName("Ab:m", "Cb")).toBe("Cb");
   });
 
+  it("keeps a written slash bass as spelled", () => {
+    expect(displayNoteName("E:dim7/Db", "Db")).toBe("Db");
+    expect(displayNoteName("A:dim7/Gb", "Gb")).toBe("Gb");
+    expect(displayNoteName("B:dim7/Ab", "Ab")).toBe("Ab");
+    expect(displayNoteName("E:dim7/C#", "C#")).toBe("C#");
+  });
+
+  it("rejects a malformed chord id", () => {
+    expect(() => displayNoteName("D:dim7:garbage", "Cb")).toThrow();
+    expect(() => displayNoteName("D:dim7/H", "Cb")).toThrow();
+    expect(() => displayNoteName("D:dim7/", "Cb")).toThrow();
+    expect(() => displayNoteName("D", "Cb")).toThrow();
+  });
+
   it("does not respell the same pitch class outside dim7", () => {
     expect(displayNoteName("D:m7b5", "Cb")).toBe("Cb");
   });
