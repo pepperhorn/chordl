@@ -26,7 +26,8 @@
   "sideEffects": false,
   "files": [
     "dist",
-    "schema"
+    "schema",
+    "docs/CANONICAL.md"
   ],
   "scripts": {
     "prepare:schema": "node scripts/copy-schema.mjs",

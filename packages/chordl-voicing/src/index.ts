@@ -12,3 +12,5 @@ export type { ParsedPitch, LabelledNote } from "./pitch.js";
 export { BOWED_INSTRUMENTS } from "./instruments.js";
 export { soundingMidi, notesMatchRealization } from "./realization.js";
 export type { Finding } from "./realization.js";
+export { shapeHash, pitchHash, withHashes } from "./hash.js";
+export { formatChordFile, isCanonical, KEY_ORDER } from "./canonical.js";
