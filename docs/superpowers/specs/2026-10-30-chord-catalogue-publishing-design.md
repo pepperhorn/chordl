@@ -130,7 +130,7 @@ Nothing is deleted. A bad voicing gets a new revision with status `retired` or `
 
 ## Internal catalogue API (owner decision 2026-10-30)
 
-Both directions run through one small private service, the **catalogue API**, a standalone service on Coolify, so no app holds GitHub logic or keys. It replaces the catalogue-bot hook in `ph-apps-extensions` and the AI review runner in ph-apps. App-side stays: submission stores, sign-in, user-facing status, and the plain-English input.
+Both directions run through one small private service, the **catalogue API**, a standalone TypeScript service (Hono on Node, importing `@pepperhorn/chordl-voicing` directly) on Coolify, so no app holds GitHub logic or keys. It replaces the catalogue-bot hook in `ph-apps-extensions` and the AI review runner in ph-apps. App-side stays: submission stores, sign-in, user-facing status, and the plain-English input.
 
 - **OUT:** `POST /submissions` reruns `chordl-voicing`, runs the AI review, and opens the PR through the GitHub App. `GET /submissions/:id` returns status.
 - **IN:** on a release the API computes changes and notifies subscribed apps with retries. `GET /releases/:version/changes?since=` lets an app catch up (nightly check). `POST /adoptions` records a CRF staff adoption, writes `id@rev` to crf-admin and triggers the chords site rebuild.
