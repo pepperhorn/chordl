@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Ship `@pepperhorn/chordl-voicing` (format schema, IDs, spelling, hashes, canonical formatter, code checks, catalogue validator, CLI) and scaffold the public CC0 `pepperhorn/chord-catalogue` repo whose CI and release workflows run on it.
+**Goal:** Ship `@pepperhorn/chordl-voicing` (format schema, IDs, spelling, hashes, canonical formatter, code checks, catalogue validator, CLI) and scaffold the public CC0 `pepperhorn/openchords` repo whose CI and release workflows run on it.
 
 **Architecture:** A new pure-TypeScript package in the chordl pnpm monorepo, browser-safe (no `node:` imports outside `src/cli/`), depending on `@pepperhorn/chordl-core` (degree labels), `@pepperhorn/chordl-guitar` (instrument table, guitar review signals) and `@pepperhorn/chordl-voicings` (keyboard levels). The catalogue repo holds only data, docs and workflows; all logic lives in the package's CLI, pinned by version.
 
@@ -186,14 +186,14 @@ Error codes: `schema`, `not-canonical`, `path-mismatch`, `hash-mismatch`, `check
 
 ---
 
-## Part B — `pepperhorn/chord-catalogue` repo
+## Part B — `pepperhorn/openchords` repo
 
-Work in `/home/shaun/chord-catalogue` (new directory, `git init -b main`).
+Work in `/home/shaun/openchords` (new directory, `git init -b main`).
 
 ### Task 10: Repo content scaffold
 
 **Files:**
-- Create: `LICENSE` (official CC0-1.0 legal code text), `README.md` (what, how to consume: pin a release tag / npm `@pepperhorn/chord-catalogue` / jsDelivr URL pattern; tiers; status; no personal data), `CONTRIBUTING.md` (four routes from the spec; `npx @pepperhorn/chordl-voicing new`; DCO sign-off `git commit -s`; everything enters as community; append-only rules), `CODEOWNERS` (`* @pepperhorn/catalogue-maintainers` placeholder team), `licences.json` (`["CC0-1.0","public-domain"]`), `chords/.gitkeep`, `.gitattributes` (`*.json text eol=lf`), `.github/pull_request_template.md` (summary, source, and a fenced ```` ```review ```` YAML block: `decision: approve|request-changes|reject`, `tier: community|curated`, `overrides: {difficulty: , handPosition: , sound: , idiom: , teachingValue: }`), `package.json` (`name: @pepperhorn/chord-catalogue`, `version: 0.0.0` set at release, `license: CC0-1.0`, `files: ["dist"]`, `devDependencies: {"@pepperhorn/chordl-voicing": "0.1.0"}` exact pin, scripts `validate`, `format`, `bundle` calling the CLI).
+- Create: `LICENSE` (official CC0-1.0 legal code text), `README.md` (what, how to consume: pin a release tag / npm `@pepperhorn/openchords` / jsDelivr URL pattern; tiers; status; no personal data), `CONTRIBUTING.md` (four routes from the spec; `npx @pepperhorn/chordl-voicing new`; DCO sign-off `git commit -s`; everything enters as community; append-only rules), `CODEOWNERS` (`* @pepperhorn/catalogue-maintainers` placeholder team), `licences.json` (`["CC0-1.0","public-domain"]`), `chords/.gitkeep`, `.gitattributes` (`*.json text eol=lf`), `.github/pull_request_template.md` (summary, source, and a fenced ```` ```review ```` YAML block: `decision: approve|request-changes|reject`, `tier: community|curated`, `overrides: {difficulty: , handPosition: , sound: , idiom: , teachingValue: }`), `package.json` (`name: @pepperhorn/openchords`, `version: 0.0.0` set at release, `license: CC0-1.0`, `files: ["dist"]`, `devDependencies: {"@pepperhorn/chordl-voicing": "0.1.0"}` exact pin, scripts `validate`, `format`, `bundle` calling the CLI).
 - [ ] **Step 1:** `npm install && npx chordl-voicing validate` — Expected: exit 0 on the empty catalogue.
 - [ ] **Step 2:** add a throwaway `chords/C/C__maj7.json` via `npx chordl-voicing new --chord C:maj7 --instrument guitar --frets x32000 --author system:seed-test`, run `validate` → exit 0; delete it (repo ships empty).
 - [ ] **Step 3: Commit** `chore: scaffold CC0 chord catalogue` (signed off with `-s`).
@@ -217,8 +217,8 @@ Work in `/home/shaun/chord-catalogue` (new directory, `git init -b main`).
 
 ### Task 13: Publish the repo (owner-confirmed, outward-facing)
 
-- [ ] **Step 1 (confirm with owner first):** `gh repo create pepperhorn/chord-catalogue --public --source . --push --description "Open CC0 chord voicing catalogue (keyboard, fretted, bowed) in the chordl.voicing format"`.
-- [ ] **Step 2:** branch protection on `main`: require `validate` check, require PR review, disallow force-push (`gh api` on `repos/pepperhorn/chord-catalogue/branches/main/protection`).
+- [ ] **Step 1 (confirm with owner first):** `gh repo create pepperhorn/openchords --public --source . --push --description "Open CC0 chord voicing catalogue (keyboard, fretted, bowed) in the chordl.voicing format"`.
+- [ ] **Step 2:** branch protection on `main`: require `validate` check, require PR review, disallow force-push (`gh api` on `repos/pepperhorn/openchords/branches/main/protection`).
 - [ ] **Step 3:** create the `catalogue-maintainers` team (or replace the CODEOWNERS placeholder with real handles the owner names).
 - [ ] **Step 4:** open a test PR adding one voicing via the CLI (signed off) — Expected: `validate` green; close it unmerged. Run the release dry run (Task 12 Step 2).
-- [ ] **Step 5 (owner action, before the first real release):** create the npm package `@pepperhorn/chord-catalogue` (first publish manually or via token) and register the repo's `release.yml` as Trusted Publisher; then flip `dry_run` default to `false`.
+- [ ] **Step 5 (owner action, before the first real release):** create the npm package `@pepperhorn/openchords` (first publish manually or via token) and register the repo's `release.yml` as Trusted Publisher; then flip `dry_run` default to `false`.

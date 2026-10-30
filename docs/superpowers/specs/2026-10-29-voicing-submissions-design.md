@@ -2,7 +2,7 @@
 
 **Date:** 2026-10-29
 **Status:** design agreed in conversation; ready for a plan
-**Next design (not this one):** the Directus v12 unified chord catalogue for CRF and PepperHorn, and the `chord-catalogue` publishing repo. Both build on the format defined here.
+**Next design (not this one):** the Directus v12 unified chord catalogue for CRF and PepperHorn, and the `openchords` publishing repo. Both build on the format defined here.
 
 ## Intent
 
@@ -22,7 +22,7 @@ Underneath that sits a bigger need: one flat, open JSON format that spells a voi
 
 ## Non-goals
 
-- The Directus v12 catalogue service, the migration out of CRF Admin, and the `chord-catalogue` repo and release job. Next design. This one only fixes the format they will use.
+- The Directus v12 catalogue service, the migration out of CRF Admin, and the `openchords` repo and release job. Next design. This one only fixes the format they will use.
 - The improvement loop that learns from review records. Separate process. We only store what it needs.
 - The voicing generator consuming submissions. Nothing here changes how chordl generates voicings.
 - Bowed-string (violin, cello) **builder UI**. The format supports bowed voicings from day one; the builder doesn't yet.
@@ -145,7 +145,7 @@ Rules:
 | Format: JSON Schema, types, validators, hashes, code checks, scorecard and review-record types | new package `@pepperhorn/chordl-voicing` in this monorepo |
 | Editor overlay: onboarding question, fretted and keyboard builders, plain-text box, live checks, submit | new package `@pepperhorn/chordl-voicing-editor` in this monorepo |
 | Submission adapter: ph-apps implementation; AI review runner; text-to-voicing endpoint | ph-apps (server side) |
-| Published catalogue data | `chord-catalogue` repo — see `2026-10-30-chord-catalogue-publishing-design.md` |
+| Published catalogue data | `openchords` repo — see `2026-10-30-chord-catalogue-publishing-design.md` |
 
 Both new packages are open source and must be usable with a local/memory adapter and no server.
 
@@ -206,7 +206,7 @@ Stored per submission revision, append-only:
 
 The review prompt lives in the repo, versioned, so scoring is transparent. Staff overrides are the improvement loop's main signal; nothing in this project acts on them.
 
-**Superseded 2026-10-30:** the final human review now happens in the `chord-catalogue` pull request, with decisions written back to the intake record. Intake staff only clear hard-failed or flagged submissions for promotion. See `2026-10-30-chord-catalogue-publishing-design.md`.
+**Superseded 2026-10-30:** the final human review now happens in the `openchords` pull request, with decisions written back to the intake record. Intake staff only clear hard-failed or flagged submissions for promotion. See `2026-10-30-chord-catalogue-publishing-design.md`.
 
 ## Owner decisions 2026-10-30
 

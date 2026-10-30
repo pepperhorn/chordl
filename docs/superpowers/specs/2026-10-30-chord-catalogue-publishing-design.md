@@ -14,7 +14,7 @@ The hard part isn't storage, it's the **publish process**: getting a voicing fro
 
 ## Goals
 
-1. A public repo, `pepperhorn/chord-catalogue`, licensed **CC0**, with a fixed file layout and canonical formatting so diffs are clean.
+1. A public repo, `pepperhorn/openchords`, licensed **CC0**, with a fixed file layout and canonical formatting so diffs are clean.
 2. **CI** that enforces the format and the musical checks on every pull request, and makes history append-only.
 3. A **promotion path** from private intake stores (ph-apps for chordl.app, crf-admin for the CRF sites) into the repo as one pull request per voicing.
 4. **Third-party routes**: direct PRs, partner intakes, bulk datasets — all ending at the same checks, AI review and maintainer merge.
@@ -45,7 +45,7 @@ The hard part isn't storage, it's the **publish process**: getting a voicing fro
    code checks → AI scorecard → held / live-in-app / flagged
    │ passes (or staff-cleared)
    ▼
- PROMOTION BOT ── one PR per voicing ──▶ chord-catalogue (public)
+ PROMOTION BOT ── one PR per voicing ──▶ openchords (public)
                                           CI + AI review comment
                                           maintainer review → merge
                                           │ scheduled
@@ -107,7 +107,7 @@ Voicings carry `tier: "curated" | "community"`. Consumers filter on it. Promotio
 
 - Merges collect on `main`. A scheduled workflow (weekly, plus manual dispatch) cuts a release when `main` has changed.
 - Version: calendar versioning `vYYYY.MM.N`.
-- Each release produces: git tag; GitHub release with generated notes (added, new revisions, superseded, retired, by instrument and tier); `manifest.json` (every `id@rev` with hashes, `chordl-voicing` version, counts); a bundled single-file JSON plus per-instrument bundles; npm package `@pepperhorn/chord-catalogue`; jsDelivr URLs come free from the tag.
+- Each release produces: git tag; GitHub release with generated notes (added, new revisions, superseded, retired, by instrument and tier); `manifest.json` (every `id@rev` with hashes, `chordl-voicing` version, counts); a bundled single-file JSON plus per-instrument bundles; npm package `@pepperhorn/openchords`; jsDelivr URLs come free from the tag.
 - Publishing to npm uses trusted publishing from the workflow. (Note: trusted publishing for chordl packages failed with E404 on 2026-10-28; set it up and test it before the first release.)
 
 ### 9. Consumers
@@ -128,6 +128,16 @@ Nothing is deleted. A bad voicing gets a new revision with status `retired` or `
 6. **Hashes.** `shape` = instrument + tuning + capo + the sounding positions (fretted: absolute fret or mute per string; keyboard: pitches per hand; bowed: string + pitch per stop). Fingering, finger numbers and barres are excluded: a better fingering of the same grip is a new revision of the same voicing, not a new voicing. `pitch` = sorted MIDI numbers of the sounding notes, so enharmonic spellings hash the same ("same sound"). Canonicalisation is specified in the package docs and versioned; changing it is a breaking change.
 7. **First npm publish of `@pepperhorn/chordl-voicing` is manual** (npm login with browser approval by the owner, as on 2026-10-28), then trusted publishing is configured on the existing package and tested before any further release. The catalogue validate workflow pins that published version.
 
+## Internal catalogue API (owner decision 2026-10-30)
+
+Both directions run through one small private service, the **catalogue API**, a standalone service on Coolify, so no app holds GitHub logic or keys. It replaces the catalogue-bot hook in `ph-apps-extensions` and the AI review runner in ph-apps. App-side stays: submission stores, sign-in, user-facing status, and the plain-English input.
+
+- **OUT:** `POST /submissions` reruns `chordl-voicing`, runs the AI review, and opens the PR through the GitHub App. `GET /submissions/:id` returns status.
+- **IN:** on a release the API computes changes and notifies subscribed apps with retries. `GET /releases/:version/changes?since=` lets an app catch up (nightly check). `POST /adoptions` records a CRF staff adoption, writes `id@rev` to crf-admin and triggers the chords site rebuild.
+- **Rules:** not in any read path (sites build from release files; an outage stops no build); stores no catalogue data and no personal details (jobs, deliveries, subscriptions only); private, one token per app; outside contributors keep using GitHub PRs.
+
+CRF: the chords site builds from pinned release files for voicings and keeps reading crf-admin for school content. crf-cms is the staff audit desk for incoming voicings, and also the CRF submission store, in separate collections. crf-admin holds the school programme and references voicings by `id@rev`.
+
 ## Third-party routes
 
 All end at the same CI, AI review and maintainer merge, and all enter as `community`.
@@ -140,7 +150,7 @@ All end at the same CI, AI review and maintainer merge, and all enter as `commun
 ## Repo layout (agreed shape; exact names builder's call)
 
 ```
-chord-catalogue/
+openchords/
   LICENSE                      CC0-1.0
   README.md                    what it is, how to consume, how to contribute
   CONTRIBUTING.md              the four routes, DCO, format, review
@@ -160,8 +170,8 @@ The first content is an import of CRF's existing voicings (≈2,947 `chord_data`
 ## Order of work
 
 1. `@pepperhorn/chordl-voicing` package in the chordl monorepo: schema, types, validators, hashes, canonical formatter, code checks, CLI. (Needed by everything else.)
-2. `chord-catalogue` repo scaffold: licence, layout, docs, templates, validate workflow, release workflow (dry run).
-3. Catalogue bot (GitHub App) + review-service hook: PR comments, decision write-back.
+2. `openchords` repo scaffold: licence, layout, docs, templates, validate workflow, release workflow (dry run).
+3. Catalogue API + GitHub App: submissions, AI review, PR comments, decision write-back, release notifications, adoptions.
 4. Intake promotion from ph-apps (and later crf-admin).
 5. Seeding from CRF and chordl.
 6. Consumer imports in each app (each app's own work).
