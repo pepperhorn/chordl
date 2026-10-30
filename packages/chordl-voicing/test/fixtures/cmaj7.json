@@ -1,0 +1,54 @@
+{
+  "schema": "chordl.chord/1",
+  "chord": {
+    "id": "C:maj7",
+    "symbol": "Cmaj7",
+    "root": "C",
+    "quality": "maj7",
+    "bass": null,
+    "aliases": ["CΔ7", "CM7"]
+  },
+  "voicings": [
+    {
+      "schema": "chordl.voicing/1",
+      "id": "v_01JBX9ZQ3M4N5P6R7S8T9V0W1X",
+      "rev": 1,
+      "previous": null,
+      "chordId": "C:maj7",
+      "status": "live",
+      "tier": "community",
+      "licence": "CC0-1.0",
+      "notes": [
+        { "pitch": "C3", "degree": "I" },
+        { "pitch": "E3", "degree": "III" },
+        { "pitch": "G3", "degree": "V" },
+        { "pitch": "B3", "degree": "VII" },
+        { "pitch": "E4", "degree": "III" }
+      ],
+      "realization": {
+        "kind": "fretted",
+        "instrument": "guitar",
+        "tuning": ["E2", "A2", "D3", "G3", "B3", "E4"],
+        "strings": [null, 3, 2, 0, 0, 0],
+        "fingers": [null, 3, 2, null, null, null],
+        "baseFret": 1,
+        "barres": [],
+        "capo": null
+      },
+      "level": "beginner",
+      "provenance": {
+        "source": "user",
+        "authorId": "ph:user:123",
+        "createdAt": "2026-10-29T10:00:00Z",
+        "changeNote": null,
+        "basedOn": null,
+        "alternativeTo": null
+      },
+      "relations": { "supersedes": null, "supersededBy": null, "duplicateOf": null },
+      "hashes": {
+        "shape": "sha256:3f2a9c1d5e7b8a406c1d2e3f4a5b6c7d8e9f00112233445566778899aabbccdd",
+        "pitch": "sha256:a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90"
+      }
+    }
+  ]
+}
