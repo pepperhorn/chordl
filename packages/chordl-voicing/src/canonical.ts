@@ -29,7 +29,7 @@ function order(o: unknown, keys: readonly string[], children: Record<string, (v:
   if (o === null || typeof o !== "object" || Array.isArray(o)) return o;
   const src = o as Obj;
   const out: Obj = {};
-  const emit = (k: string) => { out[k] = children[k] ? children[k](src[k]) : src[k]; };
+  const emit = (k: string) => { out[k] = Object.prototype.hasOwnProperty.call(children, k) ? children[k](src[k]) : src[k]; };
   for (const k of keys) if (k in src && src[k] !== undefined) emit(k);
   for (const k of Object.keys(src)) if (!(k in out) && src[k] !== undefined) emit(k);
   return out;

@@ -1,5 +1,5 @@
 import { createRequire } from "node:module";
-import { mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { INSTRUMENTS } from "@pepperhorn/chordl-guitar";
 import { Note } from "tonal";
@@ -13,7 +13,7 @@ import type { ChordFile, Realization, Voicing } from "../index.js";
 export interface CliIo { cwd: string; stdout(s: string): void; stderr(s: string): void }
 
 const USAGE = `Usage:
-  chordl-voicing new --chord <id> --instrument <id> (--frets <code> | --notes "<pitches>") --author <prefixed id> [--tier community|curated]
+  chordl-voicing new --chord <id> --instrument <id> (--frets <code> | --notes "<pitches>") --author <prefixed id> [--tier community|curated] [--barre <fret>:<from>-<to>]...
   chordl-voicing format [--check] [paths...]
   chordl-voicing validate [--base <dir>] [--licences <file>]
   chordl-voicing bundle --out <dir> --version <vYYYY.MM.N>
@@ -22,10 +22,10 @@ const USAGE = `Usage:
 class UsageError extends Error {}
 class Failure extends Error {}
 
-interface Args { flags: Map<string, string | true>; positional: string[] }
+interface Args { flags: Map<string, string | true>; all: Map<string, string[]>; positional: string[] }
 const BOOLEAN_FLAGS = new Set(["check"]);
 const COMMAND_FLAGS: Record<string, string[]> = {
-  new: ["chord", "instrument", "frets", "notes", "author", "tier"],
+  new: ["chord", "instrument", "frets", "notes", "author", "tier", "barre"],
   format: ["check"],
   validate: ["base", "licences"],
   bundle: ["out", "version"],
@@ -34,6 +34,7 @@ const COMMAND_FLAGS: Record<string, string[]> = {
 function parseArgs(command: string, argv: string[]): Args {
   const allowed = COMMAND_FLAGS[command];
   const flags = new Map<string, string | true>();
+  const all = new Map<string, string[]>();
   const positional: string[] = [];
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
@@ -44,8 +45,9 @@ function parseArgs(command: string, argv: string[]): Args {
     const value = argv[++i];
     if (value === undefined) throw new UsageError(`Option --${name} needs a value`);
     flags.set(name, value);
+    all.set(name, [...(all.get(name) ?? []), value]);
   }
-  return { flags, positional };
+  return { flags, all, positional };
 }
 
 function need(args: Args, name: string): string {
@@ -77,7 +79,12 @@ function walkJson(root: string): string[] {
   return out;
 }
 
-function loadTree(root: string): Map<string, string> {
+function loadTree(root: string, mustExist = false): Map<string, string> {
+  if (mustExist) {
+    let ok = false;
+    try { ok = statSync(root).isDirectory(); } catch { /* reported below */ }
+    if (!ok) throw new Failure(`--base "${root}" is not a directory`);
+  }
   const m = new Map<string, string>();
   for (const p of walkJson(root)) m.set(p, readFileSync(join(root, p), "utf8"));
   return m;
@@ -132,14 +139,15 @@ function buildRealization(args: Args, chordId: string): Realization {
   const instrument = need(args, "instrument");
   const frets = opt(args, "frets");
   const notes = opt(args, "notes");
-  if (instrument in BOWED_INSTRUMENTS) {
+  if (Object.prototype.hasOwnProperty.call(BOWED_INSTRUMENTS, instrument)) {
     throw new Failure(`Bowed voicings (${instrument}) are written by hand; this command only creates fretted and keyboard voicings`);
   }
   if (instrument === "piano" || instrument === "keyboard") {
     if (notes === undefined) throw new UsageError("Keyboard voicings need --notes");
     if (frets !== undefined) throw new Failure("--frets does not apply to keyboard voicings; use --notes");
+    if (notes.split("|").length > 2) throw new UsageError('--notes may contain at most one "|" (left | right)');
     const [left, right] = notes.includes("|")
-      ? notes.split("|", 2).map((s) => s.trim().split(/\s+/).filter(Boolean))
+      ? notes.split("|").map((s) => s.trim().split(/\s+/).filter(Boolean))
       : [[], notes.trim().split(/\s+/).filter(Boolean)];
     for (const p of [...left, ...right]) {
       if (!parsePitch(p)) throw new Failure(`Invalid pitch "${p}": use ASCII scientific pitch such as Eb4`);
@@ -153,8 +161,12 @@ function buildRealization(args: Args, chordId: string): Realization {
   if (notes !== undefined) throw new Failure("--notes only applies to keyboard voicings; use --frets");
   if (frets === undefined) throw new UsageError("Fretted voicings need --frets");
   const cfg = INSTRUMENTS[instrument as keyof typeof INSTRUMENTS];
-  const tones = chordTones(chordId);
   const strings = parseFrets(frets, cfg.openMidi.length);
+  const barres = (args.all.get("barre") ?? []).map((b) => {
+    const m = /^(\d+):(\d+)-(\d+)$/.exec(b);
+    if (!m) throw new UsageError(`Invalid --barre "${b}"; expected <fret>:<fromString>-<toString> such as 3:1-5`);
+    return { fret: +m[1], fromString: +m[2], toString: +m[3] };
+  });
   const fretted = strings.filter((f): f is number => f !== null && f > 0);
   return {
     kind: "fretted",
@@ -162,8 +174,8 @@ function buildRealization(args: Args, chordId: string): Realization {
     tuning: cfg.openMidi.map((m) => Note.fromMidi(m)),
     strings,
     fingers: strings.map(() => null),
-    baseFret: fretted.length ? Math.min(...fretted) : 1,
-    barres: [],
+    baseFret: fretted.length && Math.max(...fretted) > 5 ? Math.min(...fretted) : 1,
+    barres,
     capo: null,
   };
 }
@@ -300,7 +312,7 @@ function cmdFormat(args: Args, io: CliIo): number {
 function cmdValidate(args: Args, io: CliIo): number {
   const head = loadTree(io.cwd);
   const baseDir = opt(args, "base");
-  const base = baseDir === undefined ? undefined : loadTree(resolve(io.cwd, baseDir));
+  const base = baseDir === undefined ? undefined : loadTree(resolve(io.cwd, baseDir), true);
   let licences = ["CC0-1.0", "public-domain"];
   const licFile = opt(args, "licences");
   if (licFile !== undefined) {
@@ -371,7 +383,7 @@ function cmdBundle(args: Args, io: CliIo): number {
 export async function run(argv: string[], io: CliIo): Promise<number> {
   const [command, ...rest] = argv;
   try {
-    if (!command || !(command in COMMAND_FLAGS)) {
+    if (!command || !Object.prototype.hasOwnProperty.call(COMMAND_FLAGS, command)) {
       throw new UsageError(command ? `Unknown command "${command}"` : "Missing command");
     }
     const args = parseArgs(command, rest);

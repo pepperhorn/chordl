@@ -2,6 +2,7 @@ import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSyn
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { formatChordFile } from "../src/index.js";
 import { run } from "../src/cli/run.js";
 
 let dir: string;
@@ -28,7 +29,7 @@ describe("new", () => {
     expect(v.id).toMatch(/^v_[0-9A-HJKMNP-TV-Z]{26}$/);
     expect(v.provenance).toMatchObject({ source: "gh", authorId: "gh:alice" });
     expect(v.notes.map((n: { pitch: string }) => n.pitch)).toEqual(["C3", "E3", "G3", "B3", "E4"]);
-    expect(v.realization).toMatchObject({ kind: "fretted", instrument: "guitar", baseFret: 2, barres: [], capo: null });
+    expect(v.realization).toMatchObject({ kind: "fretted", instrument: "guitar", baseFret: 1, barres: [], capo: null });
     expect(v.realization.tuning).toEqual(["E2", "A2", "D3", "G3", "B3", "E4"]);
     expect(v.realization.strings).toEqual([null, 3, 2, 0, 0, 0]);
     expect(v.realization.fingers).toEqual([null, null, null, null, null, null]);
@@ -100,6 +101,29 @@ describe("new", () => {
   });
 });
 
+describe("new --barre and baseFret", () => {
+  it("writes barres and passes checks for a barre shape", async () => {
+    const r = await cli(["new", "--chord", "C:7", "--instrument", "guitar", "--frets", "x35353", "--barre", "3:1-5", "--author", "gh:a"]);
+    expect(r.err).not.toMatch(/invalid/i);
+    expect(r.code).toBe(0);
+    const v = JSON.parse(read("chords/C/C__7.json")).voicings[0];
+    expect(v.realization.barres).toEqual([{ fret: 3, fromString: 1, toString: 5 }]);
+    expect(v.realization.baseFret).toBe(1);
+  });
+  it("rejects malformed --barre with exit 2", async () => {
+    const r = await cli(["new", "--chord", "C:7", "--instrument", "guitar", "--frets", "x32310", "--barre", "bad", "--author", "gh:a"]);
+    expect(r.code).toBe(2);
+  });
+  it("baseFret is the lowest fretted fret when the highest is above 5", async () => {
+    await cli(["new", "--chord", "C:maj7", "--instrument", "guitar", "--frets", "8,x,9,9,8,x", "--author", "gh:a"]);
+    expect(JSON.parse(read("chords/C/C__maj7.json")).voicings[0].realization.baseFret).toBe(8);
+  });
+  it("rejects more than one | in --notes with exit 2", async () => {
+    const r = await cli(["new", "--chord", "C:maj7", "--instrument", "piano", "--notes", "C3 | E4 | G4", "--author", "gh:a"]);
+    expect(r.code).toBe(2);
+  });
+});
+
 describe("format", () => {
   it("--check fails on a mangled file and format fixes it", async () => {
     await newGuitar();
@@ -133,6 +157,40 @@ describe("validate", () => {
       expect(r.code).toBe(1);
       expect(r.out + r.err).toContain("modified-history");
     } finally { rmSync(base, { recursive: true, force: true }); }
+  });
+});
+
+describe("validate --base errors", () => {
+  it("fails on a missing or non-directory base, accepts an empty real dir", async () => {
+    expect((await cli(["validate", "--base", join(dir, "nope")])).code).toBe(1);
+    writeFileSync(join(dir, "afile"), "x");
+    const f = await cli(["validate", "--base", join(dir, "afile")]);
+    expect(f.code).toBe(1);
+    expect(f.err).toMatch(/not a directory/);
+    const empty = mkdtempSync(join(tmpdir(), "chordl-empty-"));
+    try { expect((await cli(["validate", "--base", empty])).code).toBe(0); } finally { rmSync(empty, { recursive: true, force: true }); }
+  });
+});
+
+describe("bundle revisions", () => {
+  it("excludes retired latest revisions and lists every revision", async () => {
+    await newGuitar();
+    await newGuitar("8,x,9,9,8,x");
+    const p = join(dir, "chords/C/C__maj7.json");
+    const file = JSON.parse(readFileSync(p, "utf8"));
+    const first = file.voicings[0];
+    const rev2 = { ...first, rev: 2, previous: 1, status: "retired" };
+    file.voicings.push(rev2);
+    writeFileSync(p, formatChordFile(file));
+    expect((await cli(["validate"])).code).toBe(0);
+    expect((await cli(["bundle", "--out", "out", "--version", "v2026.10.1"])).code).toBe(0);
+    const m = JSON.parse(read("out/manifest.json"));
+    expect(m.counts.voicings).toBe(1);
+    expect(m.counts.byInstrument).toEqual({ guitar: 1 });
+    expect(m.voicings).toHaveLength(3);
+    const g = JSON.parse(read("out/by-instrument/guitar.json"));
+    expect(g).toHaveLength(1);
+    expect(g[0].id).not.toBe(first.id);
   });
 });
 

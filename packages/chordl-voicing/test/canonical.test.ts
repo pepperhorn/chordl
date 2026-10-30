@@ -86,3 +86,10 @@ describe("isCanonical", () => {
     expect(isCanonical("{nope")).toEqual({ ok: false, expected: "" });
   });
 });
+
+import { formatChordFile as _fmt } from "../src/index.js";
+import { it as _it, expect as _expect } from "vitest";
+_it("keeps a barre's toString field as data (not Object.prototype.toString)", () => {
+  const f = { schema: "chordl.chord/1", chord: { id: "C:7" }, voicings: [{ id: "a", rev: 1, realization: { kind: "fretted", barres: [{ fret: 3, fromString: 1, toString: 5 }] } }] };
+  _expect(_fmt(f as never)).toContain('"toString": 5');
+});
