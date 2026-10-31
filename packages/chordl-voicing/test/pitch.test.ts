@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { voicingSchema } from "../src/schema.js";
 import { parsePitch, labelNotes, degreeLabel } from "../src/index.js";
 
 const degrees = (chord: string, pitches: string[]) => labelNotes(chord, pitches).map((n) => n.degree);
@@ -29,6 +30,21 @@ describe("degreeLabel", () => {
 });
 
 describe("labelNotes", () => {
+  it("labels every chromatic note on every spelling root as the schema allows", () => {
+    const degree = new RegExp(voicingSchema.properties.notes.items.properties.degree.pattern);
+    const names = ["C", "C#", "Db", "D", "D#", "Eb", "E", "E#", "Fb", "F", "F#", "Gb", "G", "G#", "Ab", "A", "A#", "Bb", "B", "B#", "Cb"];
+    for (const root of ["C", "C#", "Db", "D", "Eb", "E", "F", "F#", "Gb", "G", "G#", "Ab", "A", "Bb", "B"]) {
+      for (const n of labelNotes(`${root}:maj`, names.map((p) => `${p}3`))) {
+        expect(n.degree, `${n.pitch} on ${root}`).toMatch(degree);
+      }
+    }
+  });
+
+  it("labels an altered root as a flattened or sharpened I", () => {
+    expect(labelNotes("A:6/Ab", ["Ab2", "A2"]).map((n) => n.degree)).toEqual(["bI", "I"]);
+    expect(labelNotes("A:6", ["A#2"])[0].degree).toBe("#I");
+  });
+
   it("labels Bb:7#5", () => {
     const r = labelNotes("Bb:7#5", ["Bb2", "D3", "F#3", "Ab3"]);
     expect(r.map((n) => n.degree)).toEqual(["I", "III", "#V", "bVII"]);
