@@ -2,8 +2,8 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
-  CHORD_TYPES, ROOTS, SHEET_ERRATA, chordTypeById, parseChordSymbol, simplifyDoubleAccidental,
-  spellChord, spellChordStrict, teachingNoteFor,
+  CHORD_TYPES, ROOTS, SHEET_ERRATA, chordTypeById, displayNoteName, parseChordSymbol,
+  simplifyDoubleAccidental, spellChord, spellChordStrict, teachingNoteFor,
 } from "../src/catalogue";
 import { slashChordsForBass } from "../src/slash";
 import { qualityLabelFor } from "../src/names";
@@ -316,5 +316,58 @@ describe("spellChord", () => {
   it("throws on an unknown type or root", () => {
     expect(() => spellChord("C", "nope")).toThrow(/unknown chord type/);
     expect(() => spellChord("H", "maj")).toThrow(/root/);
+  });
+});
+
+describe("displayNoteName", () => {
+  // The diminished 7th above each root, as catalogue data holds it.
+  const STRICT_DIM7: Record<string, string[]> = {
+    C: ["C", "Eb", "Gb", "Bbb"], "C#": ["C#", "E", "G", "Bb"], Db: ["Db", "Fb", "Abb", "Cbb"],
+    D: ["D", "F", "Ab", "Cb"], Eb: ["Eb", "Gb", "Bbb", "Dbb"], E: ["E", "G", "Bb", "Db"],
+    F: ["F", "Ab", "Cb", "Ebb"], "F#": ["F#", "A", "C", "Eb"], Gb: ["Gb", "Bbb", "Dbb", "Fbb"],
+    G: ["G", "Bb", "Db", "Fb"], "G#": ["G#", "B", "D", "F"], Ab: ["Ab", "Cb", "Ebb", "Gbb"],
+    A: ["A", "C", "Eb", "Gb"], Bb: ["Bb", "Db", "Fb", "Abb"], B: ["B", "D", "F", "Ab"],
+  };
+
+  it("shows every root's strict dim7 as the printed card spelling", () => {
+    expect(Object.keys(STRICT_DIM7).sort()).toEqual([...ROOTS].sort());
+    for (const root of ROOTS) {
+      const shown = STRICT_DIM7[root].map((n) => displayNoteName(`${root}:dim7`, n));
+      expect(shown, root).toEqual(spellChord(root, "dim7"));
+    }
+  });
+
+  it("holds for a slash dim7", () => {
+    expect(displayNoteName("D:dim7/F", "Cb")).toBe("B");
+  });
+
+  it("simplifies double accidentals on other chords and leaves single ones alone", () => {
+    expect(displayNoteName("C#:aug", "G##")).toBe("A");
+    expect(displayNoteName("C#:maj", "E#")).toBe("E#");
+    expect(displayNoteName("Ab:m", "Cb")).toBe("Cb");
+  });
+
+  it("keeps a written slash bass as spelled, and still spells the same note above it", () => {
+    expect(displayNoteName("E:dim7/Db", "Db", { isBass: true })).toBe("Db");
+    expect(displayNoteName("E:dim7/Db", "Db")).toBe("C#");
+    expect(displayNoteName("A:dim7/Gb", "Gb", { isBass: true })).toBe("Gb");
+    expect(displayNoteName("A:dim7/Gb", "Gb")).toBe("F#");
+    expect(displayNoteName("B:dim7/Ab", "Ab", { isBass: true })).toBe("Ab");
+    expect(displayNoteName("B:dim7/Ab", "Ab")).toBe("G#");
+  });
+
+  it("rejects a malformed chord id", () => {
+    expect(() => displayNoteName("D:dim7:garbage", "Cb")).toThrow();
+    expect(() => displayNoteName("D:dim7/H", "Cb")).toThrow();
+    expect(() => displayNoteName("D:dim7/", "Cb")).toThrow();
+    expect(() => displayNoteName("D", "Cb")).toThrow();
+  });
+
+  it("does not respell the same pitch class outside dim7", () => {
+    expect(displayNoteName("D:m7b5", "Cb")).toBe("Cb");
+  });
+
+  it("rejects a name with an octave", () => {
+    expect(() => displayNoteName("D:dim7", "Cb4")).toThrow();
   });
 });
