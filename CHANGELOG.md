@@ -1,6 +1,6 @@
 # Changelog
 
-## 2026-10-31 — chordl-voicing (unreleased)
+## 2026-10-31 — chordl-voicing 0.2.0
 
 - **Chord ids:** seven new base qualities (`7omit3`, `9sus4`, `13sus4`, `m#5`, `m7add11`,
   `m7sus4`, `mmaj9`), so every chord type in the chordl-cards catalogue has an id.
