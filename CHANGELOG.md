@@ -6,6 +6,7 @@
   `m7sus4`, `mmaj9`), so every chord type in the chordl-cards catalogue has an id.
   `mmaj9b5` and `mmaj9#5` parse through the new `mmaj9` base.
 - **Checks:** `missing-third` no longer fires on `bass4`, which outlines root and fifth.
+- **Degrees:** an altered root is labelled `bI` or `bbI`. It was `b8`, which the schema rejects, so slash chords such as `A:6/Ab` couldn't be published.
 
 ## 2026-10-31 — chordl-cards (unreleased)
 

@@ -34,6 +34,8 @@ export function parsePitch(p: string): ParsedPitch | null {
 export function degreeLabel(interval: string): string {
   const m = INTERVAL_RE.exec(interval);
   if (m) {
+    // An altered root reads as a diminished octave (A to Ab is 8d); core labels it "b8".
+    if (m[1] === "8" && /^d+$/.test(m[2])) return `${"b".repeat(m[2].length)}I`;
     const simple = ((parseInt(m[1], 10) - 1) % 7) + 1;
     if (m[2] === "d" && MAJOR_QUALITY_DEGREES.has(simple)) {
       return `bb${intervalToDegreeLabel(`${m[1]}M`)}`;
