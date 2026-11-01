@@ -1,6 +1,12 @@
 # Changelog
 
-## 2026-10-31 — chordl-voicing (unreleased)
+## 2026-11-01 — chordl-guitar 0.3.1
+
+- **Voicing fixes:** the guitar ranking, level-3 rootless coverage and review metadata fixes
+  from #85, and the chord identity and low open clash fixes from #86. `chordl-voicing`'s guitar
+  checks use these rules.
+
+## 2026-10-31 — chordl-voicing 0.2.0
 
 - **Chord ids:** seven new base qualities (`7omit3`, `9sus4`, `13sus4`, `m#5`, `m7add11`,
   `m7sus4`, `mmaj9`), so every chord type in the chordl-cards catalogue has an id.
