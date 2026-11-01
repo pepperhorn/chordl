@@ -5,6 +5,8 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { formatChordFile } from "../src/index.js";
 import { run } from "../src/cli/run.js";
 
+const PACKAGE_VERSION = (JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as { version: string }).version;
+
 let dir: string;
 beforeEach(() => { dir = mkdtempSync(join(tmpdir(), "chordl-voicing-")); });
 afterEach(() => { rmSync(dir, { recursive: true, force: true }); });
@@ -207,7 +209,7 @@ describe("bundle", () => {
     expect(r.code).toBe(0);
     const m = JSON.parse(read("out/manifest.json"));
     expect(m.version).toBe("v2026.10.1");
-    expect(m.chordlVoicing).toBe("0.1.0");
+    expect(m.chordlVoicing).toBe(PACKAGE_VERSION);
     expect(typeof m.generatedAt).toBe("string");
     expect(m.counts).toEqual({ chords: 2, voicings: 4, byInstrument: { guitar: 2, keyboard: 1, ukulele: 1 }, byTier: { community: 3, curated: 1 } });
     expect(m.voicings).toHaveLength(4);

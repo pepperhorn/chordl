@@ -19,7 +19,7 @@ The hard part isn't storage, it's the **publish process**: getting a voicing fro
 3. A **promotion path** from private intake stores (ph-apps for chordl.app, crf-admin for the CRF sites) into the repo as one pull request per voicing.
 4. **Third-party routes**: direct PRs, partner intakes, bulk datasets — all ending at the same checks, AI review and maintainer merge.
 5. **Releases**: tagged, versioned, published as a GitHub release, an npm data package and CDN URLs.
-6. **Consumers** pin a release, filter, and import; new releases arrive as a bump PR in each consumer.
+6. **Consumers** choose how they follow the repo: chordl.app fetches single chord files on demand, chords.creativeranges.org builds from `main`, and others can pin a release.
 
 ## Non-goals
 
@@ -53,7 +53,7 @@ The hard part isn't storage, it's the **publish process**: getting a voicing fro
                                         RELEASE vYYYY.MM.N
                                           (git tag, GitHub release, npm, jsDelivr)
                                           │
-                         each consumer: bump PR → pin → filter → import
+                         each consumer imports (see Consumers)
 ```
 
 ### 1. Intake (private)
@@ -112,6 +112,8 @@ Voicings carry `tier: "curated" | "community"`. Consumers filter on it. Promotio
 
 ### 9. Consumers
 
+Owner decisions 2026-10-31: **chords.creativeranges.org** shows every live voicing on `main`, community and curated, labelled, with no adoption filter. A merge triggers a rebuild, and each build records the commit it used. **chordl.app** shows any voicing, fetching one chord file on demand. Staff adoption applies only to the school programme in crf-admin. The text below applies to consumers that pin a release.
+
 Each app pins a release and imports at build time or by sync job, filtering by instrument, level and tier, and maps voicings into its own store keeping `id@rev`. A new release opens a bump PR in each consumer repo (Renovate/Dependabot on the npm package, or a small workflow). chordl.app, chords.creativeranges.org, be.creativeranges.org and chordcards are the first four consumers; their import code is each app's own work, not this repo's.
 
 chordcards prints, so it doesn't filter a release directly: it pins an allow-list of `id@rev` per card face, and default order and print labels live in that list, not in the format. A new release can't change a printed face without a reviewed bump PR. See [chordcards ADR 0001](https://github.com/pepperhorn/chordcards/blob/master/docs/decisions/0001-openchords-format-rulings.md).
@@ -140,7 +142,7 @@ Both directions run through one small private service, the **catalogue API**, a 
 - **IN:** on a release the API computes changes and notifies subscribed apps with retries. `GET /releases/:version/changes?since=` lets an app catch up (nightly check). `POST /adoptions` records a CRF staff adoption, writes `id@rev` to crf-admin and triggers the chords site rebuild.
 - **Rules:** not in any read path (sites build from release files; an outage stops no build); stores no catalogue data and no personal details (jobs, deliveries, subscriptions only); private, one token per app; outside contributors keep using GitHub PRs.
 
-CRF: the chords site builds from pinned release files for voicings and keeps reading crf-admin for school content. crf-cms is the staff audit desk for incoming voicings, and also the CRF submission store, in separate collections. crf-admin holds the school programme and references voicings by `id@rev`.
+CRF: the chords site builds from the files on `main` for voicings and keeps reading crf-admin for school content. crf-cms is the staff audit desk for incoming voicings, and also the CRF submission store, in separate collections. crf-admin holds the school programme and references voicings by `id@rev`.
 
 ## Third-party routes
 
