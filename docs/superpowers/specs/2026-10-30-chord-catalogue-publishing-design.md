@@ -66,6 +66,19 @@ The submit form requires agreement to publish under **CC0**, and offers a choice
 
 ### 3. Promotion
 
+**Duplicate check first** (owner decision 2026-11-02). Before AI review and before any PR, the catalogue API compares the submission's chord ID and `shape` hash with `openchords` main and its own open PRs.
+
+| Match | Result |
+|---|---|
+| Same chord ID and shape as a live voicing | No PR. Status `duplicate`, `duplicateOf: id@rev` |
+| Same, and an open bot PR | No new PR. Status `duplicate`, pointing at that PR |
+| Same, but only fingering differs | No PR, recorded as above with `fingeringDiffers: true` so staff can raise a revision |
+| Same as a retired or superseded voicing | PR opens, flagged for the maintainer |
+| Same `pitch` hash with a different grip | PR opens with a warning |
+| Same shape under another chord ID | PR opens with a warning |
+
+The submitter sees that the voicing is already in the catalogue, with a link to it.
+
 A GitHub App ("catalogue bot") opens **one PR per voicing** when a submission passes intake review or staff clear a flagged one. The PR:
 
 - adds or updates exactly one chord file
@@ -142,7 +155,7 @@ Both directions run through one small private service, the **catalogue API**, a 
 - **IN:** on a release the API computes changes and notifies subscribed apps with retries. `GET /releases/:version/changes?since=` lets an app catch up (nightly check). `POST /adoptions` records a CRF staff adoption, writes `id@rev` to crf-admin and triggers the chords site rebuild.
 - **Rules:** not in any read path (sites build from release files; an outage stops no build); stores no catalogue data and no personal details (jobs, deliveries, subscriptions only); private, one token per app; outside contributors keep using GitHub PRs.
 
-CRF: the chords site builds from the files on `main` for voicings and keeps reading crf-admin for school content. crf-cms is the staff audit desk for incoming voicings, and also the CRF submission store, in separate collections. crf-admin holds the school programme and references voicings by `id@rev`.
+CRF: the chords site builds from the files on `main` for voicings and keeps reading crf-admin for school content. crf-cms is the staff audit desk for incoming voicings. CRF submissions stay on the account's own side (owner decision 2026-11-02): becreative members on crf-admin, online accounts on crf-cms. The API and audit desk receive only an opaque copy, such as `crf:member:<public author id>`, for becreative members. crf-admin holds the school programme and references voicings by `id@rev`.
 
 ## Third-party routes
 
