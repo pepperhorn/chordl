@@ -127,3 +127,11 @@ export type {
   VoicingEntry, VoicingQuery, VoicingQuality, VoicingEra,
   VoicingStyle, Hand, RealizedNote, ChordDescriptor,
 } from "@pepperhorn/chordl-voicings";
+
+// Host-supplied scale library (core pass-through)
+export {
+  spellScale, stepPatternOf, validateStepPattern, degreeLabelsOf,
+  modeSource, modeAt, scaleExcerpt, excerptLabel, diatonicChords,
+  preferredRoot, modeDemo,
+} from "@pepperhorn/chordl-core";
+export type { StepToken, ScaleDef } from "@pepperhorn/chordl-core";
