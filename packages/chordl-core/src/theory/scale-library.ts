@@ -1,7 +1,6 @@
 /** Host-supplied scale definitions; no catalogue or Directus dependency. */
 import { Interval, Note } from "tonal";
 import { spellWithPreference } from "../engine/note-spelling.js";
-import { intervalToDegreeLabel } from "./degree-labels.js";
 
 export type StepToken = "H" | "W" | "m3" | "M3";
 export type ScaleDef = {
@@ -73,7 +72,13 @@ export function validateStepPattern(intervals: string[], steps: StepToken[]): bo
 }
 
 export function degreeLabelsOf(intervals: string[]): string[] {
-  return intervals.map(i => intervalToDegreeLabel(tonalInterval(i)).replace(/b/g, "♭"));
+  return intervals.map(token => {
+    tonalInterval(token); // Validate the formula token before reading its degree.
+    // Preserve the written prefix: Tonal's diminished 7th is bb7, whereas a
+    // diminished 5th is b5. A quality-only label helper loses that distinction.
+    const prefix = token.slice(0, -1).replace(/b/g, "♭");
+    return prefix + ROMANS[Number(token.slice(-1)) - 1];
+  });
 }
 
 /** Major-key signature cost: Db=5 < C#=7; Eb=3 < D#=9, etc.

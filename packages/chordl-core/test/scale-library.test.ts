@@ -21,7 +21,7 @@ const mixolydian = def("mixolydian", "Mixolydian", "1 2 3 4 5 6 b7", "W W H W W 
 const minor = def("minor", "Natural Minor", "1 2 b3 4 5 b6 b7", "W H W W H W W", "major", 6);
 const locrian = def("locrian", "Locrian", "1 b2 b3 4 b5 b6 b7", "H W W H W W W", "major", 7);
 const melodic = def("melodic-minor", "Melodic Minor", "1 2 b3 4 5 6 7", "W H W W W W H", "melodic-minor", 1);
-const altered = def("altered", "Altered", "1 b2 #2 3 b5 b6 b7", "H W H W W W W", "melodic-minor", 7);
+const altered = def("altered", "Altered", "1 b2 #2 3 b5 #5 b7", "H W H W W W W", "melodic-minor", 7);
 const harmonic = def("harmonic-minor", "Harmonic Minor", "1 2 b3 4 5 b6 7", "W H W W H m3 H", "harmonic-minor", 1);
 const dominant = def("phrygian-dominant", "Phrygian Dominant", "1 b2 3 4 5 b6 b7", "H m3 H W H W W", "harmonic-minor", 5);
 const pent = def("minor-pentatonic", "Minor Pentatonic", "1 b3 4 5 b7", "m3 W W m3 W");
@@ -42,6 +42,48 @@ const modes = [major, dorian, phrygian, lydian, mixolydian, minor, locrian,
 const defs = [...modes, ionian, pent, sus];
 
 describe("scale library", () => {
+  it("preserves every accidental in formula degree labels and Romans", () => {
+    expect(degreeLabelsOf(["bb7", "##4", "bb3"])).toEqual(["♭♭VII", "##IV", "♭♭III"]);
+    expect(degreeLabelsOf(ultralocrian.intervals)).toEqual(["I", "♭II", "♭III", "♭IV", "♭V", "♭VI", "♭♭VII"]);
+    expect(diatonicChords(ultralocrian, "C#", 4).map(c => c.roman)).toEqual([
+      "i°7", "♭iimaj7", "♭iiiø7", "♭IV+maj7", "♭v7", "♭VI7", "♭♭VIImaj7",
+    ]);
+    for (const stack of [3, 4, 5] as const) {
+      expect(diatonicChords(ultralocrian, "C#", stack)[6].roman).toMatch(/^♭♭VII/);
+    }
+  });
+  it("limits seed-matrix double-accidental roots to the ruled Altered cases", () => {
+    // 21 distinct seed modes × 12 pitch classes × 3 stacks × 7 degrees.
+    // T10 lists these formula-forced Altered chords as missing, not respelled.
+    const expectedRoots: Record<string, string[]> = {
+      Db: ["Ebb", "Abb"], Eb: ["Bbb"], E: ["F##"],
+      "F#": ["G##", "C##"], Ab: ["Bbb", "Ebb"], B: ["C##", "F##"],
+    };
+    const actual: Record<string, string[]> = {};
+    let totalRows = 0;
+    let doubleRows = 0;
+    expect(modes).toHaveLength(21);
+    for (const mode of modes) for (let pc = 0; pc < 12; pc++) {
+      const root = preferredRoot(pc, mode);
+      expect(Note.chroma(root)).toBe(pc);
+      for (const stack of [3, 4, 5] as const) {
+        const chords = diatonicChords(mode, root, stack);
+        expect(chords).toHaveLength(7);
+        totalRows += chords.length;
+        const doubles = chords.filter(c => /bb|##/.test(c.root));
+        doubleRows += doubles.length;
+        if (doubles.length) {
+          expect(mode.slug).toBe("altered");
+          actual[`${root}/${stack}`] = doubles.map(c => c.root);
+        }
+      }
+    }
+    const expected = Object.fromEntries(Object.entries(expectedRoots).flatMap(([root, notes]) =>
+      [3, 4, 5].map(stack => [`${root}/${stack}`, notes])));
+    expect(actual).toEqual(expected);
+    expect(totalRows).toBe(5292);
+    expect(doubleRows).toBe(30);
+  });
   it("preserves letter-consistent parents and uses flat ties only on fallback", () => {
     expect(modeSource(dorian, "Ab", defs).parentRoot).toBe("Gb");
     expect(modeSource(locrian, "F", defs).parentRoot).toBe("Gb");
@@ -90,7 +132,7 @@ describe("scale library", () => {
   });
   it("keeps degree accidentals on minor-family Roman numerals", () => {
     // The amended rule preserves formula interval numbers, including #2/3.
-    expect(diatonicChords(altered, "C", 4).map(c => c.roman)).toEqual(["iø7", "♭iimaj7", "♯ii7", "III+maj7", "♭V7", "♭VI7", "♭viiø7"]);
+    expect(diatonicChords(altered, "C", 4).map(c => c.roman)).toEqual(["iø7", "♭iimaj7", "♯ii7", "III+maj7", "♭V7", "♯V7", "♭viiø7"]);
     expect(diatonicChords(minor, "C", 4).map(c => c.roman)).toEqual(["i7", "iiø7", "♭IIImaj7", "iv7", "v7", "♭VImaj7", "♭VII7"]);
     expect(diatonicChords(harmonic, "C", 4).map(c => c.roman)).toEqual(["imaj7", "iiø7", "♭III+maj7", "iv7", "V7", "♭VImaj7", "vii°7"]);
   });
@@ -106,7 +148,7 @@ describe("scale library", () => {
     expect(modeAt(major, "Gb", 4, defs).root).toBe("Cb");
   });
   it("spells interval numbers without simplifying enharmonics", () => {
-    expect(spellScale(altered, "C")).toEqual(["C", "Db", "D#", "E", "Gb", "Ab", "Bb"]);
+    expect(spellScale(altered, "C")).toEqual(["C", "Db", "D#", "E", "Gb", "G#", "Bb"]);
     expect(spellScale(major, "C#")).toEqual(["C#", "D#", "E#", "F#", "G#", "A#", "B#"]);
     expect(spellScale(major, "Gb")[3]).toBe("Cb");
   });
