@@ -109,3 +109,11 @@ export type {
   ConstrainedVariant,
   GenerateConstrainedOptions,
 } from "./theory/constrained-variants.js";
+
+// Host-supplied scale library
+export {
+  spellScale, stepPatternOf, validateStepPattern, degreeLabelsOf,
+  modeSource, modeAt, scaleExcerpt, excerptLabel, diatonicChords,
+  preferredRoot, modeDemo,
+} from "./theory/scale-library.js";
+export type { StepToken, ScaleDef } from "./theory/scale-library.js";
