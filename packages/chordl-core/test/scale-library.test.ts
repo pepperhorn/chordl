@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { Note } from "tonal";
 import {
   type ScaleDef, type StepToken, spellScale, stepPatternOf, validateStepPattern,
   degreeLabelsOf, modeSource, modeAt, scaleExcerpt, excerptLabel,
@@ -19,15 +20,81 @@ const lydian = def("lydian", "Lydian", "1 2 3 #4 5 6 7", "W W W H W W H", "major
 const mixolydian = def("mixolydian", "Mixolydian", "1 2 3 4 5 6 b7", "W W H W W H W", "major", 5);
 const minor = def("minor", "Natural Minor", "1 2 b3 4 5 b6 b7", "W H W W H W W", "major", 6);
 const locrian = def("locrian", "Locrian", "1 b2 b3 4 b5 b6 b7", "H W W H W W W", "major", 7);
-const melodic = def("melodic-minor", "Melodic Minor", "1 2 b3 4 5 6 7", "W H W W W W H");
+const melodic = def("melodic-minor", "Melodic Minor", "1 2 b3 4 5 6 7", "W H W W W W H", "melodic-minor", 1);
 const altered = def("altered", "Altered", "1 b2 #2 3 b5 b6 b7", "H W H W W W W", "melodic-minor", 7);
-const harmonic = def("harmonic-minor", "Harmonic Minor", "1 2 b3 4 5 b6 7", "W H W W H m3 H");
+const harmonic = def("harmonic-minor", "Harmonic Minor", "1 2 b3 4 5 b6 7", "W H W W H m3 H", "harmonic-minor", 1);
 const dominant = def("phrygian-dominant", "Phrygian Dominant", "1 b2 3 4 5 b6 b7", "H m3 H W H W W", "harmonic-minor", 5);
 const pent = def("minor-pentatonic", "Minor Pentatonic", "1 b3 4 5 b7", "m3 W W m3 W");
 const sus = def("sus-dominant", "Sus Dominant", "1 2 4 5 6 b7", "W m3 W W H W");
-const defs = [major, ionian, dorian, phrygian, lydian, mixolydian, minor, locrian, melodic, altered, harmonic, dominant, pent, sus];
+const dorianFlat2 = def("dorian-flat2", "Dorian b2", "1 b2 b3 4 5 6 b7", "H W W W W H W", "melodic-minor", 2);
+const lydianAug = def("lydian-augmented", "Lydian Augmented", "1 2 3 #4 #5 6 7", "W W W W H W H", "melodic-minor", 3);
+const lydianDom = def("lydian-dominant", "Lydian Dominant", "1 2 3 #4 5 6 b7", "W W W H W H W", "melodic-minor", 4);
+const mixoFlat6 = def("mixolydian-flat6", "Mixolydian b6", "1 2 3 4 5 b6 b7", "W W H W H W W", "melodic-minor", 5);
+const locrian2 = def("locrian-natural2", "Locrian Natural 2", "1 2 b3 4 b5 b6 b7", "W H W H W W W", "melodic-minor", 6);
+const locrian6 = def("locrian-natural6", "Locrian Natural 6", "1 b2 b3 4 b5 6 b7", "H W W H m3 H W", "harmonic-minor", 2);
+const ionianAug = def("ionian-sharp5", "Ionian #5", "1 2 3 4 #5 6 7", "W W H m3 H W H", "harmonic-minor", 3);
+const dorianSharp4 = def("dorian-sharp4", "Dorian #4", "1 2 b3 #4 5 6 b7", "W H m3 H W H W", "harmonic-minor", 4);
+const lydianSharp2 = def("lydian-sharp2", "Lydian #2", "1 #2 3 #4 5 6 7", "m3 H W H W W H", "harmonic-minor", 6);
+const ultralocrian = def("ultralocrian", "Ultralocrian", "1 b2 b3 b4 b5 b6 bb7", "H W H W W H m3", "harmonic-minor", 7);
+const modes = [major, dorian, phrygian, lydian, mixolydian, minor, locrian,
+  melodic, dorianFlat2, lydianAug, lydianDom, mixoFlat6, locrian2, altered,
+  harmonic, locrian6, ionianAug, dorianSharp4, dominant, lydianSharp2, ultralocrian];
+const defs = [...modes, ionian, pent, sus];
 
 describe("scale library", () => {
+  it("preserves letter-consistent parents and uses flat ties only on fallback", () => {
+    expect(modeSource(dorian, "Ab", defs).parentRoot).toBe("Gb");
+    expect(modeSource(locrian, "F", defs).parentRoot).toBe("Gb");
+    expect(modeSource(lydian, "F#", defs).parentRoot).toBe("C#");
+    // G# major needs a double sharp; its practical enharmonic is Ab major.
+    expect(modeSource(lydian, "C#", defs).parentRoot).toBe("Ab");
+    // E# melodic minor needs impractical spelling; F# is cleaner than Gb.
+    expect(modeSource(altered, "E", defs).parentRoot).toBe("F");
+    expect(modeSource(altered, "F", defs).parentRoot).toBe("F#");
+    expect(modeSource(major, "E##", defs).parentRoot).toBe("Gb");
+    let roundTrips = 0;
+    let fallbacks = 0;
+    for (const mode of modes) for (let pc = 0; pc < 12; pc++) {
+      const root = preferredRoot(pc);
+      const source = modeSource(mode, root, defs);
+      const parentNotes = spellScale(source.parent, source.parentRoot);
+      // Independently identify fallback by whether the inverse-transposed parent
+      // has >7 accidentals or any double accidental (Note.get gives the count).
+      const parentRoot = Note.transpose(root, `-${Note.distance("C", spellScale(source.parent, "C")[mode.modeDegree! - 1])}`);
+      const originalNotes = spellScale(source.parent, parentRoot);
+      const count = originalNotes.reduce((sum, n) => sum + Math.abs(Note.get(n).alt!), 0);
+      if (count <= 7 && originalNotes.every(n => Math.abs(Note.get(n).alt!) <= 1)) {
+        expect(source.parentRoot, `${mode.slug}@${root}`).toBe(parentRoot);
+        expect(modeAt(source.parent, source.parentRoot, mode.modeDegree!, modes)).toEqual({ mode, root });
+        roundTrips++;
+      } else {
+        expect(parentNotes.some(n => /##|bb/.test(n)), `${mode.slug}@${root}`).toBe(false);
+        fallbacks++;
+      }
+    }
+    expect(roundTrips + fallbacks).toBe(252);
+    expect(roundTrips).toBeGreaterThan(0);
+    expect(fallbacks).toBeGreaterThan(0);
+  });
+  it.each(modes)("uses parent spelling in the $slug relative demo", mode => {
+    const demo = modeDemo(mode, defs);
+    expect(demo.relative.notes.some(n => /##|bb/.test(n))).toBe(false);
+    const parent = defs.find(d => d.slug === mode.modeParent)!;
+    const notes = spellScale(parent, demo.relative.answer);
+    const start = mode.modeDegree! - 1;
+    expect(demo.relative.notes).toEqual([...notes.slice(start), ...notes.slice(0, start)]);
+  });
+  it("uses the parent's B Altered spelling while keeping formula spelling explicit", () => {
+    expect(modeDemo(altered, defs).relative.notes).toEqual(["B", "C", "D", "Eb", "F", "G", "A"]);
+    expect(spellScale(altered, "B")).toContain("C##");
+  });
+  it("keeps degree accidentals on minor-family Roman numerals", () => {
+    // The amended rule preserves formula interval numbers, including #2/3.
+    expect(diatonicChords(altered, "C", 4).map(c => c.roman)).toEqual(["iø7", "♭iimaj7", "♯ii7", "III+maj7", "♭V7", "♭VI7", "♭viiø7"]);
+    expect(diatonicChords(minor, "C", 4).map(c => c.roman)).toEqual(["i7", "iiø7", "♭IIImaj7", "iv7", "v7", "♭VImaj7", "♭VII7"]);
+    expect(diatonicChords(harmonic, "C", 4).map(c => c.roman)).toEqual(["imaj7", "iiø7", "♭III+maj7", "iv7", "V7", "♭VImaj7", "vii°7"]);
+  });
+
   it.each([
     [lydian, "major", "G"], [altered, "melodic-minor", "Db"],
     [dominant, "harmonic-minor", "F"], [locrian, "major", "Db"], [dorian, "major", "Bb"],
@@ -77,6 +144,15 @@ describe("scale library", () => {
     expect(demo.relative).toEqual({ root: "D", notes: ["D", "E", "F", "G", "A", "B", "C"], question: "D is the II (nd degree) of?", answer: "C" });
     expect(modeDemo(ionian, defs).relative.root).toBe("G");
     expect(modeDemo({ ...dorian, relativeExampleRoot: "G" }, defs).relative.root).toBe("G");
+  });
+  it("chooses roots using the supplied scale's accidentals", () => {
+    expect(preferredRoot(1, locrian)).toBe("C#");
+    expect(preferredRoot(6, lydianAug)).toBe("Gb");
+    expect(preferredRoot(1, major)).toBe("Db");
+    expect(preferredRoot(6, major)).toBe("F#");
+    expect(preferredRoot(-11, locrian)).toBe("C#");
+    expect(preferredRoot(13, locrian)).toBe("C#");
+    expect(() => preferredRoot(1.5, locrian)).toThrow();
   });
   it("chooses the fewest key-signature accidentals", () => {
     expect(Array.from({ length: 12 }, (_, pc) => preferredRoot(pc))).toEqual(["C", "Db", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"]);

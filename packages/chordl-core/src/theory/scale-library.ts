@@ -78,11 +78,40 @@ export function degreeLabelsOf(intervals: string[]): string[] {
 
 /** Major-key signature cost: Db=5 < C#=7; Eb=3 < D#=9, etc.
  * F#/Gb both cost six: the explicit Task 9 preference is F#.
+ * With a definition, rank its actual spelled notes: avoid double accidentals,
+ * then minimize accidental count, then avoid Cb/Fb/E#/B# roots. Remaining ties
+ * keep the conventional one-argument spelling.
  */
-export function preferredRoot(pc: number): string {
+export function preferredRoot(pc: number, def?: ScaleDef): string {
   if (!Number.isInteger(pc)) throw new Error("Pitch class must be an integer");
   const normalized = mod12(pc);
-  return spellWithPreference(Note.pitchClass(Note.fromMidiSharps(60 + normalized)), "C", normalized !== 6);
+  const conventional = spellWithPreference(Note.pitchClass(Note.fromMidiSharps(60 + normalized)), "C", normalized !== 6);
+  if (!def) return conventional;
+  return rootCandidates(normalized).map(root => ({ root, cost: spellingCost(spellScale(def, root)) }))
+    .sort((a, b) => a.cost.doubles - b.cost.doubles || a.cost.accidentals - b.cost.accidentals
+      || Number(["Cb", "Fb", "E#", "B#"].includes(a.root)) - Number(["Cb", "Fb", "E#", "B#"].includes(b.root))
+      || Number(b.root === conventional) - Number(a.root === conventional))[0].root;
+}
+
+function spellingCost(notes: string[]): { doubles: number; accidentals: number } {
+  return notes.reduce((cost, note) => {
+    const count = Math.abs(Note.get(note).alt!);
+    return { doubles: cost.doubles + (count > 1 ? 1 : 0), accidentals: cost.accidentals + count };
+  }, { doubles: 0, accidentals: 0 });
+}
+
+/** Candidate roots have at most one accidental; a double-accidental root
+ * cannot give a scale free of double accidentals, since it is the first note.
+ */
+function rootCandidates(pc: number): string[] {
+  return [..."CDEFGAB"].flatMap(letter => ["", "b", "#"].map(acc => letter + acc))
+    .filter(root => Note.chroma(root) === mod12(pc));
+}
+
+function practicalParentRoot(pc: number, parent: ScaleDef): string {
+  return rootCandidates(pc).map(root => ({ root, cost: spellingCost(spellScale(parent, root)) }))
+    .sort((a, b) => a.cost.doubles - b.cost.doubles || a.cost.accidentals - b.cost.accidentals
+      || Number(b.root.includes("b")) - Number(a.root.includes("b")))[0].root;
 }
 
 function modeDegree(mode: ScaleDef): number {
@@ -97,7 +126,13 @@ export function modeSource(mode: ScaleDef, root: string, defs: ScaleDef[]): { pa
   if (!parent) throw new Error(`Missing mode parent: ${mode.modeParent}`);
   const offset = pitches(parent.intervals)[degree - 1];
   if (offset === undefined) throw new Error("Mode degree exceeds parent scale");
-  return { parent, parentRoot: preferredRoot(checkRoot(root) - offset) };
+  const pc = checkRoot(root) - offset;
+  // Preserve the mode root's letter at its parent degree. Only impractical
+  // parent keys (>7 written accidentals or a double accidental) are respelled.
+  const letterRoot = Note.transpose(root, `-${tonalInterval(parent.intervals[degree - 1])}`);
+  const cost = spellingCost(spellScale(parent, letterRoot));
+  const parentRoot = cost.doubles || cost.accidentals > 7 ? practicalParentRoot(pc, parent) : letterRoot;
+  return { parent, parentRoot };
 }
 
 export function modeAt(parent: ScaleDef, parentRoot: string, degree: number, defs: ScaleDef[]): { mode: ScaleDef; root: string } {
@@ -151,6 +186,7 @@ export function diatonicChords(def: ScaleDef, root: string, stack: 3 | 4 | 5): {
   if (![3, 4, 5].includes(stack)) throw new Error("Chord stack must be 3, 4, or 5");
   const pcs = pitches(def.intervals);
   const notes = spellScale(def, root);
+  const labels = degreeLabelsOf(def.intervals).map(label => label.replace(/#/g, "♯"));
   return notes.map((chordRoot, i) => {
     const tones = Array.from({ length: stack }, (_, j) => mod12(pcs[(i + j * 2) % 7] - pcs[i]));
     const third = tones[1], fifth = tones[2];
@@ -159,7 +195,8 @@ export function diatonicChords(def: ScaleDef, root: string, stack: 3 | 4 | 5): {
     const minor = third === 3;
     if (![3, 4].includes(third) || ![6, 7, 8].includes(fifth)) throw new Error("Unsupported diatonic chord quality");
     let suffix = diminished ? "dim" : augmented ? "aug" : minor ? "m" : "";
-    let roman = minor ? ROMANS[i].toLowerCase() : ROMANS[i];
+    const degreeRoman = minor ? labels[i].toLowerCase() : labels[i];
+    let roman = degreeRoman;
     if (diminished) roman += "°";
     if (augmented) roman += "+";
     if (stack >= 4) {
@@ -172,7 +209,7 @@ export function diatonicChords(def: ScaleDef, root: string, stack: 3 | 4 | 5): {
         if (fifth === 6) suffix += "b5";
         if (fifth === 8) suffix += "#5";
       }
-      roman = diminished && seventh === 10 ? `${ROMANS[i].toLowerCase()}ø7` : `${roman}${seventh === 11 ? "maj7" : "7"}`;
+      roman = diminished && seventh === 10 ? `${degreeRoman}ø7` : `${roman}${seventh === 11 ? "maj7" : "7"}`;
     }
     if (stack === 5) {
       const ninth = tones[4];
@@ -201,6 +238,12 @@ export function modeDemo(mode: ScaleDef, defs: ScaleDef[]) {
   return {
     title: `${degree}${ordinal} Degree - ${mode.name}`,
     steps: [...mode.steps], degreeLabels: mode.degreeLabels ? [...mode.degreeLabels] : degreeLabelsOf(mode.intervals),
-    parallel: { ...example("C"), root: "C" as const }, relative: example(relativeRoot),
+    parallel: { ...example("C"), root: "C" as const },
+    relative: (() => {
+      const relative = example(relativeRoot);
+      const parentNotes = spellScale(parent, relative.answer);
+      const start = degree - 1;
+      return { ...relative, notes: [...parentNotes.slice(start), ...parentNotes.slice(0, start)] };
+    })(),
   };
 }
