@@ -6,7 +6,7 @@
 - **Branch:** orch/0026-string-view-export · **Worktree:** /home/shaun/.t3/worktrees/chordl/t3-18df5969
 - **PR:** see PR body / lead (draft against main)
 - **Base commit:** 20cd029
-- **Status:** open
+- **Status:** closed
 
 ## Return
 - **Outcome:** done, with one AC1 caveat (below)

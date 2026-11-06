@@ -7,7 +7,7 @@
 - **PR:** (open as a draft)
 - **Base commit:** 1914297
 - **Port (if running a server):** 5460
-- **Status:** open
+- **Status:** closed
 
 ## Goal
 The string view (`GuitarChordPanel`) gets the same .zip export (This/All) as the keyboard view. Each zip has SVG, PNG, MIDI and two WAVs, and the MIDI/WAV use the shape's real sounding pitches.
