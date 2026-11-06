@@ -717,6 +717,23 @@ export const BoardEditor = forwardRef<BoardEditorHandle, BoardEditorProps>(funct
         : next);
   }, []);
 
+  const parsedWords = useMemo(() => isProg ? undefined : parseChordDescription(input), [input, isProg]);
+  const parsedInstrument = parsedWords?.instrument;
+  const parsedLevel = parsedWords?.level;
+  // Key each effect on its parsed value: manual choices survive unrelated
+  // keystrokes and changes to the other requested control.
+  useEffect(() => {
+    if (!parsedInstrument) return;
+    if (parsedInstrument === "piano") setDisplayMode("keyboard");
+    else {
+      setDisplayMode("guitar");
+      setGuitarInstrument(parsedInstrument);
+    }
+  }, [parsedInstrument]);
+  useEffect(() => {
+    if (parsedLevel) setLevel(parsedLevel);
+  }, [parsedLevel]);
+
   // Resolve note count for dynamic fingering cells.
   const noteCount = useMemo(() => {
     if (isProg) return 0;

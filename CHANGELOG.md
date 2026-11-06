@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Chord input accepts instrument and experience-level words and aliases (for example, `ukulele am beginner`), switching the editor frame/display and Level control. Existing bass-note phrasing is preserved.
+
 ## 2026-11-01 — chordl-guitar 0.3.1
 
 - **Voicing fixes:** the guitar ranking, level-3 rootless coverage and review metadata fixes

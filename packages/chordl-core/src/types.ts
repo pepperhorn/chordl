@@ -20,6 +20,10 @@ export interface ColorTheme {
 }
 
 export interface ParsedChordRequest {
+  /** Requested frame instrument or piano display; core has no guitar dependency. */
+  instrument?: "guitar" | "ukulele" | "guitar-top3" | "bass4" | "bass5" | "violin" | "piano";
+  /** Requested experience level. */
+  level?: "beginner" | "emerging" | "established";
   chordName: string;
   inversion?: number;
   /** When true, show all inversions side by side (root, 1st, 2nd, etc.) */

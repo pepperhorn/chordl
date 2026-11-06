@@ -884,3 +884,60 @@ describe("midi note names combine with degrees", () => {
     expect(parseChordDescription("Cmaj7 midi note names with degrees in xl").chordName).toBe("Cmaj7");
   });
 })
+
+
+describe("instrument and level words", () => {
+  const instruments = [
+    ["ukulele", "ukulele"], ["uke", "ukulele"], ["guitar", "guitar"], ["gtr", "guitar"],
+    ["bass", "bass4"], ["4-string bass", "bass4"], ["4 string bass", "bass4"],
+    ["5-string bass", "bass5"], ["5 string bass", "bass5"],
+    ["violin", "violin"], ["fiddle", "violin"], ["piano", "piano"],
+    ["keys", "piano"], ["keyboard", "piano"],
+  ];
+  const levels = [
+    ["beginner", "beginner"], ["easy", "beginner"], ["basic", "beginner"],
+    ["emerging", "emerging"], ["intermediate", "emerging"],
+    ["established", "established"], ["advanced", "established"],
+  ];
+  it.each(instruments)("recognises %s in any position", (word, instrument) => {
+    for (const input of [`${word} Am compact`, `Am ${word} compact`, `Am compact ${word}`, `${word.toUpperCase()} Am`]) {
+      expect(parseChordDescription(input)).toMatchObject({ chordName: "Am", instrument });
+    }
+  });
+  it.each(levels)("recognises %s in any position", (word, level) => {
+    for (const input of [`${word} Am compact`, `Am ${word} compact`, `Am compact ${word}`, `${word.toUpperCase()} Am`]) {
+      expect(parseChordDescription(input)).toMatchObject({ chordName: "Am", level });
+    }
+  });
+  it.each(["ukulele am beginner", "Am ukulele beginner", "beginner uke Am"])("regression: %s", (input) => {
+    expect(parseChordDescription(input)).toMatchObject({ chordName: "Am", instrument: "ukulele", level: "beginner" });
+  });
+  it("does not extract a root from ukulele", () => {
+    expect(parseChordDescription("ukulele Am")).toMatchObject({ chordName: "Am", instrument: "ukulele" });
+  });
+  it.each([
+    ["C/E", { chordName: "C/E" }],
+    ["C over E", { chordName: "C", bassNote: "E" }],
+    ...["bass", "bottom", "lowest"].flatMap((word) => [
+      [`C with E in the ${word}`, { chordName: "C", bassNote: "E" }],
+      [`C E ${word}`, { chordName: "C", bassNote: "E" }],
+      [`C with the 5th in the ${word}`, { chordName: "C", bassDegree: 5 }],
+    ]),
+  ])("preserves bass-note phrasing: %s", (input, expected) => {
+    const result = parseChordDescription(input as string);
+    expect(result).toMatchObject(expected);
+    expect(result.instrument).toBeUndefined();
+  });
+  it.each(["C with notes C E G in bass clef", "bass C E G treble B D F", "C bass up an octave", "C keys xl"])("preserves other existing modifiers: %s", (input) => {
+    expect(parseChordDescription(input).instrument).toBeUndefined();
+  });
+  it("uses whole words and leaves unspecified fields absent", () => {
+    expect(parseChordDescription("Am")).toEqual({ chordName: "Am" });
+    const result = parseChordDescription("Am ukuleles easiest keyboards");
+    expect(result.instrument).toBeUndefined();
+    expect(result.level).toBeUndefined();
+  });
+  it("strips repeated words and chooses the first request", () => {
+    expect(parseChordDescription("uke Am guitar beginner advanced")).toMatchObject({ chordName: "Am", instrument: "ukulele", level: "beginner" });
+  });
+});

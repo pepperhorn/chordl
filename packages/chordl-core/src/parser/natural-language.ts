@@ -44,6 +44,21 @@ function stripArticles(text: string, input: string): string {
   });
 }
 
+// Multi-word bass instruments must be claimed before the bass-note regexes:
+// otherwise the final "g bass" in "5-string bass" looks like a bass note.
+const INSTRUMENT_RE = /\b([45][- ]string\s+bass|ukulele|uke|guitar|gtr|bass|violin|fiddle|piano|keys|keyboard)\b/gi;
+const LEVEL_RE = /\b(beginner|easy|basic|emerging|intermediate|established|advanced)\b/gi;
+const INSTRUMENT_WORDS: Record<string, NonNullable<ParsedChordRequest["instrument"]>> = {
+  ukulele: "ukulele", uke: "ukulele", guitar: "guitar", gtr: "guitar",
+  bass: "bass4", violin: "violin", fiddle: "violin",
+  piano: "piano", keys: "piano", keyboard: "piano",
+};
+const LEVEL_WORDS: Record<string, NonNullable<ParsedChordRequest["level"]>> = {
+  beginner: "beginner", easy: "beginner", basic: "beginner",
+  emerging: "emerging", intermediate: "emerging",
+  established: "established", advanced: "established",
+};
+
 const FORMAT_RE = /\b(compact|exact|full)\b/i;
 const FORMAT_FULL_RE = /\bfull\s+(?:layout|height|size|keys?)\b/i;
 
@@ -415,6 +430,26 @@ function capitalizeNote(note: string): string {
  */
 export function parseChordDescription(input: string): ParsedChordRequest {
   const result: ParsedChordRequest = { chordName: "" };
+
+  // Protect existing bass-note/clef/octave phrases and key-size requests. Mask
+  // explicit bass instruments first so their suffix cannot claim a bass note.
+  const phraseInput = input.replace(/\b[45][- ]string\s+bass\b/gi, (word) => " ".repeat(word.length));
+  const protectedRanges = [BASS_DEGREE_RE, BASS_NOTE_RE, OVER_BASS_NOTE_RE,
+    BASS_OCTAVE_RE, /\bbass\s+clef\b/i, SIZE_NAME_RE, SIZE_NUM_RE,
+    NOTES_GROUP_RE, NOTES_GROUP_PREFIX_RE, HAND_PREFIX_BARE_RE, NOTES_BARE_HAND_RE]
+    .flatMap((re) => [...phraseInput.matchAll(new RegExp(re.source, "gi"))]
+      .map((m) => [m.index, m.index + m[0].length] as const));
+  input = input.replace(INSTRUMENT_RE, (word: string, _capture: string, offset: number) => {
+    if (protectedRanges.some(([start, end]) => offset >= start && offset < end)) return word;
+    const lower = word.toLowerCase();
+    result.instrument ??= /^[45]/.test(lower)
+      ? (lower[0] === "5" ? "bass5" : "bass4") : INSTRUMENT_WORDS[lower];
+    return " ".repeat(word.length);
+  });
+  input = input.replace(LEVEL_RE, (word: string) => {
+    result.level ??= LEVEL_WORDS[word.toLowerCase()];
+    return " ".repeat(word.length);
+  });
 
   // Extract format ("compact", "exact", "full", "full layout", "full height")
   const formatFullMatch = input.match(FORMAT_FULL_RE);
