@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
+import { Note } from "tonal";
 import { DEFAULT_PLAYBACK_HIGHLIGHT_COLOR, parseChordDescription } from "@pepperhorn/chordl-core";
 import {
   lookupGuitarChord,
@@ -15,6 +16,10 @@ import { GuitarChord } from "./GuitarChord";
 import type { FrameOrientation, FrameLineStyle } from "./GuitarChord";
 import { CardHeading, CardFooter } from "./CardHeading";
 import { GuitarPlaybackControls } from "./GuitarPlaybackControls";
+import { ZipExportButton } from "./ZipExportButton";
+import type { ZipExportMode } from "./ZipExportButton";
+import { exportSingleZip, exportAllZip, downloadBlob } from "../audio/zip-export";
+import type { ZipVariant } from "../audio/zip-export";
 import type { PlaybackSpecSnapshot } from "../types";
 import type { Chord } from "svguitar";
 
@@ -116,6 +121,20 @@ const MIN_FRET_WINDOW = 4;
  * instrument that only disappoints is worse than an absent one.
  */
 const INSTRUMENT_ORDER: InstrumentId[] = ["guitar", "guitar-top3", "ukulele"];
+
+/**
+ * Frets to draw for a shape: the window floor (see `MIN_FRET_WINDOW`). Shared
+ * by the displayed frame and the hidden frames an "All" export renders, so the
+ * two cannot disagree.
+ */
+function fretWindowFor(positionFrets: number[], defaultFrets: number): number {
+  const usedFrets = positionFrets.filter((f) => f > 0);
+  // All-open shapes (every string open or muted — ukulele Am7/C6, guitar
+  // Em/D) have no fretted string to floor on. Fall back to the instrument's
+  // own default width rather than 1, which drew a single-fret sliver.
+  const needed = usedFrets.length > 0 ? Math.max(...usedFrets) : defaultFrets;
+  return Math.max(MIN_FRET_WINDOW, needed);
+}
 
 /** Add stable per-string SVG targets without changing the static diagram. */
 function decorateForPlayback(chord: Chord, frets: number[], barres: number[], strings: number): Chord {
@@ -333,12 +352,7 @@ export function GuitarChordPanel({
     // sentinels, not frets — they're excluded rather than treated as 0-height
     // bars. These values are relative to `baseFret`, already windowed (see
     // instruments.ts / pitch.ts), so this is not an absolute fret number.
-    const usedFrets = result.positions[idx].frets.filter((f) => f > 0);
-    // All-open shapes (every string open or muted — ukulele Am7/C6, guitar
-    // Em/D) have no fretted string to floor on. Fall back to the instrument's
-    // own default width rather than 1, which drew a single-fret sliver.
-    const needed = usedFrets.length > 0 ? Math.max(...usedFrets) : cfg.frets;
-    const minFrets = Math.max(MIN_FRET_WINDOW, needed);
+    const minFrets = fretWindowFor(result.positions[idx].frets, cfg.frets);
     return { selection, visible, idx, diagram, minFrets };
   }, [result, resolved, rootPc, level, active, showControls]);
 
@@ -401,6 +415,53 @@ export function GuitarChordPanel({
     const position = result.positions[placements.idx];
     return decorateForPlayback(placements.diagram, position.frets, position.barres, cfg.strings);
   }, [cfg.strings, placements, result]);
+
+  // Zip export. "This" reads the frame on screen; "All" has no frames on screen
+  // for the other positions, so it mounts one hidden `GuitarChord` per visible
+  // position (same component, same settings — so the SVG is the frame as the
+  // panel would draw it), waits for svguitar to paint them, then unmounts.
+  const frameRef = useRef<HTMLDivElement>(null);
+  const exportFramesRef = useRef<HTMLDivElement>(null);
+  const [exportAllFrames, setExportAllFrames] = useState(false);
+
+  const handleZipExport = useCallback(async (mode: ZipExportMode) => {
+    if (!result || !placements) return;
+    const { visible: visibleIdx, idx: shownIdx } = placements;
+    const nameOf = (midis: number[]) => midis.map((m) => Note.fromMidiSharps(m));
+    const variantFor = (i: number, svgElement: SVGSVGElement | null): ZipVariant => {
+      const midiNotes = positionToSoundingStrings(result.positions[i], cfg.openMidi).map(({ midi }) => midi);
+      return {
+        label: `fret ${result.positions[i].baseFret}`,
+        notes: nameOf(midiNotes),
+        midiNotes,
+        svgElement,
+      };
+    };
+    const fileStem = label.replace(/[^a-zA-Z0-9]/g, "_");
+    try {
+      if (mode === "this") {
+        const svg = frameRef.current?.querySelector<SVGSVGElement>(".bc-guitar-chord__canvas svg") ?? null;
+        const blob = await exportSingleZip(label, variantFor(shownIdx, svg));
+        downloadBlob(blob, `${fileStem}.zip`);
+        return;
+      }
+      setExportAllFrames(true);
+      const frameFor = (i: number) =>
+        exportFramesRef.current?.querySelector<SVGSVGElement>(`[data-export-position="${i}"] svg`) ?? null;
+      // svguitar draws in an effect after the hidden frames commit; give it a
+      // bounded moment rather than waiting forever on a frame that failed.
+      for (let waited = 0; waited < 3000 && !visibleIdx.every((i) => frameFor(i)); waited += 25) {
+        await new Promise((resolve) => setTimeout(resolve, 25));
+      }
+      const variants = visibleIdx.map((i) => variantFor(i, frameFor(i)));
+      const blob = await exportAllZip(label, variants);
+      downloadBlob(blob, `${fileStem}_all.zip`);
+    } catch (e) {
+      console.error("ZIP export failed:", e);
+    } finally {
+      setExportAllFrames(false);
+    }
+  }, [cfg.openMidi, label, placements, result]);
 
   useEffect(() => {
     if (soundingMidis.length === 0) return;
@@ -544,16 +605,43 @@ export function GuitarChordPanel({
           </div>
         )}
 
-        <GuitarChord
-          chord={playbackDiagram ?? diagram}
-          scale={scale}
-          orientation={orientation}
-          lineStyle={lineStyle}
-          frets={Math.max(frets ?? minFrets, minFrets)}
-          settings={guitarSettings}
-          activeStrings={activeStrings}
-          playbackHighlightColor={playbackHighlightColor}
-        />
+        <div className="bc-guitar-frame" ref={frameRef} style={{ width: "100%", display: "flex", justifyContent: "center" }}>
+          <GuitarChord
+            chord={playbackDiagram ?? diagram}
+            scale={scale}
+            orientation={orientation}
+            lineStyle={lineStyle}
+            frets={Math.max(frets ?? minFrets, minFrets)}
+            settings={guitarSettings}
+            activeStrings={activeStrings}
+            playbackHighlightColor={playbackHighlightColor}
+          />
+        </div>
+
+        {exportAllFrames && (
+          <div
+            ref={exportFramesRef}
+            className="bc-guitar-export-frames"
+            aria-hidden="true"
+            style={{ position: "fixed", left: -10000, top: 0, width: 400, pointerEvents: "none" }}
+          >
+            {visible.map((i) => {
+              const { title: _t, ...shape } = result.shapes[i];
+              return (
+                <div key={i} className="bc-guitar-export-frame" data-export-position={i}>
+                  <GuitarChord
+                    chord={shape}
+                    scale={scale}
+                    orientation={orientation}
+                    lineStyle={lineStyle}
+                    frets={Math.max(frets ?? 0, fretWindowFor(result.positions[i].frets, cfg.frets))}
+                    settings={guitarSettings}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         {resolvedShowPlayback && soundingStrings.length > 0 && (
           <GuitarPlaybackControls
@@ -569,9 +657,9 @@ export function GuitarChordPanel({
         {/* Alternate placements. Labelled by visible order so the row reads
             A/B/C even when the level filter has removed shapes
             between them, while the click still reports the underlying index. */}
-        {showControls && visible.length > 1 && (
-          <div className="bc-guitar-position-toggle" style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "center" }}>
-            {visible.map((i, shown) => {
+        {showControls && (
+          <div className="bc-guitar-position-toggle" style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "center", alignItems: "flex-start" }}>
+            {visible.length > 1 && visible.map((i, shown) => {
               const baseFret = result.positions[i].baseFret;
               return (
                 <button
@@ -596,6 +684,7 @@ export function GuitarChordPanel({
                 </button>
               );
             })}
+            <ZipExportButton onExport={handleZipExport} />
           </div>
         )}
 
