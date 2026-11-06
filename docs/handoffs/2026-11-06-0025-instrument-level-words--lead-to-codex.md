@@ -7,7 +7,7 @@
 - **PR:** (open as a draft)
 - **Base commit:** 4d43926
 - **Port (if running a server):** 5450
-- **Status:** open
+- **Status:** closed
 
 ## Goal
 Typing `ukulele am beginner` (in any word order) into the chordl board editor shows Am on the ukulele frame with Level set to Beginner. Today it shows an E chord. The parser returns structured `instrument` and `level` fields, and the editor applies them.

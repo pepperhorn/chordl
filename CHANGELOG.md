@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- The string (guitar/ukulele) view has the same `.zip` export as the keyboard view: This/All, with SVG, PNG, MIDI and block/arpeggio WAVs. MIDI and WAV use the shape's real sounding pitches (including re-entrant ukulele tuning). `generateMidiFile` and `generateWav` also accept exact MIDI numbers. Bass and violin get the button once they have shapes (#100).
 - Chord input accepts instrument and experience-level words and aliases (for example, `ukulele am beginner`), switching the editor frame/display and Level control. Existing bass-clef/bass-note and key-padding/format phrasing is preserved. Bare `bass` retains its existing meanings; use `bass4`, `bass guitar`, or explicit string counts for bass guitar. Words apply only when typing, so opening saved cards preserves their stored controls.
 
 ## 2026-11-01 — chordl-guitar 0.3.1
