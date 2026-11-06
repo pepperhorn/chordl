@@ -6,7 +6,7 @@
 - **Dispatch / receiver ack:** [lead-to-codex](2026-11-06-0025-instrument-level-words--lead-to-codex.md)
 - **Branch:** orch/0025-instrument-level-words
 - **Worktree:** /home/shaun/.t3/worktrees/chordl/t3-65720342
-- **PR:** draft PR from the branch above (URL to be filled after creation)
+- **PR:** https://github.com/pepperhorn/chordl/pull/98 (draft)
 - **Base commit:** 4d43926 (dispatch docs at 0a282d1)
 - **Port:** 5450 (no server started)
 - **Status:** closed
