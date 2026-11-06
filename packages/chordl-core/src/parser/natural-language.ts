@@ -46,11 +46,11 @@ function stripArticles(text: string, input: string): string {
 
 // Multi-word bass instruments must be claimed before the bass-note regexes:
 // otherwise the final "g bass" in "5-string bass" looks like a bass note.
-const INSTRUMENT_RE = /\b([45][- ]string\s+bass|ukulele|uke|guitar|gtr|bass|violin|fiddle|piano|keys|keyboard)\b/gi;
+const INSTRUMENT_RE = /\b([45][- ]string\s+bass|bass\s+guitar|bass[45]|ukulele|uke|guitar|gtr|violin|fiddle|piano|keys|keyboard)\b/gi;
 const LEVEL_RE = /\b(beginner|easy|basic|emerging|intermediate|established|advanced)\b/gi;
 const INSTRUMENT_WORDS: Record<string, NonNullable<ParsedChordRequest["instrument"]>> = {
   ukulele: "ukulele", uke: "ukulele", guitar: "guitar", gtr: "guitar",
-  bass: "bass4", violin: "violin", fiddle: "violin",
+  bass4: "bass4", bass5: "bass5", "bass guitar": "bass4", violin: "violin", fiddle: "violin",
   piano: "piano", keys: "piano", keyboard: "piano",
 };
 const LEVEL_WORDS: Record<string, NonNullable<ParsedChordRequest["level"]>> = {
@@ -433,9 +433,9 @@ export function parseChordDescription(input: string): ParsedChordRequest {
 
   // Protect existing bass-note/clef/octave phrases and key-size requests. Mask
   // explicit bass instruments first so their suffix cannot claim a bass note.
-  const phraseInput = input.replace(/\b[45][- ]string\s+bass\b/gi, (word) => " ".repeat(word.length));
+  const phraseInput = input.replace(/\b(?:[45][- ]string\s+bass|bass\s+guitar|bass[45])\b/gi, (word) => " ".repeat(word.length));
   const protectedRanges = [BASS_DEGREE_RE, BASS_NOTE_RE, OVER_BASS_NOTE_RE,
-    BASS_OCTAVE_RE, /\bbass\s+clef\b/i, SIZE_NAME_RE, SIZE_NUM_RE,
+    BASS_OCTAVE_RE, /\bbass\s+clef\b/i, SIZE_NAME_RE, SIZE_NUM_RE, PADDING_RE, FORMAT_FULL_RE,
     NOTES_GROUP_RE, NOTES_GROUP_PREFIX_RE, HAND_PREFIX_BARE_RE, NOTES_BARE_HAND_RE]
     .flatMap((re) => [...phraseInput.matchAll(new RegExp(re.source, "gi"))]
       .map((m) => [m.index, m.index + m[0].length] as const));

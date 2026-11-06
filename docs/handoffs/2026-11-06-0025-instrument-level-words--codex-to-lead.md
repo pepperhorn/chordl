@@ -74,3 +74,37 @@ git diff --check: passed
 - **Out-of-scope issues found:** none requiring scope expansion.
 - **Follow-ups:** Claude-family review and lead merge; no browser/device verification was performed.
 - **For GBrain (lead to promote):** new aliases must be removed before bass extraction as well as chord-name extraction; multiword instrument suffixes can otherwise look like bass notes. Real control state tests protect the parsed-value effect dependencies against resetting manual choices.
+
+## Review r1 response
+
+- **Review:** [5796777773](https://github.com/pepperhorn/chordl/pull/98#pullrequestreview-5796777773), originally at 51cbe34.
+- **Authority:** fetched origin and read the amended spec directly at `origin/main:docs/specs/0025-instrument-level-words.md`. Did not merge main: its amended spec was available remotely, and no local spec edits were needed. This section supersedes the initial implementation's bare-bass vocabulary and effect-based wiring above.
+- **Bass decision:** bare `bass` is no longer an instrument token; existing single-note, chord-symbol, multi-hand, colon and uppercase bass-clef forms are untouched. Bass instrument aliases are `bass4`, `4-string bass`, `4 string bass`, `bass guitar` → bass4, and `bass5`, `5-string bass`, `5 string bass` → bass5. Added vocabulary coverage in all positions/cases across Am/C/E/Bb and exact-result legacy regressions. Explicit `bass4`/`bass5` are masked before legacy bass-note detection too, so `C bass4` cannot be claimed as `C bass`.
+- **Saved cards:** removed the parsed-value effects. Only the textbox's user-edit handler applies changed parsed instrument/level values, independently. Loading saved cards and the imperative `setChord` path do not apply them. Added real-component tests opening a Guitar/Established card whose raw text is `uke Am beginner`, asserting the selected Guitar button, Established radio, Display state, every saved version's original text/display/instrument/level, and adapter readback. Also covered a keyboard card, later user edits, and the host `setChord` path. Existing manual-choice tests still run.
+- **Keyboard phrases:** protected `PADDING_RE` and `FORMAT_FULL_RE` before instrument extraction. Added exact regressions for `C with 2 keys on either side` → `{chordName:"C",padding:2}` and `C full keys` → `{chordName:"C",format:"exact"}`, with no instrument.
+- **Differential verification:** built main's core independently from a `git archive origin/main` extraction under `/tmp`, using its own emitted dist. Compared full serialized `parseChordDescription` results with the branch's built core on **353 unique legacy inputs: zero differences**. Corpus includes all reviewer-listed bass hand/note examples; bass/bass-clef/lh/left-hand prefixes with single notes, minor/major7/slash chords and treble/rh suffixes; key/keys/size named/numeric sizes; every each/either/both padding phrasing across C/Am/Bb/E; full keys/key/layout/height/size; and bass/bottom/lowest note and degree forms. Main parser source was confirmed byte-identical at latest observed `origin/main` cc46b51f010a50e16a10da1ba38b4914f48b7081. No legacy drift found in this corpus; the new vocabulary changes are intentional and tested separately.
+- **Verification:** final verification passed: `pnpm install --frozen-lockfile`, `pnpm build`, `pnpm lint`, `VITEST_MAX_WORKERS=2 pnpm test:run`, and `pnpm --filter @pepperhorn/chordl-react build:site` all exited 0; 152 test files / 2,721 tests passed (core 526; board 336, including six real integration cases); site built in 7.27s; `git diff --check` passed. The first full run hit the default 5s timeout in the existing multi-transition real-SVG manual-choice test (7.4s under contention, no assertion failure). An isolated rerun passed all six integration cases. Raised only that test’s budget to 15s, preserving every assertion, then restarted the full verify chain.
+- **Scope:** only the previously owned implementation/test/changelog files and this return handoff changed. No ledger, spec, plan, persistence API, or progression-parser changes. No GBrain writes; lead may promote the user-edit-only rule and legacy-phrase regressions.
+
+### Review r1 verification output
+
+```text
+pnpm install --frozen-lockfile: exit 0
+pnpm build: exit 0 (plus focused core rebuild after explicit bass-id corner case)
+pnpm lint: exit 0
+VITEST_MAX_WORKERS=2 pnpm test:run: exit 0
+  chordl-voicings: 9 files, 176 tests passed
+  chordl-core: 16 files, 526 tests passed
+  chordl-listen: 1 file, 13 tests passed
+  chordl-guitar: 19 files, 337 tests passed
+  chordl-voicing: 9 files, 161 tests passed
+  chordl-react: 47 files, 374 tests passed
+  chordl-cards: 25 files, 798 tests passed
+  chordl-board: 26 files, 336 tests passed
+  Total: 152 files, 2721 tests passed
+pnpm --filter @pepperhorn/chordl-react build:site: exit 0, built in 7.27s
+node /tmp/chordl-0025-r1-compare.mjs: 353 compared, differences []
+git diff --check: exit 0
+```
+
+A second uncapped run also hit default 5s timeouts in four unrelated React tests while host load was 28.5. The final complete suite passed with Vitest capped at two workers; no repository-wide test config or unowned tests were changed. jsdom navigation diagnostics and the Vite large-chunk warning were non-fatal. Differential corpus and script remain at `/tmp/chordl-0025-r1-comparison.json` and `/tmp/chordl-0025-r1-compare.mjs` in this environment.

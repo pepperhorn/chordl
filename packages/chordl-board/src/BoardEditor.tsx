@@ -717,23 +717,6 @@ export const BoardEditor = forwardRef<BoardEditorHandle, BoardEditorProps>(funct
         : next);
   }, []);
 
-  const parsedWords = useMemo(() => isProg ? undefined : parseChordDescription(input), [input, isProg]);
-  const parsedInstrument = parsedWords?.instrument;
-  const parsedLevel = parsedWords?.level;
-  // Key each effect on its parsed value: manual choices survive unrelated
-  // keystrokes and changes to the other requested control.
-  useEffect(() => {
-    if (!parsedInstrument) return;
-    if (parsedInstrument === "piano") setDisplayMode("keyboard");
-    else {
-      setDisplayMode("guitar");
-      setGuitarInstrument(parsedInstrument);
-    }
-  }, [parsedInstrument]);
-  useEffect(() => {
-    if (parsedLevel) setLevel(parsedLevel);
-  }, [parsedLevel]);
-
   // Resolve note count for dynamic fingering cells.
   const noteCount = useMemo(() => {
     if (isProg) return 0;
@@ -1007,7 +990,21 @@ export const BoardEditor = forwardRef<BoardEditorHandle, BoardEditorProps>(funct
    * existing card is exempt: that title belongs to the card, not to whatever
    * chord is in the box.
    */
-  const handleChordInputChange = (next: string) => {
+  const handleChordInputChange = (next: string, userEdit = false) => {
+    // Only typing applies requests. Loading a saved card or a host's setChord
+    // must preserve the stored/current controls, even when its text has words.
+    if (userEdit && !isProgressionRequest(next)) {
+      const previous = isProg ? undefined : parseChordDescription(input);
+      const parsed = parseChordDescription(next);
+      if (parsed.instrument && parsed.instrument !== previous?.instrument) {
+        if (parsed.instrument === "piano") setDisplayMode("keyboard");
+        else {
+          setDisplayMode("guitar");
+          setGuitarInstrument(parsed.instrument);
+        }
+      }
+      if (parsed.level && parsed.level !== previous?.level) setLevel(parsed.level);
+    }
     // Drops the reported voicing rather than carry it onto a different chord —
     // see `setChordInput`.
     setChordInput(next);
@@ -1245,7 +1242,7 @@ export const BoardEditor = forwardRef<BoardEditorHandle, BoardEditorProps>(funct
         <input
           type="text"
           value={input}
-          onChange={(e) => handleChordInputChange(e.target.value)}
+          onChange={(e) => handleChordInputChange(e.target.value, true)}
           placeholder='Tell me what chord(s) you&apos;d like to visualize..'
           className={inputPulsing ? "chordl-input--edit-pulse" : undefined}
           style={{

@@ -889,7 +889,7 @@ describe("midi note names combine with degrees", () => {
 describe("instrument and level words", () => {
   const instruments = [
     ["ukulele", "ukulele"], ["uke", "ukulele"], ["guitar", "guitar"], ["gtr", "guitar"],
-    ["bass", "bass4"], ["4-string bass", "bass4"], ["4 string bass", "bass4"],
+    ["bass4", "bass4"], ["bass guitar", "bass4"], ["bass5", "bass5"], ["4-string bass", "bass4"], ["4 string bass", "bass4"],
     ["5-string bass", "bass5"], ["5 string bass", "bass5"],
     ["violin", "violin"], ["fiddle", "violin"], ["piano", "piano"],
     ["keys", "piano"], ["keyboard", "piano"],
@@ -900,8 +900,10 @@ describe("instrument and level words", () => {
     ["established", "established"], ["advanced", "established"],
   ];
   it.each(instruments)("recognises %s in any position", (word, instrument) => {
-    for (const input of [`${word} Am compact`, `Am ${word} compact`, `Am compact ${word}`, `${word.toUpperCase()} Am`]) {
-      expect(parseChordDescription(input)).toMatchObject({ chordName: "Am", instrument });
+    for (const chordName of ["Am", "C", "E", "Bb"]) {
+      for (const input of [`${word} ${chordName} compact`, `${chordName} ${word} compact`, `${chordName} compact ${word}`, `${word.toUpperCase()} ${chordName}`]) {
+        expect(parseChordDescription(input)).toMatchObject({ chordName, instrument });
+      }
     }
   });
   it.each(levels)("recognises %s in any position", (word, level) => {
@@ -929,6 +931,25 @@ describe("instrument and level words", () => {
     expect(result.instrument).toBeUndefined();
   });
   it.each(["C with notes C E G in bass clef", "bass C E G treble B D F", "C bass up an octave", "C keys xl"])("preserves other existing modifiers: %s", (input) => {
+    expect(parseChordDescription(input).instrument).toBeUndefined();
+  });
+  it.each([
+    ["bass C treble E G B", { chordName: "", notesGroups: [
+      { notes: ["E", "G", "B"], hand: "rh", clef: "treble" }, { notes: ["C"], hand: "lh", clef: "bass" },
+    ] }],
+    ["bass Cmaj7 treble G7", { chordName: "", notesGroups: [
+      { notes: ["C", "E", "G", "B"], hand: "lh", clef: "bass", chord: "Cmaj7" },
+      { notes: ["G", "B", "D", "F"], hand: "rh", clef: "treble", chord: "G7" },
+    ] }],
+    ["bass C", { chordName: "", notesGroups: [{ notes: ["C"], hand: "lh", clef: "bass" }] }],
+    ["bass: C", { chordName: "", notesGroups: [{ notes: ["C"], hand: "lh", clef: "bass" }] }],
+    ["BASS Am", { chordName: "", notesGroups: [{ notes: ["A", "C", "E"], hand: "lh", clef: "bass", chord: "Am" }] }],
+    ["C with 2 keys on either side", { chordName: "C", padding: 2 }],
+    ["C full keys", { chordName: "C", format: "exact" }],
+  ])("preserves legacy hand and keyboard syntax: %s", (input, expected) => {
+    expect(parseChordDescription(input as string)).toEqual(expected);
+  });
+  it.each(["bass", "Am bass", "Am upright bass", "Am acoustic bass", "Am electric bass"])("never treats bare bass as an instrument: %s", (input) => {
     expect(parseChordDescription(input).instrument).toBeUndefined();
   });
   it("uses whole words and leaves unspecified fields absent", () => {
