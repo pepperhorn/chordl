@@ -23,8 +23,8 @@ Vocabulary (case-insensitive, whole words only):
 |---|---|
 | `ukulele`, `uke` | instrument `ukulele` |
 | `guitar`, `gtr` | instrument `guitar` |
-| `bass`, `4-string bass`, `4 string bass` | instrument `bass4` |
-| `5-string bass`, `5 string bass` | instrument `bass5` |
+| `bass4`, `4-string bass`, `4 string bass`, `bass guitar` | instrument `bass4` |
+| `bass5`, `5-string bass`, `5 string bass` | instrument `bass5` |
 | `violin`, `fiddle` | instrument `violin` |
 | `piano`, `keys`, `keyboard` | instrument `piano` (back to the keyboard display) |
 | `beginner`, `easy`, `basic` | level `beginner` |
@@ -35,6 +35,9 @@ Vocabulary (case-insensitive, whole words only):
 - An instrument word for a frame instrument sets the display mode to `guitar` and the frame instrument to that id. `piano`/`keys`/`keyboard` sets the display mode to `keyboard`.
 - A level word with no instrument word only changes the level.
 - With no instrument or level word, the current display/instrument/level are left exactly as they are (no reset).
+- The words apply only when the **user edits** the input. Opening a saved card must keep its stored display, instrument and level, even if its text contains instrument or level words (review r1).
+- Existing phrases that contain a vocabulary word keep their old meaning, e.g. `C with 2 keys on either side` (padding) and `C full keys` (format).
+- **Bare `bass` is never an instrument** (human decision, 2026-11-06, review r1). It keeps its existing meanings: the bass-clef hand (`bass C treble E G B`, `bass Cmaj7`, `bass C`) and bass-note phrasing.
 - Bass words must not break the existing bass-note phrasing: `C/E`, `C over E`, `C with E in the bass`, `C bass E` (whatever forms the parser supports today) keep parsing as a slash-bass chord and must **not** set instrument `bass4`.
 
 ## Constraints
