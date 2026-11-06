@@ -345,6 +345,8 @@ export class CardErrorBoundary extends Component<
     if (this.state.error) {
       return (
         <div
+          className="chordl-board-card-error"
+          data-chordl-state="error"
           style={{
             padding: "16px 10px",
             fontSize: "0.75rem",

@@ -47,6 +47,10 @@ describe("BoardPlayer — a card that throws during render", () => {
   it("is the same card ChordBoard already survives", () => {
     const { container } = render(<ChordBoard items={[bad, good]} />);
     expect(container.textContent).toContain("doesn't have a");
+    const errors = container.querySelectorAll(".chordl-board-card-error");
+    expect(errors).toHaveLength(1);
+    expect(errors[0].getAttribute("data-chordl-state")).toBe("error");
+    expect(errors[0].textContent).toContain("doesn't have a");
   });
 
   it("shows an inline message instead of unmounting the board", () => {
@@ -57,6 +61,10 @@ describe("BoardPlayer — a card that throws during render", () => {
     expect(container.querySelector(".board-player")).not.toBeNull();
     // …the bad card says why it is not drawn…
     expect(container.textContent).toContain("doesn't have a");
+    const errors = container.querySelectorAll(".chordl-board-card-error");
+    expect(errors).toHaveLength(1);
+    expect(errors[0].getAttribute("data-chordl-state")).toBe("error");
+    expect(errors[0].textContent).toContain("doesn't have a");
     // …and the card beside it drew anyway.
     expect(container.querySelectorAll("[data-board-id]")).toHaveLength(2);
   });
@@ -67,5 +75,20 @@ describe("BoardPlayer — a card that throws during render", () => {
     );
     expect(container.querySelector(".board-player")).not.toBeNull();
     expect(container.textContent).toContain("doesn't have a");
+    const errors = container.querySelectorAll(".chordl-board-card-error");
+    expect(errors).toHaveLength(1);
+    expect(errors[0].getAttribute("data-chordl-state")).toBe("error");
+    expect(errors[0].textContent).toContain("doesn't have a");
+  });
+
+  it("does not mark healthy cards as errors", () => {
+    const board = render(<ChordBoard items={[good]} />);
+    const player = render(
+      <BoardPlayer items={[good]} playing={false} onPlayingChange={noop} />,
+    );
+    for (const { container } of [board, player]) {
+      expect(container.querySelector(".chordl-board-card-error")).toBeNull();
+      expect(container.querySelector('[data-chordl-state="error"]')).toBeNull();
+    }
   });
 });
