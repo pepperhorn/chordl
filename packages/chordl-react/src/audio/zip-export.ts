@@ -62,6 +62,11 @@ function svgToPng(svgElement: SVGSVGElement, pixelRatio = 2): Promise<Uint8Array
 export interface ZipVariant {
   label: string;
   notes: string[];
+  /**
+   * Exact MIDI note numbers (a fretted shape's sounding pitches). When set they
+   * drive the MIDI and WAV files instead of `notes`, which then only names them.
+   */
+  midiNotes?: number[];
   svgElement: SVGSVGElement | null;
 }
 
@@ -85,18 +90,20 @@ async function addVariantToZip(
   }
 
   // MIDI (block chord)
-  const midi = generateMidiFile({ notes: variant.notes });
+  const midi = generateMidiFile({ notes: variant.notes, midiNotes: variant.midiNotes });
   folder.file(`${name}.mid`, midi);
+
+  const wavNotes = variant.midiNotes ?? variant.notes;
 
   // WAV — block chord
   try {
-    const wavBlock = await generateWav(variant.notes, "block");
+    const wavBlock = await generateWav(wavNotes, "block");
     folder.file(`${name}_chord.wav`, wavBlock);
   } catch { /* skip if offline audio fails */ }
 
   // WAV — arpeggio
   try {
-    const wavArp = await generateWav(variant.notes, "arpeggio");
+    const wavArp = await generateWav(wavNotes, "arpeggio");
     folder.file(`${name}_arpeggio.wav`, wavArp);
   } catch { /* skip if offline audio fails */ }
 }

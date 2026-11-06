@@ -44,6 +44,7 @@ None.
 
 ---
 ## Receiver ack
+Understood: extract the keyboard's .zip button + This/All menu into a shared `ZipExportButton`, use it in `GuitarChordPanel`, and export each position's SVG/PNG plus MIDI/WAV built from `positionToSoundingStrings` MIDI numbers (additive `midiNotes` support in `generateMidiFile`, `generateWav`, `ZipVariant`). "All" covers the positions visible at the current level, one `A_<label>` folder each. Keyboard zip contents unchanged. Out of scope: header animation, timbre, CHANGELOG, chordl-board, parser, types.ts. Only owned files touched.
 
 ---
 ## Return (implementer → lead; fill in when done, or in a separate …-to-lead.md)
