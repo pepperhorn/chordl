@@ -10,13 +10,17 @@ const SAMPLE_RATE = 44100;
  * Render notes to an AudioBuffer using an OfflineAudioContext.
  */
 async function renderToBuffer(
-  notes: string[],
+  notes: Array<string | number>,
   mode: "block" | "arpeggio",
   octave: number = 4,
   durationSec: number = 2.5,
   arpDelayMs: number = 120,
 ): Promise<AudioBuffer> {
-  const ascending = toAscendingNotes(notes, octave);
+  // MIDI numbers are exact pitches: keep them, low to high. Names still go
+  // through `toAscendingNotes` to be given octaves.
+  const ascending: Array<string | number> = notes.every((n) => typeof n === "number")
+    ? [...(notes as number[])].sort((a, b) => a - b)
+    : toAscendingNotes(notes as string[], octave);
   const totalDuration = mode === "arpeggio"
     ? durationSec + (ascending.length * arpDelayMs) / 1000
     : durationSec;
@@ -90,10 +94,11 @@ function writeString(view: DataView, offset: number, str: string): void {
 }
 
 /**
- * Generate a WAV file for a chord (block or arpeggio).
+ * Generate a WAV file for a chord (block or arpeggio). `notes` is either note
+ * names (octaves assigned ascending from `octave`) or exact MIDI numbers.
  */
 export async function generateWav(
-  notes: string[],
+  notes: Array<string | number>,
   mode: "block" | "arpeggio",
   octave?: number,
 ): Promise<Uint8Array> {

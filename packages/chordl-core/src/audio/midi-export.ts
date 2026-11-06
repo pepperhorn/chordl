@@ -37,6 +37,13 @@ function noteToMidi(note: string, defaultOctave: number = 4): number | null {
 
 interface MidiChordOptions {
   notes: string[];
+  /**
+   * Exact MIDI note numbers. When given (and no `lhNotes`), these are written
+   * as-is and `notes`/`octave` are ignored — for callers that already know the
+   * sounding pitches (a fretted shape's strings) and must not have them
+   * re-derived from note names.
+   */
+  midiNotes?: number[];
   /** Left-hand notes (bass clef). Remaining notes go to right hand (treble clef). */
   lhNotes?: string[];
   octave?: number;
@@ -110,6 +117,7 @@ function buildTrackData(
 export function generateMidiFile(options: MidiChordOptions): Uint8Array {
   const {
     notes,
+    midiNotes: exactMidi,
     lhNotes,
     octave = 4,
     lhOctave: lhOctaveOpt,
@@ -186,9 +194,11 @@ export function generateMidiFile(options: MidiChordOptions): Uint8Array {
   }
 
   // Single track (Format 0) — original behavior
-  const midiNotes = notes
-    .map((n) => noteToMidi(n, octave))
-    .filter((m): m is number => m != null);
+  const midiNotes = exactMidi
+    ? exactMidi.filter((m) => Number.isInteger(m) && m >= 0 && m <= 127)
+    : notes
+        .map((n) => noteToMidi(n, octave))
+        .filter((m): m is number => m != null);
 
   if (midiNotes.length === 0) return new Uint8Array(0);
 
