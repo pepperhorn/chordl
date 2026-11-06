@@ -51,5 +51,7 @@ None.
 ---
 ## Receiver ack
 
+Acknowledged: I will add instrument and level extraction/stripping to single-chord parsing, mirror optional union fields in core, and apply changed parsed values to the real BoardEditor controls without overriding manual choices on unrelated keystrokes. I will preserve all bass-note forms, cover aliases/word order and real control state in tests, update Unreleased, and change only the declared owned files and my 0025 handoffs. No open questions. GBrain search found no relevant chordl-parser guidance.
+
 ---
 ## Return (implementer → lead; fill in when done, or in a separate …-to-lead.md)
