@@ -36,6 +36,12 @@ jobs:
       - name: Build
         run: pnpm build
 
+      # The chordl.app site build type-checks dev/ (the site entry), which
+      # the package tsconfig excludes. Without this a missing name in
+      # dev/App.tsx builds fine and blanks the live site (see #96).
+      - name: Site build
+        run: pnpm --filter @pepperhorn/chordl-react build:site
+
       - name: Lint
         run: pnpm lint
 
