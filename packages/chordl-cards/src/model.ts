@@ -26,6 +26,9 @@ export type { FacePosition, PositionsOptions, FrettedCardFace } from "./position
 export { playbackFor } from "./playback";
 export type { FacePlayback } from "./playback";
 
+export { describeShape } from "./describe";
+export type { ShapeDescription, DescribeShapeOptions } from "./describe";
+
 export { qualityLabelFor, fullChordName, rootOf } from "./names";
 
 export {
