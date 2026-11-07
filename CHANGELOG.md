@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **chordl-cards 0.2.0:** `describeShape(chord, face, { theme, request? })` returns plain-English "how to play" text for any card face: `play` (steps in the order you place fingers), `read` (how to read that kind of diagram), `text` (both, for display, with glyph-ready names like `Bb`) and `spoken` (both, for text-to-speech: "B flat", "second fret", no digits or symbols). It is built from the same request and playback the card draws, so it matches the diagram; pass a `positionsFor` request to describe an alternative position. Pure and deterministic, templates only. Re-vendor with `pnpm vendor:chordl` in crf-chords.
 - The string (guitar/ukulele) view has the same `.zip` export as the keyboard view: This/All, with SVG, PNG, MIDI and block/arpeggio WAVs. MIDI and WAV use the shape's real sounding pitches (including re-entrant ukulele tuning). `generateMidiFile` and `generateWav` also accept exact MIDI numbers. Bass and violin get the button once they have shapes (#100).
 - Chord input accepts instrument and experience-level words and aliases (for example, `ukulele am beginner`), switching the editor frame/display and Level control. Existing bass-clef/bass-note and key-padding/format phrasing is preserved. Bare `bass` retains its existing meanings; use `bass4`, `bass guitar`, or explicit string counts for bass guitar. Words apply only when typing, so opening saved cards preserves their stored controls.
 
