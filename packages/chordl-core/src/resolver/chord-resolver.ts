@@ -119,6 +119,11 @@ function normalizeChordName(name: string): string {
   const root = rootMatch[1];
   let suffix = name.slice(root.length);
 
+  // Catalogue extensions such as m7b5(b9) and 7(b9,#5) use brackets.
+  // Unwrap only alteration lists; other parentheses retain their meaning.
+  suffix = suffix.replace(/\(((?:[#b](?:5|9|11|13)|add(?:9|11|13|b9|#9|b13|#11))(?:,(?:[#b](?:5|9|11|13)|add(?:9|11|13|b9|#9|b13|#11)))*)\)/g,
+    (_, alterations: string) => alterations.replace(/,/g, ""));
+
   // m7sus is special — handled by buildSpecialChord, don't normalize it away
 
   // Cmaug → Cm#5 (minor augmented)

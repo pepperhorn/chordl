@@ -41,11 +41,11 @@ describe("catalogue sweep: keyboard", () => {
       if (req.size > widest.size) widest = { size: req.size, chords: [chord] };
       else if (req.size === widest.size) widest.chords.push(chord);
     }
-    expect(ROOT_CHORDS.length + SLASH_CHORDS.length).toBe(15 * 86 + 2520);
+    expect(ROOT_CHORDS.length + SLASH_CHORDS.length).toBe(15 * 88 + 2520);
     expect(Object.fromEntries([...widths].sort((a, b) => a[0] - b[0]))).toMatchInlineSnapshot(`
       {
         "12": 453,
-        "13": 2259,
+        "13": 2289,
         "14": 407,
         "15": 437,
         "16": 178,
@@ -155,7 +155,7 @@ describe("catalogue sweep: six-string guitar", () => {
     expect(tally).toMatchInlineSnapshot(`
       {
         "db": 535,
-        "generated": 699,
+        "generated": 729,
         "impossible": 41,
         "power": 15,
       }

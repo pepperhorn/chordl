@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { Note } from "tonal";
 import { resolveChord } from "@pepperhorn/chordl-core";
 
 describe("resolveChord", () => {
@@ -128,5 +129,50 @@ describe("resolveChord — intervals are populated on every branch", () => {
     const inverted = resolveChord("Cmaj7", 1);
     expect(inverted.notes).not.toEqual(root.notes);
     expect(inverted.intervals).toEqual(root.intervals);
+  });
+});
+
+describe("resolveChord — bracketed extensions", () => {
+  it.each([
+    ["Bm7b5(b9)", [11, 2, 5, 9, 0]],
+    ["G#dim7(b9)", [8, 11, 2, 5, 9]],
+    ["Em7(b9)", [4, 7, 11, 2, 5]],
+    ["A7(b9)", [9, 1, 4, 7, 10]],
+  ])("resolves %s to the expected pitch classes", (symbol, pcs) => {
+    const resolved = resolveChord(symbol);
+    expect(resolved.notes.map((n) => Note.chroma(n))).toEqual(pcs);
+    expect(resolved.intervals).toHaveLength(pcs.length);
+  });
+
+  it("resolves both new types on all 15 catalogue roots", () => {
+    const roots = ["C", "C#", "Db", "D", "Eb", "E", "F", "F#", "Gb", "G", "G#", "Ab", "A", "Bb", "B"];
+    for (const root of roots) {
+      for (const [suffix, offsets] of [
+        ["m7b5(b9)", [0, 3, 6, 10, 1]],
+        ["dim7(b9)", [0, 3, 6, 9, 1]],
+      ] as const) {
+        expect(resolveChord(root + suffix).notes.map((n) => Note.chroma(n)), root + suffix)
+          .toEqual(offsets.map((offset) => (Note.chroma(root)! + offset) % 12));
+      }
+    }
+  });
+
+  it.each([
+    ["Cm7b5(b9)", "Cm7b5b9"], ["Cm7(b5,b9)", "Cm7b5b9"],
+    ["Cdim7(b9)", "Cdim7b9"], ["Cm7(b9)", "Cm7b9"],
+    ["C7(b9)", "C7b9"], ["C7(b9,#5)", "C7b9#5"],
+  ])("resolves %s like %s", (bracketed, plain) => {
+    expect(resolveChord(bracketed)).toEqual(resolveChord(plain));
+  });
+
+  it("rotates bracketed chords without changing their intervals", () => {
+    const chord = resolveChord("Bm7b5(b9)");
+    const inverted = resolveChord("Bm7b5(b9)", 1);
+    expect(inverted.notes).toEqual([...chord.notes.slice(1), chord.notes[0]]);
+    expect(inverted.intervals).toEqual(chord.intervals);
+  });
+
+  it.each(["Cm7(b9", "Cm7b9)", "Cm7(foo)", "Cm7(b9,,b5)"])("rejects malformed %s", (symbol) => {
+    expect(() => resolveChord(symbol)).toThrow("Unknown chord");
   });
 });

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.6.1
+
+- Accept bracketed alteration lists in `resolveChord`, including `m7b5(b9)`,
+  `dim7(b9)`, `m7(b9)` and `7(b9)`, through the existing chord resolver.
+
 ## 0.6.0
 
 - Add a host-supplied scale library: `ScaleDef` and `StepToken`, interval-aware

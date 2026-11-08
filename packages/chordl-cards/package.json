@@ -1,6 +1,6 @@
 {
   "name": "@pepperhorn/chordl-cards",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Chord-card voicing model (node-free) and a React player for the printed card faces: keyboard, exploded-triad hands, top-3 guitar",
   "repository": {
     "type": "git",
