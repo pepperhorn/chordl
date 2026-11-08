@@ -962,3 +962,18 @@ describe("instrument and level words", () => {
     expect(parseChordDescription("uke Am guitar beginner advanced")).toMatchObject({ chordName: "Am", instrument: "ukulele", level: "beginner" });
   });
 });
+
+describe("bracketed alteration descriptions", () => {
+  it.each([
+    ["Bm7b5(b9)", "Bm7b5(b9)"],
+    ["Em7(b9) in the right hand", "Em7(b9)"],
+    ["G#dim7(b9)", "G#dim7(b9)"],
+    ["C7(b9,b5)/E", "C7(b9,b5)/E"],
+    ["show me a C7(#11,b9,#5)/eb with note names", "C7(#11,b9,#5)/Eb"],
+    ["C(add9)", "C(add9)"],
+    ["C7(b9,b5), compact", "C7(b9,b5)"],
+    ["C6/9", "C6/9"],
+  ])("keeps the chord symbol in %s", (input, chordName) => {
+    expect(parseChordDescription(input).chordName).toBe(chordName);
+  });
+});

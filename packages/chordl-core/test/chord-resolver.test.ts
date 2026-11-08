@@ -286,3 +286,58 @@ describe("bracket safety and catalogue parity", () => {
     `);
   });
 });
+
+describe("alteration fallback with slash bass", () => {
+  it.each([
+    ["Bm7b5(b9)/F", [5, 9, 0, 11, 2]],
+    ["C7(b9,b5)/E", [4, 6, 10, 1, 0]],
+    ["C7(#9,b5)/G", [7, 0, 4, 6, 10, 3]],
+    ["Cdim7(b9)/Eb", [3, 6, 9, 1, 0]],
+    ["Cm7(b9)/F#", [6, 0, 3, 7, 10, 1]],
+  ])("resolves %s before applying its bass", (symbol, expected) => {
+    const actual = resolveChord(symbol);
+    expect(actual.notes.map((n) => Note.chroma(n))).toEqual(expected);
+    expect(actual.root).toBe(symbol.startsWith("B") ? "B" : "C");
+    expect(resolveChord(symbol, 1).notes).toEqual([...actual.notes.slice(1), actual.notes[0]]);
+    expect(resolveChord(symbol, 1).intervals).toEqual(actual.intervals);
+  });
+
+  it.each(["Bm7b5(b9)", "Cm7b5b9", "Cm7(b5,b9)"])("retains half-diminished quality in %s", (symbol) => {
+    expect(resolveChord(symbol).type).toBe("half-diminished (extended)");
+    expect(resolveChord(symbol + "/F").type).toBe("half-diminished (extended)");
+  });
+
+  it("retains the first alteration's named quality", () => {
+    expect(resolveChord("C7#11b9").type).toBe("lydian dominant seventh (extended)");
+  });
+
+  it("every bracketed catalogue alias with every slash bass is correct or throws", () => {
+    const mismatches: string[] = [];
+    const accepted = new Map<string, number>();
+    const pcs = (notes: string[]) => [...new Set(notes.map((n) => Note.chroma(n)))].sort();
+    for (const type of CHORD_TYPES) {
+      for (const alias of new Set([type.symbol, type.displaySymbol, ...type.aliases].filter((s) => s.includes("(")))) {
+        for (const root of ROOTS) {
+          for (const bass of ROOTS) {
+            const symbol = root + alias + "/" + bass;
+            let actual;
+            try { actual = resolveChord(symbol); }
+            catch (error) {
+              expect(String(error)).toContain("Unknown chord");
+              continue;
+            }
+            accepted.set(alias, (accepted.get(alias) ?? 0) + 1);
+            if (JSON.stringify(pcs(actual.notes)) !== JSON.stringify(pcs([...spellChord(root, type), bass]))) {
+              mismatches.push(symbol + ": " + actual.notes.join(" "));
+            }
+            expect(Note.chroma(actual.notes[0]), symbol).toBe(Note.chroma(bass));
+            expect(Note.chroma(actual.root), symbol).toBe(Note.chroma(root));
+          }
+        }
+      }
+    }
+    expect(mismatches).toEqual([]);
+    expect(accepted.size).toBe(55);
+    for (const count of accepted.values()) expect(count).toBe(ROOTS.length ** 2);
+  });
+});

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.2
+
+- Resolve alteration-fallback upper chords before applying slash basses, replacing
+  altered fifths without retaining the natural fifth.
+- Preserve bracketed alterations and their commas in `parseChordDescription`.
+- Keep the base quality’s own alteration in fallback type labels, including
+  `half-diminished (extended)` and `lydian dominant seventh (extended)`.
+
 ## 0.6.1
 
 - Accept ASCII comma-separated alteration brackets after a nonempty chord

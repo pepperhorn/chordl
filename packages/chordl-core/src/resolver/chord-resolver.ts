@@ -77,7 +77,12 @@ function resolveWithFallback(
   }
   return {
     notes, root: simplifyNote(root),
-    type: (chord.type || chord.aliases?.[0] || suffix) + " (extended)",
+    // A quality such as m7b5 or 7#11 owns its first alteration too.
+    type: (() => {
+      const quality = Chord.get(root + suffix + tokens[0]);
+      const base = quality.empty ? chord : quality;
+      return (base.type || base.aliases?.[0] || suffix) + " (extended)";
+    })(),
     intervals,
   };
 }
@@ -199,7 +204,10 @@ export function resolveChord(
   chordName: string,
   inversion?: number
 ): ResolvedChord {
-  chordName = normalizeChordName(chordName);
+  // Only a terminal note is a slash bass; m6/9 remains a quality.
+  const slash = chordName.match(/\/([A-G][#b]?)$/);
+  const upperName = normalizeChordName(slash ? chordName.slice(0, slash.index) : chordName);
+  chordName = upperName + (slash ? slash[0] : "");
   const chord = Chord.get(chordName);
 
   let notes: string[];
@@ -209,9 +217,9 @@ export function resolveChord(
 
   // Try special chord builders first (omit3, m6/9, etc.)
   const special = buildSpecialChord(chordName);
-  const alterations = splitAlterations(chordName)?.tokens ?? [];
+  const alterations = splitAlterations(upperName)?.tokens ?? [];
   const alteredFifth = alterations.length > 1 && alterations.some((t) => t === "b5" || t === "#5");
-  const fallback = chord.empty || alteredFifth ? resolveWithFallback(chordName) : null;
+  const fallback = chord.empty || alteredFifth ? resolveWithFallback(upperName) : null;
   if (special) {
     notes = special.notes;
     root = special.root;
@@ -219,6 +227,14 @@ export function resolveChord(
     intervals = special.intervals;
   } else if (fallback) {
     ({ notes, root, type, intervals } = fallback);
+    if (slash) {
+      const bass = simplifyNote(slash[1]);
+      const bassIndex = notes.findIndex((note) => Note.chroma(note) === Note.chroma(bass));
+      // Chord tones rotate into the bass; an external pedal is added below
+      // the upper chord. Intervals continue to describe the upper quality.
+      notes = bassIndex < 0 ? [bass, ...notes]
+        : [bass, ...notes.slice(bassIndex + 1), ...notes.slice(0, bassIndex)];
+    }
   } else if (!chord.empty && !alteredFifth) {
     notes = chord.notes.map(simplifyNote);
     root = simplifyNote(chord.tonic ?? notes[0]);
