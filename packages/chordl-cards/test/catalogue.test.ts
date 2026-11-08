@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   CHORD_TYPES, ROOTS, SHEET_ERRATA, chordTypeById, displayNoteName, parseChordSymbol,
-  simplifyDoubleAccidental, spellChord, spellChordStrict, teachingNoteFor,
+  noteParts, simplifyDoubleAccidental, spellChord, spellChordStrict, teachingNoteFor,
 } from "../src/catalogue";
 import { slashChordsForBass } from "../src/slash";
 import { qualityLabelFor } from "../src/names";
@@ -61,9 +61,9 @@ describe("the sheet transcription", () => {
 });
 
 describe("CHORD_TYPES", () => {
-  it("is the 85 sheet types plus the library's diminished triad", () => {
-    expect(CHORD_TYPES).toHaveLength(86);
-    expect(CHORD_TYPES.filter((t) => !t.sheet).map((t) => t.id)).toEqual(["dim"]);
+  it("is the 85 sheet types plus three library additions", () => {
+    expect(CHORD_TYPES).toHaveLength(88);
+    expect(CHORD_TYPES.filter((t) => !t.sheet).map((t) => t.id)).toEqual(["m7-flat5-flat9", "dim7-flat9", "dim"]);
   });
 
   it("every interval set spells to cSpelling on C", () => {
@@ -144,7 +144,7 @@ describe("names, twins and teaching notes", () => {
     const note = chordTypeById("dim7")!.teachingNote!;
     expect(note).toMatch(/diminished seventh/);
     expect(note).toMatch(/double flat/);
-    expect(CHORD_TYPES.filter((t) => t.teachingNote).map((t) => t.id)).toEqual(["dim7"]);
+    expect(CHORD_TYPES.filter((t) => t.teachingNote).map((t) => t.id)).toEqual(["dim7", "dim7-flat9"]);
   });
 });
 
@@ -250,8 +250,8 @@ describe("spellChord", () => {
     // Pinned so a change to the interval tables shows up here; see the report.
     expect({ doubles, chords: doubleChords.length }).toMatchInlineSnapshot(`
       {
-        "chords": 272,
-        "doubles": 326,
+        "chords": 280,
+        "doubles": 342,
       }
     `);
   });
@@ -307,7 +307,7 @@ describe("spellChord", () => {
     const slash = ROOTS.flatMap((b) => slashChordsForBass(b)).filter((c) => teachingNoteFor(c.symbol)).length;
     expect({ chords, slash }).toMatchInlineSnapshot(`
       {
-        "chords": 272,
+        "chords": 280,
         "slash": 176,
       }
     `);
@@ -369,5 +369,42 @@ describe("displayNoteName", () => {
 
   it("rejects a name with an octave", () => {
     expect(() => displayNoteName("D:dim7", "Cb4")).toThrow();
+  });
+});
+
+describe("diatonic diminished flat-nine additions", () => {
+  it("adds exactly 30 chords with the specified slugs, aliases and pitch classes", () => {
+    const definitions = [
+      { id: "m7-flat5-flat9", symbol: "m7b5(b9)", aliases: ["m7(b5,b9)", "m7b5b9", "ø7(b9)"], intervals: ["1", "b3", "b5", "b7", "b9"], pcs: [0, 3, 6, 10, 1] },
+      { id: "dim7-flat9", symbol: "dim7(b9)", aliases: ["dim7b9", "°7(b9)"], intervals: ["1", "b3", "b5", "6", "b9"], pcs: [0, 3, 6, 9, 1] },
+    ];
+    const slugs = new Set<string>();
+    for (const def of definitions) {
+      const type = chordTypeById(def.id)!;
+      expect(type.symbol).toBe(def.symbol);
+      expect(type.aliases).toEqual(def.aliases);
+      expect(type.intervals).toEqual(def.intervals);
+      expect(type.sheet).toBeUndefined();
+      for (const root of ROOTS) {
+        slugs.add(`${root}-${type.slugModifiers.join("-")}`);
+        expect(spellChord(root, type).map((n) => noteParts(n)!.pc))
+          .toEqual(def.pcs.map((pc) => (noteParts(root)!.pc + pc) % 12));
+        for (const alias of [def.symbol, ...def.aliases]) {
+          expect(parseChordSymbol(root + alias)).toEqual({ root, type });
+        }
+      }
+    }
+    expect(slugs.size).toBe(30);
+  });
+
+  it("uses the dim7 teaching spelling before the ninth on every root", () => {
+    for (const root of ROOTS) {
+      expect(spellChord(root, "dim7-flat9").slice(0, 4)).toEqual(spellChord(root, "dim7"));
+      const seventh = spellChordStrict(root, "dim7-flat9")[3];
+      expect(displayNoteName(`${root}:dim7b9`, seventh)).toBe(spellChord(root, "dim7")[3]);
+    }
+    expect(displayNoteName("D:dim7b9", "Cb")).toBe("B");
+    expect(displayNoteName("E:dim7b9/Db", "Db", { isBass: true })).toBe("Db");
+    expect(chordTypeById("dim7-flat9")!.teachingNote).toMatch(/diminished seventh/);
   });
 });

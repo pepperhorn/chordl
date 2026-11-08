@@ -1,6 +1,6 @@
 /**
  * The chord catalogue: every chord type on PepperHorn's "Common Chord Spellings"
- * sheet (85 types), plus the library's diminished triad, which the sheet omits.
+ * sheet (85 types), plus the library's diminished triad and two flat-nine diminished types.
  * This is the single source of truth that chordcards, the chords site, the
  * derive-slug flow and the Directus import read. See
  * chordcards/docs/superpowers/specs/2026-10-22-full-chord-catalogue-design.md.
@@ -168,11 +168,17 @@ const ROWS: Row[] = [
   [84, "m(maj9#5)", "m(maj9#5)", ["mMaj9#5", "m(maj9,#5)"], "1 b3 #5 7 9", "minMaj9#5", "minor major ninth sharp five", "m maj9 sharp5"],
   // As engraved: the minor third stays beside the 4th, and there is no 5th.
   [85, "m7sus4", "m7(sus)", ["m7(sus)", "m7sus", "m7(sus4)", "min7sus4"], "1 b3 4 b7", "min7sus4", "minor seventh suspended fourth", "m7 sus4"],
+  // Diatonic ninths absent from the sheet. Keep written modifier order in slugs.
+  [null, "m7b5(b9)", null, ["m7(b5,b9)", "m7b5b9", "ø7(b9)"], "1 b3 b5 b7 b9", "min7b5b9", "minor seventh flat five flat nine", "m7 flat5 flat9"],
+  [null, "dim7(b9)", null, ["dim7b9", "°7(b9)"], "1 b3 b5 6 b9", "dim7b9", "diminished seventh flat nine", "dim7 flat9"],
   // Not on the sheet: the library's diminished triad.
   [null, "dim", null, ["(dim)", "mb5", "m(b5)"], "1 b3 b5", "dim", "diminished", "dim", "dim"],
 ];
 
 const TEACHING_NOTES = new Map([
+  ["dim7(b9)",
+    "The diminished seventh is written as the major sixth for simpler reading " +
+    "(on C, A instead of B double-flat). The flat ninth is unchanged."],
   ["dim7",
     "The top note is the diminished seventh. Written strictly it is a double flat " +
     "(on C, B𝄫, B double-flat). That is the same key as the major sixth, so we " +
@@ -347,7 +353,7 @@ export function displayNoteName(chordId: string, pitchClass: string, options: { 
   const n = noteParts(pitchClass);
   if (!r || !n) throw new Error(`unknown note in "${chordId}", "${pitchClass}"`);
   if (options.isBass && pitchClass === bass) return pitchClass;
-  if (quality === "dim7" && n.pc === (r.pc + 9) % 12) return simplifyDoubleAccidental(spellInterval(root, "6"));
+  if ((quality === "dim7" || quality === "dim7b9") && n.pc === (r.pc + 9) % 12) return simplifyDoubleAccidental(spellInterval(root, "6"));
   return simplifyDoubleAccidental(pitchClass);
 }
 
