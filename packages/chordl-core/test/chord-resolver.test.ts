@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { CHORD_TYPES, ROOTS, spellChord } from "../../chordl-cards/src/catalogue";
 import { Note } from "tonal";
 import { resolveChord } from "@pepperhorn/chordl-core";
 
@@ -174,5 +175,114 @@ describe("resolveChord — bracketed extensions", () => {
 
   it.each(["Cm7(b9", "Cm7b9)", "Cm7(foo)", "Cm7(b9,,b5)"])("rejects malformed %s", (symbol) => {
     expect(() => resolveChord(symbol)).toThrow("Unknown chord");
+  });
+});
+
+describe("bracket safety and catalogue parity", () => {
+  it.each(["C(b5)", "C(#5)", "C(b9)", "C(#9)", "C(#11)", "C(b13)", "C(b5)/E"])(
+    "rejects %s without changing the written root", (symbol) => {
+      expect(() => resolveChord(symbol)).toThrow("Unknown chord");
+    },
+  );
+
+  it.each([
+    ["C7(b9,b5)", [0, 4, 6, 10, 1]],
+    ["C7b9b5", [0, 4, 6, 10, 1]],
+    ["C7(#9,b5)", [0, 4, 6, 10, 3]],
+    ["C7#9b5", [0, 4, 6, 10, 3]],
+    ["C13(b9,b5)", [0, 4, 6, 10, 1, 9]],
+    ["C13b9b5", [0, 4, 6, 10, 1, 9]],
+    ["C7(#11,b9,#5)", [0, 4, 8, 10, 6, 1]],
+    ["C7#11b9#5", [0, 4, 8, 10, 6, 1]],
+  ])("replaces the fifth in %s without relabelling it", (symbol, expected) => {
+    const result = resolveChord(symbol);
+    expect(result.notes.map((n) => Note.chroma(n)).sort()).toEqual([...expected].sort());
+    expect(result.intervals).toContain(symbol.includes("#5") ? "5A" : "5d");
+    expect(result.intervals).not.toContain("5P");
+    if (!symbol.includes("#11")) expect(result.intervals).not.toContain("4A");
+  });
+
+  it("every bracketed catalogue spelling resolves correctly or explicitly throws", () => {
+    const mismatches: string[] = [];
+    const accepted = new Map<string, number>();
+    const pcs = (notes: string[]) => notes.map((n) => Note.chroma(n)).sort((a, b) => a! - b!);
+    for (const type of CHORD_TYPES) {
+      for (const alias of new Set([type.symbol, type.displaySymbol, ...type.aliases].filter((s) => s.includes("(")))) {
+        for (const root of ROOTS) {
+          let actual;
+          try { actual = resolveChord(root + alias); }
+          catch (error) {
+            expect(String(error)).toContain("Unknown chord");
+            continue;
+          }
+          accepted.set(alias, (accepted.get(alias) ?? 0) + 1);
+          if (JSON.stringify(pcs(actual.notes)) !== JSON.stringify(pcs(spellChord(root, type)))) {
+            mismatches.push(root + alias + ": " + actual.notes.join(" "));
+          }
+          expect(Note.chroma(actual.root), root + alias).toBe(Note.chroma(root));
+        }
+      }
+    }
+    expect(mismatches).toEqual([]);
+    for (const count of accepted.values()) expect(count).toBe(ROOTS.length);
+    expect([...accepted.keys()].sort()).toMatchInlineSnapshot(`
+      [
+        "(add9)",
+        "13(#11)",
+        "13(#11,#5)",
+        "13(#11,#9)",
+        "13(#11,b9)",
+        "13(#5)",
+        "13(#9)",
+        "13(#9,#5)",
+        "13(#9,b5)",
+        "13(b5)",
+        "13(b9)",
+        "13(b9,#5)",
+        "13(b9,b5)",
+        "6(add9)",
+        "7(#11,#9)",
+        "7(#11,#9,#5)",
+        "7(#11,b9)",
+        "7(#11,b9,#5)",
+        "7(#5)",
+        "7(#9)",
+        "7(#9,#5)",
+        "7(#9,b5)",
+        "7(b5)",
+        "7(b9)",
+        "7(b9,#5)",
+        "7(b9,b5)",
+        "9(#11)",
+        "9(#11,#5)",
+        "9(#5)",
+        "9(b5)",
+        "dim7(b9)",
+        "m(#5)",
+        "m(add9)",
+        "m(b5)",
+        "m11(b5)",
+        "m7(#5)",
+        "m7(add11)",
+        "m7(b5)",
+        "m7(b5,b9)",
+        "m7(b9)",
+        "m7b5(b9)",
+        "m9(#11)",
+        "m9(#5)",
+        "m9(b5)",
+        "maj13(#11)",
+        "maj13(#11,#5)",
+        "maj7(#5)",
+        "maj7(#9)",
+        "maj7(b5)",
+        "maj7(b9)",
+        "maj9(#11)",
+        "maj9(#11,#5)",
+        "maj9(#5)",
+        "maj9(b5)",
+        "°7(b9)",
+      ]
+    `);
   });
 });

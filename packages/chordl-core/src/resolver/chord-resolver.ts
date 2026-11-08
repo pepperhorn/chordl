@@ -31,66 +31,55 @@ const ALTERATION_TO_INTERVAL: Record<string, string> = {
   "addb13": "6m",
 };
 
-// Try to resolve by stripping trailing alterations one at a time,
-// then transposing the root by those intervals to get extra notes
+// Strip the whole alteration tail before consulting Tonal: e.g. 7b9b5 is
+// otherwise interpreted as 7b9#11, retaining the natural fifth.
+function splitAlterations(chordName: string) {
+  const rootMatch = chordName.match(/^([A-G][#b]?)/);
+  if (!rootMatch) return null;
+  const root = rootMatch[1];
+  let suffix = chordName.slice(root.length);
+  const tokens: string[] = [];
+  let match: RegExpMatchArray | null;
+  while ((match = suffix.match(ALTERATION_RE))) {
+    tokens.unshift(match[1]);
+    suffix = suffix.slice(0, -match[1].length);
+  }
+  return { root, suffix, tokens };
+}
+
 function resolveWithFallback(
   chordName: string
 ): { notes: string[]; root: string; type: string; intervals: string[] } | null {
-  // Extract root note
-  const rootMatch = chordName.match(/^([A-G][#b]?)/);
-  if (!rootMatch) return null;
+  const parts = splitAlterations(chordName);
+  if (!parts || !parts.tokens.length) return null;
+  const { root, suffix, tokens } = parts;
+  const chord = Chord.get(root + suffix);
+  if (chord.empty) return null;
+  const notes = chord.notes.map(simplifyNote);
+  const intervals = [...chord.intervals];
 
-  const root = rootMatch[1];
-  let suffix = chordName.slice(root.length);
-  const extraIntervals: string[] = [];
-
-  // Strip alterations from the end until Tonal recognizes the base
-  let attempts = 0;
-  while (suffix && attempts < 5) {
-    const match = suffix.match(ALTERATION_RE);
-    if (!match) break;
-
-    const token = match[1];
-    const interval = ALTERATION_TO_INTERVAL[token];
-    if (!interval) break;
-
-    extraIntervals.unshift(interval);
-    suffix = suffix.slice(0, -token.length);
-    attempts++;
-
-    const chord = Chord.get(root + suffix);
-    if (!chord.empty) {
-      let notes = chord.notes.map(simplifyNote);
-      // Kept in step with `notes`, entry for entry: an interval is pushed
-      // exactly when its note is. `mapToVoicingQuality` classifies by interval,
-      // and the type string this branch returns ("major (extended)") names only
-      // the *base* chord — the alterations that made it a fallback are not in
-      // it, so the name alone cannot describe the chord.
-      const intervals = [...chord.intervals];
-
-      // Add extra notes from stripped alterations
-      for (const ivl of extraIntervals) {
-        const extra = Note.transpose(root, ivl);
-        if (extra) {
-          const normalized = simplifyNote(extra);
-          // Replace if same degree already exists, otherwise add
-          if (!notes.includes(normalized)) {
-            notes.push(normalized);
-            intervals.push(ivl);
-          }
-        }
-      }
-
-      return {
-        notes,
-        root: simplifyNote(root),
-        type: chord.type + " (extended)",
-        intervals,
-      };
+  for (const token of tokens) {
+    const ivl = ALTERATION_TO_INTERVAL[token];
+    const note = simplifyNote(Note.transpose(root, ivl));
+    // Alterations replace that degree; additions keep existing chord tones.
+    // Match interval degrees, never chroma: b5 and #11 share a sound but
+    // describe different chord tones.
+    const index = token.startsWith("add") ? -1 : intervals.findIndex(
+      (existing) => Interval.get(existing).simple === Interval.get(ivl).simple,
+    );
+    if (index >= 0) {
+      notes[index] = note;
+      intervals[index] = ivl;
+    } else if (!notes.includes(note)) {
+      notes.push(note);
+      intervals.push(ivl);
     }
   }
-
-  return null;
+  return {
+    notes, root: simplifyNote(root),
+    type: (chord.type || chord.aliases?.[0] || suffix) + " (extended)",
+    intervals,
+  };
 }
 
 export interface ResolvedChord {
@@ -119,10 +108,19 @@ function normalizeChordName(name: string): string {
   const root = rootMatch[1];
   let suffix = name.slice(root.length);
 
+  // Tonal's major/minor thirteenths omit the catalogue's natural eleventh.
+  // Do not turn these previously unsupported bracketed spellings into a
+  // silently incomplete chord. #11 variants explicitly supply their eleventh.
+  if (/^(?:maj13\(#5\)|m13\([b#]5\))$/.test(suffix)) {
+    throw new Error(`Unknown chord: "${name}"`);
+  }
+
   // Catalogue extensions such as m7b5(b9) and 7(b9,#5) use brackets.
   // Unwrap only alteration lists; other parentheses retain their meaning.
   suffix = suffix.replace(/\(((?:[#b](?:5|9|11|13)|add(?:9|11|13|b9|#9|b13|#11))(?:,(?:[#b](?:5|9|11|13)|add(?:9|11|13|b9|#9|b13|#11)))*)\)/g,
-    (_, alterations: string) => alterations.replace(/,/g, ""));
+    (group, alterations: string, offset: number) =>
+      offset === 0 && /^[#b]/.test(alterations)
+        ? group : alterations.replace(/,/g, ""));
 
   // m7sus is special — handled by buildSpecialChord, don't normalize it away
 
@@ -211,12 +209,17 @@ export function resolveChord(
 
   // Try special chord builders first (omit3, m6/9, etc.)
   const special = buildSpecialChord(chordName);
+  const alterations = splitAlterations(chordName)?.tokens ?? [];
+  const alteredFifth = alterations.length > 1 && alterations.some((t) => t === "b5" || t === "#5");
+  const fallback = chord.empty || alteredFifth ? resolveWithFallback(chordName) : null;
   if (special) {
     notes = special.notes;
     root = special.root;
     type = special.type;
     intervals = special.intervals;
-  } else if (!chord.empty) {
+  } else if (fallback) {
+    ({ notes, root, type, intervals } = fallback);
+  } else if (!chord.empty && !alteredFifth) {
     notes = chord.notes.map(simplifyNote);
     root = simplifyNote(chord.tonic ?? notes[0]);
     // tonal names most of its chord types but not all: `Cadd9`, `CM7b5` and
@@ -229,15 +232,7 @@ export function resolveChord(
     type = chord.type || chord.aliases?.[0] || "";
     intervals = chord.intervals;
   } else {
-    // Fallback: strip trailing alterations and reapply as intervals
-    const fallback = resolveWithFallback(chordName);
-    if (!fallback) {
-      throw new Error(`Unknown chord: "${chordName}"`);
-    }
-    notes = fallback.notes;
-    root = fallback.root;
-    type = fallback.type;
-    intervals = fallback.intervals;
+    throw new Error(`Unknown chord: "${chordName}"`);
   }
 
   // Apply inversion: rotate notes array
