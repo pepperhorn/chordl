@@ -415,7 +415,7 @@ const QUALITY_WORDS: Record<string, string> = {
 // `\/[0-9]+` stays in the quality group so "6/9"-style suffixes (slash
 // followed by digits, not a bass letter) aren't mistaken for a slash bass.
 const CHORD_RE =
-  /([A-Ga-g][#b]?)\s*(maj|min|m|aug|dim|sus|add|dom|M|°|ø|\/[0-9]+|[0-9#b]+)*(\/[A-Ga-g][#b]?)?/i;
+  /([A-Ga-g][#b]?)\s*(maj|min|m|aug|dim|sus|add|dom|M|°|ø|\/[0-9]+|[0-9#b]+|\((?:[#b](?:5|9|11|13)|add(?:9|11|13|b9|#9|b13|#11))(?:,(?:[#b](?:5|9|11|13)|add(?:9|11|13|b9|#9|b13|#11)))*\))*(\/[A-Ga-g][#b]?)?/i;
 
 function capitalizeNote(note: string): string {
   return note.charAt(0).toUpperCase() + note.slice(1);
@@ -937,7 +937,7 @@ export function parseChordDescription(input: string): ParsedChordRequest {
     .replace(/\bcustom\b/gi, "")
     .replace(/\band\b/gi, "")
     .replace(FILLER_WORDS, "")
-    .replace(/,/g, "")
+    .replace(/\([^)]*\)|,/g, (token) => token.startsWith("(") ? token : "")
     .replace(/\blayout\b/gi, "")
     .replace(/\bfull\b/gi, "")
     .replace(/\bheight\b/gi, "")
