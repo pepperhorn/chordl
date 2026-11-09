@@ -8,7 +8,7 @@
 - **Worktree:** /home/shaun/.t3/worktrees/chordl/t3-24e7c148
 - **Base:** 627dbfa (contains e86c52f)
 - **Implementation commit:** 7dd9897
-- **PR:** pending creation after this handoff commit
+- **PR:** https://github.com/pepperhorn/chordl/pull/111 (draft)
 - **Status:** closed
 
 ## Goal / scope
