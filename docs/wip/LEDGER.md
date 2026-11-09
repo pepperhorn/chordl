@@ -11,7 +11,7 @@ Next ID: 0052  (0001–0024 were used before the ledger existed; see orch/0024-*
 
 | K | Title | Status | Waiting on | Owner (provider/model) | Branch | PR | Worktree | T3 task/thread | Spec | Plan | Latest handoff | Updated |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 0048 | [quick] Resolver: accept Δ7 / mΔ7 spellings (S17) | in-review | review 0048-review-r1 (claude-opus) | codex/gpt-6.1-sol | orch/0048-resolver-delta7 | [#118](https://github.com/pepperhorn/chordl/pull/118) @ 200e264 | /home/shaun/.t3/worktrees/chordl/t3-33bc70cb | task `node:delegated-task:command%3Amcp%3A2003c157-d682-482f-909c-d39f8df01ee4%3Adelegate-task%3A0048-impl-r1` | — | — | [sol→lead](../handoffs/2026-11-10-0048-resolver-delta7--sol-to-lead.md) (on branch) | 2026-11-10 |
+| 0048 | [quick] Resolver: accept Δ7 / mΔ7 spellings (S17) | changes-requested | child 0048-impl-r2 | codex/gpt-6.1-sol | orch/0048-resolver-delta7 | [#118](https://github.com/pepperhorn/chordl/pull/118) @ 200e264 | /home/shaun/.t3/worktrees/chordl/t3-33bc70cb | task `node:delegated-task:command%3Amcp%3A2003c157-d682-482f-909c-d39f8df01ee4%3Adelegate-task%3A0048-impl-r1` | — | — | [r1 decisions](../handoffs/2026-11-10-0048-resolver-delta7--lead-r1-decisions.md) | 2026-11-10 |
 | 0050 | [quick] StaffNotation reports its own loading/ready/error state (S19) | in-review | review 0050-review-r1 (claude-opus) | codex/gpt-6.1-sol | orch/0050-staff-state-marker | [#119](https://github.com/pepperhorn/chordl/pull/119) @ 49f6946 | /home/shaun/.t3/worktrees/chordl/t3-975e9688 | task `node:delegated-task:command%3Amcp%3A2003c157-d682-482f-909c-d39f8df01ee4%3Adelegate-task%3A0050-impl-r1` | — | — | [sol→lead](../handoffs/2026-11-10-0050-staff-state-marker--sol-to-lead.md) (on branch) | 2026-11-10 |
 | 0051 | [quick] Make the slowest board and react tests cheaper (S14) | dispatched | child 0051-impl-r1 | codex/gpt-6.1-sol | orch/0051-faster-slow-tests | | created by T3 | task `node:delegated-task:command%3Amcp%3A2003c157-d682-482f-909c-d39f8df01ee4%3Adelegate-task%3A0051-impl-r1` | — | — | [lead→sol](../handoffs/2026-11-10-0051-faster-slow-tests--lead-to-sol.md) | 2026-11-10 |
 | 0047 | [external] becreative: PDF readiness must wait for `data-chordl-state="ready"` (needed before publishing chordl-board with 0045-t2) | proposed | human: becreative's lead to schedule (rule in 0045-t2 return handoff, "Downstream becreative readiness"); hold chordl-board publish until it lands | — | | | | | [0045 spec](../specs/0045-load-on-demand.md) | | | 2026-11-10 |
@@ -69,11 +69,13 @@ Next ID: 0052  (0001–0024 were used before the ledger existed; see orch/0024-*
 | S20 | efficiency | Drop the no-op `exact: true` option and its cast in a board test (getByRole ignores it) | packages/chordl-board/test/board-editor-instrument-words.test.tsx:54; PR #116 review r1 (5831960114) | S | L | review 0043-t2 r1 | new |
 | S21 | stack | Export `BoardCardSize` from chordl-board's public index (tests currently reach into src/types) — public API, human's call | PR #116 review r1 (5831960114) | S | L | review 0043-t2 r1 | new |
 | S22 | risk | Audit escape hatches + cadence: move the audit to its own CI job (an advisory shouldn't block build/test of unrelated PRs), add a weekly scheduled run, and document `--ignore-registry-errors` (endpoint outage) and `auditConfig.ignoreGhsas` (unfixable advisory) | PR #117 review r1 (5832209507) | S | M | review 0049 r1 | new |
+| S23 | risk | Resolver: case-insensitive `/mmaj/i` reads `CMmaj7` as minor/major (wrong); bare `Δ` returns empty notes instead of throwing; "Unknown chord" errors show the rewritten name, not the user's input | chord-resolver.ts:143; PR #118 review r1 (5832235935) | S | M | review 0048 r1 | new |
 
 Last health scan: 2026-11-09
 
 ## Log
 <!-- One line per status change, newest first: YYYY-MM-DD NNNN old→new — note -->
+- 2026-11-10 0048 in-review→changes-requested — r1 (opus) @200e264: CMΔ7 now resolves as mMaj7 (Δ7 rewrite feeds /mmaj/i); sweeps didn't cover new spellings. Lead: guard after M, add spellings to resolver sweep; pre-existing resolver issues → S23
 - 2026-11-10 0049 ready→merged→closed — #117 (human approved); audit clean on main
 - 2026-11-10 0049 in-review→ready — r1 (opus) approve @997fef7: high fails, moderate passes, workspace-wide, --prod needed; CI change → human
 - 2026-11-10 0050 dispatched→in-review — PR #119 @49f6946, 2947 tests + packed-board; review r1 → opus
