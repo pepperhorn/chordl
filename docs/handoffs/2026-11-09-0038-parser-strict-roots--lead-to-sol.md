@@ -39,3 +39,4 @@ None.
 
 ---
 ## Receiver ack
+I will restrict root extraction to standalone chord tokens, retain existing valid parses and modifiers, normalize the specified alt aliases, and cover article handling within the two owned parser/test files. I will compare baseline and changed parses, run the resolver sweep and full verification, then commit a return handoff and open a draft PR. No open questions at acknowledgement. GBrain searches for chordl parser and C7alt returned no relevant parser page; the linked 0032 handoff supplies the case-normalization gotcha.
