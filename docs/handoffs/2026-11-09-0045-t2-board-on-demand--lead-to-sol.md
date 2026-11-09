@@ -47,3 +47,5 @@ None.
 
 ---
 ## Receiver ack
+
+Acknowledged: implement T2 within the listed owned files, preserve public guitar exports/props and explicit notation warm-up, remove idle prefetch, add loading/ready markers with tests, and measure first-use loading and gzip targets. Run the full verify command, commit a return handoff, push only orch/0045-t2-board-on-demand, and open a draft PR. No open questions. GBrain searched; no relevant task page found.
