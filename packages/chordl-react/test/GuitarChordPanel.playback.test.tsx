@@ -13,7 +13,7 @@ vi.mock("../src/audio/usePlaybackTimeline", () => ({
   }),
 }));
 
-import { GuitarChordPanel } from "../src/components/GuitarChordPanel";
+import { GuitarChordPanel } from "../src/components/GuitarChordPanelImpl";
 
 describe("GuitarChordPanel playback", () => {
   it("plays low to high and targets the first sounding physical string", async () => {

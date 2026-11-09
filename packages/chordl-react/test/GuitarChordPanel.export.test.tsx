@@ -21,7 +21,7 @@ vi.mock("../src/audio/zip-export", async () => {
   };
 });
 
-import { GuitarChordPanel } from "../src/components/GuitarChordPanel";
+import { GuitarChordPanel } from "../src/components/GuitarChordPanelImpl";
 
 /** Note numbers of a Format 0 file's note-on events, in file order. */
 function noteOns(midi: Uint8Array): number[] {

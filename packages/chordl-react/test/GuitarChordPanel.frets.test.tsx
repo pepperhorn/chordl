@@ -1,14 +1,14 @@
 import { describe, expect, it, vi } from "vitest";
 import { render } from "@testing-library/react";
 import { lookupGuitarChord, INSTRUMENTS } from "@pepperhorn/chordl-guitar";
-import { GuitarChordPanel } from "../src/components/GuitarChordPanel";
+import { GuitarChordPanel } from "../src/components/GuitarChordPanelImpl";
 
 // GuitarChord draws through svguitar into real SVG, but its internal markup
 // (line/.fret nodes) is a library implementation detail, not part of this
 // panel's contract. Stubbing GuitarChord lets these tests assert exactly what
 // the panel promises — the `frets` value it hands down — without pinning
 // svguitar's DOM shape.
-vi.mock("../src/components/GuitarChord", () => ({
+vi.mock("../src/components/GuitarChordImpl", () => ({
   GuitarChord: (props: { frets?: number }) => (
     <div data-testid="mock-guitar-chord" data-frets={props.frets} />
   ),

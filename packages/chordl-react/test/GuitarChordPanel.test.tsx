@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { describe, it, expect, vi } from "vitest";
 import { render, fireEvent, within } from "@testing-library/react";
-import { GuitarChordPanel } from "../src/components/GuitarChordPanel";
+import { GuitarChordPanel } from "../src/components/GuitarChordPanelImpl";
 import {
   lookupGuitarChord,
   INSTRUMENTS,

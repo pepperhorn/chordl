@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, waitFor } from "@testing-library/react";
-import { GuitarChord } from "../src/components/GuitarChord";
+import { GuitarChord } from "../src/components/GuitarChordImpl";
 import { lookupGuitarChord } from "@pepperhorn/chordl-guitar";
 
 const amShape = lookupGuitarChord("Am")!.shapes[0];
