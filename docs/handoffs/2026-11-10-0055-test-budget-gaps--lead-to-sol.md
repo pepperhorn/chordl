@@ -29,3 +29,5 @@ None.
 
 ---
 ## Receiver ack
+
+I understand the task: align cards async waits and guitar test/hook budgets, trace and fix react legacy-level budget bypasses, and audit react/board/cards async waits. I will change only the owned test budget lines, preserve assertions and test counts, measure guitar idle/loaded durations, run three concurrent-suite rounds and the full verification command, then return a committed handoff and draft PR. No open questions.
