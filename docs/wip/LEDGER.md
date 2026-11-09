@@ -5,13 +5,16 @@
 > Waiting on: `child <taskId>` · `review <taskId>` · `ci` · `human: <why>` · `lead: <next action>`. Set it on every status change. A row needs the lead when it starts with `lead`, or when it's empty and Status is dispatched, in-review, changes-requested, ready, or merged. The lead's Stop hook won't let the lead end its turn while any row needs it.
 > Type: normal items have a spec and plan. Quick items have the title prefix `[quick]` (no spec or plan, a short handoff). PRs adopted by `orch-sweep` have the prefix `[pr]`.
 
-Next ID: 0042  (0001–0024 were used before the ledger existed; see orch/0024-* branches; 0027, 0029 and 0033–0036 were assigned outside this ledger; 0037 merged as #105)
+Next ID: 0045  (0001–0024 were used before the ledger existed; see orch/0024-* branches; 0027–0031, 0033–0037 also come from the crf-transcribe lead's ledger (/home/shaun/trans); 0037 merged as #105)
 
 ## Active
 
 | K | Title | Status | Waiting on | Owner (provider/model) | Branch | PR | Worktree | T3 task/thread | Spec | Plan | Latest handoff | Updated |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 0038 | Chord box accepts nonsense ("@@@ not a chord @@@" → C, "Zbq9" → B) | proposed | human: needs spec (error vs. empty vs. best guess is a product call) | — | | | | | | | | 2026-11-09 |
+| 0042 | [quick] Patch vulnerable transitive dependencies (dompurify, fast-uri, image-size) | dispatched | lead: delegate | codex/gpt-6.1-sol | orch/0042-audit-transitives | | | | — | — | [lead→sol](../handoffs/2026-11-09-0042-audit-transitives--lead-to-sol.md) | 2026-11-09 |
+| 0043 | Type-check test files in every package (tsconfig.test.json + lint:test in CI) | proposed | lead: spec after 0042 and 0038 merge (shares the lockfile and core test files) | — | | | | | | | | 2026-11-09 |
+| 0044 | Deploy: brotli + precompressed assets | proposed | human: re-scope (re-measured 2026-11-09: nginx already gzips via Railpack, cold JS 2.1s not 13s; brotli would save ~25%, 305→231 KB; the 1.12 MB single JS bundle is the bigger lever) | — | | | | | | | | 2026-11-09 |
+| 0038 | Chord parser: only read a root from a standalone chord token (+ S11, S13) | dispatched | lead: delegate | codex/gpt-6.1-sol | orch/0038-parser-strict-roots | | | | [spec](../specs/0038-parser-strict-roots.md) | [plan](../plans/0038-parser-strict-roots.md) | [lead→sol](../handoffs/2026-11-09-0038-parser-strict-roots--lead-to-sol.md) | 2026-11-09 |
 | 0039 | Notation view: annotations to the right of the stave; scales/runs as beamed eighths | proposed | human: needs spec (3 defects: StaffNotationProps has no annotation props; scale/run branches of PianoChord skip display; mei-builder.ts:115,117 hard-code dur="1") | — | | | | | | | | 2026-11-09 |
 
 ## Done / closed
@@ -35,25 +38,26 @@ Next ID: 0042  (0001–0024 were used before the ledger existed; see orch/0024-*
 
 | S | Kind | Suggestion | Evidence | Effort (S/M/L) | Value | Source | Status |
 |---|---|---|---|---|---|---|---|
-| S1 | risk | Type-check chordl-board tests: tsconfig include is ["src"] only, so test/ is never checked | packages/chordl-board/tsconfig.json:23; 27 errors measured 2026-09 (16 need @types/node → a devDependency, so not quick lane) | S | M — a stale call already slipped through review | memory 2026-09 | new |
-| S2 | efficiency | Dockerfile + nginx gzip_static/brotli deploy (Coolify static mode ignores repo nginx.conf; Traefik compresses on the fly) | no Dockerfile on main; repo nginx.conf unused; cold load 13.0s vs warm 2.3s measured 2026-09 | M | H — first-load time | memory 2026-09 | new |
+| S1 | risk | Type-check chordl-board tests: tsconfig include is ["src"] only, so test/ is never checked | packages/chordl-board/tsconfig.json:23; 27 errors measured 2026-09 (16 need @types/node → a devDependency, so not quick lane) | S | M — a stale call already slipped through review | memory 2026-09 | accepted → 0043 |
+| S2 | efficiency | Dockerfile + nginx gzip_static/brotli deploy (Coolify static mode ignores repo nginx.conf; Traefik compresses on the fly) | no Dockerfile on main; repo nginx.conf unused; cold load 13.0s vs warm 2.3s measured 2026-09 | M | H — first-load time | memory 2026-09 | accepted → 0044 |
 | S3 | risk | Six library voicings unreachable (first-entry-per-(quality,style) wins; inferStyle never returns Rootless Type B) | findVoicing/generateVariants/inferStyle in chordl-voicings; measured 2026-09-08 | S | M | memory 2026-09 | new (not re-verified) |
-| S4 | risk | Vulnerable transitives: dompurify 3.4.5 (critical GHSA-cg2g-xh64-v4q7, via board>jspdf), fast-uri (8 high, via voicing>ajv), image-size (via guitar>svguitar>svgdom). Lockfile refresh within existing ranges | `pnpm audit --prod`: 28 vulns (1 critical, 11 high) | S | H | scan 2026-11-09 | new |
-| S5 | risk | Extends S1 to every package: test/ is type-checked nowhere. tsconfig.test.json per package + `lint:test` in CI | 50 errors in board, 55 in core, 22 in cards, 0 in react (scratch tsc over src+test); ci.yml runs only `pnpm lint` | M | H | scan 2026-11-09 | new |
+| S4 | risk | Vulnerable transitives: dompurify 3.4.5 (critical GHSA-cg2g-xh64-v4q7, via board>jspdf), fast-uri (8 high, via voicing>ajv), image-size (via guitar>svguitar>svgdom). Lockfile refresh within existing ranges | `pnpm audit --prod`: 28 vulns (1 critical, 11 high) | S | H | scan 2026-11-09 | accepted → 0042 |
+| S5 | risk | Extends S1 to every package: test/ is type-checked nowhere. tsconfig.test.json per package + `lint:test` in CI | 50 errors in board, 55 in core, 22 in cards, 0 in react (scratch tsc over src+test); ci.yml runs only `pnpm lint` | M | H | scan 2026-11-09 | accepted → 0043 |
 | S6 | efficiency | Delete the stale tracked package-lock.json (old better-chord-react-monorepo); untrack the root screenshots and ScaleFormulas.jpg | `package-lock.json:2`; `git ls-files` | S | M | scan 2026-11-09 | new |
 | S7 | efficiency | Deduplicate note→MIDI/pitch-class helpers onto tonal `Note.midi`/`Note.chroma` | 5 sharp tables (cards/faces.ts:81, cards/hands.ts:41, core/theory/chord-identify.ts:76, voicings/spellings.ts:27, react/follow/sequenceFromChords.ts:22); 4 noteToMidi copies (core mei-builder.ts:76, staff-layout.ts:70, react audio/playback.ts:193) | M | M | scan 2026-11-09 | new |
 | S8 | risk | Tests for chordl-listen (detect/follow/resolve) and render-cli | listen: 597 src lines, 1 test file; render-cli has no test script | M | M | scan 2026-11-09 | new |
 | S9 | stack | Major bumps one at a time: vitest 5, vite 8, plugin-react 6, jsdom 31, TS 7, smplr 1.x; minors (tonal, verovio, react 19.3, ajv) in one batch. Untangle core test → cards/src import first | `pnpm outdated -r`; core/test/chord-resolver.test.ts:2 | L | M | scan 2026-11-09 | new |
 | S10 | efficiency | Root CLAUDE.md Commands said npm / `--grep` | CLAUDE.md:23-28 | S | M | scan 2026-11-09 | done (lead, 2026-11-09) |
-| S11 | risk | Remaining `alt` spellings drop silently: `C7 alt`, `C7(alt)`, `C7alt9`, `Calt7`; and `Calt7` resolves to C E Bb Db vs `C7alt` C E G# Bb D# | PR #106 review r1 (5821147423) | S | M | review 0032 r1 | new |
+| S11 | risk | Remaining `alt` spellings drop silently: `C7 alt`, `C7(alt)`, `C7alt9`, `Calt7`; and `Calt7` resolves to C E Bb Db vs `C7alt` C E G# Bb D# | PR #106 review r1 (5821147423) | S | M | review 0032 r1 | accepted → 0038 |
 | S12 | risk | A core catalogue regression test also exceeds its default timeout under concurrent load | 0040 return handoff (orch/0040 @bc4ff4c) | S | M | 0040 follow-up | new |
-| S13 | risk | CHORD_RE has no word boundary before the root letter: "play Bb7 over D" parses as chord A (from "play") | PR #106 review r2 (5821202395); natural-language.ts:417 | S | M | review 0032 r2 | new |
+| S13 | risk | CHORD_RE has no word boundary before the root letter: "play Bb7 over D" parses as chord A (from "play") | PR #106 review r2 (5821202395); natural-language.ts:417 | S | M | review 0032 r2 | accepted → 0038 |
 | S14 | efficiency | Make the slowest board and react tests cheaper (react InteractiveInput.annotation-disabled 15.4s under load, PR #108 review 5821469568) instead of raising budgets again (slowest 23.4s of 30s under load) | PR #107 review r2 (5821405987) | M | M | review 0040 r2 | new |
 
 Last health scan: 2026-11-09
 
 ## Log
 <!-- One line per status change, newest first: YYYY-MM-DD NNNN old→new — note -->
+- 2026-11-09 human accepted S2, S4, S5, S11+S13; 0038 decided (unreadable input = error) → specced+planned+dispatched with S11/S13 folded in; 0042 (S4) →dispatched; 0043 (S1+S5) proposed, sequenced after 0042/0038; 0044 (S2) needs re-scope after re-measuring
 - 2026-11-09 0041 in-review→merged→closed — #108 @1487fa7, r1 approve, CI green, auto-merged (§5a); verify on main passes, 2819 tests
 - 2026-11-09 0041 dispatched→in-review — PR #108 @cb3b9ee; 6 three-way loaded react runs green, slowest 12.96s; pre-existing 10s override (play-mode-hotkey.test.tsx:63) and a 4s waitFor left alone; review r1 → opus
 - 2026-11-09 0041 →dispatched (quick) — react InteractiveInput tests time out at 5s under load (0040 r2)
