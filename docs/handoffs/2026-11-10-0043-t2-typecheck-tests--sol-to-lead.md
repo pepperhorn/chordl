@@ -7,8 +7,8 @@
 - **Branch:** orch/0043-t2-typecheck-tests
 - **Worktree:** /home/shaun/.t3/worktrees/chordl/t3-08ebcd6f
 - **Base commit:** 5eb225e (contains required 745bd30)
-- **Implementation commits:** 0fd9043, 580e628, 7d904f3, 423a378; acknowledgement ebb561f
-- **PR:** draft to be opened from the branch above
+- **Implementation commits:** 0fd9043, 580e628, 7d904f3, 423a378; manifest formatting preserved by f963894; acknowledgement ebb561f
+- **PR:** https://github.com/pepperhorn/chordl/pull/116 (draft)
 - **Status:** closed (implementation complete; lead review remains)
 
 ## Goal
