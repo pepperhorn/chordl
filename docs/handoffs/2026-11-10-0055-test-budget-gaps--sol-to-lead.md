@@ -6,7 +6,8 @@
 - **Branch:** `orch/0055-test-budget-gaps`
 - **Worktree:** `/home/shaun/.t3/worktrees/chordl/t3-b963ed7c`
 - **Base commit:** `dfcb4a1edd577767b406766a696d8c7df59a4bbd` (contains required `4438c76` ancestor)
-- **PR:** draft opened after this commit; see branch `orch/0055-test-budget-gaps`
+- **PR:** https://github.com/pepperhorn/chordl/pull/123 (draft)
+- **Implementation / validation commit:** `f002612` (following commit records PR metadata only)
 - **Status:** done; confirmed gaps fixed, legacy-level 1s hypothesis disproved; historical flake cause unproven
 
 ## Goal / context
