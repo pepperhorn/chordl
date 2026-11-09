@@ -22,8 +22,10 @@ The tasks run in order because board consumes react's built dist.
 ### T2 — board: no idle Verovio prefetch, lazy guitar panel, loading/ready markers
 - **Depends on:** T1 merged
 - **Route:** implement (default)
-- **Owns:** `packages/chordl-board/src/BoardEditor.tsx`, `packages/chordl-board/src/ChordBoard.tsx`, `packages/chordl-board/src/BoardPlayer.tsx` (if it renders cards), `packages/chordl-board/test/**`, `packages/chordl-board/package.json` (version only), `packages/chordl-board/CHANGELOG.md`
+- **Owns:** `packages/chordl-react/src/components/GuitarChord.tsx` and `GuitarChordPanel.tsx` (for an internal lazy boundary: SVGuitar and the guitar datasets load on first render, behind the marked fallback; exports keep their names and props), `packages/chordl-board/src/BoardEditor.tsx`, `packages/chordl-board/src/ChordBoard.tsx`, `packages/chordl-board/src/BoardPlayer.tsx` (if it renders cards), `packages/chordl-board/test/**`, `packages/chordl-board/package.json` (version only), `packages/chordl-board/CHANGELOG.md`
 - **Acceptance:** AC1–AC5
+
+- **Notes (added after T1, #112):** a `React.lazy` in board can't split `GuitarChordPanel` off the `@pepperhorn/chordl-react` entry, because board also imports `PianoChord` from that entry statically. The boundary has to live inside react. `GuitarChord.tsx:3` imports SVGuitar statically, and the guitar data is about 567 KB, or 51% of the entry (T1 return handoff).
 
 ## Merge order
 T1 → T2
