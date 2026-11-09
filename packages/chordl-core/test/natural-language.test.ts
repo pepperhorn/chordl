@@ -3,6 +3,40 @@ import { parseChordDescription, resolveChord } from "@pepperhorn/chordl-core";
 
 describe("parseChordDescription", () => {
   it.each([
+    "Δ", "Δ9", "Δ#4", "Δ#11", "Δ9#11", "ma7", "mi7", "mΔ",
+    "m/ma7", "m/maj7", "m/M7", "o", "o7", "oM7", "o7M7", "h", "h7",
+    "phryg", "quartal", "m11A", "-7", "+7",
+  ])("rescues resolver spelling C%s without truncation", suffix => {
+    const symbol = `C${suffix}`;
+    const expected = resolveChord(symbol).notes;
+    for (const input of [symbol, `play ${symbol} in drop 2`, `(${symbol})`, `${symbol}.`]) {
+      const parsed = parseChordDescription(input);
+      expect(parsed.chordName, input).toBe(symbol);
+      expect(resolveChord(parsed.chordName).notes, input).toEqual(expected);
+    }
+  });
+
+  it.each(["do", "Do", "go", "Go", "be", "Be", "add", "Add", "bad", "Dad", "Cab", "face", "Bed"])(
+    "rejects the English word '%s' alone and in prose", word => {
+      for (const input of [word, `${word} it`, `play ${word}`]) {
+        expect(parseChordDescription(input).chordName, input).toBe("");
+      }
+    },
+  );
+
+  it.each([
+    ["give me a dominant C7", "C7"], ["give me a dominant Cmi7", "Cmi7"],
+    ["F#quartal", "F#quartal"], ["CΔ7", "CΔ7"], ["show a suspended G", "G"],
+    ["a major seventh on C", "C"], ["a minor 7 on D", "D"], ["a minor", "Am"],
+    ["C9 alt", "C9alt"], ["C7b9 alt", "C7b9alt"], ["Cm7 alt", "Cm7alt"],
+    ["C7 (alt)", "C7alt"], ["C9(alt)", "C9alt"], ["Cm7 (ALT)", "Cm7alt"],
+    ["B♭7", "Bb7"], ["F♯m", "F#m"], ["E♭maj7/G", "Ebmaj7/G"],
+  ])("handles review edge '%s'", (input, expected) => {
+    expect(parseChordDescription(input).chordName).toBe(expected);
+    if (input === "CΔ7") expect(() => resolveChord(expected)).toThrow('Unknown chord');
+  });
+
+  it.each([
     ["C7omit3", "C7omit3"], ["Amajor", "Amaj"], ["Aminor", "Amin"],
     ["Cmajor7", "Cmaj7"], ["D7no3", "D7no3"], ["C69omit3", "C69omit3"],
     ["Cmaj7omit5", "Cmaj7omit5"], ["Cmaj7no5", "Cmaj7no5"],

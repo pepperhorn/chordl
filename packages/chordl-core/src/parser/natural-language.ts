@@ -41,7 +41,8 @@ function stripArticles(text: string, input: string): string {
     if (token === "A") return token;
     // A lowercase lone "a" before another chord ("play a C major chord")
     // is an article. Before its own quality ("a minor"), it is the root A.
-    if (token === "a" && /^\s+(?:major|minor|diminished|augmented|dominant|suspended)\b/i.test(rest)) return token;
+    if (token === "a" && /^\s+(?:major|minor|diminished|augmented|dominant|suspended)\b/i.test(rest)
+      && !rest.match(CHORD_RE) && !resolverTokenFallback(rest)) return token;
     if (/^\s*$/.test(rest) && bareArticleAtEnd) return token;
     return "";
   });
@@ -422,7 +423,37 @@ const QUALITY_WORDS: Record<string, string> = {
 // `\/[0-9]+` stays in the quality group so "6/9"-style suffixes (slash
 // followed by digits, not a bass letter) aren't mistaken for a slash bass.
 const CHORD_RE =
-  /(?<![\p{L}\p{N}_#\/])([A-Ga-g][#b]?)\s*(major|minor|maj|min|m|aug|dim|sus|add|dom|omit\d+|no\d+|alt7\b|alt\b|\s+alt\b|\(alt\)|M|°|ø|\/[0-9]+|[0-9#b]+|\((?:[#b](?:5|9|11|13)|add(?:9|11|13|b9|#9|b13|#11))(?:,(?:[#b](?:5|9|11|13)|add(?:9|11|13|b9|#9|b13|#11)))*\))*(\/[A-Ga-g][#b]?)?(?![\p{L}\p{N}_#]|\/[\p{L}\p{N}])/iu;
+  /(?<![\p{L}\p{N}_#\/])([A-Ga-g][#b]?)\s*(major|minor|maj|min|m|aug|dim|sus|add|dom|omit\d+|no\d+|alt7\b|alt\b|\s+alt\b|\s*\(alt\)|M|°|ø|\/[0-9]+|[0-9#b]+|\((?:[#b](?:5|9|11|13)|add(?:9|11|13|b9|#9|b13|#11))(?:,(?:[#b](?:5|9|11|13)|add(?:9|11|13|b9|#9|b13|#11)))*\))*(\/[A-Ga-g][#b]?)?(?![\p{L}\p{N}_#]|\/[\p{L}\p{N}])/iu;
+
+// Strict grammar remains the first choice. A resolver-accepted whole token
+// may rescue an unknown suffix, but only with explicit chord-like evidence.
+// Even the known diminished alias "o" must not turn "Do"/"Go" into chords.
+function resolverTokenFallback(text: string, strictIndex?: number): string | undefined {
+  for (const match of text.matchAll(/(?<![\p{L}\p{N}_#\/])[A-G][^\s]*/gu)) {
+    if (strictIndex !== undefined && match.index > strictIndex) break;
+    let token = match[0].replace(/[.,!?:;\]}'"’”]+$/gu, "");
+    // Remove surrounding prose parentheses, retaining balanced chord suffixes.
+    while (token.endsWith(")") && (token.match(/\)/g)?.length ?? 0) > (token.match(/\(/g)?.length ?? 0)) {
+      token = token.slice(0, -1);
+    }
+    const strict = token.match(CHORD_RE);
+    if (strict?.index === 0 && strict[0].trim() === token) continue;
+    if (/^(?:do|go|be|add|bad|dad|cab|face|bed)$/i.test(token)) continue;
+    const remainder = token.slice(1);
+    if (!/[0-9Δø°+\-/\(#]/.test(token) && !/^b/.test(remainder)
+      && !/^(?:mi|ma|min|maj|dim|aug|sus|m|M|o|h|phryg|quartal)$/.test(remainder)) continue;
+    try {
+      resolveChord(token);
+      return token;
+    } catch {
+      // Lead-approved exception: preserve the written Δ7 token for the
+      // resolver's error path; it currently supports Δ but rejects Δ7.
+      if (/^[A-G][#b]?Δ7(?:\/[A-G][#b]?)?$/.test(token)) return token;
+      // Other resolver rejections leave the strict parser or next token in charge.
+    }
+  }
+  return undefined;
+}
 
 function capitalizeNote(note: string): string {
   return note.charAt(0).toUpperCase() + note.slice(1);
@@ -436,6 +467,7 @@ function capitalizeNote(note: string): string {
  * a single monolithic chord regex that accounts for all possible contexts.
  */
 export function parseChordDescription(input: string): ParsedChordRequest {
+  input = input.replace(/♭/g, "b").replace(/♯/g, "#");
   const result: ParsedChordRequest = { chordName: "" };
 
   // Protect existing bass-note/clef/octave phrases and key-size requests. Mask
@@ -913,7 +945,8 @@ export function parseChordDescription(input: string): ParsedChordRequest {
     .replace(FINGERING_RE, "")
     .replace(AUTO_FINGERING_RE, "")
     .replace(STYLE_RE, "")
-    .replace(STYLE_KEYWORD_RE, "")
+    .replace(STYLE_KEYWORD_RE, (word, _quality: string, offset: number, whole: string) =>
+      word.toLowerCase() === "quartal" && /[A-G]#$/.test(whole.slice(0, offset)) ? word : "")
     .replace(BASS_DEGREE_RE, "")
     .replace(BASS_NOTE_RE, "")
     .replace(OVER_BASS_NOTE_RE, "")
@@ -968,7 +1001,7 @@ export function parseChordDescription(input: string): ParsedChordRequest {
 
   // Try to extract chord from descriptive words: "C minor seventh" → "Cm7"
   const descriptiveRe =
-    /([A-Ga-g][#b]?)\s+((?:major|minor|diminished|augmented|dominant|suspended)\s*(?:triad|seventh|ninth|eleventh|thirteenth)?)/i;
+    /(?<![\p{L}\p{N}_#\/])([A-Ga-g][#b]?)\s+((?:major|minor|diminished|augmented|dominant|suspended)\s*(?:triad|seventh|ninth|eleventh|thirteenth)?)/iu;
   const descMatch = cleaned.match(descriptiveRe);
 
   if (descMatch) {
@@ -981,12 +1014,16 @@ export function parseChordDescription(input: string): ParsedChordRequest {
     result.chordName = root + suffix;
   } else {
     const chordMatch = cleaned.match(CHORD_RE);
-    if (chordMatch) {
+    const fallback = resolverTokenFallback(cleaned, chordMatch?.index);
+    if (fallback) {
+      result.chordName = fallback;
+    } else if (chordMatch) {
       const root = capitalizeNote(chordMatch[1]);
       const afterRoot = chordMatch[0]
         .slice(chordMatch[1].length)
         .trim()
-        .replace(/^7(?:\s+alt|\(alt\))|^alt7/i, "7alt")
+        .replace(/^alt7/i, "7alt")
+        .replace(/\s*\(alt\)|\s+alt\b/gi, "alt")
         .replace(/alt\b/i, "alt")
         .replace(/major/gi, "maj")
         .replace(/minor/gi, "min")
