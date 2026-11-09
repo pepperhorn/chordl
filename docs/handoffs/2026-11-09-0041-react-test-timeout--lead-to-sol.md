@@ -33,3 +33,5 @@ none
 
 ---
 ## Receiver ack
+
+Acknowledged 2026-11-09 (sol): I will match board's 30000 ms Vitest test/hook budgets and 5000 ms Testing Library async utility budget, editing only the two owned React configuration/setup files and this task's handoffs. I will run at least two rounds of three concurrent complete React suites, record pass counts and slowest tests (flagging any above 15 seconds), inspect per-test timeout overrides without editing tests, and run the full prescribed verification chain. I will commit a return handoff, push only orch/0041-react-test-timeout, and open a draft PR for lead review. No open questions.
