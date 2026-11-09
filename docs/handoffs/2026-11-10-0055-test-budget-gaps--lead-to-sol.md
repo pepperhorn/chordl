@@ -2,7 +2,7 @@
 
 - **Date:** 2026-11-10 · **Type:** quick · **Ledger:** 0055
 - **Branch:** orch/0055-test-budget-gaps · **Worktree:** created by T3 · **Base commit:** 4438c76
-- **Status:** open
+- **Status:** closed
 
 ## Goal
 Board, react, cards and core now use 30s test/hook budgets, and board and react raise Testing Library's `asyncUtilTimeout` to 5000 (#107, #108, #121). Three gaps are left, all found under load:
