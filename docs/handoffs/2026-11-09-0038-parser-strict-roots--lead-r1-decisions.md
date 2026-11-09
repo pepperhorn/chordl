@@ -4,7 +4,7 @@
 - **Type:** dispatch (review decisions)
 - **Ledger:** 0038 · **Spec:** docs/specs/0038-parser-strict-roots.md · **PR:** https://github.com/pepperhorn/chordl/pull/110 (head 12c80e5)
 - **Review:** https://github.com/pepperhorn/chordl/pull/110#pullrequestreview-5822144959 (`gh pr view 110 --comments`)
-- **Status:** open
+- **Status:** closed
 
 ## Decisions
 

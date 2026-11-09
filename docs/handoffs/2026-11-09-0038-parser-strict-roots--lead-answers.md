@@ -4,7 +4,7 @@
 - **Type:** dispatch (answers)
 - **Ledger:** 0038 · **Spec:** docs/specs/0038-parser-strict-roots.md · **Plan:** docs/plans/0038-parser-strict-roots.md (T1)
 - **Branch:** orch/0038-parser-strict-roots · **PR:** https://github.com/pepperhorn/chordl/pull/110 (head 3255fb6)
-- **Status:** open
+- **Status:** closed
 
 ## Answers
 

@@ -6,7 +6,7 @@
 - **Branch:** orch/0038-parser-strict-roots · **Worktree:** created by T3
 - **PR:** <url once opened>
 - **Base commit:** 436e03e
-- **Status:** open
+- **Status:** closed
 
 ## Goal
 Implement the spec: the parser only reads a root from a standalone chord token, and the remaining `alt` spellings parse to `C7alt`. Unreadable input returns `chordName: ""`, which already surfaces as an error.
