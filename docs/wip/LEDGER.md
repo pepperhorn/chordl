@@ -11,7 +11,7 @@ Next ID: 0041  (0001–0024 were used before the ledger existed; see orch/0024-*
 
 | K | Title | Status | Waiting on | Owner (provider/model) | Branch | PR | Worktree | T3 task/thread | Spec | Plan | Latest handoff | Updated |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 0040 | [quick] chordl-board tests: raise vitest timeout above the 5s default | dispatched | child 0040-impl-r1 | codex/gpt-6.1-sol | orch/0040-board-test-timeout | | created by T3 | task `node:delegated-task:command%3Amcp%3Aacb17a48-3737-4dcb-babb-6afd61cdd00c%3Adelegate-task%3A0040-impl-r1` | — | — | [lead→sol](../handoffs/2026-11-09-0040-board-test-timeout--lead-to-sol.md) | 2026-11-09 |
+| 0040 | [quick] chordl-board tests: raise vitest timeout above the 5s default | in-review | review 0040-review-r1 (claude-opus) | codex/gpt-6.1-sol | orch/0040-board-test-timeout | [#107](https://github.com/pepperhorn/chordl/pull/107) @ bc4ff4c | /home/shaun/.t3/worktrees/chordl/t3-d013f290 | task `node:delegated-task:command%3Amcp%3Aacb17a48-3737-4dcb-babb-6afd61cdd00c%3Adelegate-task%3A0040-impl-r1` | — | — | [sol→lead](../handoffs/2026-11-09-0040-board-test-timeout--sol-to-lead.md) (on branch) | 2026-11-09 |
 | 0032 | [quick] "C7alt" parses as "C7" in parseChordDescription | in-review | review 0032-review-r1 (claude-opus) | codex/gpt-6.1-sol | orch/0032-c7alt-parse | [#106](https://github.com/pepperhorn/chordl/pull/106) @ 5dd3b21 | /home/shaun/.t3/worktrees/chordl/t3-ec8034e7 | task `node:delegated-task:command%3Amcp%3Aacb17a48-3737-4dcb-babb-6afd61cdd00c%3Adelegate-task%3A0032-impl-r1` (thread = delegated-task …0032-impl-r1) | — | — | [sol→lead](../handoffs/2026-11-09-0032-c7alt-parse--sol-to-lead.md) (on branch) | 2026-11-09 |
 | 0038 | Chord box accepts nonsense ("@@@ not a chord @@@" → C, "Zbq9" → B) | proposed | human: needs spec (error vs. empty vs. best guess is a product call) | — | | | | | | | | 2026-11-09 |
 | 0039 | Notation view: annotations to the right of the stave; scales/runs as beamed eighths | proposed | human: needs spec (3 defects: StaffNotationProps has no annotation props; scale/run branches of PianoChord skip display; mei-builder.ts:115,117 hard-code dur="1") | — | | | | | | | | 2026-11-09 |
@@ -49,6 +49,7 @@ Last health scan: 2026-11-09
 
 ## Log
 <!-- One line per status change, newest first: YYYY-MM-DD NNNN old→new — note -->
+- 2026-11-09 0040 dispatched→in-review — PR #107 @bc4ff4c; 15s test/hook timeout, slowest loaded board test 9.71s, 5 loaded runs green; review r1 → claude-opus. Follow-up: a core catalogue test also times out under load
 - 2026-11-09 0032 dispatched→in-review — PR #106 @5dd3b21, 2816 tests pass, 104 legacy parses unchanged; review r1 → claude-opus
 - 2026-11-09 0040 →dispatched (quick, from scan); health scan → S4–S10; 0037/#105 backfilled; proposed rows renumbered 0038/0039 to avoid IDs used elsewhere
 - 2026-11-09 sweep — backfilled 0028-t3/#101, #102, 0030-t1/#103, 0031/#104; 0032 →dispatched (quick); 0038, 0039 →proposed
