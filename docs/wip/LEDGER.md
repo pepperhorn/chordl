@@ -12,14 +12,14 @@ Next ID: 0048  (0001–0024 were used before the ledger existed; see orch/0024-*
 | K | Title | Status | Waiting on | Owner (provider/model) | Branch | PR | Worktree | T3 task/thread | Spec | Plan | Latest handoff | Updated |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
 | 0047 | [external] becreative: PDF readiness must wait for `data-chordl-state="ready"` (needed before publishing chordl-board with 0045-t2) | proposed | human: becreative's lead to schedule (rule in 0045-t2 return handoff, "Downstream becreative readiness"); hold chordl-board publish until it lands | — | | | | | [0045 spec](../specs/0045-load-on-demand.md) | | | 2026-11-10 |
-| 0045-t2 | Load on demand: board — no idle Verovio prefetch, lazy guitar (inside react), loading/ready markers | ready | human: approve merge (~900 changed code lines, mostly moved; chordl-react + chordl-board version bumps) | codex/gpt-6.1-sol | orch/0045-t2-board-on-demand | [#114](https://github.com/pepperhorn/chordl/pull/114) @ 8970c14 (r2 approve) | /home/shaun/.t3/worktrees/chordl/t3-c5320047 | task `node:delegated-task:command%3Amcp%3A8171515d-9a8b-4268-a6b9-8eda267c872b%3Adelegate-task%3A0045-t2-impl-r1` | [spec](../specs/0045-load-on-demand.md) | [plan](../plans/0045-load-on-demand.md) | [sol→lead](../handoffs/2026-11-09-0045-t2-board-on-demand--sol-to-lead.md) (on branch) | 2026-11-09 |
-| 0043-t2 | Type-check tests: react, cards, board | planned | review 0045-t2-review-r2 (0043-t1 merged; dispatch once 0045-t2 merges) | — | orch/0043-t2-typecheck-tests | | | | [spec](../specs/0043-typecheck-tests.md) | [plan](../plans/0043-typecheck-tests.md) | | 2026-11-09 |
+| 0043-t2 | Type-check tests: react, cards, board | dispatched | lead: delegate | codex/gpt-6.1-sol | orch/0043-t2-typecheck-tests | | | | [spec](../specs/0043-typecheck-tests.md) | [plan](../plans/0043-typecheck-tests.md) | [lead→sol](../handoffs/2026-11-10-0043-t2-typecheck-tests--lead-to-sol.md) | 2026-11-10 |
 | 0039 | Notation view: annotations to the right of the stave; scales/runs as beamed eighths | proposed | human: needs spec (3 defects: StaffNotationProps has no annotation props; scale/run branches of PianoChord skip display; mei-builder.ts:115,117 hard-code dur="1") | — | | | | | | | | 2026-11-09 |
 
 ## Done / closed
 
 | K | Title | PR | Merged | Notes |
 |---|---|---|---|---|
+| 0045-t2 | Load on demand: board — no idle Verovio prefetch, lazy guitar (inside react), loading/ready markers | [#114](https://github.com/pepperhorn/chordl/pull/114) | 2026-11-10 @ 745bd30 | No-interaction JS 3.18 MB→147 KB gzip (−95.4%), entry −47.1%. r0 blocked (cards test) → lead answers; Opus r1 changes-requested (notice-card marker, JSDoc) + lead adds (capture waits ≤15s, static panel import); r2 approve; human approved merge. Verify + lint:test + packed-board on main: 2943. Not published: 0047 holds |
 | 0043-t1 | Type-check tests: plumbing + voicings/core/listen/guitar/voicing | [#115](https://github.com/pepperhorn/chordl/pull/115) | 2026-11-10 @ fb1e85e | tsconfig.test.json (Bundler resolution, strict inherited), root + CI `lint:test`, @types/node (guitar). 8 type errors fixed. Opus r1 approve (planted errors fail in all 5); human approved merge. Verify + lint:test on main pass, 2929 |
 | 0046 | [quick] Parser: Ah/Eh interjections; trailing slash before a bass | [#113](https://github.com/pepperhorn/chordl/pull/113) | 2026-11-09 @ 382678d | r0 blocked on lead's wrong LH expectation (corrected); Opus r1 approve (sweep classification can't hide regressions). Auto-merged (32 code lines). Verify on main 2929 pass |
 | 0045-t1 | Load on demand: react smplr | [#112](https://github.com/pepperhorn/chordl/pull/112) | 2026-11-09 @ 024825e | wav-export imports smplr dynamically; entry gzip −7.19%; chordl-react 0.5.2. Opus r1 approve (browser WAV check); human approved merge. Verify + packed-board on main: 2920 pass |
@@ -67,6 +67,8 @@ Last health scan: 2026-11-09
 
 ## Log
 <!-- One line per status change, newest first: YYYY-MM-DD NNNN old→new — note -->
+- 2026-11-10 0043-t2 planned→dispatched
+- 2026-11-10 0045-t2 ready→merged→closed — #114 @745bd30 (human approved); verify on main passes, 2943 tests. 0045 complete (t1 #112, t2 #114)
 - 2026-11-10 0045-t2 in-review→ready — r2 (opus) approve @8970c14; AC1 holds after static import; capture wait bounded at 15s → human for merge
 - 2026-11-10 0045-t2 changes-requested→in-review — r1 fixes @8970c14, 2934 tests + packed-board; review r2 → opus
 - 2026-11-10 0045-t2 in-review→changes-requested — r1 (opus) @a20d98c: notice cards never reach a terminal marker; public JSDoc lost. Lead adds: captureBoard waits for no loading markers; static GuitarChordPanel import. AC1 re-derived: entry −47.1%, no-interaction JS 4.6% of baseline

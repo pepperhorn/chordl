@@ -3,7 +3,7 @@
 - **Date:** 2026-11-09
 - **Type:** dispatch (answers)
 - **Ledger:** 0045 · **Spec:** docs/specs/0045-load-on-demand.md · **PR:** https://github.com/pepperhorn/chordl/pull/114 (head 1cf3f84)
-- **Status:** open
+- **Status:** closed
 
 ## Answers
 1. **The cards test: ownership granted.** You now also own `packages/chordl-cards/test/ChordCardPlayer.test.tsx`. Make the guitar assertions (~line 160, and any others that read the guitar SVG) await rendering: `findBy…` or `waitFor`, or better, wait for `data-chordl-state="ready"` on `.bc-guitar-chord`. Don't add a test-only eager path.

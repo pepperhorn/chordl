@@ -7,7 +7,7 @@
 - **PR:** <url once opened>
 - **Base commit:** 024825e (T1 #112 merged: smplr is lazy, chordl-react 0.5.2)
 - **Port (if running a server):** 5652
-- **Status:** open
+- **Status:** closed
 
 ## Goal
 Plan T2, which completes 0045's spec:

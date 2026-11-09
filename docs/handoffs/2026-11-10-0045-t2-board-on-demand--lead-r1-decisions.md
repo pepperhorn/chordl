@@ -4,7 +4,7 @@
 - **Type:** dispatch (review decisions)
 - **Ledger:** 0045 · **Spec:** docs/specs/0045-load-on-demand.md · **PR:** https://github.com/pepperhorn/chordl/pull/114 (head a20d98c)
 - **Review:** https://github.com/pepperhorn/chordl/pull/114#pullrequestreview-5824873163 (`gh pr view 114 --comments`)
-- **Status:** open
+- **Status:** closed
 
 ## In scope for this round (all within files you already own)
 1. **Finding 1, medium: notice cards get a terminal state.** The guitar notice roots ("No shape found", scale mode, empty chord; `GuitarChordPanelImpl.tsx` ~395–401 and ~463–475) get `data-chordl-state="ready"`. They are a finished render, not an error. Add tests, including a board-level test showing that such a card ends with no `loading` marker.
