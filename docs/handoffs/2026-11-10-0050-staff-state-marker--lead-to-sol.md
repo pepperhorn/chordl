@@ -2,7 +2,7 @@
 
 - **Date:** 2026-11-10 · **Type:** quick · **Ledger:** 0050 (suggestion S19)
 - **Branch:** orch/0050-staff-state-marker · **Worktree:** created by T3 · **Base commit:** 4911f61
-- **Status:** open
+- **Status:** closed
 
 ## Goal
 `StaffNotation` (`packages/chordl-react/src/components/StaffNotation.tsx`) already tracks `loading` / `failed` / `staffSvg` (~150–175), but doesn't expose them. chordl-board's notation wrapper (`packages/chordl-board/src/ChordBoard.tsx` ~25–45) has to infer readiness from DOM shape (`.bc-staff__loading`, `.bc-staff__engraving svg`), and treats a missing SVG as an error. Changes:

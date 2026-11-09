@@ -12,9 +12,8 @@ Next ID: 0055  (0001–0024 were used before the ledger existed; see orch/0024-*
 | K | Title | Status | Waiting on | Owner (provider/model) | Branch | PR | Worktree | T3 task/thread | Spec | Plan | Latest handoff | Updated |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
 | 0054 | [quick] cards and core tests: timeouts under load (S12 + 0051 review) | dispatched | child 0054-impl-r1 | codex/gpt-6.1-sol | orch/0054-cards-core-test-timeout | | created by T3 | task `node:delegated-task:command%3Amcp%3A2003c157-d682-482f-909c-d39f8df01ee4%3Adelegate-task%3A0054-impl-r1` | — | — | [lead→sol](../handoffs/2026-11-10-0054-cards-core-test-timeout--lead-to-sol.md) | 2026-11-10 |
-| 0052 | Release: bump chordl-core 0.6.3 (parser 0032/0038/0046 + 0048) and publish core 0.6.3 + react 0.5.3 | proposed | review 0050-review-r2 (0048 merged) (then dispatch the version bump; then human: approve publish tags) | — | | | | | — | — | | 2026-11-10 |
+| 0052 | [quick] Release prep: chordl-core 0.6.3 (0032/0038/0046/0048) + react 0.5.3 notes; then publish core 0.6.3 → react 0.5.3 | dispatched | lead: delegate | codex/gpt-6.1-sol | orch/0052-release-core-063 | | | | — | — | [lead→sol](../handoffs/2026-11-10-0052-release-core-063--lead-to-sol.md) | 2026-11-10 |
 | 0053 | [external] crf-chords: upgrade to chordl core 0.6.3 / react 0.5.3 and adapt (SSR guitar placeholder, readiness waits, parser strictness) | proposed | human: hand to the crf-chords lead once 0052 publishes | — | | | | | | | [chordl→chords](../handoffs/2026-11-10-adhoc-chordl-upgrade--chordl-lead-to-chords-lead.md) | 2026-11-10 |
-| 0050 | [quick] StaffNotation reports its own loading/ready/error state (S19) | in-review | review 0050-review-r2 (claude-opus) | codex/gpt-6.1-sol | orch/0050-staff-state-marker | [#119](https://github.com/pepperhorn/chordl/pull/119) @ 14efdf1 | /home/shaun/.t3/worktrees/chordl/t3-975e9688 | task `node:delegated-task:command%3Amcp%3A2003c157-d682-482f-909c-d39f8df01ee4%3Adelegate-task%3A0050-impl-r1` | — | — | [sol→lead](../handoffs/2026-11-10-0050-staff-state-marker--sol-to-lead.md) (on branch) | 2026-11-10 |
 | 0047 | [external] becreative: PDF readiness must wait for `data-chordl-state="ready"` (needed before publishing chordl-board with 0045-t2) | proposed | human: becreative's lead to schedule (rule in 0045-t2 return handoff, "Downstream becreative readiness"); hold chordl-board publish until it lands | — | | | | | [0045 spec](../specs/0045-load-on-demand.md) | | | 2026-11-10 |
 | 0039 | Notation view: annotations to the right of the stave; scales/runs as beamed eighths | proposed | human: needs spec (3 defects: StaffNotationProps has no annotation props; scale/run branches of PianoChord skip display; mei-builder.ts:115,117 hard-code dur="1") | — | | | | | | | | 2026-11-09 |
 
@@ -22,6 +21,7 @@ Next ID: 0055  (0001–0024 were used before the ledger existed; see orch/0024-*
 
 | K | Title | PR | Merged | Notes |
 |---|---|---|---|---|
+| 0050 | [quick] StaffNotation reports its own loading/ready/error state (S19) | [#119](https://github.com/pepperhorn/chordl/pull/119) | 2026-11-10 @ 67f95a1 | Each .bc-staff carries data-chordl-state; board card aggregates. Opus r1 changes-requested (stale error during retry; tautological test), r2 approve; human approved merge. Verify + packed-board on main: 2966 |
 | 0051 | [quick] Make the slowest board and react tests cheaper (S14) | [#120](https://github.com/pepperhorn/chordl/pull/120) | 2026-11-10 @ 80ec59c | Loaded max board 23.4s→≤6.1s, react 15.4s→≤8.0s; Verovio stub in two control suites, lazy-test import settlement. Opus r1 approve (break tests confirmed). Auto-merged (43 test lines). Verify on main 2961. Follow-up 0054 (cards/core) |
 | 0048 | [quick] Resolver: accept Δ7 / mΔ7 spellings (S17) | [#118](https://github.com/pepperhorn/chordl/pull/118) | 2026-11-10 @ 2b6f000 | CΔ7/CmΔ7/C∆7 resolve; CMΔ7 still throws; parser Δ7 exception removed; resolver sweep generates the new spellings. Opus r1 changes-requested (CMΔ7 → mMaj7), r2 approve; human approved merge. Verify + sweep on main: 2961 |
 | 0049 | [quick] CI: fail on high-severity production advisories (S15) | [#117](https://github.com/pepperhorn/chordl/pull/117) | 2026-11-10 @ 231e5c0 | One CI step after Install. Opus r1 approve, no findings (high fails, moderate passes, workspace-wide). Human approved merge. Outage escape hatch → S22 |
@@ -78,6 +78,8 @@ Last health scan: 2026-11-09
 
 ## Log
 <!-- One line per status change, newest first: YYYY-MM-DD NNNN old→new — note -->
+- 2026-11-10 0052 proposed→dispatched — version bump + changelogs (no publish)
+- 2026-11-10 0050 in-review→merged→closed — #119 @67f95a1 (human approved); verify on main passes, 2966 tests
 - 2026-11-10 0050 changes-requested→in-review — r1 fixes @14efdf1, 2948 tests; review r2 → opus
 - 2026-11-10 0054 →dispatched (quick) — cards positions.test.ts fails at 5.2–5.8s under load (reproduced twice); core catalogue (S12)
 - 2026-11-10 0051 in-review→merged→closed — #120 @80ec59c, auto-merged (§5a); verify on main passes, 2961 tests
