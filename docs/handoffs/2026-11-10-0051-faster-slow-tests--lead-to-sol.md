@@ -29,3 +29,5 @@ None.
 
 ---
 ## Receiver ack
+
+Acknowledged: measure the ten slowest board/react tests idle and with three full suites in parallel, then reduce test-only overhead without removing or weakening assertions. I own only the two test directories, excluding staff-notation*.test.tsx and board on-demand.test.tsx, plus my task handoffs. No source, configuration, timeout, dependency, or ledger edits. Preserve test count, record per-file coverage and before/after measurements, run the full verify chain, and return a draft PR. No open questions. GBrain search found no relevant performance context.
