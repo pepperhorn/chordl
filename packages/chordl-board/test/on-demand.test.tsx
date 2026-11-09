@@ -21,7 +21,7 @@ vi.mock("@pepperhorn/chordl-react", async () => {
     ...actual,
     prefetchVerovio: warm.now,
     prefetchVerovioWhenIdle: warm.idle,
-    PianoChord: (props: Parameters<typeof actual.PianoChord>[0]) =>
+    PianoChord: (props: Extract<Parameters<typeof actual.PianoChord>[0], { chord: string }>) =>
       props.display === "staff" || props.display === "both" ? <Staffs /> : <actual.PianoChord {...props} />,
   };
 });

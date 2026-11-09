@@ -494,7 +494,7 @@ describe("ref", () => {
     const ref = importBoardJson(raw).items[0].ref;
     expect(ref).toEqual({ source: "chords", id: "42" });
     expect(Object.keys(ref!)).toEqual(["source", "id"]);
-    expect((ref as Record<string, unknown>).polluted).toBeUndefined();
+    expect((ref as unknown as Record<string, unknown>).polluted).toBeUndefined();
   });
 
   it("drops a malformed ref without throwing", () => {
