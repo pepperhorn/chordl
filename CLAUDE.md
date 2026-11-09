@@ -19,13 +19,15 @@ chordl — a React project (details to be filled in once the codebase is initial
 
 ## Commands
 
-<!-- Update these once the project is scaffolded -->
-- **Install dependencies**: `npm install`
-- **Dev server**: `npm run dev`
-- **Build**: `npm run build`
-- **Lint**: `npm run lint`
-- **Test**: `npm test`
-- **Single test**: `npm test -- --grep "test name"`
+pnpm workspace (`packageManager: pnpm@10.32.1`); packages live in `packages/`. Packages resolve each other from `dist`, so build before lint or test.
+
+- **Install dependencies**: `pnpm install --frozen-lockfile`
+- **Build**: `pnpm build`
+- **Lint (type-check)**: `pnpm lint`
+- **Test (once)**: `pnpm test:run` (`pnpm test` starts vitest in watch mode)
+- **One package**: `pnpm --filter <package-name> <script>`
+- **Single test file**: `cd packages/<pkg> && npx vitest run test/<file>` (filter by name with `-t "test name"`)
+- **Full verify**: `pnpm build && pnpm lint && pnpm test:run && pnpm --filter @pepperhorn/chordl-react build:site`
 
 ## Workflow
 
