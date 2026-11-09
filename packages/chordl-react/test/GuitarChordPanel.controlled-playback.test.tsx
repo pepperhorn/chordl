@@ -3,7 +3,7 @@ import React from "react";
 import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { GuitarChordPanel } from "../src/components/GuitarChordPanel";
+import { GuitarChordPanel } from "../src/components/GuitarChordPanelImpl";
 
 /**
  * The host drives note indices — positions in the frame's own playback order

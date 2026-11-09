@@ -1,5 +1,5 @@
 import React, { forwardRef, useId, useImperativeHandle, useState, useRef, useEffect, useMemo, useCallback, lazy, Suspense } from "react";
-import { VoicingVariantToggle, ChordQualityPicker, ProgressionView, ListenOverlay, FollowAlongOverlay, isProgressionRequest, parseProgressionRequest, resolveProgressionRequest, BRAVURA_GLYPHS, PETALUMA_GLYPHS, setDefaultGlyphs, prefetchVerovio, prefetchVerovioWhenIdle } from "@pepperhorn/chordl-react";
+import { VoicingVariantToggle, ChordQualityPicker, ProgressionView, ListenOverlay, FollowAlongOverlay, isProgressionRequest, parseProgressionRequest, resolveProgressionRequest, BRAVURA_GLYPHS, PETALUMA_GLYPHS, setDefaultGlyphs, prefetchVerovio } from "@pepperhorn/chordl-react";
 import type { PlaybackSpecSnapshot, ExperienceLevel, InstrumentId, UIThemeMode, FrameOrientation, FrameLineStyle } from "@pepperhorn/chordl-react";
 import { DEFAULT_ARPEGGIO_BPM, DEFAULT_PLAYBACK_HIGHLIGHT_COLOR, MAX_ARPEGGIO_BPM, MIN_ARPEGGIO_BPM, parseChordDescription, resolveChord } from "@pepperhorn/chordl-core";
 import type { TextSize, NoteNameMode } from "@pepperhorn/chordl-core";
@@ -112,11 +112,7 @@ function DisplayToggle({ value, onChange }: { value: DisplayMode; onChange: (v: 
   const idx = DISPLAY_MODES.findIndex((m) => m.value === value);
   const next = () => onChange(DISPLAY_MODES[(idx + 1) % DISPLAY_MODES.length].value);
   const current = DISPLAY_MODES[idx];
-  // This button is the only route to the notation views, so a pointer arriving
-  // on it is the strongest signal we get that the Verovio chunk is about to be
-  // needed — and the only warm-up a data-saver or 2g visitor gets at all, since
-  // the background arm skips those. Idempotent, so it costs nothing when the
-  // idle warm-up already ran.
+  // Pointer/focus intent warms notation without downloading it on piano-only visits.
   const warmNotation = () => { void prefetchVerovio(); };
 
   return (
@@ -739,19 +735,7 @@ export const BoardEditor = forwardRef<BoardEditorHandle, BoardEditorProps>(funct
     });
   }, [noteCount, fingeringMode]);
 
-  // Warm the notation engine before the user asks for it. Nothing imports
-  // Verovio until a staff first mounts, so the first switch to a notation view
-  // used to pay for the whole ~7 MB WASM chunk (2.6 MB gzipped, plus 765 KB of
-  // font zips) inside the engraving — 13 s on a cold deployed cache, which
-  // reads as a stuck loading animation.
-  //
-  // Two situations, two urgencies. A view that already shows a staff has that
-  // download on its critical path regardless, so it starts immediately. Anyone
-  // else gets a background warm-up the connection is allowed to veto: most
-  // visitors never leave the keyboard view, and spending a metered visitor's
-  // data — plus a main-thread WASM instantiation — on a page they may never
-  // open is not a free bet to place for them. The Display toggle's own
-  // pointer/focus warm-up covers whoever reaches for notation first.
+  // Load immediately for visible notation; otherwise wait for explicit Display intent.
   const needsStaffNow = displayMode === "staff" || displayMode === "both"
     || board.items.some((it) => it.display === "staff" || it.display === "both");
   useEffect(() => {
@@ -759,7 +743,6 @@ export const BoardEditor = forwardRef<BoardEditorHandle, BoardEditorProps>(funct
       void prefetchVerovio();
       return;
     }
-    return prefetchVerovioWhenIdle();
   }, [needsStaffNow]);
 
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
@@ -1672,7 +1655,7 @@ export const BoardEditor = forwardRef<BoardEditorHandle, BoardEditorProps>(funct
           {isProg && progressionResult ? (
             <ProgressionView result={progressionResult} theme={theme} uiTheme={uiTheme} />
           ) : displayMode === "guitar" ? (
-            <Suspense fallback={<div style={{ textAlign: "center", color: "var(--text-muted)", fontSize: "0.85rem", padding: "24px 0" }}>Loading guitar shapes…</div>}>
+            <Suspense fallback={<div className="chordl-board-card-loading" data-chordl-state="loading" role="status" style={{ fontFamily: "Poppins, system-ui, sans-serif", textAlign: "center", padding: "24px 0" }}>Loading guitar shapes…</div>}>
               <GuitarChordPanel
                 chord={input}
                 instrument={guitarInstrument}

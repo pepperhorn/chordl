@@ -16,11 +16,33 @@ import type { BoardCardStyle } from "./cardStyle.js";
 // handleDownloadPdf: BoardPlayer shares this module, and a read-only player must
 // not ship ~600 KB of export code it can never run.
 
-// Imported eagerly on purpose. A lazy() here bought nothing — chordl-react ships
-// as one bundle, so PianoChord already drags svguitar and chords-db in — while
-// its Suspense fallback could be what html2canvas captured during a PNG/PDF
-// export. Splitting the guitar renderer out has to happen in chordl-react's
-// build (a separate entry point) before a dynamic import here means anything.
+// GuitarChordPanel owns its lazy boundary inside chordl-react.
+
+/** Observe the existing staff renderer without changing its public API.
+ * It emits an outer SVG even while loading, so SVG existence alone is unsafe.
+ */
+function NotationCard({ children }: { children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [state, setState] = useState("loading");
+  useEffect(() => {
+    const el = ref.current!;
+    const update = () => {
+      const staffs = Array.from(el.querySelectorAll(".bc-staff"));
+      const loading = staffs.length === 0 || !!el.querySelector(".bc-staff__loading");
+      const ready = !loading && staffs.every((staff) => staff.querySelector(".bc-staff__engraving svg"));
+      setState(loading ? "loading" : ready ? "ready" : "error");
+    };
+    update();
+    const observer = new MutationObserver(update);
+    observer.observe(el, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, []);
+  return <div className="chordl-board-card-notation" data-chordl-state={state}>
+    {state === "loading" && <div className="chordl-board-card-loading" data-chordl-state="loading" role="status"
+      style={{ padding: "24px 0", fontFamily: "Poppins, system-ui, sans-serif", textAlign: "center" }}>Loading notation…</div>}
+    <div ref={ref} style={state === "loading" ? { visibility: "hidden", height: 0, overflow: "hidden" } : undefined}>{children}</div>
+  </div>;
+}
 
 /** Compensates for GuitarChord's fixed 260*scale cap. See BoardCardContent. */
 const GUITAR_CARD_SCALE = 1.6;
@@ -64,6 +86,7 @@ function BoardCardText({ item, uiTheme }: { item: BoardItem; uiTheme?: UIThemeMo
   return (
     <div
       className="chordl-board-card-text"
+      data-chordl-state="ready"
       style={{
         display: "flex",
         flexDirection: "column",
@@ -178,7 +201,7 @@ export function BoardCardContent({
       />
     );
   }
-  return (
+  const piano = (
     <PianoChord
       chord={item.nl}
       display={item.display}
@@ -196,6 +219,9 @@ export function BoardCardContent({
       {...cardStyleChordProps(cardStyle ?? {})}
     />
   );
+  return item.display === "staff" || item.display === "both"
+    ? <NotationCard key={`${item.nl}:${item.display}:${JSON.stringify(cardStyle)}`}>{piano}</NotationCard>
+    : <div className="chordl-board-card-piano" data-chordl-state="ready">{piano}</div>;
 }
 
 const DRAG_GLOW = "rgba(56, 189, 248, 0.55)";

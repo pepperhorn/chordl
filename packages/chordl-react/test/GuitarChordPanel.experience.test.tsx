@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { GuitarChordPanel } from "../src/components/GuitarChordPanel";
+import { GuitarChordPanel } from "../src/components/GuitarChordPanelImpl";
 
 describe("GuitarChordPanel experience controls", () => {
   it("honours the level prop, without drawing its own control", () => {
