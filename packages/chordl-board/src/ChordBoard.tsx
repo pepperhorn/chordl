@@ -18,9 +18,7 @@ import type { BoardCardStyle } from "./cardStyle.js";
 
 // GuitarChordPanel owns its lazy boundary inside chordl-react.
 
-/** Observe the existing staff renderer without changing its public API.
- * It emits an outer SVG even while loading, so SVG existence alone is unsafe.
- */
+/** Aggregate each staff renderer's explicit readiness marker. */
 function NotationCard({ children }: { children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
   const [state, setState] = useState("loading");
@@ -28,13 +26,13 @@ function NotationCard({ children }: { children: ReactNode }) {
     const el = ref.current!;
     const update = () => {
       const staffs = Array.from(el.querySelectorAll(".bc-staff"));
-      const loading = staffs.length === 0 || !!el.querySelector(".bc-staff__loading");
-      const ready = !loading && staffs.every((staff) => staff.querySelector(".bc-staff__engraving svg"));
-      setState(loading ? "loading" : ready ? "ready" : "error");
+      const error = staffs.some((staff) => staff.getAttribute("data-chordl-state") === "error");
+      const ready = staffs.length > 0 && staffs.every((staff) => staff.getAttribute("data-chordl-state") === "ready");
+      setState(error ? "error" : ready ? "ready" : "loading");
     };
     update();
     const observer = new MutationObserver(update);
-    observer.observe(el, { childList: true, subtree: true });
+    observer.observe(el, { childList: true, subtree: true, attributes: true, attributeFilter: ["data-chordl-state"] });
     return () => observer.disconnect();
   }, []);
   return <div className="chordl-board-card-notation" data-chordl-state={state}>

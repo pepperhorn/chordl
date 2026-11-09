@@ -119,6 +119,7 @@ export function StaffNotation({
     { key: string; svg: string | null; failed: boolean } | null
   >(null);
   const nestRef = useRef<SVGGElement | null>(null);
+  const [injectedKey, setInjectedKey] = useState<string | null>(null);
   /** Last markup written into `nestRef`, so a size change alone doesn't re-parse it. */
   const injectedRef = useRef<string | null>(null);
   // The engraving node is unmounted whenever the component drops back to
@@ -127,7 +128,10 @@ export function StaffNotation({
   // back would be skipped as "already there" and the staff would never appear.
   const setNest = useCallback((node: SVGGElement | null) => {
     nestRef.current = node;
-    if (!node) injectedRef.current = null;
+    if (!node) {
+      injectedRef.current = null;
+      setInjectedKey(null);
+    }
   }, []);
 
   // Verovio scale is a percent; map the component's ~0.5 scale into its range.
@@ -143,6 +147,9 @@ export function StaffNotation({
   );
 
   useEffect(() => {
+    // A failure belongs to the completed attempt. Discard it when moving on,
+    // so returning to that MEI cannot reuse its error while a retry is pending.
+    setResult((prev) => prev?.failed ? null : prev);
     let cancelled = false;
     renderMeiToSvg(mei, { font, scale: verovioScale })
       .then((svg) => {
@@ -231,7 +238,9 @@ export function StaffNotation({
       inner.setAttribute("width", String(totalWidth));
       inner.setAttribute("height", String(engHeight));
     }
-  }, [staffSvg, totalWidth, engHeight]);
+    // Publish readiness only after the current engraving is in the DOM.
+    setInjectedKey(inner ? renderKey : null);
+  }, [staffSvg, totalWidth, engHeight, renderKey]);
 
   // Verovio preserves the MEI xml:id on each engraved note. Toggle a class on
   // those stable targets so staff paint follows the same index timeline as the
@@ -256,6 +265,7 @@ export function StaffNotation({
       viewBox={`0 0 ${totalWidth} ${totalHeight}`}
       xmlns="http://www.w3.org/2000/svg"
       className={`bc-staff ${className ?? ""}`.trim()}
+      data-chordl-state={failed ? "error" : loading || injectedKey !== renderKey ? "loading" : "ready"}
       // Verovio glyphs use `currentColor`; set it to the theme text color so
       // the engraving stays visible in dark mode (not left to CSS inheritance).
       style={{

@@ -28,3 +28,5 @@ None.
 
 ---
 ## Receiver ack
+
+Acknowledged by sol, 2026-11-10. I will expose loading/ready/error on each StaffNotation root, with ready only after SVG injection, and replace the board notation wrapper's DOM-shape inference with marker aggregation (any error wins; all ready required). I own only the listed StaffNotation source/tests, notation wrapper, on-demand board test, and my task handoffs. I will cover Verovio failure and mixed two-staff states, run the complete verify command and packed-board check, then push a draft PR and return to the lead without merging or watching. No open questions. GBrain searched for chordl StaffNotation readiness; no relevant project guidance returned.
