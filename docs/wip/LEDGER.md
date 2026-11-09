@@ -12,7 +12,7 @@ Next ID: 0052  (0001–0024 were used before the ledger existed; see orch/0024-*
 | K | Title | Status | Waiting on | Owner (provider/model) | Branch | PR | Worktree | T3 task/thread | Spec | Plan | Latest handoff | Updated |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
 | 0048 | [quick] Resolver: accept Δ7 / mΔ7 spellings (S17) | dispatched | child 0048-impl-r1 | codex/gpt-6.1-sol | orch/0048-resolver-delta7 | | created by T3 | task `node:delegated-task:command%3Amcp%3A2003c157-d682-482f-909c-d39f8df01ee4%3Adelegate-task%3A0048-impl-r1` | — | — | [lead→sol](../handoffs/2026-11-10-0048-resolver-delta7--lead-to-sol.md) | 2026-11-10 |
-| 0049 | [quick] CI: fail on high-severity production advisories (S15) | dispatched | child 0049-impl-r1 | codex/gpt-6.1-sol | orch/0049-ci-audit | | created by T3 | task `node:delegated-task:command%3Amcp%3A2003c157-d682-482f-909c-d39f8df01ee4%3Adelegate-task%3A0049-impl-r1` | — | — | [lead→sol](../handoffs/2026-11-10-0049-ci-audit--lead-to-sol.md) | 2026-11-10 |
+| 0049 | [quick] CI: fail on high-severity production advisories (S15) | in-review | review 0049-review-r1 (claude-opus) | codex/gpt-6.1-sol | orch/0049-ci-audit | [#117](https://github.com/pepperhorn/chordl/pull/117) @ 997fef7 | /home/shaun/.t3/worktrees/chordl/t3-e86b93f2 | task `node:delegated-task:command%3Amcp%3A2003c157-d682-482f-909c-d39f8df01ee4%3Adelegate-task%3A0049-impl-r1` | — | — | [sol→lead](../handoffs/2026-11-10-0049-ci-audit--sol-to-lead.md) (on branch) | 2026-11-10 |
 | 0050 | [quick] StaffNotation reports its own loading/ready/error state (S19) | dispatched | child 0050-impl-r1 | codex/gpt-6.1-sol | orch/0050-staff-state-marker | | created by T3 | task `node:delegated-task:command%3Amcp%3A2003c157-d682-482f-909c-d39f8df01ee4%3Adelegate-task%3A0050-impl-r1` | — | — | [lead→sol](../handoffs/2026-11-10-0050-staff-state-marker--lead-to-sol.md) | 2026-11-10 |
 | 0051 | [quick] Make the slowest board and react tests cheaper (S14) | dispatched | child 0051-impl-r1 | codex/gpt-6.1-sol | orch/0051-faster-slow-tests | | created by T3 | task `node:delegated-task:command%3Amcp%3A2003c157-d682-482f-909c-d39f8df01ee4%3Adelegate-task%3A0051-impl-r1` | — | — | [lead→sol](../handoffs/2026-11-10-0051-faster-slow-tests--lead-to-sol.md) | 2026-11-10 |
 | 0047 | [external] becreative: PDF readiness must wait for `data-chordl-state="ready"` (needed before publishing chordl-board with 0045-t2) | proposed | human: becreative's lead to schedule (rule in 0045-t2 return handoff, "Downstream becreative readiness"); hold chordl-board publish until it lands | — | | | | | [0045 spec](../specs/0045-load-on-demand.md) | | | 2026-11-10 |
@@ -73,6 +73,7 @@ Last health scan: 2026-11-09
 
 ## Log
 <!-- One line per status change, newest first: YYYY-MM-DD NNNN old→new — note -->
+- 2026-11-10 0049 dispatched→in-review — PR #117 @997fef7 (4-line CI step); vulnerable scratch fixture exits 1; review r1 → opus
 - 2026-11-10 human accepted S14, S15, S17, S19 → 0051, 0049, 0048, 0050 dispatched in parallel (disjoint files)
 - 2026-11-10 0043-t2 ready→merged→closed — #116 @4911f61 (human approved); verify on main passes, 2943 tests
 - 2026-11-10 0043-t2 in-review→ready — r1 (opus) approve @5107153; strict inherited, all tests covered, planted errors fail; dependency → human
