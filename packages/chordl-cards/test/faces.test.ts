@@ -4,7 +4,7 @@ import { describe, it, expect } from "vitest";
 import { computeKeyboard } from "@pepperhorn/chordl-core";
 import {
   chordNotes, faceNoteNames, handBracketsFor, handLabels, handsNoteLabels, keyboardNoteLabels,
-  requestFor, sharpPitchClasses, type CardFace,
+  requestFor, sharpPitchClasses, type CardFace, type KeyboardFaceRequest,
 } from "../src/faces";
 import { keyIndicesFor } from "../src/keyboard-window";
 import { handsWindow } from "../src/hands";
@@ -220,7 +220,7 @@ describe("byte-identical with chordcards", () => {
 
 describe("handBracketsFor", () => {
   it("is undefined for a request with no hands", () => {
-    expect(handBracketsFor(requestFor("C", "keyboard", THEME))).toBeUndefined();
+    expect(handBracketsFor(requestFor("C", "keyboard", THEME) as KeyboardFaceRequest)).toBeUndefined();
   });
 
   it("maps the L.H./R.H. note indices to the keys the window lit", () => {

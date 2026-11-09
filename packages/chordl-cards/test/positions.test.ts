@@ -151,7 +151,7 @@ describe("positionsFor: the alternatives", () => {
         if (!ps) continue;
         const { frets } = INSTRUMENTS[face];
         for (const p of ps.slice(1)) {
-          const shape = p.request.shape as { position?: number; fingers: Array<[number, number | string]>; barres: Array<{ fret: number }> };
+          const shape = p.request.shape;
           const abs = absFrets(p);
           const hi = Math.max(...abs);
           expect(hi, `${chord} ${face} ${p.label}`).toBeLessThanOrEqual(POSITIONS_MAX_FRET[face]);
