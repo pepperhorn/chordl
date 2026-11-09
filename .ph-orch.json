@@ -28,5 +28,8 @@
   "AUTO_MERGE_MAX_LINES": "50",
   "SWEEP_PRS": true,
   "SCAN_DAYS": 7,
-  "STOP_MAX_BLOCKS": 3
+  "STOP_MAX_BLOCKS": 3,
+  "AUTO_MERGE_EXCLUDE": [
+    "docs/handoffs/**"
+  ]
 }

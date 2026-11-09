@@ -6,7 +6,7 @@
 - **Branch:** orch/0032-c7alt-parse · **Worktree:** created by T3
 - **PR:** <url once opened>
 - **Base commit:** b09d17d
-- **Status:** open
+- **Status:** closed
 
 ## Goal
 `parseChordDescription("C7alt")` returns `{ chordName: "C7" }`: the `alt` suffix is silently dropped because `CHORD_RE` in `packages/chordl-core/src/parser/natural-language.ts:417` has no `alt` token. `resolveChord("C7alt")` already resolves correctly (`7#5#9`), so the only defect is the NL parser losing the suffix. Done = the parser keeps `alt` (e.g. `C7alt`, `G7alt`, `Bb7alt`, `C7alt over E`, `C7alt with degrees`) so the chord box draws the altered dominant, with no change to any other input's parse.

@@ -128,3 +128,8 @@ The repo docs are the **source of truth** for this project. GBrain is the **memo
 - **Never** write secrets, tokens, `.env` values, or customer data to GBrain.
 - If GBrain isn't available in your session, say so in your handoff (`GBrain: unavailable`) and carry on.
 <!-- ph-orch:end -->
+
+## Local rules (outside the managed block)
+
+- **Auto-merge line count** (§5a): lines under `docs/handoffs/` don't count toward the 50-line limit (`AUTO_MERGE_EXCLUDE` in `.ph-orch.json`). Decided by the human 2026-11-09.
+
