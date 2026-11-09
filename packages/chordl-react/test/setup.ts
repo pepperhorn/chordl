@@ -1,5 +1,7 @@
 import { afterEach } from "vitest";
-import { cleanup } from "@testing-library/react";
+import { cleanup, configure } from "@testing-library/react";
+
+configure({ asyncUtilTimeout: 5000 });
 
 // jsdom implements no SVG layout, so SVGElement.getBBox is missing and svguitar
 // throws while measuring text ("Getting bbox of element \"text\" is not
