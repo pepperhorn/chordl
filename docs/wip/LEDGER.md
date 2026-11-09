@@ -5,14 +5,15 @@
 > Waiting on: `child <taskId>` · `review <taskId>` · `ci` · `human: <why>` · `lead: <next action>`. Set it on every status change. A row needs the lead when it starts with `lead`, or when it's empty and Status is dispatched, in-review, changes-requested, ready, or merged. The lead's Stop hook won't let the lead end its turn while any row needs it.
 > Type: normal items have a spec and plan. Quick items have the title prefix `[quick]` (no spec or plan, a short handoff). PRs adopted by `orch-sweep` have the prefix `[pr]`.
 
-Next ID: 0045  (0001–0024 were used before the ledger existed; see orch/0024-* branches; 0027–0031, 0033–0037 also come from the crf-transcribe lead's ledger (/home/shaun/trans); 0037 merged as #105)
+Next ID: 0046  (0001–0024 were used before the ledger existed; see orch/0024-* branches; 0027–0031, 0033–0037 also come from the crf-transcribe lead's ledger (/home/shaun/trans); 0037 merged as #105)
 
 ## Active
 
 | K | Title | Status | Waiting on | Owner (provider/model) | Branch | PR | Worktree | T3 task/thread | Spec | Plan | Latest handoff | Updated |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0045-t1 | Load on demand: react smplr (+ guitar panel if clean) | dispatched | lead: delegate | codex/gpt-6.1-sol | orch/0045-t1-react-lazy-audio | | | | [spec](../specs/0045-load-on-demand.md) | [plan](../plans/0045-load-on-demand.md) | [lead→sol](../handoffs/2026-11-09-0045-t1-react-lazy-audio--lead-to-sol.md) | 2026-11-09 |
+| 0045-t2 | Load on demand: board — no idle Verovio prefetch, lazy guitar, loading/ready markers | planned | child 0045-t1 (T2 depends on T1 merged) | — | orch/0045-t2-board-on-demand | | | | [spec](../specs/0045-load-on-demand.md) | [plan](../plans/0045-load-on-demand.md) | | 2026-11-09 |
 | 0043 | Type-check test files in every package (tsconfig.test.json + lint:test in CI) | planned | child 0038-impl-r2 (0042 merged; dispatch when 0038 merges) (dispatch once both merge: shared lockfile and core test files) | — | orch/0043-typecheck-tests | | | | [spec](../specs/0043-typecheck-tests.md) | [plan](../plans/0043-typecheck-tests.md) | | 2026-11-09 |
-| 0044 | chordl.app: ship less JavaScript on first load (code-split) | ready | human: approve merge (808 changed code lines, mostly a move out of dev/App.tsx) | codex/gpt-6.1-sol | orch/0044-site-code-split | [#111](https://github.com/pepperhorn/chordl/pull/111) @ 51f5523 (r1 approve) | /home/shaun/.t3/worktrees/chordl/t3-24e7c148 | task `node:delegated-task:command%3Amcp%3A8171515d-9a8b-4268-a6b9-8eda267c872b%3Adelegate-task%3A0044-impl-r1` | [spec](../specs/0044-site-code-split.md) | [plan](../plans/0044-site-code-split.md) | [sol→lead](../handoffs/2026-11-09-0044-site-code-split--sol-to-lead.md) (on branch) | 2026-11-09 |
 | 0038 | Chord parser: only read a root from a standalone chord token (+ S11, S13) | changes-requested | child 0038-impl-r2 | codex/gpt-6.1-sol | orch/0038-parser-strict-roots | [#110](https://github.com/pepperhorn/chordl/pull/110) @ 12c80e5 | /home/shaun/.t3/worktrees/chordl/t3-102f6052 | task `node:delegated-task:command%3Amcp%3A8171515d-9a8b-4268-a6b9-8eda267c872b%3Adelegate-task%3A0038-impl-r1` | [spec](../specs/0038-parser-strict-roots.md) | [plan](../plans/0038-parser-strict-roots.md) | [r1 decisions](../handoffs/2026-11-09-0038-parser-strict-roots--lead-r1-decisions.md) | 2026-11-09 |
 | 0039 | Notation view: annotations to the right of the stave; scales/runs as beamed eighths | proposed | human: needs spec (3 defects: StaffNotationProps has no annotation props; scale/run branches of PianoChord skip display; mei-builder.ts:115,117 hard-code dur="1") | — | | | | | | | | 2026-11-09 |
 
@@ -20,6 +21,7 @@ Next ID: 0045  (0001–0024 were used before the ledger existed; see orch/0024-*
 
 | K | Title | PR | Merged | Notes |
 |---|---|---|---|---|
+| 0044 | chordl.app: ship less JavaScript on first load (site layer) | [#111](https://github.com/pepperhorn/chordl/pull/111) | 2026-11-09 @ dc6f8d2 | Examples/ChordSheet lazy (−1.07% entry gzip); AC2 met by justification: idle Verovio prefetch is 91% of first-visit JS → 0045. Opus r1 approve; human approved merge. Verify on main 2819 pass |
 | 0042 | [quick] Patch vulnerable transitive dependencies | [#109](https://github.com/pepperhorn/chordl/pull/109) | 2026-11-09 @ e86c52f | Lockfile only: dompurify 3.4.17, fast-uri 3.1.9, image-size 2.1.0; audit 28→0. Opus r1 approve; human approved merge. Verify + packed-board on main pass, 2819 tests |
 | 0041 | [quick] chordl-react tests: same timeout budget as board | [#108](https://github.com/pepperhorn/chordl/pull/108) | 2026-11-09 @ 1487fa7 | Codex impl; Opus r1 approve @cb3b9ee (9/9 three-way loaded runs, slowest 15.4s annotation-disabled). Auto-merged per §5a. Verify on main: 2819 pass |
 | 0040 | [quick] chordl-board tests: raise vitest timeout | [#107](https://github.com/pepperhorn/chordl/pull/107) | 2026-11-09 @ 6b13fc1 | Codex impl; Opus r1 changes-requested @bc4ff4c (15s too low, waitFor 1s flake), r2 approve @e9355c8 (9/9 three-way loaded runs, slowest 23.4s). Auto-merged per §5a (10 code lines). Verify on main: 2819 pass. Follow-up 0041 (react) |
@@ -53,13 +55,15 @@ Next ID: 0045  (0001–0024 were used before the ledger existed; see orch/0024-*
 | S13 | risk | CHORD_RE has no word boundary before the root letter: "play Bb7 over D" parses as chord A (from "play") | PR #106 review r2 (5821202395); natural-language.ts:417 | S | M | review 0032 r2 | accepted → 0038 |
 | S14 | efficiency | Make the slowest board and react tests cheaper (react InteractiveInput.annotation-disabled 15.4s under load, PR #108 review 5821469568) instead of raising budgets again (slowest 23.4s of 30s under load) | PR #107 review r2 (5821405987) | M | M | review 0040 r2 | new |
 | S15 | risk | Add `pnpm audit --prod --audit-level=high` to CI so new advisories surface on publish, not at the next sweep | PR #109 review r1 (5821891495); ci.yml has no audit step | S | M | review 0042 r1 | new |
-| S16 | efficiency | Library-level first-load cut (r1 review confirms: Verovio 3 chunks requested within 1.5 s idle; guitar data/rendering ≈51% of entry; wav-export static smplr import): the idle Verovio prefetch downloads ~2.9 MB gzip (91% of no-interaction JS) on every visit, even piano-only; guitar data/SVGuitar and smplr are static imports in the entry. Product trade-off: instant notation vs lighter visits | packages/chordl-board/src/BoardEditor.tsx:757 `prefetchVerovioWhenIdle()`; 0044 return handoff @51f5523 | M | H | 0044 implementer | new |
+| S16 | efficiency | Library-level first-load cut (r1 review confirms: Verovio 3 chunks requested within 1.5 s idle; guitar data/rendering ≈51% of entry; wav-export static smplr import): the idle Verovio prefetch downloads ~2.9 MB gzip (91% of no-interaction JS) on every visit, even piano-only; guitar data/SVGuitar and smplr are static imports in the entry. Product trade-off: instant notation vs lighter visits | packages/chordl-board/src/BoardEditor.tsx:757 `prefetchVerovioWhenIdle()`; 0044 return handoff @51f5523 | M | H | 0044 implementer | accepted → 0045 |
 | S17 | risk | Resolver accepts `CΔ` but rejects `CΔ7` (and `B♭`-style input relied on parser normalisation) — add Δ7 alias in resolveChord | 0038 r2 implementer question 2026-11-09; resolveChord("CΔ7") throws on main | S | M | 0038 r2 | new |
 
 Last health scan: 2026-11-09
 
 ## Log
 <!-- One line per status change, newest first: YYYY-MM-DD NNNN old→new — note -->
+- 2026-11-09 0045 specced+planned (S16, human: load on demand); t1 →dispatched, t2 waits on t1
+- 2026-11-09 0044 ready→merged→closed — #111 @dc6f8d2 (human approved); verify on main passes
 - 2026-11-09 0044 in-review→ready — r1 (opus) approve @51f5523: numbers re-derived, move behaviour-preserving, browser smoke OK; over line limit → human
 - 2026-11-09 0038 in-review→changes-requested — r1 (opus) @12c80e5: 21 resolver-accepted spellings (Cmi7, CΔ7, Co7…) now error; article before quality word; alt after space. Lead: guarded resolver fallback, ♭/♯ normalisation, keep compat sweep script
 - 2026-11-09 0044 dispatched→in-review — PR #111 @51f5523: site-layer split only −1.07% entry gzip (AC2 justification route); 91% of no-interaction JS is the idle Verovio prefetch → S16; review r1 → opus

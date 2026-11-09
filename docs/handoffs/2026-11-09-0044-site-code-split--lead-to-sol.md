@@ -7,7 +7,7 @@
 - **PR:** <url once opened>
 - **Base commit:** e86c52f
 - **Port (if running a server):** 5640
-- **Status:** open
+- **Status:** closed
 
 ## Goal
 Implement plan T1: measure what the site ships on first load, move what the first screen doesn't need behind lazy boundaries in the site app, and re-measure. Target: at least 30% less gzipped JS on the first screen, or numbers that show why it can't be done from the site layer.
