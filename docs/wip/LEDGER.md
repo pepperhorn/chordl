@@ -11,7 +11,7 @@ Next ID: 0041  (0001–0024 were used before the ledger existed; see orch/0024-*
 
 | K | Title | Status | Waiting on | Owner (provider/model) | Branch | PR | Worktree | T3 task/thread | Spec | Plan | Latest handoff | Updated |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 0040 | [quick] chordl-board tests: raise vitest timeout above the 5s default | changes-requested | child 0040-impl-r2 | codex/gpt-6.1-sol | orch/0040-board-test-timeout | [#107](https://github.com/pepperhorn/chordl/pull/107) @ bc4ff4c | /home/shaun/.t3/worktrees/chordl/t3-d013f290 | task `node:delegated-task:command%3Amcp%3Aacb17a48-3737-4dcb-babb-6afd61cdd00c%3Adelegate-task%3A0040-impl-r1` | — | — | [sol→lead](../handoffs/2026-11-09-0040-board-test-timeout--sol-to-lead.md) (on branch) | 2026-11-09 |
+| 0040 | [quick] chordl-board tests: raise vitest timeout above the 5s default | in-review | review 0040-review-r2 (claude-opus) | codex/gpt-6.1-sol | orch/0040-board-test-timeout | [#107](https://github.com/pepperhorn/chordl/pull/107) @ e9355c8 | /home/shaun/.t3/worktrees/chordl/t3-d013f290 | task `node:delegated-task:command%3Amcp%3Aacb17a48-3737-4dcb-babb-6afd61cdd00c%3Adelegate-task%3A0040-impl-r1` | — | — | [sol→lead](../handoffs/2026-11-09-0040-board-test-timeout--sol-to-lead.md) (on branch) | 2026-11-09 |
 | 0038 | Chord box accepts nonsense ("@@@ not a chord @@@" → C, "Zbq9" → B) | proposed | human: needs spec (error vs. empty vs. best guess is a product call) | — | | | | | | | | 2026-11-09 |
 | 0039 | Notation view: annotations to the right of the stave; scales/runs as beamed eighths | proposed | human: needs spec (3 defects: StaffNotationProps has no annotation props; scale/run branches of PianoChord skip display; mei-builder.ts:115,117 hard-code dur="1") | — | | | | | | | | 2026-11-09 |
 
@@ -52,6 +52,7 @@ Last health scan: 2026-11-09
 
 ## Log
 <!-- One line per status change, newest first: YYYY-MM-DD NNNN old→new — note -->
+- 2026-11-09 0040 changes-requested→in-review — r1 fixes @e9355c8 (30s, asyncUtilTimeout 5000, override removed); 9 three-way loaded runs green; review r2 → opus
 - 2026-11-09 0032 ready→merged→closed — #106 @ff0dc34 (human approved); verify on main passes, 2819 tests. Human: handoff-doc lines don't count toward the auto-merge line limit
 - 2026-11-09 0032 in-review→ready — r2 (opus) approve @dfa0a4b; CI green; over the 50-line auto-merge limit only because of handoff docs → human
 - 2026-11-09 0032 changes-requested→in-review — r1 fixes @dfa0a4b (alt lowercased, real pitch-class test), 2819 tests pass; review r2 → opus
