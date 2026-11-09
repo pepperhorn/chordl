@@ -25,3 +25,5 @@ None.
 
 ---
 ## Receiver ack
+
+Acknowledged (Sol, 2026-11-10): implement Δ7 → maj7 and mΔ7 → mMaj7, normalize the ∆ look-alike, preserve existing Δ forms, and remove only the parser’s temporary Δ7 exception. I own the resolver normalization source, that parser exception, core tests, and task 0048 handoffs. I will run both sweeps against the specified baseline and the full verification command, then push a draft PR. No open questions. GBrain search found no relevant resolver notes; repo handoff is the task source of truth.

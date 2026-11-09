@@ -35,22 +35,38 @@ const extras = [
   'm6/9', '6/9', 'mMaj7', 'maj7#11', '13b9', '7sus4b9', '7omit3',
   'm7sus', 'm7sus4', 'maug', 'mmaj7',
 ];
-const aliases = [...new Set([...ChordType.all().flatMap(t => t.aliases), ...extras])]
+// 0048: assert these aliases against canonical results even when the baseline
+// also accepts them, so removing support cannot hide behind an unchanged row.
+const jazzAliases = new Map([
+  ['Δ7', 'maj7'], ['mΔ7', 'mMaj7'], ['∆7', 'maj7'],
+  ['m∆7', 'mMaj7'], ['∆', 'maj7'], ['∆9', 'maj9'],
+]);
+const aliases = [...new Set([...ChordType.all().flatMap(t => t.aliases), ...extras, ...jazzAliases.keys()])]
   .filter(s => !s.includes('('));
 const safe = (fn, symbol) => { try { return fn(symbol); } catch { return null; } };
 const pcs = notes => [...new Set(notes.map(Note.chroma))].sort().join(',');
 const diffs = [];
 const failures = [];
 let total = 0;
+let newSpellingCases = 0;
+let rejectionCases = 0;
+let expectedNewlyAccepted = 0;
 for (const root of roots) for (const alias of aliases) for (const bass of ['', ...roots]) {
   const symbol = root + alias + (bass ? '/' + bass : '');
   total++;
   const old = safe(resolvers[0], symbol), now = safe(resolvers[1], symbol);
+  const canonicalAlias = jazzAliases.get(alias);
+  if (canonicalAlias) {
+    newSpellingCases++;
+    const canonical = safe(resolvers[1], root + canonicalAlias + (bass ? '/' + bass : ''));
+    if (!now || !canonical || JSON.stringify(now) !== JSON.stringify(canonical)) failures.push(symbol);
+  }
   if (JSON.stringify(old) === JSON.stringify(now)) continue;
+  if (canonicalAlias && !old && now) expectedNewlyAccepted++;
   const kind = !old ? 'newly accepted' : !now ? 'now throws'
     : pcs(old.notes) !== pcs(now.notes) ? 'pitch classes' : 'metadata/order';
   diffs.push({ symbol, old, now, kind });
-  if (!now || (!bass && (!old || pcs(old.notes) !== pcs(now.notes)))) {
+  if (!now || (!bass && (!old ? !canonicalAlias : pcs(old.notes) !== pcs(now.notes)))) {
     failures.push(symbol);
   } else if (bass) {
     const upper = safe(resolvers[1], root + alias);
@@ -59,8 +75,15 @@ for (const root of roots) for (const alias of aliases) for (const bass of ['', .
       || Note.chroma(now.root) !== Note.chroma(upper.root)) failures.push(symbol);
   }
 }
+// Capital M must never reach the pre-existing case-insensitive minor-major rule.
+for (const root of roots) for (const alias of ['MΔ7', 'M∆7']) for (const bass of ['', ...roots]) {
+  const symbol = root + alias + (bass ? '/' + bass : '');
+  rejectionCases++;
+  if (safe(resolvers[1], symbol)) failures.push(symbol);
+}
 const summary = {
   base, total, aliases: aliases.length, roots: roots.length, bassForms: roots.length + 1,
+  newSpellingCases, rejectionCases, expectedNewlyAccepted,
   differences: diffs.length,
   byKind: diffs.reduce((acc, d) => ({ ...acc, [d.kind]: (acc[d.kind] ?? 0) + 1 }), {}),
   failures,
