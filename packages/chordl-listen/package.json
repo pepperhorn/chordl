@@ -23,6 +23,7 @@
   ],
   "scripts": {
     "build": "tsc",
+    "lint:test": "tsc --project tsconfig.test.json",
     "lint": "tsc --noEmit",
     "test": "vitest",
     "test:run": "vitest run"
