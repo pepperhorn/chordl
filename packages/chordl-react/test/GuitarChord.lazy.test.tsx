@@ -3,14 +3,23 @@ import { describe, it, expect, vi } from "vitest";
 import { act, render, waitFor } from "@testing-library/react";
 import { renderToString } from "react-dom/server";
 
+const imports = vi.hoisted(() => {
+  let finish!: () => void;
+  const settled = new Promise<void>((resolve) => { finish = resolve; });
+  return { settled, finish, count: 0 };
+});
 const loaded = vi.hoisted(() => ({ panel: 0, renderer: 0 }));
 vi.mock("../src/components/GuitarChordPanelImpl", async () => {
   loaded.panel++;
-  return await vi.importActual("../src/components/GuitarChordPanelImpl");
+  const implementation = await vi.importActual("../src/components/GuitarChordPanelImpl");
+  if (++imports.count === 2) imports.finish();
+  return implementation;
 });
 vi.mock("../src/components/GuitarChordImpl", async () => {
   loaded.renderer++;
-  return await vi.importActual("../src/components/GuitarChordImpl");
+  const implementation = await vi.importActual("../src/components/GuitarChordImpl");
+  if (++imports.count === 2) imports.finish();
+  return implementation;
 });
 
 it("does not import guitar implementations until rendered, and marks loading then ready", async () => {
@@ -29,12 +38,7 @@ it("does not import guitar implementations until rendered, and marks loading the
   // Keep the fallback checks above before settling the real lazy modules.
   // Import/transform work can exceed waitFor's DOM-polling window under load;
   // await it inside act, then check the same real ready SVG below.
-  await act(async () => {
-    await Promise.all([
-      import("../src/components/GuitarChordPanelImpl"),
-      import("../src/components/GuitarChordImpl"),
-    ]);
-  });
+  await act(async () => { await imports.settled; });
   await waitFor(() => expect(container.querySelector('.bc-guitar-chord[data-chordl-state="ready"] svg')).toBeTruthy());
   expect(loaded).toEqual({ panel: 1, renderer: 1 });
   expect(container.querySelector('.chordl-board-card-loading')).toBeNull();
