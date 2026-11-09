@@ -6,7 +6,8 @@
 - **Branch:** `orch/0054-cards-core-test-timeout`
 - **Worktree:** `/home/shaun/.t3/worktrees/chordl/t3-92d4e2ac`
 - **Base commit:** `07c756b2257f895646863d78ae3552389d1d80fa` (contains dispatch; `80ec59c` is an ancestor)
-- **PR:** pending creation
+- **PR:** https://github.com/pepperhorn/chordl/pull/121
+- **Implementation / validation commit:** `fcc2a287fae788ea2a5439f558967c0b9f0b7497` (following commit only records PR metadata)
 - **Status:** done; awaiting lead review
 
 ## Goal / context
