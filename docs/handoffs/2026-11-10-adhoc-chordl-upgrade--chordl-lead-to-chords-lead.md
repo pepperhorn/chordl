@@ -4,7 +4,7 @@
 - **Type:** dispatch (cross-repo)
 - **Ledger:** chordl 0052 (release) and 0053 (this handoff); the crf-chords lead assigns its own item ID
 - **Repos:** source https://github.com/pepperhorn/chordl (main @ 8f3ad13); target https://github.com/pepperhorn/crf-chords (main @ 4c14051), local `/home/shaun/chords`
-- **Status:** open, **blocked on chordl publishing first** (see "Order")
+- **Status:** open — **unblocked 2026-11-10:** `@pepperhorn/chordl-core@0.6.3` and `@pepperhorn/chordl-react@0.5.3` are published (release runs 42714448779, 42714942893). The `0048` and `0050` changes are included.
 
 ## Goal
 crf-chords is two to three releases behind chordl, and some of the newer chordl behaviour changes affect it. Upgrade its `@pepperhorn/chordl-*` dependencies to the releases listed below, adapt to the behaviour changes, and verify with crf-chords' own checks. Done means: crf-chords main installs the new versions from npm, its verify command passes, and the four impact checks below are confirmed and recorded.

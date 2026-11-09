@@ -12,8 +12,7 @@ Next ID: 0056  (0001–0024 were used before the ledger existed; see orch/0024-*
 | K | Title | Status | Waiting on | Owner (provider/model) | Branch | PR | Worktree | T3 task/thread | Spec | Plan | Latest handoff | Updated |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
 | 0055 | [quick] Close remaining test-budget gaps (cards waitFor 1s, guitar 5s default, react legacy-level waitFor) | in-review | review 0055-review-r1 (claude-opus) | codex/gpt-6.1-sol | orch/0055-test-budget-gaps | [#123](https://github.com/pepperhorn/chordl/pull/123) @ 24bb6a0 | created by T3 | task `node:delegated-task:command%3Amcp%3A2003c157-d682-482f-909c-d39f8df01ee4%3Adelegate-task%3A0055-impl-r1` | — | — | [sol→lead](../handoffs/2026-11-10-0055-test-budget-gaps--sol-to-lead.md) (on branch) | 2026-11-10 |
-| 0052 | [quick] Release prep: chordl-core 0.6.3 (0032/0038/0046/0048) + react 0.5.3 notes; then publish core 0.6.3 → react 0.5.3 | merged | ci (Release run 42714942893 for chordl-react@0.5.3; core 0.6.3 published, run 42714448779) | codex/gpt-6.1-sol | orch/0052-release-core-063 | [#122](https://github.com/pepperhorn/chordl/pull/122) @ b99978d | /home/shaun/.t3/worktrees/chordl/t3-59fedfc0 | task `node:delegated-task:command%3Amcp%3A2003c157-d682-482f-909c-d39f8df01ee4%3Adelegate-task%3A0052-impl-r1` | — | — | [sol→lead](../handoffs/2026-11-10-0052-release-core-063--sol-to-lead.md) (on branch) | 2026-11-10 |
-| 0053 | [external] crf-chords: upgrade to chordl core 0.6.3 / react 0.5.3 and adapt (SSR guitar placeholder, readiness waits, parser strictness) | proposed | human: hand to the crf-chords lead once 0052 publishes | — | | | | | | | [chordl→chords](../handoffs/2026-11-10-adhoc-chordl-upgrade--chordl-lead-to-chords-lead.md) | 2026-11-10 |
+| 0053 | [external] crf-chords: upgrade to chordl core 0.6.3 / react 0.5.3 and adapt (SSR guitar placeholder, readiness waits, parser strictness) | proposed | human: hand the handoff to the crf-chords lead (core 0.6.3 + react 0.5.3 published 2026-11-10) | — | | | | | | | [chordl→chords](../handoffs/2026-11-10-adhoc-chordl-upgrade--chordl-lead-to-chords-lead.md) | 2026-11-10 |
 | 0047 | [external] becreative: PDF readiness must wait for `data-chordl-state="ready"` (needed before publishing chordl-board with 0045-t2) | proposed | human: becreative's lead to schedule (rule in 0045-t2 return handoff, "Downstream becreative readiness"); hold chordl-board publish until it lands | — | | | | | [0045 spec](../specs/0045-load-on-demand.md) | | | 2026-11-10 |
 | 0039 | Notation view: annotations to the right of the stave; scales/runs as beamed eighths | proposed | human: needs spec (3 defects: StaffNotationProps has no annotation props; scale/run branches of PianoChord skip display; mei-builder.ts:115,117 hard-code dur="1") | — | | | | | | | | 2026-11-09 |
 
@@ -21,6 +20,7 @@ Next ID: 0056  (0001–0024 were used before the ledger existed; see orch/0024-*
 
 | K | Title | PR | Merged | Notes |
 |---|---|---|---|---|
+| 0052 | Release: chordl-core 0.6.3 + chordl-react 0.5.3 | [#122](https://github.com/pepperhorn/chordl/pull/122) | 2026-11-10 @ b99978d | Published via release tags (runs 42714448779, 42714942893; both PUT 202). core 0.6.3 visible on npm; react 0.5.3 registry read lagging at close. Board 0.2.4 held (0047) |
 | 0054 | [quick] cards and core tests: timeouts under load (S12) | [#121](https://github.com/pepperhorn/chordl/pull/121) | 2026-11-10 @ 4438c76 | Test-work reuse + 30s budgets in cards/core (new core vitest.config.ts; same 16 files / 712 tests). Opus r1 approve (mutations fail). Auto-merged (48 lines). Verify on main 2966 at load ~37. Follow-up 0055 |
 | 0050 | [quick] StaffNotation reports its own loading/ready/error state (S19) | [#119](https://github.com/pepperhorn/chordl/pull/119) | 2026-11-10 @ 67f95a1 | Each .bc-staff carries data-chordl-state; board card aggregates. Opus r1 changes-requested (stale error during retry; tautological test), r2 approve; human approved merge. Verify + packed-board on main: 2966 |
 | 0051 | [quick] Make the slowest board and react tests cheaper (S14) | [#120](https://github.com/pepperhorn/chordl/pull/120) | 2026-11-10 @ 80ec59c | Loaded max board 23.4s→≤6.1s, react 15.4s→≤8.0s; Verovio stub in two control suites, lazy-test import settlement. Opus r1 approve (break tests confirmed). Auto-merged (43 test lines). Verify on main 2961. Follow-up 0054 (cards/core) |
@@ -79,6 +79,7 @@ Last health scan: 2026-11-09
 
 ## Log
 <!-- One line per status change, newest first: YYYY-MM-DD NNNN old→new — note -->
+- 2026-11-10 0052 merged→closed — chordl-core@0.6.3 and chordl-react@0.5.3 published; 0053 ready for the crf-chords lead
 - 2026-11-10 0052 — chordl-core@0.6.3 published (run 42714448779, PUT 202; registry read lagging); tag chordl-react@0.5.3 pushed, run 42714942893
 - 2026-11-10 0055 dispatched→in-review — PR #123 @24bb6a0; legacy-level 1s hypothesis disproved; review r1 → opus
 - 2026-11-10 0052 ready→merged — #122 @b99978d (human approved merge + publish); tag chordl-core@0.6.3 pushed, Release run 42714448779

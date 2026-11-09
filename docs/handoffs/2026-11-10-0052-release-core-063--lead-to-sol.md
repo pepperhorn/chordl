@@ -2,7 +2,7 @@
 
 - **Date:** 2026-11-10 · **Type:** quick · **Ledger:** 0052
 - **Branch:** orch/0052-release-core-063 · **Worktree:** created by T3 · **Base commit:** 67f95a1
-- **Status:** open
+- **Status:** closed
 
 ## Goal
 Prepare the next npm release. No code changes. `chordl-core` on main is still versioned 0.6.2, the same as npm (published 2026-11-09T02:25Z), but it has unpublished changes merged since then: #106 (0032), #110 (0038), #113 (0046) and #118 (0048). `chordl-react` 0.5.3 is unpublished, and #119 (0050) changed it without a CHANGELOG line. `chordl-board` 0.2.4 is unpublished and held for becreative (ledger 0047), but its CHANGELOG should still be accurate.
