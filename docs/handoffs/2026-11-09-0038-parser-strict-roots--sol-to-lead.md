@@ -5,7 +5,7 @@
 - **Ledger:** 0038 · **Spec:** [0038](../specs/0038-parser-strict-roots.md) · **Plan:** [T1](../plans/0038-parser-strict-roots.md)
 - **Branch:** orch/0038-parser-strict-roots
 - **Worktree:** /home/shaun/.t3/worktrees/chordl/t3-102f6052
-- **PR:** draft against main; see branch-linked PR
+- **PR:** https://github.com/pepperhorn/chordl/pull/110 (draft against main)
 - **Base commit:** a94f24fcf3f01b1cade5cabc985fcf386e8c8f4b (includes declared 436e03e ancestor)
 - **Implementation commit:** 340ef36
 - **Status:** blocked
