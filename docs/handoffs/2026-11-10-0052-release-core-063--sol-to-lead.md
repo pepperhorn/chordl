@@ -7,7 +7,7 @@
 - **Worktree:** /home/shaun/.t3/worktrees/chordl/t3-59fedfc0
 - **Base commit:** b03f80a9abafe53187aeb835d1d82a0c8481d097 (contains required 67f95a1)
 - **Implementation commit:** 1332c790de0836fc294792285a64d2e8329a82a9
-- **PR:** draft PR to be created after this return is committed.
+- **PR:** https://github.com/pepperhorn/chordl/pull/122 (draft against main).
 - **Status:** blocked on full-suite verification; scoped edits complete
 
 ## Goal and context
