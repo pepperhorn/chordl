@@ -30,3 +30,5 @@ None.
 
 ---
 ## Receiver ack
+
+Acknowledged: optimize the expensive cards positions and core catalogue tests without removing or weakening assertions, confined to the owned tests/configs. Measure idle and three-suite cards/core/react load before and after, obtain three passing loaded runs, preserve 2,961 tests, and run the full verify command. Add explicit 30s budgets only if measured residual cost warrants them. No source changes or other packages; no open questions.
