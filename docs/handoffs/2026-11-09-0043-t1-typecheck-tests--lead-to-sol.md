@@ -36,3 +36,5 @@ None.
 
 ---
 ## Receiver ack
+
+Accepted: implement T1 only on orch/0043-t1-typecheck-tests: add src+test no-emit configs and lint:test scripts for voicings/core/listen/guitar/voicing, root recursive script, approved Node types where needed, and CI step after Lint. Fix existing test typing without changing assertions or runtime behaviour; leave board/react/cards and src untouched. Verify all required commands, unchanged 2,929 tests, and a reverted deliberate test type error. Commit per package, then commit return handoff, push this branch, and open a draft PR. No open questions. GBrain search for chordl/typecheck/0043 returned no task-specific guidance; repo spec/plan govern.
