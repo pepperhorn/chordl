@@ -5,12 +5,14 @@
 > Waiting on: `child <taskId>` · `review <taskId>` · `ci` · `human: <why>` · `lead: <next action>`. Set it on every status change. A row needs the lead when it starts with `lead`, or when it's empty and Status is dispatched, in-review, changes-requested, ready, or merged. The lead's Stop hook won't let the lead end its turn while any row needs it.
 > Type: normal items have a spec and plan. Quick items have the title prefix `[quick]` (no spec or plan, a short handoff). PRs adopted by `orch-sweep` have the prefix `[pr]`.
 
-Next ID: 0052  (0001–0024 were used before the ledger existed; see orch/0024-* branches; 0027–0031, 0033–0037 also come from the crf-transcribe lead's ledger (/home/shaun/trans); 0037 merged as #105)
+Next ID: 0054  (0001–0024 were used before the ledger existed; see orch/0024-* branches; 0027–0031, 0033–0037 also come from the crf-transcribe lead's ledger (/home/shaun/trans); 0037 merged as #105)
 
 ## Active
 
 | K | Title | Status | Waiting on | Owner (provider/model) | Branch | PR | Worktree | T3 task/thread | Spec | Plan | Latest handoff | Updated |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0052 | Release: bump chordl-core 0.6.3 (parser 0032/0038/0046 + 0048) and publish core 0.6.3 + react 0.5.3 | proposed | lead: dispatch version-bump quick item after 0048 and 0050 merge; then human: approve publish tags | — | | | | | — | — | | 2026-11-10 |
+| 0053 | [external] crf-chords: upgrade to chordl core 0.6.3 / react 0.5.3 and adapt (SSR guitar placeholder, readiness waits, parser strictness) | proposed | human: hand to the crf-chords lead once 0052 publishes | — | | | | | | | [chordl→chords](../handoffs/2026-11-10-adhoc-chordl-upgrade--chordl-lead-to-chords-lead.md) | 2026-11-10 |
 | 0048 | [quick] Resolver: accept Δ7 / mΔ7 spellings (S17) | changes-requested | child 0048-impl-r2 | codex/gpt-6.1-sol | orch/0048-resolver-delta7 | [#118](https://github.com/pepperhorn/chordl/pull/118) @ 200e264 | /home/shaun/.t3/worktrees/chordl/t3-33bc70cb | task `node:delegated-task:command%3Amcp%3A2003c157-d682-482f-909c-d39f8df01ee4%3Adelegate-task%3A0048-impl-r1` | — | — | [r1 decisions](../handoffs/2026-11-10-0048-resolver-delta7--lead-r1-decisions.md) | 2026-11-10 |
 | 0050 | [quick] StaffNotation reports its own loading/ready/error state (S19) | in-review | review 0050-review-r1 (claude-opus) | codex/gpt-6.1-sol | orch/0050-staff-state-marker | [#119](https://github.com/pepperhorn/chordl/pull/119) @ 49f6946 | /home/shaun/.t3/worktrees/chordl/t3-975e9688 | task `node:delegated-task:command%3Amcp%3A2003c157-d682-482f-909c-d39f8df01ee4%3Adelegate-task%3A0050-impl-r1` | — | — | [sol→lead](../handoffs/2026-11-10-0050-staff-state-marker--sol-to-lead.md) (on branch) | 2026-11-10 |
 | 0051 | [quick] Make the slowest board and react tests cheaper (S14) | dispatched | child 0051-impl-r1 | codex/gpt-6.1-sol | orch/0051-faster-slow-tests | | created by T3 | task `node:delegated-task:command%3Amcp%3A2003c157-d682-482f-909c-d39f8df01ee4%3Adelegate-task%3A0051-impl-r1` | — | — | [lead→sol](../handoffs/2026-11-10-0051-faster-slow-tests--lead-to-sol.md) | 2026-11-10 |
@@ -75,6 +77,7 @@ Last health scan: 2026-11-09
 
 ## Log
 <!-- One line per status change, newest first: YYYY-MM-DD NNNN old→new — note -->
+- 2026-11-10 0052, 0053 →proposed — crf-chords pins core 0.6.1/react 0.5.1; chordl main has unpublished core parser changes under 0.6.2 and react 0.5.3. openchords current (chordl-voicing 0.2.0 unchanged). Handoff to chords lead written
 - 2026-11-10 0048 in-review→changes-requested — r1 (opus) @200e264: CMΔ7 now resolves as mMaj7 (Δ7 rewrite feeds /mmaj/i); sweeps didn't cover new spellings. Lead: guard after M, add spellings to resolver sweep; pre-existing resolver issues → S23
 - 2026-11-10 0049 ready→merged→closed — #117 (human approved); audit clean on main
 - 2026-11-10 0049 in-review→ready — r1 (opus) approve @997fef7: high fails, moderate passes, workspace-wide, --prod needed; CI change → human
