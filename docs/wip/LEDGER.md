@@ -12,7 +12,7 @@ Next ID: 0048  (0001–0024 were used before the ledger existed; see orch/0024-*
 | K | Title | Status | Waiting on | Owner (provider/model) | Branch | PR | Worktree | T3 task/thread | Spec | Plan | Latest handoff | Updated |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
 | 0047 | [external] becreative: PDF readiness must wait for `data-chordl-state="ready"` (needed before publishing chordl-board with 0045-t2) | proposed | human: becreative's lead to schedule (rule in 0045-t2 return handoff, "Downstream becreative readiness"); hold chordl-board publish until it lands | — | | | | | [0045 spec](../specs/0045-load-on-demand.md) | | | 2026-11-10 |
-| 0043-t2 | Type-check tests: react, cards, board | dispatched | lead: delegate | codex/gpt-6.1-sol | orch/0043-t2-typecheck-tests | | | | [spec](../specs/0043-typecheck-tests.md) | [plan](../plans/0043-typecheck-tests.md) | [lead→sol](../handoffs/2026-11-10-0043-t2-typecheck-tests--lead-to-sol.md) | 2026-11-10 |
+| 0043-t2 | Type-check tests: react, cards, board | dispatched | child 0043-t2-impl-r1 | codex/gpt-6.1-sol | orch/0043-t2-typecheck-tests | | created by T3 | task `node:delegated-task:command%3Amcp%3A8171515d-9a8b-4268-a6b9-8eda267c872b%3Adelegate-task%3A0043-t2-impl-r1` | [spec](../specs/0043-typecheck-tests.md) | [plan](../plans/0043-typecheck-tests.md) | [lead→sol](../handoffs/2026-11-10-0043-t2-typecheck-tests--lead-to-sol.md) | 2026-11-10 |
 | 0039 | Notation view: annotations to the right of the stave; scales/runs as beamed eighths | proposed | human: needs spec (3 defects: StaffNotationProps has no annotation props; scale/run branches of PianoChord skip display; mei-builder.ts:115,117 hard-code dur="1") | — | | | | | | | | 2026-11-09 |
 
 ## Done / closed
