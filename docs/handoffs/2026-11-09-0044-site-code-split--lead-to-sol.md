@@ -35,3 +35,5 @@ None.
 
 ---
 ## Receiver ack
+
+Acknowledged by sol: measure entry composition and default-screen requests, split optional site examples within dev/ (and site config only if justified), remeasure against AC1–AC4, and preserve the board and published library behavior. No open questions. GBrain searched; no relevant chordl site-split page found.
