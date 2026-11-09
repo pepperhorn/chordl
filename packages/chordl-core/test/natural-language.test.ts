@@ -1,7 +1,30 @@
 import { describe, it, expect } from "vitest";
-import { parseChordDescription } from "@pepperhorn/chordl-core";
+import { parseChordDescription, resolveChord } from "@pepperhorn/chordl-core";
 
 describe("parseChordDescription", () => {
+  it.each([
+    ["C7alt", "C7alt", ["C", "E", "G#", "Bb", "D#"]],
+    ["G7alt", "G7alt", ["G", "B", "D#", "F", "A#"]],
+    ["Bb7alt", "Bb7alt", ["Bb", "D", "F#", "Ab", "C#"]],
+    ["C7alt over E", "C7alt", ["C", "E", "G#", "Bb", "D#"]],
+    ["C7alt with degrees", "C7alt", ["C", "E", "G#", "Bb", "D#"]],
+    ["C7alt/E", "C7alt/E", ["C", "E", "G#", "Bb", "D#"]],
+    ["C7ALT", "C7alt", ["C", "E", "G#", "Bb", "D#"]],
+    ["c7ALT", "C7alt", ["C", "E", "G#", "Bb", "D#"]],
+    ["C7Alt", "C7alt", ["C", "E", "G#", "Bb", "D#"]],
+  ] as const)("preserves the altered dominant in '%s'", (input, chordName, pitchClasses) => {
+    const parsed = parseChordDescription(input);
+    expect(parsed.chordName).toBe(chordName);
+    expect(resolveChord(parsed.chordName).notes.slice().sort()).toEqual([...pitchClasses].sort());
+    if (input === "C7alt over E") expect(parsed.bassNote).toBe("E");
+    if (input === "C7alt with degrees") expect(parsed.noteNameMode).toBe("degree");
+  });
+
+  it.each(["alto", "alternate", "alternative"])("does not capture '%s' as an alt suffix", (word) => {
+    expect(parseChordDescription(`C7${word}`).chordName).toBe("C7");
+    expect(parseChordDescription(`C7 ${word}`).chordName).toBe("C7");
+  });
+
   it("parses 'Cmaj7#5 starting on G#'", () => {
     const result = parseChordDescription("Cmaj7#5 starting on G#");
     expect(result.chordName).toBe("Cmaj7#5");
