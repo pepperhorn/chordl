@@ -11,7 +11,7 @@ Next ID: 0055  (0001–0024 were used before the ledger existed; see orch/0024-*
 
 | K | Title | Status | Waiting on | Owner (provider/model) | Branch | PR | Worktree | T3 task/thread | Spec | Plan | Latest handoff | Updated |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 0054 | [quick] cards and core tests: timeouts under load (S12 + 0051 review) | dispatched | child 0054-impl-r1 | codex/gpt-6.1-sol | orch/0054-cards-core-test-timeout | | created by T3 | task `node:delegated-task:command%3Amcp%3A2003c157-d682-482f-909c-d39f8df01ee4%3Adelegate-task%3A0054-impl-r1` | — | — | [lead→sol](../handoffs/2026-11-10-0054-cards-core-test-timeout--lead-to-sol.md) | 2026-11-10 |
+| 0054 | [quick] cards and core tests: timeouts under load (S12 + 0051 review) | in-review | review 0054-review-r1 (claude-opus) | codex/gpt-6.1-sol | orch/0054-cards-core-test-timeout | [#121](https://github.com/pepperhorn/chordl/pull/121) @ 658f873 | /home/shaun/.t3/worktrees/chordl/t3-92d4e2ac | task `node:delegated-task:command%3Amcp%3A2003c157-d682-482f-909c-d39f8df01ee4%3Adelegate-task%3A0054-impl-r1` | — | — | [sol→lead](../handoffs/2026-11-10-0054-cards-core-test-timeout--sol-to-lead.md) (on branch) | 2026-11-10 |
 | 0052 | [quick] Release prep: chordl-core 0.6.3 (0032/0038/0046/0048) + react 0.5.3 notes; then publish core 0.6.3 → react 0.5.3 | dispatched | child 0052-impl-r1 | codex/gpt-6.1-sol | orch/0052-release-core-063 | | created by T3 | task `node:delegated-task:command%3Amcp%3A2003c157-d682-482f-909c-d39f8df01ee4%3Adelegate-task%3A0052-impl-r1` | — | — | [lead→sol](../handoffs/2026-11-10-0052-release-core-063--lead-to-sol.md) | 2026-11-10 |
 | 0053 | [external] crf-chords: upgrade to chordl core 0.6.3 / react 0.5.3 and adapt (SSR guitar placeholder, readiness waits, parser strictness) | proposed | human: hand to the crf-chords lead once 0052 publishes | — | | | | | | | [chordl→chords](../handoffs/2026-11-10-adhoc-chordl-upgrade--chordl-lead-to-chords-lead.md) | 2026-11-10 |
 | 0047 | [external] becreative: PDF readiness must wait for `data-chordl-state="ready"` (needed before publishing chordl-board with 0045-t2) | proposed | human: becreative's lead to schedule (rule in 0045-t2 return handoff, "Downstream becreative readiness"); hold chordl-board publish until it lands | — | | | | | [0045 spec](../specs/0045-load-on-demand.md) | | | 2026-11-10 |
@@ -78,6 +78,7 @@ Last health scan: 2026-11-09
 
 ## Log
 <!-- One line per status change, newest first: YYYY-MM-DD NNNN old→new — note -->
+- 2026-11-10 0054 dispatched→in-review — PR #121 @658f873: test reuse + 30s budgets in cards/core (optimisation alone still >5s); 3 loaded rounds pass; review r1 → opus
 - 2026-11-10 0052 proposed→dispatched — version bump + changelogs (no publish)
 - 2026-11-10 0050 in-review→merged→closed — #119 @67f95a1 (human approved); verify on main passes, 2966 tests
 - 2026-11-10 0050 changes-requested→in-review — r1 fixes @14efdf1, 2948 tests; review r2 → opus
