@@ -5,20 +5,24 @@
 > Waiting on: `child <taskId>` · `review <taskId>` · `ci` · `human: <why>` · `lead: <next action>`. Set it on every status change. A row needs the lead when it starts with `lead`, or when it's empty and Status is dispatched, in-review, changes-requested, ready, or merged. The lead's Stop hook won't let the lead end its turn while any row needs it.
 > Type: normal items have a spec and plan. Quick items have the title prefix `[quick]` (no spec or plan, a short handoff). PRs adopted by `orch-sweep` have the prefix `[pr]`.
 
-Next ID: 0048  (0001–0024 were used before the ledger existed; see orch/0024-* branches; 0027–0031, 0033–0037 also come from the crf-transcribe lead's ledger (/home/shaun/trans); 0037 merged as #105)
+Next ID: 0052  (0001–0024 were used before the ledger existed; see orch/0024-* branches; 0027–0031, 0033–0037 also come from the crf-transcribe lead's ledger (/home/shaun/trans); 0037 merged as #105)
 
 ## Active
 
 | K | Title | Status | Waiting on | Owner (provider/model) | Branch | PR | Worktree | T3 task/thread | Spec | Plan | Latest handoff | Updated |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0048 | [quick] Resolver: accept Δ7 / mΔ7 spellings (S17) | dispatched | lead: delegate | codex/gpt-6.1-sol | orch/0048-resolver-delta7 | | | | — | — | [lead→sol](../handoffs/2026-11-10-0048-resolver-delta7--lead-to-sol.md) | 2026-11-10 |
+| 0049 | [quick] CI: fail on high-severity production advisories (S15) | dispatched | lead: delegate | codex/gpt-6.1-sol | orch/0049-ci-audit | | | | — | — | [lead→sol](../handoffs/2026-11-10-0049-ci-audit--lead-to-sol.md) | 2026-11-10 |
+| 0050 | [quick] StaffNotation reports its own loading/ready/error state (S19) | dispatched | lead: delegate | codex/gpt-6.1-sol | orch/0050-staff-state-marker | | | | — | — | [lead→sol](../handoffs/2026-11-10-0050-staff-state-marker--lead-to-sol.md) | 2026-11-10 |
+| 0051 | [quick] Make the slowest board and react tests cheaper (S14) | dispatched | lead: delegate | codex/gpt-6.1-sol | orch/0051-faster-slow-tests | | | | — | — | [lead→sol](../handoffs/2026-11-10-0051-faster-slow-tests--lead-to-sol.md) | 2026-11-10 |
 | 0047 | [external] becreative: PDF readiness must wait for `data-chordl-state="ready"` (needed before publishing chordl-board with 0045-t2) | proposed | human: becreative's lead to schedule (rule in 0045-t2 return handoff, "Downstream becreative readiness"); hold chordl-board publish until it lands | — | | | | | [0045 spec](../specs/0045-load-on-demand.md) | | | 2026-11-10 |
-| 0043-t2 | Type-check tests: react, cards, board | ready | human: approve merge (109 code lines + @types/node devDependency) | codex/gpt-6.1-sol | orch/0043-t2-typecheck-tests | [#116](https://github.com/pepperhorn/chordl/pull/116) @ 5107153 (r1 approve) | /home/shaun/.t3/worktrees/chordl/t3-08ebcd6f | task `node:delegated-task:command%3Amcp%3A8171515d-9a8b-4268-a6b9-8eda267c872b%3Adelegate-task%3A0043-t2-impl-r1` | [spec](../specs/0043-typecheck-tests.md) | [plan](../plans/0043-typecheck-tests.md) | [sol→lead](../handoffs/2026-11-10-0043-t2-typecheck-tests--sol-to-lead.md) (on branch) | 2026-11-10 |
 | 0039 | Notation view: annotations to the right of the stave; scales/runs as beamed eighths | proposed | human: needs spec (3 defects: StaffNotationProps has no annotation props; scale/run branches of PianoChord skip display; mei-builder.ts:115,117 hard-code dur="1") | — | | | | | | | | 2026-11-09 |
 
 ## Done / closed
 
 | K | Title | PR | Merged | Notes |
 |---|---|---|---|---|
+| 0043-t2 | Type-check tests: react, cards, board | [#116](https://github.com/pepperhorn/chordl/pull/116) | 2026-11-10 @ 4911f61 | 59 test type errors fixed (react 1, cards 22, board 36), @types/node dev. Opus r1 approve; human approved merge. All 8 packages type-check tests in CI. Verify + lint:test on main: 2943. 0043 complete |
 | 0045-t2 | Load on demand: board — no idle Verovio prefetch, lazy guitar (inside react), loading/ready markers | [#114](https://github.com/pepperhorn/chordl/pull/114) | 2026-11-10 @ 745bd30 | No-interaction JS 3.18 MB→147 KB gzip (−95.4%), entry −47.1%. r0 blocked (cards test) → lead answers; Opus r1 changes-requested (notice-card marker, JSDoc) + lead adds (capture waits ≤15s, static panel import); r2 approve; human approved merge. Verify + lint:test + packed-board on main: 2943. Not published: 0047 holds |
 | 0043-t1 | Type-check tests: plumbing + voicings/core/listen/guitar/voicing | [#115](https://github.com/pepperhorn/chordl/pull/115) | 2026-11-10 @ fb1e85e | tsconfig.test.json (Bundler resolution, strict inherited), root + CI `lint:test`, @types/node (guitar). 8 type errors fixed. Opus r1 approve (planted errors fail in all 5); human approved merge. Verify + lint:test on main pass, 2929 |
 | 0046 | [quick] Parser: Ah/Eh interjections; trailing slash before a bass | [#113](https://github.com/pepperhorn/chordl/pull/113) | 2026-11-09 @ 382678d | r0 blocked on lead's wrong LH expectation (corrected); Opus r1 approve (sweep classification can't hide regressions). Auto-merged (32 code lines). Verify on main 2929 pass |
@@ -56,12 +60,12 @@ Next ID: 0048  (0001–0024 were used before the ledger existed; see orch/0024-*
 | S11 | risk | Remaining `alt` spellings drop silently: `C7 alt`, `C7(alt)`, `C7alt9`, `Calt7`; and `Calt7` resolves to C E Bb Db vs `C7alt` C E G# Bb D# | PR #106 review r1 (5821147423) | S | M | review 0032 r1 | accepted → 0038 |
 | S12 | risk | A core catalogue regression test also exceeds its default timeout under concurrent load | 0040 return handoff (orch/0040 @bc4ff4c) | S | M | 0040 follow-up | new |
 | S13 | risk | CHORD_RE has no word boundary before the root letter: "play Bb7 over D" parses as chord A (from "play") | PR #106 review r2 (5821202395); natural-language.ts:417 | S | M | review 0032 r2 | accepted → 0038 |
-| S14 | efficiency | Make the slowest board and react tests cheaper (react InteractiveInput.annotation-disabled 15.4s under load, PR #108 review 5821469568) instead of raising budgets again (slowest 23.4s of 30s under load) | PR #107 review r2 (5821405987) | M | M | review 0040 r2 | new |
-| S15 | risk | Add `pnpm audit --prod --audit-level=high` to CI so new advisories surface on publish, not at the next sweep | PR #109 review r1 (5821891495); ci.yml has no audit step | S | M | review 0042 r1 | new |
+| S14 | efficiency | Make the slowest board and react tests cheaper (react InteractiveInput.annotation-disabled 15.4s under load, PR #108 review 5821469568) instead of raising budgets again (slowest 23.4s of 30s under load) | PR #107 review r2 (5821405987) | M | M | review 0040 r2 | accepted → 0051 |
+| S15 | risk | Add `pnpm audit --prod --audit-level=high` to CI so new advisories surface on publish, not at the next sweep | PR #109 review r1 (5821891495); ci.yml has no audit step | S | M | review 0042 r1 | accepted → 0049 |
 | S16 | efficiency | Library-level first-load cut (r1 review confirms: Verovio 3 chunks requested within 1.5 s idle; guitar data/rendering ≈51% of entry; wav-export static smplr import): the idle Verovio prefetch downloads ~2.9 MB gzip (91% of no-interaction JS) on every visit, even piano-only; guitar data/SVGuitar and smplr are static imports in the entry. Product trade-off: instant notation vs lighter visits | packages/chordl-board/src/BoardEditor.tsx:757 `prefetchVerovioWhenIdle()`; 0044 return handoff @51f5523 | M | H | 0044 implementer | accepted → 0045 |
-| S17 | risk | Resolver accepts `CΔ` but rejects `CΔ7` (and `B♭`-style input relied on parser normalisation) — add Δ7 alias in resolveChord | 0038 r2 implementer question 2026-11-09; resolveChord("CΔ7") throws on main | S | M | 0038 r2 | new |
+| S17 | risk | Resolver accepts `CΔ` but rejects `CΔ7` (and `B♭`-style input relied on parser normalisation) — add Δ7 alias in resolveChord | 0038 r2 implementer question 2026-11-09; resolveChord("CΔ7") throws on main | S | M | 0038 r2 | accepted → 0048 |
 | S18 | efficiency | guitar and voicing `lint:test` don't run their data-generation step first (unlike `lint`), so it fails on a clean clone before a build; CI unaffected | PR #115 review r1 (5824799412) | S | L | review 0043-t1 r1 | new |
-| S19 | risk | StaffNotation should mark its own failure (`data-chordl-state="error"`) so consumers needn't infer failure from a missing SVG | PR #114 review r1 (5824873163) | S | M | review 0045-t2 r1 | new |
+| S19 | risk | StaffNotation should mark its own failure (`data-chordl-state="error"`) so consumers needn't infer failure from a missing SVG | PR #114 review r1 (5824873163) | S | M | review 0045-t2 r1 | accepted → 0050 |
 | S20 | efficiency | Drop the no-op `exact: true` option and its cast in a board test (getByRole ignores it) | packages/chordl-board/test/board-editor-instrument-words.test.tsx:54; PR #116 review r1 (5831960114) | S | L | review 0043-t2 r1 | new |
 | S21 | stack | Export `BoardCardSize` from chordl-board's public index (tests currently reach into src/types) — public API, human's call | PR #116 review r1 (5831960114) | S | L | review 0043-t2 r1 | new |
 
@@ -69,6 +73,8 @@ Last health scan: 2026-11-09
 
 ## Log
 <!-- One line per status change, newest first: YYYY-MM-DD NNNN old→new — note -->
+- 2026-11-10 human accepted S14, S15, S17, S19 → 0051, 0049, 0048, 0050 dispatched in parallel (disjoint files)
+- 2026-11-10 0043-t2 ready→merged→closed — #116 @4911f61 (human approved); verify on main passes, 2943 tests
 - 2026-11-10 0043-t2 in-review→ready — r1 (opus) approve @5107153; strict inherited, all tests covered, planted errors fail; dependency → human
 - 2026-11-10 0043-t2 dispatched→in-review — PR #116 @5107153; errors react 1→0, cards 22→0, board 36→0; 2943 tests; review r1 → opus
 - 2026-11-10 0043-t2 planned→dispatched

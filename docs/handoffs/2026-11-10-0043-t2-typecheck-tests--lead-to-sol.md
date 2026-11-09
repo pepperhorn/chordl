@@ -6,7 +6,7 @@
 - **Branch:** orch/0043-t2-typecheck-tests · **Worktree:** created by T3
 - **PR:** <url once opened>
 - **Base commit:** 745bd30 (0043-t1 #115 and 0045-t2 #114 both merged)
-- **Status:** open
+- **Status:** closed
 
 ## Goal
 Plan T2: give chordl-react, chordl-cards and chordl-board each a `tsconfig.test.json` and a `lint:test` script, following T1's pattern. Root `pnpm lint:test` then covers all eight packages. Fix the existing test type errors with type-only changes. That includes the test files 0045-t2 just added: `chordl-board/test/on-demand.test.tsx`, `chordl-react/test/GuitarChord.lazy.test.tsx`, and the capture/readiness tests.
