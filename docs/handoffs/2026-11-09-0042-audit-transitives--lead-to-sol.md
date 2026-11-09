@@ -6,7 +6,7 @@
 - **Branch:** orch/0042-audit-transitives · **Worktree:** created by T3
 - **PR:** <url once opened>
 - **Base commit:** 436e03e
-- **Status:** open
+- **Status:** closed
 
 ## Goal
 `pnpm audit --prod` reports 28 vulnerabilities (1 critical, 11 high). Fix the three groups below by moving the lockfile to patched versions that already sit inside the parents' declared ranges:

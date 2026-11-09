@@ -11,9 +11,8 @@ Next ID: 0045  (0001–0024 were used before the ledger existed; see orch/0024-*
 
 | K | Title | Status | Waiting on | Owner (provider/model) | Branch | PR | Worktree | T3 task/thread | Spec | Plan | Latest handoff | Updated |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 0042 | [quick] Patch vulnerable transitive dependencies (dompurify, fast-uri, image-size) | ready | human: approve merge (dependency change, §5a) | codex/gpt-6.1-sol | orch/0042-audit-transitives | [#109](https://github.com/pepperhorn/chordl/pull/109) @ cb9f54d (r1 approve) | /home/shaun/.t3/worktrees/chordl/t3-bf75a123 | task `node:delegated-task:command%3Amcp%3A8171515d-9a8b-4268-a6b9-8eda267c872b%3Adelegate-task%3A0042-impl-r1` | — | — | [sol→lead](../handoffs/2026-11-09-0042-audit-transitives--sol-to-lead.md) (on branch) | 2026-11-09 |
-| 0043 | Type-check test files in every package (tsconfig.test.json + lint:test in CI) | planned | review 0042-review-r1 + child 0038-impl-r1 (dispatch once both merge: shared lockfile and core test files) | — | orch/0043-typecheck-tests | | | | [spec](../specs/0043-typecheck-tests.md) | [plan](../plans/0043-typecheck-tests.md) | | 2026-11-09 |
-| 0044 | Deploy: brotli + precompressed assets | proposed | human: re-scope — brotli only, code-split the 1.12 MB bundle, or drop (re-measured 2026-11-09: nginx already gzips via Railpack, cold JS 2.1s not 13s; brotli ~25%, 305→231 KB) | — | | | | | | | | 2026-11-09 |
+| 0043 | Type-check test files in every package (tsconfig.test.json + lint:test in CI) | planned | child 0038-impl-r1-answers (0042 merged; dispatch when 0038 merges) (dispatch once both merge: shared lockfile and core test files) | — | orch/0043-typecheck-tests | | | | [spec](../specs/0043-typecheck-tests.md) | [plan](../plans/0043-typecheck-tests.md) | | 2026-11-09 |
+| 0044 | chordl.app: ship less JavaScript on first load (code-split) | dispatched | lead: delegate | codex/gpt-6.1-sol | orch/0044-site-code-split | | | | [spec](../specs/0044-site-code-split.md) | [plan](../plans/0044-site-code-split.md) | [lead→sol](../handoffs/2026-11-09-0044-site-code-split--lead-to-sol.md) | 2026-11-09 |
 | 0038 | Chord parser: only read a root from a standalone chord token (+ S11, S13) | dispatched | child 0038-impl-r1-answers | codex/gpt-6.1-sol | orch/0038-parser-strict-roots | [#110](https://github.com/pepperhorn/chordl/pull/110) @ 3255fb6 (r0, blocked) | created by T3 | task `node:delegated-task:command%3Amcp%3A8171515d-9a8b-4268-a6b9-8eda267c872b%3Adelegate-task%3A0038-impl-r1` | [spec](../specs/0038-parser-strict-roots.md) | [plan](../plans/0038-parser-strict-roots.md) | [lead answers](../handoffs/2026-11-09-0038-parser-strict-roots--lead-answers.md) | 2026-11-09 |
 | 0039 | Notation view: annotations to the right of the stave; scales/runs as beamed eighths | proposed | human: needs spec (3 defects: StaffNotationProps has no annotation props; scale/run branches of PianoChord skip display; mei-builder.ts:115,117 hard-code dur="1") | — | | | | | | | | 2026-11-09 |
 
@@ -21,6 +20,7 @@ Next ID: 0045  (0001–0024 were used before the ledger existed; see orch/0024-*
 
 | K | Title | PR | Merged | Notes |
 |---|---|---|---|---|
+| 0042 | [quick] Patch vulnerable transitive dependencies | [#109](https://github.com/pepperhorn/chordl/pull/109) | 2026-11-09 @ e86c52f | Lockfile only: dompurify 3.4.17, fast-uri 3.1.9, image-size 2.1.0; audit 28→0. Opus r1 approve; human approved merge. Verify + packed-board on main pass, 2819 tests |
 | 0041 | [quick] chordl-react tests: same timeout budget as board | [#108](https://github.com/pepperhorn/chordl/pull/108) | 2026-11-09 @ 1487fa7 | Codex impl; Opus r1 approve @cb3b9ee (9/9 three-way loaded runs, slowest 15.4s annotation-disabled). Auto-merged per §5a. Verify on main: 2819 pass |
 | 0040 | [quick] chordl-board tests: raise vitest timeout | [#107](https://github.com/pepperhorn/chordl/pull/107) | 2026-11-09 @ 6b13fc1 | Codex impl; Opus r1 changes-requested @bc4ff4c (15s too low, waitFor 1s flake), r2 approve @e9355c8 (9/9 three-way loaded runs, slowest 23.4s). Auto-merged per §5a (10 code lines). Verify on main: 2819 pass. Follow-up 0041 (react) |
 | 0032 | [quick] "C7alt" parses as "C7" in parseChordDescription | [#106](https://github.com/pepperhorn/chordl/pull/106) | 2026-11-09 @ ff0dc34 | Codex impl; Opus r1 changes-requested @5dd3b21 (C7ALT case, self-compare test), r2 approve @dfa0a4b. Verify on main: 2819 pass. Follow-ups S11, S13 |
@@ -58,6 +58,8 @@ Last health scan: 2026-11-09
 
 ## Log
 <!-- One line per status change, newest first: YYYY-MM-DD NNNN old→new — note -->
+- 2026-11-09 0044 proposed→dispatched — human chose code-splitting; spec/plan written (dev/ + vite.site.config.ts only, parallel with 0043)
+- 2026-11-09 0042 ready→merged→closed — #109 @e86c52f (human approved); verify + packed-board + audit clean on main
 - 2026-11-09 0042 in-review→ready — r1 (opus) approve @cb9f54d; dompurify 3.4.17, fast-uri 3.1.9, image-size 2.1.0; audit 0; dependency change → human
 - 2026-11-09 0038 blocked (r0, PR #110 @3255fb6) — lead answered: leftover-word removals accepted (AC2 amended); add omit/no and attached major/minor grammar; banana test authorised
 - 2026-11-09 0042 dispatched→in-review — PR #109 @cb9f54d, lockfile only (+13 -13), audit 28→0, no overrides; review r1 → opus
