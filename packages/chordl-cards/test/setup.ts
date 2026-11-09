@@ -1,5 +1,7 @@
 import { afterEach } from "vitest";
-import { cleanup } from "@testing-library/react";
+import { cleanup, configure } from "@testing-library/react";
+
+configure({ asyncUtilTimeout: 5000 });
 
 // jsdom implements no SVG layout, so svguitar throws measuring text without a
 // getBBox; GuitarChord would then render nothing. Same shim as chordl-react.

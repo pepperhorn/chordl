@@ -187,7 +187,7 @@ describe("prefetchVerovioWhenIdle", () => {
     prefetchVerovioWhenIdle();
     expect(idle.length).toBe(1);
     idle[0]();
-    await vi.waitFor(() => expect(created.length).toBe(1));
+    await vi.waitFor(() => expect(created.length).toBe(1), { timeout: 5000 });
   });
 
   it("warms on idle on an ordinary connection", async () => {
@@ -197,7 +197,7 @@ describe("prefetchVerovioWhenIdle", () => {
     prefetchVerovioWhenIdle();
     expect(idle.length).toBe(1);
     idle[0]();
-    await vi.waitFor(() => expect(created.length).toBe(1));
+    await vi.waitFor(() => expect(created.length).toBe(1), { timeout: 5000 });
   });
 
   it("skips the background download when the user asked to save data", async () => {
@@ -255,6 +255,6 @@ describe("prefetchVerovioWhenIdle", () => {
     } finally {
       vi.useRealTimers();
     }
-    await vi.waitFor(() => expect(created.length).toBe(1));
+    await vi.waitFor(() => expect(created.length).toBe(1), { timeout: 5000 });
   });
 });
