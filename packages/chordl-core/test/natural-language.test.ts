@@ -3,16 +3,19 @@ import { parseChordDescription, resolveChord } from "@pepperhorn/chordl-core";
 
 describe("parseChordDescription", () => {
   it.each([
-    ["C7alt", "C7alt"],
-    ["G7alt", "G7alt"],
-    ["Bb7alt", "Bb7alt"],
-    ["C7alt over E", "C7alt"],
-    ["C7alt with degrees", "C7alt"],
-    ["C7alt/E", "C7alt/E"],
-  ])("preserves the altered dominant in '%s'", (input, chordName) => {
+    ["C7alt", "C7alt", ["C", "E", "G#", "Bb", "D#"]],
+    ["G7alt", "G7alt", ["G", "B", "D#", "F", "A#"]],
+    ["Bb7alt", "Bb7alt", ["Bb", "D", "F#", "Ab", "C#"]],
+    ["C7alt over E", "C7alt", ["C", "E", "G#", "Bb", "D#"]],
+    ["C7alt with degrees", "C7alt", ["C", "E", "G#", "Bb", "D#"]],
+    ["C7alt/E", "C7alt/E", ["C", "E", "G#", "Bb", "D#"]],
+    ["C7ALT", "C7alt", ["C", "E", "G#", "Bb", "D#"]],
+    ["c7ALT", "C7alt", ["C", "E", "G#", "Bb", "D#"]],
+    ["C7Alt", "C7alt", ["C", "E", "G#", "Bb", "D#"]],
+  ] as const)("preserves the altered dominant in '%s'", (input, chordName, pitchClasses) => {
     const parsed = parseChordDescription(input);
     expect(parsed.chordName).toBe(chordName);
-    expect(resolveChord(parsed.chordName).notes).toEqual(resolveChord(chordName).notes);
+    expect(resolveChord(parsed.chordName).notes.slice().sort()).toEqual([...pitchClasses].sort());
     if (input === "C7alt over E") expect(parsed.bassNote).toBe("E");
     if (input === "C7alt with degrees") expect(parsed.noteNameMode).toBe("degree");
   });

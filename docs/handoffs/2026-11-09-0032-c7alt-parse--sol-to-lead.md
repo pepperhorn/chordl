@@ -5,7 +5,7 @@
 - **Ledger:** 0032 · **Spec:** none (quick) · **Plan:** none
 - **Branch:** orch/0032-c7alt-parse
 - **Worktree:** /home/shaun/.t3/worktrees/chordl/t3-ec8034e7
-- **PR:** draft against main, opened after this handoff is committed and pushed; URL in task completion.
+- **PR:** https://github.com/pepperhorn/chordl/pull/106 (draft against main)
 - **Base commit:** f94927f (dispatch); comparison base origin/main 4e9cca48da461a8a750ce054a2795f193829ebe7
 - **Implementation commit:** 7a7c9af4ff52e68a90c4618a3f6e4eb1623a72d9
 - **Status:** closed
@@ -73,3 +73,26 @@ Baseline parser comparison: {"base":"origin/main","inputs":104,"differences":[]}
 - **Out-of-scope issues found:** none requiring work for this task.
 - **Follow-ups:** other-family review and lead merge decision.
 - **For GBrain (lead to promote):** Natural-language chord matching must explicitly retain resolver-supported suffixes; a trailing word boundary on alt avoids swallowing prose prefixes.
+
+## Review r1 response
+
+- **Review:** [5821147423](https://github.com/pepperhorn/chordl/pull/106#pullrequestreview-5821147423), reviewed head 5dd3b21fddc5bd32484a209a3de8568fd1e36a9b.
+- **Outcome:** addressed the blocking casing finding and the resolved-notes assertion nit.
+- **Changes:** normalize the matched `alt` token to lowercase when assembling `chordName`. Added `C7ALT`, `c7ALT`, and `C7Alt` to the regression table, all expecting `C7alt`. Replaced the self-comparison through `resolveChord` with literal expected pitch classes for every table row (including G/Bb roots and slash bass). Sort copies of both lists to compare pitch-class content independently of bass ordering.
+- **Failing-test-first evidence:** with only the test changes, the natural-language suite reported 3 failed / 191 passed; each new casing variant failed the chord-name assertion. After the normalization fix: 194 passed.
+- **Verification:** full required command exited 0:
+```bash
+pnpm build && pnpm lint && pnpm test:run && pnpm --filter @pepperhorn/chordl-react build:site
+```
+```text
+pnpm build: PASS
+pnpm lint: PASS
+pnpm test:run: PASS (155 files, 2819 tests)
+Per-package tests, command order: 176 / 588 / 13 / 337 / 161 / 385 / 822 / 337
+pnpm --filter @pepperhorn/chordl-react build:site: PASS (built in 6.03s)
+Targeted natural-language suite: 1 file passed, 194 tests passed
+```
+- **Warnings:** Vite chunk-size and jsdom navigation warnings; no failing suites or timeout reruns.
+- **Scope audit:** only the two owned code/test files and this return handoff changed during r1; `git diff --check` passed.
+- **Deferred by owner:** spaced `C7 alt`, `C7(alt)`, `C7alt9`, `Calt7`, and the Calt7/C7alt resolver mismatch. Existing clean failure of `Calt`/`Cmaj7alt` accepted. No grammar expansion or resolver changes made.
+- **Open questions:** none; ready for re-review. GBrain was searched again, with no relevant additional parser context found; no implementer write-back.

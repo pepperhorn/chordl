@@ -980,6 +980,7 @@ export function parseChordDescription(input: string): ParsedChordRequest {
       const afterRoot = chordMatch[0]
         .slice(chordMatch[1].length)
         .trim()
+        .replace(/alt\b/i, "alt")
         .replace(/\/([A-Ga-g])/, (_m, letter: string) => `/${letter.toUpperCase()}`);
       result.chordName = root + afterRoot;
     }
