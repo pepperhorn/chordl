@@ -5,13 +5,13 @@
 > Waiting on: `child <taskId>` · `review <taskId>` · `ci` · `human: <why>` · `lead: <next action>`. Set it on every status change. A row needs the lead when it starts with `lead`, or when it's empty and Status is dispatched, in-review, changes-requested, ready, or merged. The lead's Stop hook won't let the lead end its turn while any row needs it.
 > Type: normal items have a spec and plan. Quick items have the title prefix `[quick]` (no spec or plan, a short handoff). PRs adopted by `orch-sweep` have the prefix `[pr]`.
 
-Next ID: 0055  (0001–0024 were used before the ledger existed; see orch/0024-* branches; 0027–0031, 0033–0037 also come from the crf-transcribe lead's ledger (/home/shaun/trans); 0037 merged as #105)
+Next ID: 0056  (0001–0024 were used before the ledger existed; see orch/0024-* branches; 0027–0031, 0033–0037 also come from the crf-transcribe lead's ledger (/home/shaun/trans); 0037 merged as #105)
 
 ## Active
 
 | K | Title | Status | Waiting on | Owner (provider/model) | Branch | PR | Worktree | T3 task/thread | Spec | Plan | Latest handoff | Updated |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 0054 | [quick] cards and core tests: timeouts under load (S12 + 0051 review) | in-review | review 0054-review-r1 (lead to add: cards asyncUtilTimeout 5000 in test/setup.ts, matching board/react) | codex/gpt-6.1-sol | orch/0054-cards-core-test-timeout | [#121](https://github.com/pepperhorn/chordl/pull/121) @ 658f873 | /home/shaun/.t3/worktrees/chordl/t3-92d4e2ac | task `node:delegated-task:command%3Amcp%3A2003c157-d682-482f-909c-d39f8df01ee4%3Adelegate-task%3A0054-impl-r1` | — | — | [sol→lead](../handoffs/2026-11-10-0054-cards-core-test-timeout--sol-to-lead.md) (on branch) | 2026-11-10 |
+| 0055 | [quick] Close remaining test-budget gaps (cards waitFor 1s, guitar 5s default, react legacy-level waitFor) | dispatched | lead: delegate | codex/gpt-6.1-sol | orch/0055-test-budget-gaps | | | | — | — | [lead→sol](../handoffs/2026-11-10-0055-test-budget-gaps--lead-to-sol.md) | 2026-11-10 |
 | 0052 | [quick] Release prep: chordl-core 0.6.3 (0032/0038/0046/0048) + react 0.5.3 notes; then publish core 0.6.3 → react 0.5.3 | changes-requested | child 0052-impl-r2 (release notes: add #112/#114 to react 0.5.3) | codex/gpt-6.1-sol | orch/0052-release-core-063 | [#122](https://github.com/pepperhorn/chordl/pull/122) @ caa1a8c | /home/shaun/.t3/worktrees/chordl/t3-59fedfc0 | task `node:delegated-task:command%3Amcp%3A2003c157-d682-482f-909c-d39f8df01ee4%3Adelegate-task%3A0052-impl-r1` | — | — | [sol→lead](../handoffs/2026-11-10-0052-release-core-063--sol-to-lead.md) (on branch) | 2026-11-10 |
 | 0053 | [external] crf-chords: upgrade to chordl core 0.6.3 / react 0.5.3 and adapt (SSR guitar placeholder, readiness waits, parser strictness) | proposed | human: hand to the crf-chords lead once 0052 publishes | — | | | | | | | [chordl→chords](../handoffs/2026-11-10-adhoc-chordl-upgrade--chordl-lead-to-chords-lead.md) | 2026-11-10 |
 | 0047 | [external] becreative: PDF readiness must wait for `data-chordl-state="ready"` (needed before publishing chordl-board with 0045-t2) | proposed | human: becreative's lead to schedule (rule in 0045-t2 return handoff, "Downstream becreative readiness"); hold chordl-board publish until it lands | — | | | | | [0045 spec](../specs/0045-load-on-demand.md) | | | 2026-11-10 |
@@ -21,6 +21,7 @@ Next ID: 0055  (0001–0024 were used before the ledger existed; see orch/0024-*
 
 | K | Title | PR | Merged | Notes |
 |---|---|---|---|---|
+| 0054 | [quick] cards and core tests: timeouts under load (S12) | [#121](https://github.com/pepperhorn/chordl/pull/121) | 2026-11-10 @ 4438c76 | Test-work reuse + 30s budgets in cards/core (new core vitest.config.ts; same 16 files / 712 tests). Opus r1 approve (mutations fail). Auto-merged (48 lines). Verify on main 2966 at load ~37. Follow-up 0055 |
 | 0050 | [quick] StaffNotation reports its own loading/ready/error state (S19) | [#119](https://github.com/pepperhorn/chordl/pull/119) | 2026-11-10 @ 67f95a1 | Each .bc-staff carries data-chordl-state; board card aggregates. Opus r1 changes-requested (stale error during retry; tautological test), r2 approve; human approved merge. Verify + packed-board on main: 2966 |
 | 0051 | [quick] Make the slowest board and react tests cheaper (S14) | [#120](https://github.com/pepperhorn/chordl/pull/120) | 2026-11-10 @ 80ec59c | Loaded max board 23.4s→≤6.1s, react 15.4s→≤8.0s; Verovio stub in two control suites, lazy-test import settlement. Opus r1 approve (break tests confirmed). Auto-merged (43 test lines). Verify on main 2961. Follow-up 0054 (cards/core) |
 | 0048 | [quick] Resolver: accept Δ7 / mΔ7 spellings (S17) | [#118](https://github.com/pepperhorn/chordl/pull/118) | 2026-11-10 @ 2b6f000 | CΔ7/CmΔ7/C∆7 resolve; CMΔ7 still throws; parser Δ7 exception removed; resolver sweep generates the new spellings. Opus r1 changes-requested (CMΔ7 → mMaj7), r2 approve; human approved merge. Verify + sweep on main: 2961 |
@@ -78,6 +79,8 @@ Last health scan: 2026-11-09
 
 ## Log
 <!-- One line per status change, newest first: YYYY-MM-DD NNNN old→new — note -->
+- 2026-11-10 0055 →dispatched (quick) — cards asyncUtilTimeout, guitar budget, react legacy-level 1s waitFor
+- 2026-11-10 0054 in-review→merged→closed — #121 @4438c76, auto-merged (§5a); verify on main passes, 2966 tests
 - 2026-11-10 0052 in-review→changes-requested — r1 (opus) approve @caa1a8c with minor: react 0.5.3 notes miss #112/#114 (0.5.2 never published); lead sent back for the notes before release
 - 2026-11-10 0052 dispatched→in-review — PR #122 @caa1a8c (version + changelogs only); local test:run hit two pre-existing timing failures under load ~40 (core catalogue 5s → 0054; cards ChordCardPlayer waitFor 1s → add to 0054); review r1 → opus
 - 2026-11-10 0054 dispatched→in-review — PR #121 @658f873: test reuse + 30s budgets in cards/core (optimisation alone still >5s); 3 loaded rounds pass; review r1 → opus

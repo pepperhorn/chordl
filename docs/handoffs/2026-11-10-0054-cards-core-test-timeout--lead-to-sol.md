@@ -2,7 +2,7 @@
 
 - **Date:** 2026-11-10 · **Type:** quick · **Ledger:** 0054 (S12, plus the 0051 review finding)
 - **Branch:** orch/0054-cards-core-test-timeout · **Worktree:** created by T3 · **Base commit:** 80ec59c
-- **Status:** open
+- **Status:** closed
 
 ## Goal
 Board and react got explicit test budgets (#107, #108) and faster slow tests (#120). Cards and core still run on vitest's 5s default and time out under load:
