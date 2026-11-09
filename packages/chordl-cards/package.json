@@ -36,7 +36,8 @@
     "check:dist": "node scripts/check-dist.mjs",
     "lint": "tsc --noEmit",
     "test": "vitest",
-    "test:run": "vitest run"
+    "test:run": "vitest run",
+    "lint:test": "tsc -p tsconfig.test.json"
   },
   "peerDependencies": {
     "react": ">=18.0.0",
@@ -49,6 +50,7 @@
   },
   "devDependencies": {
     "@testing-library/react": "^16.1.0",
+    "@types/node": "^22.19.17",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^4.3.0",

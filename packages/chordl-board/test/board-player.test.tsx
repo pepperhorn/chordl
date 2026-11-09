@@ -15,8 +15,8 @@ import type { BoardItem } from "../src/types";
  */
 const cancel = vi.fn();
 const controller = { events: [], completion: Promise.resolve(), cancel };
-const startPlayback = vi.fn(async () => controller);
-const preloadInstruments = vi.fn(async () => {});
+const startPlayback = vi.fn<typeof import("@pepperhorn/chordl-react").startPlayback>(async () => controller);
+const preloadInstruments = vi.fn<typeof import("@pepperhorn/chordl-react").preloadInstruments>(async () => {});
 
 /** What each card was handed, in render order. See the last two tests. */
 const lit: Array<number[] | undefined> = [];

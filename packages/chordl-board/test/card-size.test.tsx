@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, fireEvent } from "@testing-library/react";
 import { ChordBoard, BOARD_CARD_SIZES } from "../src";
-import type { BoardItem, BoardCardSize } from "../src";
+import type { BoardItem, BoardCardSize } from "../src/types";
 
 const card = (id: string, size?: BoardCardSize, breakAfter = false): BoardItem =>
   ({ id, nl: "C", size, breakAfter });

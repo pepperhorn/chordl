@@ -20,7 +20,7 @@ describe("resolveCardPlayback", () => {
   it("resolves a legacy card from its chord text", () => {
     // Cmaj7 at the staff's own octaves — the same pitches buildMei engraves,
     // which is root position from middle C.
-    expect(resolveCardPlayback(chord({})).midi).toEqual([60, 64, 67, 71]);
+    expect(resolveCardPlayback(chord({}))!.midi).toEqual([60, 64, 67, 71]);
   });
 
   it("keeps a rotation the chord text asks for", () => {

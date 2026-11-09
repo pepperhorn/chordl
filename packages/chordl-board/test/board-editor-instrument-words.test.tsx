@@ -51,7 +51,7 @@ describe("BoardEditor instrument and level input words", () => {
     enter("uke Am beginner");
     await waitFor(() => expect(selectedInstrument()).toBe("Ukulele"));
     fireEvent.click(level("Established"));
-    fireEvent.click(within(container.querySelector('.bc-guitar-instrument-toggle') as HTMLElement).getByRole("button", { name: "Guitar", exact: true }));
+    fireEvent.click(within(container.querySelector('.bc-guitar-instrument-toggle') as HTMLElement).getByRole("button", { name: "Guitar", exact: true } as { name: string; exact: boolean }));
     enter("uke Dm beginner");
     expect(level("Established").checked).toBe(true);
     expect(selectedInstrument()).toBe("Guitar");
@@ -91,7 +91,7 @@ describe("BoardEditor instrument and level input words", () => {
     await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
     const unchanged = { nl: item.nl, display: item.display, instrument: item.instrument, level: item.level };
     for (const state of saves) expect(state.items[0]).toMatchObject(unchanged);
-    expect((await storage.load())?.items[0]).toMatchObject(unchanged);
+    expect((await storage.load() as BoardState | null)?.items[0]).toMatchObject(unchanged);
     enter("uke Dm beginner");
     expect(level("Established").checked).toBe(true);
     expect(display()).toContain(savedDisplay === "guitar" ? "Guitar" : "Diagram");

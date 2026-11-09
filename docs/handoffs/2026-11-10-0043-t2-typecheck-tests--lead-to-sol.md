@@ -38,3 +38,4 @@ None.
 
 ---
 ## Receiver ack
+I will add strict, no-emit Bundler test configs and lint:test scripts for react, cards and board, fix test typing without changing runtime behaviour or assertions, and prove inclusion and planted-error detection in all three. I will preserve src/build configs, other packages and the ledger, measure before/after diagnostics, run the full required verification (baseline 2,943 tests), and return a committed handoff plus draft PR. Base 745bd30 is an ancestor of this clean worktree at 5eb225e. No open questions. GBrain lookup found no task-specific guidance; repository docs govern.
