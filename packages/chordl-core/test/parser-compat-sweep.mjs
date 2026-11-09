@@ -58,7 +58,8 @@ inputs.push(...edges.keys());
 const diffs = []; const unexpected = []; let same = 0;
 let noteGroupInterpretations = 0;
 const pcs = notes => notes.map(Note.chroma).sort((a,b)=>a-b).join(',');
-const english = /^(?:do|go|be|add|bad|dad|cab|face|bed)$/i;
+// 0046: bare Ah/Eh are English interjections, even though the resolver accepts them.
+const english = /^(?:do|go|be|add|bad|dad|cab|face|bed|ah|eh)$/i;
 const safe = (f,x)=>{ try { return f(x) } catch(e) { return {THROW:String(e.message)} } };
 for (const x of new Set(inputs)) {
   const o = safe(parse.old,x), n = safe(parse.new,x);
@@ -87,9 +88,17 @@ for (const x of new Set(inputs)) {
   if (JSON.stringify(modifiers(safe(parse.old,normalized))) !== JSON.stringify(modifiers(n))) unexpected.push({x, reason:'modifier changed', old:o, parsed:n});
   if (JSON.stringify(o)===JSON.stringify(n)) { same++; continue; }
   const keys = [...new Set([...Object.keys(o),...Object.keys(n)])].filter(k=>JSON.stringify(o[k])!==JSON.stringify(n[k]));
-  diffs.push({x, keys, old:Object.fromEntries(keys.map(k=>[k,o[k]])), new:Object.fromEntries(keys.map(k=>[k,n[k]]))});
+  // 0046: classify only the approved chordName changes; modifier checks above
+  // still require the extracted hand-note groups to match the baseline.
+  let expectedChange;
+  if (keys.length === 1 && keys[0] === 'chordName') {
+    if (/^(?:Ah|Eh)$/.test(o.chordName) && n.chordName === '') expectedChange = 'interjection';
+    else if (symbol && x === `${symbol} in the left hand` && /\/[A-G][#b]?$/.test(symbol)
+      && n.chordName === symbol.replace(/\/[A-G][#b]?$/, '') && n.notesGroups) expectedChange = 'trailingSlashHand';
+  }
+  diffs.push({x, keys, ...(expectedChange ? {expectedChange} : {}), old:Object.fromEntries(keys.map(k=>[k,o[k]])), new:Object.fromEntries(keys.map(k=>[k,n[k]]))});
 }
-const summary = {base,baseHead,noteGroupInterpretations,symbols:syms.length,slash:slash.length,inputs:new Set(inputs).size,same,differences:diffs.length,unexpected:unexpected.length};
+const summary = {base,baseHead,noteGroupInterpretations,symbols:syms.length,slash:slash.length,inputs:new Set(inputs).size,same,differences:diffs.length,expectedChanges:{interjection:diffs.filter(d=>d.expectedChange==='interjection').length,trailingSlashHand:diffs.filter(d=>d.expectedChange==='trailingSlashHand').length},unexpected:unexpected.length};
 const report = path.join(out,'diffs.json');
 fs.writeFileSync(report, JSON.stringify({summary,diffs,unexpected},null,2));
 console.log(JSON.stringify({...summary,report},null,2));

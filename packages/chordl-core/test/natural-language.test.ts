@@ -37,6 +37,19 @@ describe("parseChordDescription", () => {
   });
 
   it.each([
+    ["Ah, play C7", "C7"], ["Eh, play C7", "C7"],
+    ["Ah", ""], ["Eh?", ""], ["Ah7", "Ah7"], ["Ab7", "Ab7"],
+    ["Cmi7/E", "Cmi7/E"], ["Cmi7/E in the left hand", "Cmi7"],
+    ["CΔ7/G", "CΔ7/G"],
+  ])("handles interjections and fallback slash bass in '%s'", (input, chordName) => {
+    const parsed = parseChordDescription(input);
+    expect(parsed.chordName).toBe(chordName);
+    if (input === "Cmi7/E in the left hand") {
+      expect(parsed.notesGroups).toEqual([{ notes: ["E"], hand: "lh" }]);
+    }
+  });
+
+  it.each([
     ["C7omit3", "C7omit3"], ["Amajor", "Amaj"], ["Aminor", "Amin"],
     ["Cmajor7", "Cmaj7"], ["D7no3", "D7no3"], ["C69omit3", "C69omit3"],
     ["Cmaj7omit5", "Cmaj7omit5"], ["Cmaj7no5", "Cmaj7no5"],
