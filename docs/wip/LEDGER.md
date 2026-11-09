@@ -11,9 +11,9 @@ Next ID: 0045  (0001–0024 were used before the ledger existed; see orch/0024-*
 
 | K | Title | Status | Waiting on | Owner (provider/model) | Branch | PR | Worktree | T3 task/thread | Spec | Plan | Latest handoff | Updated |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 0043 | Type-check test files in every package (tsconfig.test.json + lint:test in CI) | planned | child 0038-impl-r1-answers (0042 merged; dispatch when 0038 merges) (dispatch once both merge: shared lockfile and core test files) | — | orch/0043-typecheck-tests | | | | [spec](../specs/0043-typecheck-tests.md) | [plan](../plans/0043-typecheck-tests.md) | | 2026-11-09 |
+| 0043 | Type-check test files in every package (tsconfig.test.json + lint:test in CI) | planned | review 0038-review-r1 (0042 merged; dispatch when 0038 merges) (dispatch once both merge: shared lockfile and core test files) | — | orch/0043-typecheck-tests | | | | [spec](../specs/0043-typecheck-tests.md) | [plan](../plans/0043-typecheck-tests.md) | | 2026-11-09 |
 | 0044 | chordl.app: ship less JavaScript on first load (code-split) | dispatched | child 0044-impl-r1 | codex/gpt-6.1-sol | orch/0044-site-code-split | | created by T3 | task `node:delegated-task:command%3Amcp%3A8171515d-9a8b-4268-a6b9-8eda267c872b%3Adelegate-task%3A0044-impl-r1` | [spec](../specs/0044-site-code-split.md) | [plan](../plans/0044-site-code-split.md) | [lead→sol](../handoffs/2026-11-09-0044-site-code-split--lead-to-sol.md) | 2026-11-09 |
-| 0038 | Chord parser: only read a root from a standalone chord token (+ S11, S13) | dispatched | child 0038-impl-r1-answers | codex/gpt-6.1-sol | orch/0038-parser-strict-roots | [#110](https://github.com/pepperhorn/chordl/pull/110) @ 3255fb6 (r0, blocked) | created by T3 | task `node:delegated-task:command%3Amcp%3A8171515d-9a8b-4268-a6b9-8eda267c872b%3Adelegate-task%3A0038-impl-r1` | [spec](../specs/0038-parser-strict-roots.md) | [plan](../plans/0038-parser-strict-roots.md) | [lead answers](../handoffs/2026-11-09-0038-parser-strict-roots--lead-answers.md) | 2026-11-09 |
+| 0038 | Chord parser: only read a root from a standalone chord token (+ S11, S13) | in-review | review 0038-review-r1 (claude-opus) | codex/gpt-6.1-sol | orch/0038-parser-strict-roots | [#110](https://github.com/pepperhorn/chordl/pull/110) @ 12c80e5 | /home/shaun/.t3/worktrees/chordl/t3-102f6052 | task `node:delegated-task:command%3Amcp%3A8171515d-9a8b-4268-a6b9-8eda267c872b%3Adelegate-task%3A0038-impl-r1` | [spec](../specs/0038-parser-strict-roots.md) | [plan](../plans/0038-parser-strict-roots.md) | [sol→lead](../handoffs/2026-11-09-0038-parser-strict-roots--sol-to-lead.md) (on branch) | 2026-11-09 |
 | 0039 | Notation view: annotations to the right of the stave; scales/runs as beamed eighths | proposed | human: needs spec (3 defects: StaffNotationProps has no annotation props; scale/run branches of PianoChord skip display; mei-builder.ts:115,117 hard-code dur="1") | — | | | | | | | | 2026-11-09 |
 
 ## Done / closed
@@ -58,6 +58,7 @@ Last health scan: 2026-11-09
 
 ## Log
 <!-- One line per status change, newest first: YYYY-MM-DD NNNN old→new — note -->
+- 2026-11-09 0038 dispatched→in-review — PR #110 @12c80e5 after lead answers; 2864 tests pass; review r1 → opus with a broad old-vs-new parse probe
 - 2026-11-09 0044 proposed→dispatched — human chose code-splitting; spec/plan written (dev/ + vite.site.config.ts only, parallel with 0043)
 - 2026-11-09 0042 ready→merged→closed — #109 @e86c52f (human approved); verify + packed-board + audit clean on main
 - 2026-11-09 0042 in-review→ready — r1 (opus) approve @cb9f54d; dompurify 3.4.17, fast-uri 3.1.9, image-size 2.1.0; audit 0; dependency change → human
