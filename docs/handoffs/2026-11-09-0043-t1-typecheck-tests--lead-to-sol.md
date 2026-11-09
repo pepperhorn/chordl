@@ -6,7 +6,7 @@
 - **Branch:** orch/0043-t1-typecheck-tests · **Worktree:** created by T3
 - **PR:** <url once opened>
 - **Base commit:** 382678d
-- **Status:** open
+- **Status:** closed
 
 ## Goal
 Plan T1. Add a `tsconfig.test.json` and a `lint:test` script to chordl-voicings, chordl-core, chordl-listen, chordl-guitar and chordl-voicing. Add a root `lint:test` that runs every package defining one, plus a CI step that runs it after Lint. Fix those packages' existing test type errors with type-only changes. T2 will add react, cards and board later.

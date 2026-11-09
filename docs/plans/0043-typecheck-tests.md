@@ -21,7 +21,7 @@ Two tasks, split so that T1 can run while 0045-t2 (#114) still owns board/react/
 - **Route:** implement (default)
 - **Owns:** the same kinds of files for `chordl-react`, `chordl-cards` and `chordl-board`
 - **Acceptance:** AC1–AC4 for all eight packages
-- **Notes:** board's tsconfig uses `moduleResolution: bundler` deliberately (see the comment in the file); keep it.
+- **Notes:** count errors under the test config (Bundler); the spec's NodeNext counts for board/cards (50/22) include unresolved-import artefacts (0043-t1 review r1). Board's tsconfig uses `moduleResolution: bundler` deliberately (see the comment in the file); keep it.
 
 ## Merge order
 T1 → T2
