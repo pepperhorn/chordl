@@ -57,12 +57,11 @@ describe("ChordQualityPicker", () => {
     }
   });
 
-  it("tracks the parser rather than second-guessing it", () => {
-    // "banana" parses to a chord name of "B", and the app renders B major for
-    // it. The strip follows that: it offers shortcuts for whatever chord is on
-    // screen, so it can never disagree with the keyboard beside it.
+  it("follows the parser by hiding the strip for rejected nonsense", () => {
+    // The parser rejects "banana" because it contains no standalone chord token,
+    // so the strip has no chord to offer shortcuts for.
     const { container } = render(<ChordQualityPicker input="banana" onPick={() => {}} />);
-    expect(strip(container)).toBeTruthy();
+    expect(strip(container)).toBeNull();
   });
 
   it("rewrites the input to the root plus the chosen quality", () => {

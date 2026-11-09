@@ -422,7 +422,7 @@ const QUALITY_WORDS: Record<string, string> = {
 // `\/[0-9]+` stays in the quality group so "6/9"-style suffixes (slash
 // followed by digits, not a bass letter) aren't mistaken for a slash bass.
 const CHORD_RE =
-  /(?<![\p{L}\p{N}_#\/])([A-Ga-g][#b]?)\s*(maj|min|m|aug|dim|sus|add|dom|alt7\b|alt\b|\s+alt\b|\(alt\)|M|°|ø|\/[0-9]+|[0-9#b]+|\((?:[#b](?:5|9|11|13)|add(?:9|11|13|b9|#9|b13|#11))(?:,(?:[#b](?:5|9|11|13)|add(?:9|11|13|b9|#9|b13|#11)))*\))*(\/[A-Ga-g][#b]?)?(?![\p{L}\p{N}_#]|\/[\p{L}\p{N}])/iu;
+  /(?<![\p{L}\p{N}_#\/])([A-Ga-g][#b]?)\s*(major|minor|maj|min|m|aug|dim|sus|add|dom|omit\d+|no\d+|alt7\b|alt\b|\s+alt\b|\(alt\)|M|°|ø|\/[0-9]+|[0-9#b]+|\((?:[#b](?:5|9|11|13)|add(?:9|11|13|b9|#9|b13|#11))(?:,(?:[#b](?:5|9|11|13)|add(?:9|11|13|b9|#9|b13|#11)))*\))*(\/[A-Ga-g][#b]?)?(?![\p{L}\p{N}_#]|\/[\p{L}\p{N}])/iu;
 
 function capitalizeNote(note: string): string {
   return note.charAt(0).toUpperCase() + note.slice(1);
@@ -988,6 +988,9 @@ export function parseChordDescription(input: string): ParsedChordRequest {
         .trim()
         .replace(/^7(?:\s+alt|\(alt\))|^alt7/i, "7alt")
         .replace(/alt\b/i, "alt")
+        .replace(/major/gi, "maj")
+        .replace(/minor/gi, "min")
+        .replace(/(?:omit|no)(?=\d)/gi, token => token.toLowerCase())
         .replace(/\/([A-Ga-g])/, (_m, letter: string) => `/${letter.toUpperCase()}`);
       result.chordName = root + afterRoot;
     }

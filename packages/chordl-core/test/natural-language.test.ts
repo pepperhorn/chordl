@@ -3,6 +3,36 @@ import { parseChordDescription, resolveChord } from "@pepperhorn/chordl-core";
 
 describe("parseChordDescription", () => {
   it.each([
+    ["C7omit3", "C7omit3"], ["Amajor", "Amaj"], ["Aminor", "Amin"],
+    ["Cmajor7", "Cmaj7"], ["D7no3", "D7no3"], ["C69omit3", "C69omit3"],
+    ["Cmaj7omit5", "Cmaj7omit5"], ["Cmaj7no5", "Cmaj7no5"],
+    ["C69no3no5", "C69no3no5"], ["c7OMIT3", "C7omit3"],
+    ["aMAJOR", "Amaj"], ["aMINOR", "Amin"], ["c69NO3no5", "C69no3no5"],
+    ["C7omit3/G", "C7omit3/G"], ["C7omit", ""], ["C7nope", ""],
+  ])("retains the full supported grammar in '%s'", (input, chordName) => {
+    expect(parseChordDescription(input).chordName).toBe(chordName);
+  });
+
+  it.each([
+    ["notes C E G in bottom hand", [{ notes: ["C", "E", "G"], hand: "lh" }]],
+    ["with notes C E G in the bass clef", [{ notes: ["C", "E", "G"], hand: "lh", clef: "bass" }]],
+    ...[
+      "notes C E G in the bass clef and notes B D F in the treble clef",
+      "with notes C E G in bass clef with notes B D F in treble clef",
+      "notes C E G in the bass clef and notes B D F in the treble clef with midi note names",
+    ].map(input => [input, [
+      { notes: ["C", "E", "G"], hand: "lh", clef: "bass" },
+      { notes: ["B", "D", "F"], hand: "rh", clef: "treble" },
+    ]] as const),
+  ] as const)("preserves note groups without inventing a chord in '%s'", (input, groups) => {
+    const parsed = parseChordDescription(input);
+    expect(parsed.chordName).toBe("");
+    expect(parsed.notesGroups).toEqual(groups);
+    expect(parsed.bassNote).toBe("G");
+    if (input.includes("midi")) expect(parsed.noteNameMode).toBe("midi");
+  });
+
+  it.each([
     ["@@@ not a chord @@@", ""], ["Zbq9", ""], ["hello world", ""],
     ["play Bb7 over D", "Bb7"], ["C7 alt", "C7alt"], ["C7(alt)", "C7alt"],
     ["C7alt9", ""], ["Calt7", "C7alt"],
