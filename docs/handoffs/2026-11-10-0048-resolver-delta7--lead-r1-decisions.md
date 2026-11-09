@@ -2,7 +2,7 @@
 
 - **Date:** 2026-11-10 · **Type:** dispatch (review decisions) · **Ledger:** 0048
 - **PR:** https://github.com/pepperhorn/chordl/pull/118 (head 200e264) · **Review:** https://github.com/pepperhorn/chordl/pull/118#pullrequestreview-5832235935
-- **Status:** open
+- **Status:** closed
 
 ## In scope
 1. **Blocking: `CMΔ7`.** Don't rewrite `Δ7` when it follows `M`. Use the reviewer's `/(?<!M)Δ7/g` or an equivalent. Add a test that `CMΔ7` throws, as it did on main. Also test `C∆7` (U+2206) with the same `M` guard.

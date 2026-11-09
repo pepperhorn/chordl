@@ -2,7 +2,7 @@
 
 - **Date:** 2026-11-10 · **Type:** quick · **Ledger:** 0048 (suggestion S17)
 - **Branch:** orch/0048-resolver-delta7 · **Worktree:** created by T3 · **Base commit:** 4911f61
-- **Status:** open
+- **Status:** closed
 
 ## Goal
 `resolveChord` accepts `CΔ` (maj7) and `CmΔ` (minor/major 7th), but throws on `CΔ7`, `CmΔ7` and `C∆7`. The last one uses U+2206 INCREMENT, a common look-alike of Δ (U+0394). Measured on main @ 4911f61. These are standard jazz spellings, so make them resolve: `Δ7` → maj7, `mΔ7` → mMaj7, with `∆` treated as `Δ`. Keep `Δ9` and the other existing Δ forms unchanged. Then remove the parser's temporary exception for Δ7 at `packages/chordl-core/src/parser/natural-language.ts` ~449–451, added in 0038. It exists only because the resolver rejected Δ7.
