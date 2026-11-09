@@ -1,12 +1,30 @@
 import { it, expect, vi } from "vitest";
-import { fireEvent, render, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, waitFor } from "@testing-library/react";
 
 const warm = vi.hoisted(() => ({ now: vi.fn(), idle: vi.fn() }));
-vi.mock("@pepperhorn/chordl-react", async () => ({
-  ...await vi.importActual("@pepperhorn/chordl-react"),
-  prefetchVerovio: warm.now,
-  prefetchVerovioWhenIdle: warm.idle,
-}));
+const engraving = vi.hoisted(() => ({ finish: null as ((count: number) => void) | null }));
+vi.mock("@pepperhorn/chordl-react", async () => {
+  const actual = await vi.importActual<typeof import("@pepperhorn/chordl-react")>("@pepperhorn/chordl-react");
+  const { useState } = await import("react");
+  // The readiness contract is DOM-based. Control each staff's completion so
+  // this test covers partial engraving without downloading/initialising WASM.
+  function Staffs() {
+    const [completed, setCompleted] = useState(0);
+    engraving.finish = setCompleted;
+    return <>{[0, 1].map(index => <svg className="bc-staff" key={index}>
+      {index < completed
+        ? <g className="bc-staff__engraving"><svg><path d="M0 0 L1 1" /></svg></g>
+        : <g className="bc-staff__loading" role="status" />}
+    </svg>)}</>;
+  }
+  return {
+    ...actual,
+    prefetchVerovio: warm.now,
+    prefetchVerovioWhenIdle: warm.idle,
+    PianoChord: (props: Parameters<typeof actual.PianoChord>[0]) =>
+      props.display === "staff" || props.display === "both" ? <Staffs /> : <actual.PianoChord {...props} />,
+  };
+});
 import { BoardEditor } from "../src/BoardEditor";
 import { BoardCardContent, useChordBoard } from "../src/ChordBoard";
 import { memoryStorageAdapter } from "../src/storage";
@@ -50,6 +68,10 @@ it("staff SVG placeholders cannot satisfy readiness; engraving must complete", a
   expect(fallback).toBeTruthy();
   expect(fallback.querySelector('svg')).toBeNull();
   expect(container.querySelector('[data-chordl-state="ready"]')).toBeNull();
+  await act(async () => engraving.finish!(1));
+  expect(container.querySelectorAll('.bc-staff__engraving svg')).toHaveLength(1);
+  expect(container.querySelector('[data-chordl-state="ready"]')).toBeNull();
+  await act(async () => engraving.finish!(2));
   await waitFor(() => expect(container.querySelector('.chordl-board-card-notation[data-chordl-state="ready"]')).toBeTruthy());
   expect(container.querySelector('.bc-staff__engraving svg')).toBeTruthy();
   expect(container.querySelector('.chordl-board-card-loading')).toBeNull();
