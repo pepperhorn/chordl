@@ -28,7 +28,11 @@ async function mount(initialState: BoardState = { items: [], meta: {} }) {
   );
   const selectedInstrument = () => view.container.querySelector('.bc-guitar-instrument-btn[data-active="true"]')?.textContent;
   const display = () => view.container.querySelector('.btn-display-toggle')?.textContent;
-  const level = (name: string) => within(view.container).getByRole('radio', { name }) as HTMLInputElement;
+  // Restrict accessible-name computation to this control, rather than every
+  // radio and diagram in the editor/board on each interaction.
+  const level = (name: string) => within(
+    view.container.querySelector<HTMLElement>(".level-control")!,
+  ).getByRole('radio', { name }) as HTMLInputElement;
   return { ...view, enter, selectedInstrument, display, level, storage, saves, editorRef };
 }
 

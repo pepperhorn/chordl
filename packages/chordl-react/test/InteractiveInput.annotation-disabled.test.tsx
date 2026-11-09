@@ -1,3 +1,4 @@
+import "./helpers/mock-engraving";
 import { describe, it, expect } from "vitest";
 import { render, fireEvent, waitFor, within } from "@testing-library/react";
 import { InteractiveInput } from "../dev/App";
