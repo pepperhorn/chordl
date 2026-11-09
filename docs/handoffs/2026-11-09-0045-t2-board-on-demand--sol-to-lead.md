@@ -9,7 +9,7 @@
 - **Base:** b4b8f3d (contains pinned 024825e)
 - **Acknowledgement:** b1f5fe4
 - **Implementation:** 3bc9ddb
-- **PR:** draft against main; linked by the final delivery and PR body
+- **PR:** https://github.com/pepperhorn/chordl/pull/114 (draft against main)
 - **Port:** 5652 (handoff allocation; spec's 5650 belongs to the whole item)
 - **Status:** blocked
 
