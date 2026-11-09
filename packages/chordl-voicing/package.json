@@ -35,6 +35,7 @@
   "scripts": {
     "prepare:schema": "node scripts/copy-schema.mjs",
     "build": "pnpm run prepare:schema && tsc",
+    "lint:test": "tsc --project tsconfig.test.json",
     "lint": "pnpm run prepare:schema && tsc --noEmit",
     "test": "pnpm run prepare:schema && vitest",
     "test:run": "pnpm run prepare:schema && vitest run"

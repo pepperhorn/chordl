@@ -96,7 +96,7 @@ describe("prototype-named keys", () => {
 
   it("does not copy an inherited toString onto a barre that lacks one", () => {
     const f = structuredClone(base);
-    delete (f.voicings[0].realization.barres[0] as Record<string, unknown>).toString;
+    delete (f.voicings[0].realization.barres[0] as { toString?: number }).toString;
     expect(formatChordFile(f as never)).not.toContain('"toString"');
   });
 

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type voicingSchemaJson from "../schema/voicing.schema.json";
 import { voicingSchema } from "../src/schema.js";
 import { parsePitch, labelNotes, degreeLabel } from "../src/index.js";
 
@@ -31,7 +32,7 @@ describe("degreeLabel", () => {
 
 describe("labelNotes", () => {
   it("labels every chromatic note on every spelling root as the schema allows", () => {
-    const degree = new RegExp(voicingSchema.properties.notes.items.properties.degree.pattern);
+    const degree = new RegExp((voicingSchema as typeof voicingSchemaJson).properties.notes.items.properties.degree.pattern);
     const names = ["C", "C#", "Db", "D", "D#", "Eb", "E", "E#", "Fb", "F", "F#", "Gb", "G", "G#", "Ab", "A", "A#", "Bb", "B", "B#", "Cb"];
     for (const root of ["C", "C#", "Db", "D", "Eb", "E", "F", "F#", "Gb", "G", "G#", "Ab", "A", "Bb", "B"]) {
       for (const n of labelNotes(`${root}:maj`, names.map((p) => `${p}3`))) {
