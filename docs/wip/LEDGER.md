@@ -11,7 +11,7 @@ Next ID: 0042  (0001–0024 were used before the ledger existed; see orch/0024-*
 
 | K | Title | Status | Waiting on | Owner (provider/model) | Branch | PR | Worktree | T3 task/thread | Spec | Plan | Latest handoff | Updated |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 0041 | [quick] chordl-react tests: same timeout budget as board | dispatched | lead: delegate | codex/gpt-6.1-sol | orch/0041-react-test-timeout | | | | — | — | [lead→sol](../handoffs/2026-11-09-0041-react-test-timeout--lead-to-sol.md) | 2026-11-09 |
+| 0041 | [quick] chordl-react tests: same timeout budget as board | dispatched | child 0041-impl-r1 | codex/gpt-6.1-sol | orch/0041-react-test-timeout | | created by T3 | task `node:delegated-task:command%3Amcp%3Aacb17a48-3737-4dcb-babb-6afd61cdd00c%3Adelegate-task%3A0041-impl-r1` | — | — | [lead→sol](../handoffs/2026-11-09-0041-react-test-timeout--lead-to-sol.md) | 2026-11-09 |
 | 0038 | Chord box accepts nonsense ("@@@ not a chord @@@" → C, "Zbq9" → B) | proposed | human: needs spec (error vs. empty vs. best guess is a product call) | — | | | | | | | | 2026-11-09 |
 | 0039 | Notation view: annotations to the right of the stave; scales/runs as beamed eighths | proposed | human: needs spec (3 defects: StaffNotationProps has no annotation props; scale/run branches of PianoChord skip display; mei-builder.ts:115,117 hard-code dur="1") | — | | | | | | | | 2026-11-09 |
 
