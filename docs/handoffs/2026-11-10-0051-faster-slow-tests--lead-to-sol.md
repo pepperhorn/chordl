@@ -2,7 +2,7 @@
 
 - **Date:** 2026-11-10 · **Type:** quick · **Ledger:** 0051 (suggestion S14)
 - **Branch:** orch/0051-faster-slow-tests · **Worktree:** created by T3 · **Base commit:** 4911f61
-- **Status:** open
+- **Status:** closed
 
 ## Goal
 Under concurrent load, board's slowest test reached 23.4s and react's `InteractiveInput.annotation-disabled` reached 15.4s. The 30s budget only holds them for now (#107, #108). Measure first: list the 10 slowest tests in each of chordl-board and chordl-react, from vitest's JSON reporter, idle and with three suites running concurrently. Then make the slowest ones cheaper without weakening them. For example: render less (a smaller board, fewer cards), mock Verovio/SVGuitar or audio where the test isn't about them, replace real-time waits with fake timers, split tests that do several unrelated things, or hoist expensive setup into `beforeAll` where that's safe. Target: no test over 10s under the three-suite load.
