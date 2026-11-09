@@ -13,8 +13,8 @@ Next ID: 0046  (0001–0024 were used before the ledger existed; see orch/0024-*
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
 | 0045-t1 | Load on demand: react smplr (+ guitar panel if clean) | dispatched | child 0045-t1-impl-r1 | codex/gpt-6.1-sol | orch/0045-t1-react-lazy-audio | | created by T3 | task `node:delegated-task:command%3Amcp%3A8171515d-9a8b-4268-a6b9-8eda267c872b%3Adelegate-task%3A0045-t1-impl-r1` | [spec](../specs/0045-load-on-demand.md) | [plan](../plans/0045-load-on-demand.md) | [lead→sol](../handoffs/2026-11-09-0045-t1-react-lazy-audio--lead-to-sol.md) | 2026-11-09 |
 | 0045-t2 | Load on demand: board — no idle Verovio prefetch, lazy guitar, loading/ready markers | planned | child 0045-t1 (T2 depends on T1 merged) | — | orch/0045-t2-board-on-demand | | | | [spec](../specs/0045-load-on-demand.md) | [plan](../plans/0045-load-on-demand.md) | | 2026-11-09 |
-| 0043 | Type-check test files in every package (tsconfig.test.json + lint:test in CI) | planned | child 0038-impl-r2 (0042 merged; dispatch when 0038 merges) (dispatch once both merge: shared lockfile and core test files) | — | orch/0043-typecheck-tests | | | | [spec](../specs/0043-typecheck-tests.md) | [plan](../plans/0043-typecheck-tests.md) | | 2026-11-09 |
-| 0038 | Chord parser: only read a root from a standalone chord token (+ S11, S13) | changes-requested | child 0038-impl-r2 | codex/gpt-6.1-sol | orch/0038-parser-strict-roots | [#110](https://github.com/pepperhorn/chordl/pull/110) @ 12c80e5 | /home/shaun/.t3/worktrees/chordl/t3-102f6052 | task `node:delegated-task:command%3Amcp%3A8171515d-9a8b-4268-a6b9-8eda267c872b%3Adelegate-task%3A0038-impl-r1` | [spec](../specs/0038-parser-strict-roots.md) | [plan](../plans/0038-parser-strict-roots.md) | [r1 decisions](../handoffs/2026-11-09-0038-parser-strict-roots--lead-r1-decisions.md) | 2026-11-09 |
+| 0043 | Type-check test files in every package (tsconfig.test.json + lint:test in CI) | planned | review 0038-review-r2 (0042 merged; dispatch when 0038 merges) (dispatch once both merge: shared lockfile and core test files) | — | orch/0043-typecheck-tests | | | | [spec](../specs/0043-typecheck-tests.md) | [plan](../plans/0043-typecheck-tests.md) | | 2026-11-09 |
+| 0038 | Chord parser: only read a root from a standalone chord token (+ S11, S13) | in-review | review 0038-review-r2 (claude-opus) | codex/gpt-6.1-sol | orch/0038-parser-strict-roots | [#110](https://github.com/pepperhorn/chordl/pull/110) @ 1eb82f8 | /home/shaun/.t3/worktrees/chordl/t3-102f6052 | task `node:delegated-task:command%3Amcp%3A8171515d-9a8b-4268-a6b9-8eda267c872b%3Adelegate-task%3A0038-impl-r1` | [spec](../specs/0038-parser-strict-roots.md) | [plan](../plans/0038-parser-strict-roots.md) | [sol→lead](../handoffs/2026-11-09-0038-parser-strict-roots--sol-to-lead.md) (on branch) | 2026-11-09 |
 | 0039 | Notation view: annotations to the right of the stave; scales/runs as beamed eighths | proposed | human: needs spec (3 defects: StaffNotationProps has no annotation props; scale/run branches of PianoChord skip display; mei-builder.ts:115,117 hard-code dur="1") | — | | | | | | | | 2026-11-09 |
 
 ## Done / closed
@@ -62,6 +62,7 @@ Last health scan: 2026-11-09
 
 ## Log
 <!-- One line per status change, newest first: YYYY-MM-DD NNNN old→new — note -->
+- 2026-11-09 0038 changes-requested→in-review — r1 fixes @1eb82f8, 2916 tests, compat sweep 0 unexpected; review r2 → opus
 - 2026-11-09 0045 specced+planned (S16, human: load on demand); t1 →dispatched, t2 waits on t1
 - 2026-11-09 0044 ready→merged→closed — #111 @dc6f8d2 (human approved); verify on main passes
 - 2026-11-09 0044 in-review→ready — r1 (opus) approve @51f5523: numbers re-derived, move behaviour-preserving, browser smoke OK; over line limit → human
