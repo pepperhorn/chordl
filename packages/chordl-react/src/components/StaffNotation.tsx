@@ -147,6 +147,9 @@ export function StaffNotation({
   );
 
   useEffect(() => {
+    // A failure belongs to the completed attempt. Discard it when moving on,
+    // so returning to that MEI cannot reuse its error while a retry is pending.
+    setResult((prev) => prev?.failed ? null : prev);
     let cancelled = false;
     renderMeiToSvg(mei, { font, scale: verovioScale })
       .then((svg) => {
