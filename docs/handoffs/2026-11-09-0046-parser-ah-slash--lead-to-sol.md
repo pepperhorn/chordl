@@ -34,3 +34,5 @@ None.
 ## Receiver ack
 
 Acknowledged 2026-11-09 (sol). I will exclude bare Ah/Eh interjections from resolver fallback, strip a trailing slash from fallback tokens so slash-bass parsing works, and add the requested table regressions. Implementation is limited to the two owned core parser/test files, plus my acknowledgement and return handoff. I will compare against 9da3066 with the compatibility sweep, run the full verification command, push only orch/0046-parser-ah-slash, and open a draft PR. No open questions. GBrain search found no task-specific context; repository docs govern.
+
+Lead answers acknowledged (5441619): preserve Cmi7 plus the E left-hand note group; additionally own parser-compat-sweep.mjs only to classify 0046 interjection removals and trailing-slash hand recoveries. I will rerun full verification and the sweep, then update the same PR and return handoff.
