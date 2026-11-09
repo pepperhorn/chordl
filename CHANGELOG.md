@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-11-10 — chordl-core 0.6.3, chordl-react 0.5.3 (release prep)
+
+Publish `chordl-core@0.6.3` first, then `chordl-react@0.5.3`, which depends on
+core through its packed workspace dependency. These versions are prepared for
+publication; this change does not publish them.
+
+- **Core parser:** preserve altered-dominant suffixes, including `C7ALT`, slash
+  basses and modifiers (#106); match standalone chord tokens, accept Unicode
+  accidentals and alt/omit/no spellings, and reject nonsense input (#110).
+- **Core fixes:** ignore `Ah`/`Eh` interjections and retain chord symbols after
+  hand-note extraction leaves a trailing slash (#113); resolve `Δ7`/`mΔ7` and
+  `∆` spellings, including slash basses (#118).
+- **Staff readiness:** `StaffNotation` exposes loading/ready/error markers, with
+  ready following SVG injection and failed retries returning to loading; board
+  notation cards aggregate those states, with any staff error taking priority (#119).
+- **Board publication hold:** `chordl-board@0.2.4` remains held until becreative's
+  readiness change (ledger 0047), required by the loading/ready markers in #114.
+- **Consumers:** `GuitarChord` now renders through a lazy boundary, so
+  server-rendered HTML contains the loading placeholder. Wait for
+  `data-chordl-state="ready"` rather than for an SVG to exist (#114, #119).
+
 ## Unreleased
 
 - **chordl-cards 0.2.0:** `describeShape(chord, face, { theme, request? })` returns plain-English "how to play" text for any card face: `play` (steps in the order you place fingers), `read` (how to read that kind of diagram), `text` (both, for display, with glyph-ready names like `Bb`) and `spoken` (both, for text-to-speech: "B flat", "second fret", no digits or symbols). It is built from the same request and playback the card draws, so it matches the diagram; pass a `positionsFor` request to describe an alternative position. Pure and deterministic, templates only. Re-vendor with `pnpm vendor:chordl` in crf-chords.
