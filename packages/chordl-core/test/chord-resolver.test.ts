@@ -23,6 +23,10 @@ describe("resolveChord", () => {
     expect(result).toEqual(resolveChord(canonical));
   });
 
+  it.each(["CMΔ7", "CM∆7"])("rejects ambiguous major prefix %s", symbol => {
+    expect(() => resolveChord(symbol)).toThrow("Unknown chord");
+  });
+
   it("resolves Cmaj7 to [C, E, G, B]", () => {
     const result = resolveChord("Cmaj7");
     expect(result.notes).toEqual(["C", "E", "G", "B"]);

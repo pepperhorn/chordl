@@ -128,7 +128,7 @@ function normalizeChordName(name: string): string {
         ? group : alterations.replace(/,/g, ""));
 
   // Jazz Δ7 spells maj7; normalize its look-alike without changing other Δ forms.
-  suffix = suffix.replace(/∆/g, "Δ").replace(/Δ7/g, "maj7");
+  suffix = suffix.replace(/∆/g, "Δ").replace(/(?<!M)Δ7/g, "maj7");
 
   // m7sus is special — handled by buildSpecialChord, don't normalize it away
 
