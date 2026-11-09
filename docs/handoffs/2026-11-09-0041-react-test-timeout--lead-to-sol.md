@@ -6,7 +6,7 @@
 - **Branch:** orch/0041-react-test-timeout · **Worktree:** created by T3
 - **PR:** <url once opened>
 - **Base commit:** 6b13fc1
-- **Status:** open
+- **Status:** closed
 
 ## Goal
 Under load, `chordl-react`'s `InteractiveInput` tests time out at vitest's 5s default (0040 review r2, https://github.com/pepperhorn/chordl/pull/107#pullrequestreview-5821405987: `pnpm test:run` failed twice in react at load 22–57 on 12 CPUs; react alone passed 49/49). Because `test:run` stops at the first failing package, a react timeout hides cards and board results. Apply the fix merged for board in #107 (`6b13fc1`): `testTimeout`/`hookTimeout` 30000 in `vitest.config.ts`, `configure({ asyncUtilTimeout: 5000 })` in `test/setup.ts`.
