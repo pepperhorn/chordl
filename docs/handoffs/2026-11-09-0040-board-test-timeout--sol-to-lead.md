@@ -5,7 +5,7 @@
 - **Ledger:** 0040 · **Spec/Plan:** none (quick)
 - **Branch:** orch/0040-board-test-timeout
 - **Worktree:** /home/shaun/.t3/worktrees/chordl/t3-d013f290
-- **PR:** draft PR on this branch, opened after committing this handoff; see the PR containing this document.
+- **PR:** https://github.com/pepperhorn/chordl/pull/107 (draft)
 - **Base commit:** a3f6182 (contains dispatch; declared base f94927f verified as ancestor)
 - **Implementation commit:** 0c5f105ef7ea7d7f08e584fa911427809ebc6e71
 - **Status:** closed (implementation complete; lead review pending)
