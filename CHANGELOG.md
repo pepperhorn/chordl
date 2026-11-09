@@ -6,6 +6,31 @@
 - The string (guitar/ukulele) view has the same `.zip` export as the keyboard view: This/All, with SVG, PNG, MIDI and block/arpeggio WAVs. MIDI and WAV use the shape's real sounding pitches (including re-entrant ukulele tuning). `generateMidiFile` and `generateWav` also accept exact MIDI numbers. Bass and violin get the button once they have shapes (#100).
 - Chord input accepts instrument and experience-level words and aliases (for example, `ukulele am beginner`), switching the editor frame/display and Level control. Existing bass-clef/bass-note and key-padding/format phrasing is preserved. Bare `bass` retains its existing meanings; use `bass4`, `bass guitar`, or explicit string counts for bass guitar. Words apply only when typing, so opening saved cards preserves their stored controls.
 
+## 2026-11-10 — chordl-core 0.6.3, chordl-react 0.5.3 (release prep)
+
+Publish `chordl-core@0.6.3` first, then `chordl-react@0.5.3`, which depends on
+core through its packed workspace dependency. These versions are prepared for
+publication; this change does not publish them.
+
+- **Core parser:** preserve altered-dominant suffixes, including `C7ALT`, slash
+  basses and modifiers (#106); match standalone chord tokens, accept Unicode
+  accidentals and alt/omit/no spellings, and reject nonsense input (#110).
+- **Core fixes:** ignore `Ah`/`Eh` interjections and retain chord symbols after
+  hand-note extraction leaves a trailing slash (#113); resolve `Δ7`/`mΔ7` and
+  `∆` spellings, including slash basses (#118).
+- **React audio (first publish since 0.5.1):** includes unpublished 0.5.2's
+  on-demand smplr loading on first audio play or WAV export (#112).
+- **React guitar and notation:** load the guitar renderer and data on first use,
+  expose loading/ready markers, and remove idle Verovio prefetch (#114).
+- **Staff readiness:** `StaffNotation` exposes loading/ready/error markers, with
+  ready following SVG injection and failed retries returning to loading; board
+  notation cards aggregate those states, with any staff error taking priority (#119).
+- **Board publication hold:** `chordl-board@0.2.4` remains held until becreative's
+  readiness change (ledger 0047), required by the loading/ready markers in #114.
+- **Consumers:** `GuitarChord` now renders through a lazy boundary, so
+  server-rendered HTML contains the loading placeholder. Wait for
+  `data-chordl-state="ready"` rather than for an SVG to exist (#114, #119).
+
 ## 2026-11-01 — chordl-guitar 0.3.1
 
 - **Voicing fixes:** the guitar ranking, level-3 rootless coverage and review metadata fixes

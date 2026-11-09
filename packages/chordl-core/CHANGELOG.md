@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.6.3
+
+- Preserve altered-dominant suffixes in chord descriptions, including `C7ALT`, slash basses and degree modifiers (#106).
+- Read standalone chord tokens instead of letters inside prose; accept Unicode accidentals, omit/no qualities and alt aliases while rejecting nonsense input (#110).
+- Ignore interjections such as `Ah`/`Eh` and retain chord symbols when hand-note extraction leaves a trailing slash (#113).
+- Resolve `Δ7`/`mΔ7` and `∆` spellings, including slash basses, while rejecting unsupported `MΔ7`/`M∆7` forms (#118).
+
 ## 0.6.2
 
 - Resolve alteration-fallback upper chords before applying slash basses, replacing

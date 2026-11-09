@@ -28,3 +28,5 @@ None.
 
 ---
 ## Receiver ack
+
+Acknowledged by Sol, 2026-11-10. I will bump only chordl-core's package version to 0.6.3, document the four merged core PRs, add #119's React and board readiness notes, and prepare the root release/consumer guidance. I own the five listed files plus this acknowledgement and my return handoff. I will run the full specified verification, push only orch/0052-release-core-063, and open a draft PR. No tagging or publishing. No open questions.
