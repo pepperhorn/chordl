@@ -12,7 +12,7 @@ Next ID: 0047  (0001–0024 were used before the ledger existed; see orch/0024-*
 | K | Title | Status | Waiting on | Owner (provider/model) | Branch | PR | Worktree | T3 task/thread | Spec | Plan | Latest handoff | Updated |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
 | 0046 | [quick] Parser: "Ah"/"Eh" interjections; trailing slash before a bass | in-review | review 0046-review-r1 (claude-opus) | codex/gpt-6.1-sol | orch/0046-parser-ah-slash | [#113](https://github.com/pepperhorn/chordl/pull/113) @ 1d31388 | /home/shaun/.t3/worktrees/chordl/t3-8585972f | task `node:delegated-task:command%3Amcp%3A8171515d-9a8b-4268-a6b9-8eda267c872b%3Adelegate-task%3A0046-impl-r1` | — | — | [sol→lead](../handoffs/2026-11-09-0046-parser-ah-slash--sol-to-lead.md) (on branch) | 2026-11-09 |
-| 0045-t2 | Load on demand: board — no idle Verovio prefetch, lazy guitar (inside react), loading/ready markers | dispatched | child 0045-t2-impl-r1 | codex/gpt-6.1-sol | orch/0045-t2-board-on-demand | | created by T3 | task `node:delegated-task:command%3Amcp%3A8171515d-9a8b-4268-a6b9-8eda267c872b%3Adelegate-task%3A0045-t2-impl-r1` | [spec](../specs/0045-load-on-demand.md) | [plan](../plans/0045-load-on-demand.md) | [lead→sol](../handoffs/2026-11-09-0045-t2-board-on-demand--lead-to-sol.md) | 2026-11-09 |
+| 0045-t2 | Load on demand: board — no idle Verovio prefetch, lazy guitar (inside react), loading/ready markers | dispatched | child 0045-t2-impl-r1-answers | codex/gpt-6.1-sol | orch/0045-t2-board-on-demand | [#114](https://github.com/pepperhorn/chordl/pull/114) @ 1cf3f84 (blocked r0) | /home/shaun/.t3/worktrees/chordl/t3-c5320047 | task `node:delegated-task:command%3Amcp%3A8171515d-9a8b-4268-a6b9-8eda267c872b%3Adelegate-task%3A0045-t2-impl-r1` | [spec](../specs/0045-load-on-demand.md) | [plan](../plans/0045-load-on-demand.md) | [lead answers](../handoffs/2026-11-09-0045-t2-board-on-demand--lead-answers.md) | 2026-11-09 |
 | 0043 | Type-check test files in every package (tsconfig.test.json + lint:test in CI) | planned | review 0046-review-r1 (dispatch after 0046 merges: both edit core/test/natural-language.test.ts) | — | orch/0043-typecheck-tests | | | | [spec](../specs/0043-typecheck-tests.md) | [plan](../plans/0043-typecheck-tests.md) | | 2026-11-09 |
 | 0039 | Notation view: annotations to the right of the stave; scales/runs as beamed eighths | proposed | human: needs spec (3 defects: StaffNotationProps has no annotation props; scale/run branches of PianoChord skip display; mei-builder.ts:115,117 hard-code dur="1") | — | | | | | | | | 2026-11-09 |
 
@@ -63,6 +63,7 @@ Last health scan: 2026-11-09
 
 ## Log
 <!-- One line per status change, newest first: YYYY-MM-DD NNNN old→new — note -->
+- 2026-11-09 0045-t2 blocked (PR #114 @1cf3f84) — no-interaction JS −95.4% (3.18 MB→147 KB gzip), entry −47%; blocked on sync guitar assertion in cards test. Lead: test ownership granted, check ChordCardPlayer playback marking, finish AC3 smoke
 - 2026-11-09 0046 dispatched→in-review — PR #113 @1d31388, 2925 tests, sweep exit 0; review r1 → opus (focus: sweep expectations don't hide regressions)
 - 2026-11-09 0046 blocked (PR #113 @42076ff) — lead's left-hand expectation was wrong (Cm7/E in LH → Cm7 + E note group); amended; sweep expectations granted
 - 2026-11-09 0045-t2 planned→dispatched
