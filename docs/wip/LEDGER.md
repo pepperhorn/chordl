@@ -12,8 +12,7 @@ Next ID: 0047  (0001–0024 were used before the ledger existed; see orch/0024-*
 | K | Title | Status | Waiting on | Owner (provider/model) | Branch | PR | Worktree | T3 task/thread | Spec | Plan | Latest handoff | Updated |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
 | 0046 | [quick] Parser: "Ah"/"Eh" interjections; trailing slash before a bass | dispatched | child 0046-impl-r1 | codex/gpt-6.1-sol | orch/0046-parser-ah-slash | | created by T3 | task `node:delegated-task:command%3Amcp%3A8171515d-9a8b-4268-a6b9-8eda267c872b%3Adelegate-task%3A0046-impl-r1` | — | — | [lead→sol](../handoffs/2026-11-09-0046-parser-ah-slash--lead-to-sol.md) | 2026-11-09 |
-| 0045-t1 | Load on demand: react smplr (+ guitar panel if clean) | in-review | review 0045-t1-review-r1 (claude-opus) | codex/gpt-6.1-sol | orch/0045-t1-react-lazy-audio | [#112](https://github.com/pepperhorn/chordl/pull/112) @ 7cf12a3 | /home/shaun/.t3/worktrees/chordl/t3-24130b61 | task `node:delegated-task:command%3Amcp%3A8171515d-9a8b-4268-a6b9-8eda267c872b%3Adelegate-task%3A0045-t1-impl-r1` | [spec](../specs/0045-load-on-demand.md) | [plan](../plans/0045-load-on-demand.md) | [sol→lead](../handoffs/2026-11-09-0045-t1-react-lazy-audio--sol-to-lead.md) (on branch) | 2026-11-09 |
-| 0045-t2 | Load on demand: board — no idle Verovio prefetch, lazy guitar, loading/ready markers | planned | review 0045-t1-review-r1 (T2 depends on T1 merged) | — | orch/0045-t2-board-on-demand | | | | [spec](../specs/0045-load-on-demand.md) | [plan](../plans/0045-load-on-demand.md) | | 2026-11-09 |
+| 0045-t2 | Load on demand: board — no idle Verovio prefetch, lazy guitar (inside react), loading/ready markers | dispatched | lead: delegate | codex/gpt-6.1-sol | orch/0045-t2-board-on-demand | | | | [spec](../specs/0045-load-on-demand.md) | [plan](../plans/0045-load-on-demand.md) | [lead→sol](../handoffs/2026-11-09-0045-t2-board-on-demand--lead-to-sol.md) | 2026-11-09 |
 | 0043 | Type-check test files in every package (tsconfig.test.json + lint:test in CI) | planned | child 0046-impl-r1 (dispatch after 0046 merges: both edit core/test/natural-language.test.ts) | — | orch/0043-typecheck-tests | | | | [spec](../specs/0043-typecheck-tests.md) | [plan](../plans/0043-typecheck-tests.md) | | 2026-11-09 |
 | 0039 | Notation view: annotations to the right of the stave; scales/runs as beamed eighths | proposed | human: needs spec (3 defects: StaffNotationProps has no annotation props; scale/run branches of PianoChord skip display; mei-builder.ts:115,117 hard-code dur="1") | — | | | | | | | | 2026-11-09 |
 
@@ -21,6 +20,7 @@ Next ID: 0047  (0001–0024 were used before the ledger existed; see orch/0024-*
 
 | K | Title | PR | Merged | Notes |
 |---|---|---|---|---|
+| 0045-t1 | Load on demand: react smplr | [#112](https://github.com/pepperhorn/chordl/pull/112) | 2026-11-09 @ 024825e | wav-export imports smplr dynamically; entry gzip −7.19%; chordl-react 0.5.2. Opus r1 approve (browser WAV check); human approved merge. Verify + packed-board on main: 2920 pass |
 | 0038 | Chord parser: only read a root from a standalone chord token (+S11, S13) | [#110](https://github.com/pepperhorn/chordl/pull/110) | 2026-11-09 @ 9da3066 | Codex; r0 blocked → lead answers; Opus r1 changes-requested @12c80e5 (21 resolver spellings, article, alt); r2 approve @1eb82f8; human approved merge. New test/parser-compat-sweep.mjs (61,196 inputs, 0 unexpected). Verify on main 2916. Follow-up 0046 |
 | 0044 | chordl.app: ship less JavaScript on first load (site layer) | [#111](https://github.com/pepperhorn/chordl/pull/111) | 2026-11-09 @ dc6f8d2 | Examples/ChordSheet lazy (−1.07% entry gzip); AC2 met by justification: idle Verovio prefetch is 91% of first-visit JS → 0045. Opus r1 approve; human approved merge. Verify on main 2819 pass |
 | 0042 | [quick] Patch vulnerable transitive dependencies | [#109](https://github.com/pepperhorn/chordl/pull/109) | 2026-11-09 @ e86c52f | Lockfile only: dompurify 3.4.17, fast-uri 3.1.9, image-size 2.1.0; audit 28→0. Opus r1 approve; human approved merge. Verify + packed-board on main pass, 2819 tests |
@@ -63,6 +63,8 @@ Last health scan: 2026-11-09
 
 ## Log
 <!-- One line per status change, newest first: YYYY-MM-DD NNNN old→new — note -->
+- 2026-11-09 0045-t2 planned→dispatched
+- 2026-11-09 0045-t1 in-review→merged→closed — #112 @024825e (human approved); verify on main passes, 2920 tests
 - 2026-11-09 0046 →dispatched (quick) — 0038 r2 minors m1 (Ah/Eh) and m2 (Cmi7/E trailing slash)
 - 2026-11-09 0038 in-review→merged→closed — #110 @9da3066 (human approved); verify on main passes, 2916 tests
 - 2026-11-09 0045-t1 dispatched→in-review — PR #112 @7cf12a3: smplr dynamic in wav-export, entry gzip −7.19%; guitar split must live inside react (plan T2 ownership widened); review r1 → opus

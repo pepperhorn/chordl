@@ -7,7 +7,7 @@
 - **PR:** <url once opened>
 - **Base commit:** dc6f8d2
 - **Port (if running a server):** 5651
-- **Status:** open
+- **Status:** closed
 
 ## Goal
 Plan T1: `smplr` loads only when audio plays or a WAV export runs. Today wav-export imports it statically, which defeats `playback.ts`'s dynamic import. Also find out, without changing any export, whether `GuitarChordPanel` can load its datasets and SVGuitar on demand from inside chordl-react. Do it if it's clean; otherwise report numbers for T2.
