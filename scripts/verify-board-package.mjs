@@ -1,5 +1,5 @@
-// Run after pnpm build. Exercises packed packages against registry dependencies,
-// without workspace links or Vite aliases, before a coordinated npm release.
+// Run after pnpm build. Exercises packed workspace packages against external
+// registry dependencies, without workspace links or Vite aliases.
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -20,7 +20,9 @@ const run = (command, args, cwd = consumer) => {
 };
 
 const dependencies = { react: "^19.0.0", "react-dom": "^19.0.0" };
-for (const dir of ["chordl-guitar", "chordl-react", "chordl-board"]) {
+// Include the board's full workspace dependency chain so unpublished versions
+// are tested from this checkout rather than resolved from npm.
+for (const dir of ["chordl-voicings", "chordl-core", "chordl-listen", "chordl-guitar", "chordl-react", "chordl-board"]) {
   run("pnpm", ["--filter", `@pepperhorn/${dir}`, "pack", "--pack-destination", consumer], root);
   const manifest = JSON.parse(readFileSync(join(root, "packages", dir, "package.json"), "utf8"));
   const tarball = join(consumer, `pepperhorn-${dir}-${manifest.version}.tgz`);
