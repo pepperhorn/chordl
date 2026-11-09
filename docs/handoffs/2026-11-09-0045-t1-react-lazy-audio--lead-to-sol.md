@@ -37,3 +37,5 @@ None.
 
 ---
 ## Receiver ack
+
+Acknowledged: I will remove wav-export's eager smplr import while preserving audio/export behavior and public exports, add import-timing regression coverage, bump chordl-react's patch version and changelog, and measure entry bytes before/after using 0044's method. I will investigate the optional guitar boundary and either implement it cleanly within ownership or report the measured blockers for T2. I own only the listed react audio/tests/version/changelog files and this task's handoffs; no board, ledger, deployment, dependency, or public API changes. Required workspace verification and verify-board-package will run before the return handoff and draft PR. No open questions. GBrain searched for chordl and lazy smplr; results were unrelated, so repo spec/plan and 0044 handoff supply task context.

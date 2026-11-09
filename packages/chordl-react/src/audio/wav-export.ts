@@ -1,7 +1,6 @@
 /**
  * Render piano audio to WAV using OfflineAudioContext + smplr.
  */
-import { Soundfont } from "smplr";
 import { toAscendingNotes } from "./playback";
 
 const SAMPLE_RATE = 44100;
@@ -25,6 +24,8 @@ async function renderToBuffer(
     ? durationSec + (ascending.length * arpDelayMs) / 1000
     : durationSec;
 
+  // Keep the sampler off the initial render path, just like live playback.
+  const { Soundfont } = await import("smplr");
   const offlineCtx = new OfflineAudioContext(2, Math.ceil(SAMPLE_RATE * totalDuration), SAMPLE_RATE);
   const piano = new Soundfont(offlineCtx as unknown as AudioContext, {
     instrument: "acoustic_grand_piano",
