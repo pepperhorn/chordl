@@ -30,6 +30,10 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
+      # Fail on high/critical production advisories; auditing needs no build.
+      - name: Audit production dependencies
+        run: pnpm audit --prod --audit-level=high
+
       # Build first: packages resolve each other's types from dist (chordl-core
       # imports @pepperhorn/chordl-voicings), so lint and test both fail on a
       # clean checkout until the workspace has been built once.

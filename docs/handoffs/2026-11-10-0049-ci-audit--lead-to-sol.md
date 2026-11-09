@@ -30,3 +30,5 @@ None.
 
 ---
 ## Receiver ack
+
+Acknowledged by sol (2026-11-10). I will change only `.github/workflows/ci.yml` plus the task-owned handoffs: add `pnpm audit --prod --audit-level=high` immediately after Install with a one-line rationale explaining that no build is needed. I will verify the clean production audit and demonstrate the failing high-advisory path, run required workspace verification, then push the task branch and open a draft PR. No retries, error suppression, dependency changes, merge, PR watching, or polling. No open questions. GBrain search for chordl CI/audit 0042/0049 returned no relevant pages.
