@@ -431,14 +431,14 @@ const CHORD_RE =
 function resolverTokenFallback(text: string, strictIndex?: number): string | undefined {
   for (const match of text.matchAll(/(?<![\p{L}\p{N}_#\/])[A-G][^\s]*/gu)) {
     if (strictIndex !== undefined && match.index > strictIndex) break;
-    let token = match[0].replace(/[.,!?:;\]}'"’”]+$/gu, "");
+    let token = match[0].replace(/[\/.,!?:;\]}'"’”]+$/gu, "");
     // Remove surrounding prose parentheses, retaining balanced chord suffixes.
     while (token.endsWith(")") && (token.match(/\)/g)?.length ?? 0) > (token.match(/\(/g)?.length ?? 0)) {
       token = token.slice(0, -1);
     }
     const strict = token.match(CHORD_RE);
     if (strict?.index === 0 && strict[0].trim() === token) continue;
-    if (/^(?:do|go|be|add|bad|dad|cab|face|bed)$/i.test(token)) continue;
+    if (/^(?:do|go|be|add|bad|dad|cab|face|bed|ah|eh)$/i.test(token)) continue;
     const remainder = token.slice(1);
     if (!/[0-9Δø°+\-/\(#]/.test(token) && !/^b/.test(remainder)
       && !/^(?:mi|ma|min|maj|dim|aug|sus|m|M|o|h|phryg|quartal)$/.test(remainder)) continue;
