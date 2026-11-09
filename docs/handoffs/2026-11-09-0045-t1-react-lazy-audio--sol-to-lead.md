@@ -9,7 +9,7 @@
 - **Base:** 003b00a (contains pinned dc6f8d2)
 - **Acknowledgement commit:** 3d8a458
 - **Implementation commit:** 9708af62a548872209e1ae9218f90ad063ff4287
-- **PR:** draft PR on this branch; URL reported in implementation completion and PR body links this file.
+- **PR:** https://github.com/pepperhorn/chordl/pull/112 (draft)
 - **Port:** 5651 (no server needed for T1 entry-file measurement)
 - **Status:** closed
 
@@ -143,4 +143,4 @@ computing gzip size...
 ✓ built in 19.71s
 ```
 
-Normal (no sourcemaps) site build also passed in 6.29s. Final normal site build restores the usual output after measurement. Scope audit and `git diff --check` pass; only owned implementation files and this task's two handoffs changed relative to the branch base.
+Normal (no sourcemaps) site build also passed in 6.29s. Final normal site build passed in 11.97s and restored the usual output after measurement. Scope audit and `git diff --check` pass; only owned implementation files and this task's two handoffs changed relative to the branch base.
