@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import React from "react";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ChordCardPlayer } from "../src/ChordCardPlayer";
 import { parseTheme } from "../src/theme";
@@ -154,9 +154,55 @@ describe("ChordCardPlayer — keyboard-hands", () => {
   });
 });
 
+describe("ChordCardPlayer — first lazy guitar render", () => {
+  it("keeps playback string targets active when playback starts before the lazy diagram paints", async () => {
+    // Hold drawing and timeline frames independently of machine speed. Audio
+    // remains in the sounding interval until the diagram has finished painting.
+    const frames = new Map<number, FrameRequestCallback>();
+    let nextFrame = 0;
+    const raf = vi.spyOn(globalThis, "requestAnimationFrame").mockImplementation((callback) => {
+      frames.set(++nextFrame, callback);
+      return nextFrame;
+    });
+    const cancel = vi.spyOn(globalThis, "cancelAnimationFrame").mockImplementation((id) => { frames.delete(id); });
+    const clock = vi.spyOn(StubAudioContext.prototype, "currentTime", "get").mockReturnValue(0);
+    const flushFrame = () => act(() => {
+      const batch = [...frames.values()];
+      frames.clear();
+      batch.forEach((callback) => callback(performance.now()));
+    });
+    const { container, unmount } = render(<ChordCardPlayer chord="Dm" face="guitar-top3" theme={THEME} />);
+    try {
+      expect(container.querySelector('[data-chordl-state="loading"]')).toBeTruthy();
+      expect(container.querySelector('.bc-guitar-chord svg')).toBeNull();
+      fireEvent.click(screen.getByRole("button", { name: /play chord/i }));
+      await waitFor(() => expect(notesOf("electric_guitar_clean")).toEqual([57, 62, 65]));
+      // Module loading can finish, but the paint boundary is still pending.
+      await waitFor(() => expect(container.querySelector('.bc-guitar-chord svg')).toBeTruthy());
+      expect(container.querySelector('.bc-guitar-chord[data-chordl-state="ready"]')).toBeNull();
+      clock.mockReturnValue(0.1);
+      flushFrame();
+      flushFrame();
+      await waitFor(() => expect(container.querySelector('.bc-guitar-chord[data-chordl-state="ready"]')).toBeTruthy());
+      const root = container.querySelector('.bc-guitar-chord')!;
+      const sounding = root.getAttribute("data-active-strings")!.split(" ");
+      expect(sounding).toHaveLength(3);
+      sounding.forEach((index) => expect(root.querySelector(`.bc-playback-string-${index}`)).toBeTruthy());
+      expect(screen.getByRole("button", { name: /play chord/i }).getAttribute("aria-pressed")).toBe("true");
+      expect(container.querySelector('.ccp-status')!.textContent).toBe("");
+    } finally {
+      unmount();
+      raf.mockRestore();
+      cancel.mockRestore();
+      clock.mockRestore();
+    }
+  });
+});
+
 describe("ChordCardPlayer — guitar-top3", () => {
-  it("renders the frame and the chord/arpeggio controls", () => {
+  it("renders the frame and the chord/arpeggio controls", async () => {
     const { container } = render(<ChordCardPlayer chord="C" face="guitar-top3" theme={THEME} />);
+    await waitFor(() => expect(container.querySelector('.bc-guitar-chord[data-chordl-state="ready"] svg')).toBeTruthy());
     expect(container.querySelector(".chord-card-player .bc-guitar-chord")).toBeTruthy();
     expect(screen.getByRole("button", { name: /play chord/i })).toBeTruthy();
     expect(screen.getByRole("button", { name: /play arpeggio/i })).toBeTruthy();
@@ -171,8 +217,9 @@ describe("ChordCardPlayer — guitar-top3", () => {
 });
 
 describe("ChordCardPlayer — ukulele", () => {
-  it("draws four strings labelled G C E A, named for assistive tech", () => {
+  it("draws four strings labelled G C E A, named for assistive tech", async () => {
     const { container } = render(<ChordCardPlayer chord="C" face="ukulele" theme={THEME} />);
+    await waitFor(() => expect(container.querySelector('.bc-guitar-chord[data-chordl-state="ready"] svg')).toBeTruthy());
     const player = container.querySelector(".chord-card-player[data-face='ukulele']")!;
     expect(player.getAttribute("aria-label")).toMatch(/ukulele$/);
     expect(player.querySelector(".bc-guitar-chord")).toBeTruthy();
@@ -193,8 +240,9 @@ describe("ChordCardPlayer — ukulele", () => {
 });
 
 describe("ChordCardPlayer — bass4", () => {
-  it("draws four strings labelled E A D G over six frets", () => {
+  it("draws four strings labelled E A D G over six frets", async () => {
     const { container } = render(<ChordCardPlayer chord="C" face="bass4" theme={THEME} />);
+    await waitFor(() => expect(container.querySelector('.bc-guitar-chord[data-chordl-state="ready"] svg')).toBeTruthy());
     const player = container.querySelector(".chord-card-player[data-face='bass4']")!;
     expect(player.getAttribute("aria-label")).toMatch(/four-string bass$/);
     expect(tuningRow(player)).toEqual(["E", "A", "D", "G"]);
@@ -209,8 +257,9 @@ describe("ChordCardPlayer — bass4", () => {
 });
 
 describe("ChordCardPlayer — guitar (six strings)", () => {
-  it("renders a chords-db shape with no generated badge", () => {
+  it("renders a chords-db shape with no generated badge", async () => {
     const { container } = render(<ChordCardPlayer chord="C" face="guitar" theme={THEME} />);
+    await waitFor(() => expect(container.querySelector('.bc-guitar-chord[data-chordl-state="ready"] svg')).toBeTruthy());
     expect(container.querySelector(".chord-card-player[data-face='guitar'] .bc-guitar-chord")).toBeTruthy();
     expect(container.querySelector(".ccp-badge--generated")).toBeNull();
   });
@@ -237,6 +286,7 @@ describe("ChordCardPlayer — a position elsewhere on the neck", () => {
   it("draws and plays the request it is given instead of the card shape", async () => {
     const octave = positionsFor("C", "guitar-top3", THEME).find((p) => p.kind === "octave")!;
     const { container } = render(<ChordCardPlayer chord="C" face="guitar-top3" theme={THEME} request={octave.request} />);
+    await waitFor(() => expect(container.querySelector('.bc-guitar-chord[data-chordl-state="ready"] svg')).toBeTruthy());
     // svguitar prints the window's first fret beside a slid diagram.
     expect(container.querySelector(".bc-guitar-chord text.fret-position")?.textContent).toBe("12fr");
     fireEvent.click(screen.getByRole("button", { name: /play arpeggio/i }));
