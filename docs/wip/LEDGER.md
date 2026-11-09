@@ -12,8 +12,8 @@ Next ID: 0045  (0001–0024 were used before the ledger existed; see orch/0024-*
 | K | Title | Status | Waiting on | Owner (provider/model) | Branch | PR | Worktree | T3 task/thread | Spec | Plan | Latest handoff | Updated |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
 | 0042 | [quick] Patch vulnerable transitive dependencies (dompurify, fast-uri, image-size) | dispatched | child 0042-impl-r1 | codex/gpt-6.1-sol | orch/0042-audit-transitives | | created by T3 | task `node:delegated-task:command%3Amcp%3A8171515d-9a8b-4268-a6b9-8eda267c872b%3Adelegate-task%3A0042-impl-r1` | — | — | [lead→sol](../handoffs/2026-11-09-0042-audit-transitives--lead-to-sol.md) | 2026-11-09 |
-| 0043 | Type-check test files in every package (tsconfig.test.json + lint:test in CI) | proposed | lead: spec after 0042 and 0038 merge (shares the lockfile and core test files) | — | | | | | | | | 2026-11-09 |
-| 0044 | Deploy: brotli + precompressed assets | proposed | human: re-scope (re-measured 2026-11-09: nginx already gzips via Railpack, cold JS 2.1s not 13s; brotli would save ~25%, 305→231 KB; the 1.12 MB single JS bundle is the bigger lever) | — | | | | | | | | 2026-11-09 |
+| 0043 | Type-check test files in every package (tsconfig.test.json + lint:test in CI) | planned | child 0042-impl-r1 + child 0038-impl-r1 (dispatch once both merge: shared lockfile and core test files) | — | orch/0043-typecheck-tests | | | | [spec](../specs/0043-typecheck-tests.md) | [plan](../plans/0043-typecheck-tests.md) | | 2026-11-09 |
+| 0044 | Deploy: brotli + precompressed assets | proposed | human: re-scope — brotli only, code-split the 1.12 MB bundle, or drop (re-measured 2026-11-09: nginx already gzips via Railpack, cold JS 2.1s not 13s; brotli ~25%, 305→231 KB) | — | | | | | | | | 2026-11-09 |
 | 0038 | Chord parser: only read a root from a standalone chord token (+ S11, S13) | dispatched | child 0038-impl-r1 | codex/gpt-6.1-sol | orch/0038-parser-strict-roots | | created by T3 | task `node:delegated-task:command%3Amcp%3A8171515d-9a8b-4268-a6b9-8eda267c872b%3Adelegate-task%3A0038-impl-r1` | [spec](../specs/0038-parser-strict-roots.md) | [plan](../plans/0038-parser-strict-roots.md) | [lead→sol](../handoffs/2026-11-09-0038-parser-strict-roots--lead-to-sol.md) | 2026-11-09 |
 | 0039 | Notation view: annotations to the right of the stave; scales/runs as beamed eighths | proposed | human: needs spec (3 defects: StaffNotationProps has no annotation props; scale/run branches of PianoChord skip display; mei-builder.ts:115,117 hard-code dur="1") | — | | | | | | | | 2026-11-09 |
 
@@ -57,6 +57,7 @@ Last health scan: 2026-11-09
 
 ## Log
 <!-- One line per status change, newest first: YYYY-MM-DD NNNN old→new — note -->
+- 2026-11-09 0043 proposed→planned — spec + plan written; dispatch waits for 0042 and 0038 to merge
 - 2026-11-09 human accepted S2, S4, S5, S11+S13; 0038 decided (unreadable input = error) → specced+planned+dispatched with S11/S13 folded in; 0042 (S4) →dispatched; 0043 (S1+S5) proposed, sequenced after 0042/0038; 0044 (S2) needs re-scope after re-measuring
 - 2026-11-09 0041 in-review→merged→closed — #108 @1487fa7, r1 approve, CI green, auto-merged (§5a); verify on main passes, 2819 tests
 - 2026-11-09 0041 dispatched→in-review — PR #108 @cb3b9ee; 6 three-way loaded react runs green, slowest 12.96s; pre-existing 10s override (play-mode-hotkey.test.tsx:63) and a 4s waitFor left alone; review r1 → opus
