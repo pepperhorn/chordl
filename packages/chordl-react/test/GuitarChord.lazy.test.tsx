@@ -1,3 +1,4 @@
+import type { GuitarChordProps } from "../src/components/GuitarChord";
 import { describe, it, expect, vi } from "vitest";
 import { render, waitFor } from "@testing-library/react";
 import { renderToString } from "react-dom/server";
@@ -33,7 +34,7 @@ it("does not import guitar implementations until rendered, and marks loading the
 describe("standalone guitar", () => {
   it("marks actual draw failure as error rather than ready", async () => {
     const { GuitarChord } = await import("../src/components/GuitarChord");
-    const { container } = render(<GuitarChord chord={{ fingers: null as never }} />);
+    const { container } = render(<GuitarChord chord={{ fingers: null as never } as unknown as GuitarChordProps["chord"]} />);
     await waitFor(() => expect(container.querySelector('[data-chordl-state="error"]')).toBeTruthy());
     expect(container.querySelector('[data-chordl-state="ready"]')).toBeNull();
   });
