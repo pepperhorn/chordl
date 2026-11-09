@@ -45,7 +45,7 @@ Only `/assets/index-DNS7UQOD.js` requested during the cold-load interval; zero p
 Bundle check: entry sourcemap contains **zero** SVGuitar/chordl-guitar sources. `GuitarChordImpl-CTDW2u5L.js` contains SVGuitar; `GuitarChordPanelImpl-D8tdO0cc.js` contains instruments.js, top3Generated.js and lookup/selection code. Both absent from the no-interaction log. This closes the T1 reviewer bundle-graph suggestion.
 
 ## Downstream becreative readiness (AC4)
-Do not accept the existence of any SVG as completion: notation has an SVG shell while downloading, guitar has a drawing/paint phase, and boards can contain toolbar icons/text cards. For each expected card, wait for a rendered content root with `data-chordl-state="ready"`, and ensure **no loading or error state remains anywhere in that card**. Guitar's ready root is `.bc-guitar-chord`; notation's is `.chordl-board-card-notation`; piano's is `.chordl-board-card-piano`; text's is `.chordl-board-card-text`. Treat `.chordl-board-card-loading` / state=loading as pending, state=error as failure, and apply a bounded timeout for malformed or unavailable content. Existing `.chordl-board-card-error` / state=error behavior is preserved. These are additive markers; becreative should replace SVG-only readiness checks with this rule. No downstream edits made.
+Do not accept the existence of any SVG as completion: notation has an SVG shell while downloading, guitar has a drawing/paint phase, and boards can contain toolbar icons/text cards. For each expected card, wait for a rendered content root with `data-chordl-state="ready"`, and ensure **no loading or error state remains anywhere in that card**. Guitar's ready root is `.bc-guitar-chord` (or `.bc-guitar-panel` for a finished notice); notation's is `.chordl-board-card-notation`; piano's is `.chordl-board-card-piano`; text's is `.chordl-board-card-text`. Treat `.chordl-board-card-loading` / state=loading as pending, state=error as failure, and apply a bounded timeout for malformed or unavailable content. Existing `.chordl-board-card-error` / state=error behavior is preserved. These are additive markers; becreative should replace SVG-only readiness checks with this rule. No downstream edits made.
 
 ## Lead answers response
 - Read the exact answers via `git fetch origin && git show 847d236:docs/handoffs/2026-11-09-0045-t2-board-on-demand--lead-answers.md` before resuming. Expanded scope only to the granted cards test file.
@@ -134,3 +134,63 @@ Packed consumer typecheck and Vite build pass: /tmp/chordl-board-consumer-TS4Yjn
 Final board-only lint and full board suite also pass (27 files / 341 tests, 10.86s) after explicitly awaiting MutationObserver microtasks between the partial/complete staff updates. Targeted readiness file passes (4 tests, 2.86s). No source, dependency or test-budget changes on resume: only the newly owned cards test, the existing owned board test and this return handoff changed. Preview tab and local server closed. Scope audit and `git diff --check` pass.
 
 Resume implementation/test commits: 73ebc4f (cards async assertions and playback timing regression), 1537237 (controlled staff completion). No open questions or remaining implementation gates; lead review is next.
+
+## Review r1 response
+
+- **Date:** 2026-11-10 · **Outcome:** done; all four lead decisions addressed.
+- **Reviewed head:** a20d98c · **Fix commit:** 63a00fee7839456a27937110a0294ff351e657bd
+- **Review:** [5824873163](https://github.com/pepperhorn/chordl/pull/114#pullrequestreview-5824873163)
+- **Lead decisions read before editing:** [97d2002](https://github.com/pepperhorn/chordl/blob/97d2002/docs/handoffs/2026-11-10-0045-t2-board-on-demand--lead-r1-decisions.md), retrieved with the requested `git fetch origin && git show ...` command. Also read `gh pr view 114 --comments` and the exact review via GitHub API.
+
+**Finding 1 — finished guitar notices:** added ready markers to the shared scale/empty-chord notice root and the no-shape panel root. All three public-wrapper notice cases are tested. A board-level ukulele C/E miss test confirms a ready notice and no loading/error marker. Notices are completed content, as the lead decided, and require no engraving SVG. The downstream rule above still waits for a ready content root with no loading/error state; it now names the notice root too.
+
+**Finding 2 — public JSDoc:** restored the exact original origin/main JSDoc on both exported wrappers, leaving the lazy implementation note out of emitted public docs. Compared the original source comments with the regenerated `packages/chordl-react/dist/index.d.ts`: both match exactly. Public names, props and signatures unchanged.
+
+**Suggestion A — board capture readiness:** captureBoard now waits for the absence of any `[data-chordl-state="loading"]` descendant immediately before invoking html2canvas. It observes child/attribute changes, cleans up on completion, and has a 15,000ms bound. On timeout it logs a warning and captures current content as instructed. This gate applies to PNG and PDF. Tests suspend a guitar renderer, start each export while the lazy fallback is still mounted, verify no capture occurs, then resolve the module and check captured content is finished. A fake-timer test proves no capture at 14,999ms, then a warning plus capture at 15,000ms. No production/test timeout was increased.
+
+**Suggestion B — editor import:** replaced the editor's lazy public-namespace import with a static GuitarChordPanel import and removed its redundant outer Suspense. The panel's internal lazy boundary remains the sole guitar loading boundary. Updated both package changelogs under the existing unreleased PR versions; no new version bump.
+
+### First guitar use remeasurement
+Normal production site build (no maps), same gzip level 6 with mtime=0 payload method. Before rows were measured from the retained a20d98c site artifacts and correspond to the actual four-chunk first-guitar request log above. After rows come from a fresh incognito server Chromium preview at port 5652, 1280×800. The 12-second no-interaction log requested only `/assets/index-EkoDHwJS.js`. Entering `guitar Dm7` is an existing editor route to guitar without Display pointer warm-up; it loaded **only** `/assets/GuitarChordPanelImpl-hrBiqwHm.js` and reached a ready SVG. No console entries/errors. The renderer and guitar datasets now share this single deferred chunk; no public barrel/ChordSheet chunk is requested at first guitar use.
+
+| First guitar incremental payload | Before a20d98c | After r1 | Saved |
+|---|---:|---:|---:|
+| Requested JS chunks | 4 | 1 | 3 |
+| Raw bytes | 610,234 | 586,854 | 23,380 |
+| Gzip level 6 bytes | 122,020 | 111,746 | 10,274 (8.42%) |
+
+Request/byte details:
+```text
+Before first guitar (normal built-file gzip sizes):
+  index-B6g8TRjT.js                 8,041 B gzip
+  ChordSheet-BNxYvBWX.js            2,055 B gzip
+  GuitarChordPanelImpl-D8tdO0cc.js 41,606 B gzip
+  GuitarChordImpl-CTDW2u5L.js      70,318 B gzip
+After fresh preview resource log:
+  t=72ms:     /assets/index-EkoDHwJS.js (entry only, through 12s idle)
+  t=35406ms:  /assets/GuitarChordPanelImpl-hrBiqwHm.js (first guitar render)
+  ready SVG count: 1
+```
+The new normal entry is 463,144 raw / 146,341 gzip bytes; no-interaction JS is the entry alone. This remains below both original AC1 targets. These are payload estimates, not production latency or wire compression. Preview tab and server closed after measurement.
+
+### Full r1 verification
+```bash
+pnpm build && pnpm lint && pnpm test:run && pnpm --filter @pepperhorn/chordl-react build:site && node scripts/verify-board-package.mjs
+```
+All passed, exit 0. **159 files / 2,934 tests**:
+```text
+build: PASS
+lint: PASS
+voicings: 9 files / 176 tests
+core: 16 files / 685 tests
+listen: 1 file / 13 tests
+guitar: 19 files / 337 tests
+voicing: 9 files / 161 tests
+react: 51 files / 394 tests
+cards: 26 files / 823 tests
+board: 28 files / 345 tests
+build:site: built in 5.14s
+Packed editor/player SSR, exports and scoped stylesheet pass.
+Packed consumer typecheck and Vite build pass: /tmp/chordl-board-consumer-ujsXlp
+```
+Targeted notice/readiness/export checks also passed. `git diff --check` and scope audit pass: only already-owned React/board component files, tests, changelogs and this return handoff changed in r1. StaffNotation failure-state work remains untouched and belongs to lead suggestion S19. No implementation questions remain; ready for lead re-review. No PR watch or polling.
