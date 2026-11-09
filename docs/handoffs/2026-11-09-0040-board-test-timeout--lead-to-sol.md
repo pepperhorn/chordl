@@ -6,7 +6,7 @@
 - **Branch:** orch/0040-board-test-timeout · **Worktree:** created by T3
 - **PR:** <url once opened>
 - **Base commit:** f94927f
-- **Status:** open
+- **Status:** closed
 
 ## Goal
 chordl-board tests flake under load: suites using `waitFor` / `setTimeout` (board-editor*, board-player, lazy-export, new-board, card-toolbar) hit vitest's 5s default `testTimeout`, and pass when rerun in isolation (seen in the 0025, 0026 and 0031 return handoffs). `packages/chordl-board/vitest.config.ts` sets no `testTimeout` or `hookTimeout`. Done = the board suite no longer times out under a loaded machine, without hiding a real hang.

@@ -5,13 +5,13 @@
 > Waiting on: `child <taskId>` · `review <taskId>` · `ci` · `human: <why>` · `lead: <next action>`. Set it on every status change. A row needs the lead when it starts with `lead`, or when it's empty and Status is dispatched, in-review, changes-requested, ready, or merged. The lead's Stop hook won't let the lead end its turn while any row needs it.
 > Type: normal items have a spec and plan. Quick items have the title prefix `[quick]` (no spec or plan, a short handoff). PRs adopted by `orch-sweep` have the prefix `[pr]`.
 
-Next ID: 0041  (0001–0024 were used before the ledger existed; see orch/0024-* branches; 0027, 0029 and 0033–0036 were assigned outside this ledger; 0037 merged as #105)
+Next ID: 0042  (0001–0024 were used before the ledger existed; see orch/0024-* branches; 0027, 0029 and 0033–0036 were assigned outside this ledger; 0037 merged as #105)
 
 ## Active
 
 | K | Title | Status | Waiting on | Owner (provider/model) | Branch | PR | Worktree | T3 task/thread | Spec | Plan | Latest handoff | Updated |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 0040 | [quick] chordl-board tests: raise vitest timeout above the 5s default | in-review | review 0040-review-r2 (claude-opus) | codex/gpt-6.1-sol | orch/0040-board-test-timeout | [#107](https://github.com/pepperhorn/chordl/pull/107) @ e9355c8 | /home/shaun/.t3/worktrees/chordl/t3-d013f290 | task `node:delegated-task:command%3Amcp%3Aacb17a48-3737-4dcb-babb-6afd61cdd00c%3Adelegate-task%3A0040-impl-r1` | — | — | [sol→lead](../handoffs/2026-11-09-0040-board-test-timeout--sol-to-lead.md) (on branch) | 2026-11-09 |
+| 0041 | [quick] chordl-react tests: same timeout budget as board | dispatched | lead: delegate | codex/gpt-6.1-sol | orch/0041-react-test-timeout | | | | — | — | [lead→sol](../handoffs/2026-11-09-0041-react-test-timeout--lead-to-sol.md) | 2026-11-09 |
 | 0038 | Chord box accepts nonsense ("@@@ not a chord @@@" → C, "Zbq9" → B) | proposed | human: needs spec (error vs. empty vs. best guess is a product call) | — | | | | | | | | 2026-11-09 |
 | 0039 | Notation view: annotations to the right of the stave; scales/runs as beamed eighths | proposed | human: needs spec (3 defects: StaffNotationProps has no annotation props; scale/run branches of PianoChord skip display; mei-builder.ts:115,117 hard-code dur="1") | — | | | | | | | | 2026-11-09 |
 
@@ -19,6 +19,7 @@ Next ID: 0041  (0001–0024 were used before the ledger existed; see orch/0024-*
 
 | K | Title | PR | Merged | Notes |
 |---|---|---|---|---|
+| 0040 | [quick] chordl-board tests: raise vitest timeout | [#107](https://github.com/pepperhorn/chordl/pull/107) | 2026-11-09 @ 6b13fc1 | Codex impl; Opus r1 changes-requested @bc4ff4c (15s too low, waitFor 1s flake), r2 approve @e9355c8 (9/9 three-way loaded runs, slowest 23.4s). Auto-merged per §5a (10 code lines). Verify on main: 2819 pass. Follow-up 0041 (react) |
 | 0032 | [quick] "C7alt" parses as "C7" in parseChordDescription | [#106](https://github.com/pepperhorn/chordl/pull/106) | 2026-11-09 @ ff0dc34 | Codex impl; Opus r1 changes-requested @5dd3b21 (C7ALT case, self-compare test), r2 approve @dfa0a4b. Verify on main: 2819 pass. Follow-ups S11, S13 |
 | 0037 | Packed-board CI check uses workspace chordl-core | [#105](https://github.com/pepperhorn/chordl/pull/105) | 2026-11-09 @ b09d17d | Backfilled by sweep 2026-11-09 (merged outside this ledger) |
 | 0031 | Resolver: slash + bracketed-alteration fallback | [#104](https://github.com/pepperhorn/chordl/pull/104) | 2026-11-08 @ fce7b1a | Backfilled by sweep 2026-11-09 (merged outside ledger). Handoffs: 2026-11-09-0031-* |
@@ -47,11 +48,14 @@ Next ID: 0041  (0001–0024 were used before the ledger existed; see orch/0024-*
 | S11 | risk | Remaining `alt` spellings drop silently: `C7 alt`, `C7(alt)`, `C7alt9`, `Calt7`; and `Calt7` resolves to C E Bb Db vs `C7alt` C E G# Bb D# | PR #106 review r1 (5821147423) | S | M | review 0032 r1 | new |
 | S12 | risk | A core catalogue regression test also exceeds its default timeout under concurrent load | 0040 return handoff (orch/0040 @bc4ff4c) | S | M | 0040 follow-up | new |
 | S13 | risk | CHORD_RE has no word boundary before the root letter: "play Bb7 over D" parses as chord A (from "play") | PR #106 review r2 (5821202395); natural-language.ts:417 | S | M | review 0032 r2 | new |
+| S14 | efficiency | Make the slowest board tests cheaper instead of raising budgets again (slowest 23.4s of 30s under load) | PR #107 review r2 (5821405987) | M | M | review 0040 r2 | new |
 
 Last health scan: 2026-11-09
 
 ## Log
 <!-- One line per status change, newest first: YYYY-MM-DD NNNN old→new — note -->
+- 2026-11-09 0041 →dispatched (quick) — react InteractiveInput tests time out at 5s under load (0040 r2)
+- 2026-11-09 0040 in-review→merged→closed — #107 @6b13fc1, r2 approve, CI green, auto-merged (§5a); verify on main passes, 2819 tests
 - 2026-11-09 0040 changes-requested→in-review — r1 fixes @e9355c8 (30s, asyncUtilTimeout 5000, override removed); 9 three-way loaded runs green; review r2 → opus
 - 2026-11-09 0032 ready→merged→closed — #106 @ff0dc34 (human approved); verify on main passes, 2819 tests. Human: handoff-doc lines don't count toward the auto-merge line limit
 - 2026-11-09 0032 in-review→ready — r2 (opus) approve @dfa0a4b; CI green; over the 50-line auto-merge limit only because of handoff docs → human
