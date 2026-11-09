@@ -1,5 +1,5 @@
-import React, { forwardRef, useId, useImperativeHandle, useState, useRef, useEffect, useMemo, useCallback, lazy, Suspense } from "react";
-import { VoicingVariantToggle, ChordQualityPicker, ProgressionView, ListenOverlay, FollowAlongOverlay, isProgressionRequest, parseProgressionRequest, resolveProgressionRequest, BRAVURA_GLYPHS, PETALUMA_GLYPHS, setDefaultGlyphs, prefetchVerovio } from "@pepperhorn/chordl-react";
+import React, { forwardRef, useId, useImperativeHandle, useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { GuitarChordPanel, VoicingVariantToggle, ChordQualityPicker, ProgressionView, ListenOverlay, FollowAlongOverlay, isProgressionRequest, parseProgressionRequest, resolveProgressionRequest, BRAVURA_GLYPHS, PETALUMA_GLYPHS, setDefaultGlyphs, prefetchVerovio } from "@pepperhorn/chordl-react";
 import type { PlaybackSpecSnapshot, ExperienceLevel, InstrumentId, UIThemeMode, FrameOrientation, FrameLineStyle } from "@pepperhorn/chordl-react";
 import { DEFAULT_ARPEGGIO_BPM, DEFAULT_PLAYBACK_HIGHLIGHT_COLOR, MAX_ARPEGGIO_BPM, MIN_ARPEGGIO_BPM, parseChordDescription, resolveChord } from "@pepperhorn/chordl-core";
 import type { TextSize, NoteNameMode } from "@pepperhorn/chordl-core";
@@ -14,8 +14,6 @@ import type { BoardDisplayMode, BoardItem, BoardItemRef } from "./types.js";
 import { normalizeRef } from "./io.js";
 import { BoardIcon, BOARD_ICONS } from "./icons.js";
 import { fileToCardImage, imageBytesUsed, IMAGE_BUDGET_CHARS } from "./image.js";
-
-const GuitarChordPanel = lazy(() => import("@pepperhorn/chordl-react").then((m) => ({ default: m.GuitarChordPanel })));
 
 export interface BoardEditorProps {
   /** Host-owned board. Use useChordBoard with a stable storage adapter and onChange. */
@@ -1655,28 +1653,26 @@ export const BoardEditor = forwardRef<BoardEditorHandle, BoardEditorProps>(funct
           {isProg && progressionResult ? (
             <ProgressionView result={progressionResult} theme={theme} uiTheme={uiTheme} />
           ) : displayMode === "guitar" ? (
-            <Suspense fallback={<div className="chordl-board-card-loading" data-chordl-state="loading" role="status" style={{ fontFamily: "Poppins, system-ui, sans-serif", textAlign: "center", padding: "24px 0" }}>Loading guitar shapes…</div>}>
-              <GuitarChordPanel
-                chord={input}
-                instrument={guitarInstrument}
-                onInstrumentChange={setGuitarInstrument}
-                position={guitarPosition}
-                onPositionChange={setGuitarPosition}
-                orientation={frameOrientation}
-                onOrientationChange={setFrameOrientation}
-                lineStyle={frameLineStyle}
-                onLineStyleChange={setFrameLineStyle}
-                level={level}
-                scale={scale}
-                uiTheme={uiTheme}
-                title={title || undefined}
-                subheading={subheading || undefined}
-                footerText={footerText || undefined}
-                arpeggioBpm={arpeggioBpm}
-                playbackHighlightColor={playbackHighlightColor}
-                onPlaybackSpecChange={handlePlaybackSpecChange}
-              />
-            </Suspense>
+            <GuitarChordPanel
+              chord={input}
+              instrument={guitarInstrument}
+              onInstrumentChange={setGuitarInstrument}
+              position={guitarPosition}
+              onPositionChange={setGuitarPosition}
+              orientation={frameOrientation}
+              onOrientationChange={setFrameOrientation}
+              lineStyle={frameLineStyle}
+              onLineStyleChange={setFrameLineStyle}
+              level={level}
+              scale={scale}
+              uiTheme={uiTheme}
+              title={title || undefined}
+              subheading={subheading || undefined}
+              footerText={footerText || undefined}
+              arpeggioBpm={arpeggioBpm}
+              playbackHighlightColor={playbackHighlightColor}
+              onPlaybackSpecChange={handlePlaybackSpecChange}
+            />
           ) : (
             <VoicingVariantToggle
               chord={(octaveShift === 0 ? input : `${input} chord ${octaveShift > 0 ? "up" : "down"} ${Math.abs(octaveShift)} octave${Math.abs(octaveShift) > 1 ? "s" : ""}`) + detailsModifiers}

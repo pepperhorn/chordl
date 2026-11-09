@@ -396,6 +396,7 @@ export function GuitarChordPanel({
   const notice = (msg: string) => (
     <UIThemeProvider value={uiCtx}>
       <div className={`bc-guitar-panel bc-guitar-notice ${className ?? ""}`.trim()}
+        data-chordl-state="ready"
         style={{ textAlign: "center", color: muted, fontSize: "0.85rem", padding: "24px 0", ...style }}>
         {msg}
       </div>
@@ -464,6 +465,7 @@ export function GuitarChordPanel({
       <UIThemeProvider value={uiCtx}>
         <div
           className={`bc-guitar-panel ${className ?? ""}`.trim()}
+          data-chordl-state="ready"
           style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, ...style }}
         >
           {instrumentToggle}

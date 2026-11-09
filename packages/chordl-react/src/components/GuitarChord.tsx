@@ -26,9 +26,16 @@ export interface GuitarChordProps {
   playbackHighlightColor?: string;
 }
 
+// Keep heavy rendering code off the public entry until the first render.
 const Renderer = lazy(() => import("./GuitarChordImpl").then((m) => ({ default: m.GuitarChord })));
 
-/** Keep heavy rendering code off the public entry until the first render. */
+/**
+ * Render a single guitar chord diagram (fretboard "frame") with svguitar.
+ *
+ * svguitar draws imperatively into a DOM node, so we render into a ref'd div in
+ * an effect and clear it on unmount — the same pattern the Verovio staff uses.
+ * Colors come from the UI theme so the diagram stays visible in dark mode.
+ */
 export function GuitarChord(props: GuitarChordProps) {
   return <Suspense fallback={<GuitarLoading className={props.className} style={props.style} />}><Renderer {...props} /></Suspense>;
 }

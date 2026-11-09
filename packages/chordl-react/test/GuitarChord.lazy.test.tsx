@@ -38,3 +38,15 @@ describe("standalone guitar", () => {
     expect(container.querySelector('[data-chordl-state="ready"]')).toBeNull();
   });
 });
+
+it.each([
+  { chord: "C major scale", message: "switch off scale mode" },
+  { chord: "", message: "Enter a chord" },
+  { chord: "C/E", instrument: "ukulele" as const, message: "No ukulele shape found" },
+])("notice for '$chord' is finished content with a ready marker", async ({ chord, instrument, message }) => {
+  const { GuitarChordPanel } = await import("../src/components/GuitarChordPanel");
+  const { container } = render(<GuitarChordPanel chord={chord} instrument={instrument} />);
+  await waitFor(() => expect(container.querySelector('.bc-guitar-panel[data-chordl-state="ready"]')?.textContent).toContain(message));
+  expect(container.querySelector('[data-chordl-state="loading"]')).toBeNull();
+  expect(container.querySelector('[data-chordl-state="error"]')).toBeNull();
+});

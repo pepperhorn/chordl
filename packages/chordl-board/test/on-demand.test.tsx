@@ -76,3 +76,10 @@ it("staff SVG placeholders cannot satisfy readiness; engraving must complete", a
   expect(container.querySelector('.bc-staff__engraving svg')).toBeTruthy();
   expect(container.querySelector('.chordl-board-card-loading')).toBeNull();
 });
+
+it("a guitar board card without a shape settles on a ready notice with no loading marker", async () => {
+  const { container } = render(<BoardCardContent item={{ id: "g", nl: "C/E", display: "guitar", instrument: "ukulele" }} />);
+  await waitFor(() => expect(container.querySelector('.chordl-board-card-guitar[data-chordl-state="ready"]')?.textContent).toContain("No ukulele shape found"));
+  expect(container.querySelector('[data-chordl-state="loading"]')).toBeNull();
+  expect(container.querySelector('[data-chordl-state="error"]')).toBeNull();
+});

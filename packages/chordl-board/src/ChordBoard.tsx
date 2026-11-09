@@ -44,6 +44,28 @@ function NotationCard({ children }: { children: ReactNode }) {
   </div>;
 }
 
+const BOARD_CAPTURE_READY_TIMEOUT_MS = 15_000;
+
+/** Do not export a lazy renderer's placeholder while its content is pending. */
+function waitForBoardRender(node: HTMLElement): Promise<void> {
+  if (!node.querySelector('[data-chordl-state="loading"]')) return Promise.resolve();
+  return new Promise((resolve) => {
+    const finish = () => {
+      clearTimeout(timeout);
+      observer.disconnect();
+      resolve();
+    };
+    const observer = new MutationObserver(() => {
+      if (!node.querySelector('[data-chordl-state="loading"]')) finish();
+    });
+    const timeout = setTimeout(() => {
+      console.warn("Chordl board: render readiness timed out after 15s; capturing current content.");
+      finish();
+    }, BOARD_CAPTURE_READY_TIMEOUT_MS);
+    observer.observe(node, { childList: true, subtree: true, attributes: true, attributeFilter: ["data-chordl-state"] });
+  });
+}
+
 /** Compensates for GuitarChord's fixed 260*scale cap. See BoardCardContent. */
 const GUITAR_CARD_SCALE = 1.6;
 
@@ -792,6 +814,7 @@ export function ChordBoard({
     // Wait one frame so the exporting=true render commits before capture.
     await new Promise<void>((r) => requestAnimationFrame(() => r()));
     const html2canvas = (await import("html2canvas")).default;
+    await waitForBoardRender(node);
     return await html2canvas(node, {
       backgroundColor: "#ffffff",
       scale: 2,

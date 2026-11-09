@@ -80,9 +80,14 @@ export interface GuitarChordPanelProps {
   onPlaybackSpecChange?: (spec: PlaybackSpecSnapshot) => void;
 }
 
+// Keep heavy rendering code off the public entry until the first render.
 const Renderer = lazy(() => import("./GuitarChordPanelImpl").then((m) => ({ default: m.GuitarChordPanel })));
 
-/** Keep heavy rendering code off the public entry until the first render. */
+/**
+ * Guitar view for a chord: resolves the chord label, looks up its shapes, and
+ * renders the selected fret position with an A/B/C toggle for the alternate
+ * placements. Chord-only (scales / note lists fall back to a hint).
+ */
 export function GuitarChordPanel(props: GuitarChordPanelProps) {
   return <Suspense fallback={<GuitarLoading className={props.className} style={props.style} />}><Renderer {...props} /></Suspense>;
 }
