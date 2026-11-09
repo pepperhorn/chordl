@@ -1,4 +1,4 @@
-<!-- ph-orch:begin v2 — managed by orch-init; customise via .ph-orch.json, edit outside these markers, or re-run orch-init to upgrade -->
+<!-- ph-orch:begin v3 — managed by orch-init; customise via .ph-orch.json, edit outside these markers, or re-run orch-init to upgrade -->
 # Agent Operating Manual
 
 Every agent working in this repo (Claude, Codex, or anything else) reads this first.
@@ -25,9 +25,18 @@ Before starting any work, read the ledger and every doc linked from your ledger 
 
 Any capable model can hold any role. Which one you are depends on where you're running and what your brief says, not on which model you are.
 
-- **Lead** (Claude Opus or Codex, in the **main checkout**): talks with the human, writes specs and plans, records decisions, dispatches work, runs reviews, merges PRs, and owns the ledger and the GBrain write-back. It never writes feature code on the main checkout. Its playbook is the `orch-dispatch` skill.
+- **Lead** (Claude Opus or Codex, in the **main checkout**): talks with the human, writes specs and plans, records decisions, dispatches work, runs reviews, merges PRs, and owns the ledger and the GBrain write-back. It never writes code on the main checkout. Its playbooks are the `orch-dispatch` and `orch-sweep` skills.
 - **Implementer** (in its **own worktree**): carries out one plan task within its declared scope, opens a PR, and hands back.
 - **Reviewer** (the **other model family** from the implementer): reviews the PR against the spec, the plan, and the acceptance criteria. It never edits code.
+
+### What the lead does inline, and what it dispatches
+
+The lead does these itself:
+- edits docs: specs, plans, handoffs, ADRs, the ledger, `AGENTS.md`, `CLAUDE.md`, `.ph-orch.json`
+- runs `git` and `gh` commands (commit and push docs, review state, merge)
+- reads code, searches, and runs read-only commands, such as the verify command on `main` after a merge
+
+Everything else is a task, however small: a one-line fix, a refactor, a dependency bump, a test that needs fixing. Dispatch it. Small things go through the **quick lane** (`orch-dispatch`, "Quick lane"). Hooks enforce this in the lead's checkout: `lead-guard` denies edits outside the lead's paths and pushes of code commits, `lead-post` flags any code a shell command changed or committed, and `lead-stop` stops the lead ending its turn while the ledger has work waiting on it.
 
 ### Routing (customise in `.ph-orch.json`; T3 `delegate_task` targets)
 
@@ -75,7 +84,20 @@ Related words: **"park"** means write a handoff addressed to `future` and set th
 
 - Only the lead edits the ledger, and only on `main`. This avoids merge conflicts across worktrees.
 - Implementers report status (and their PR URL) through their return handoff. The lead copies it into the ledger.
-- Status flow: `proposed → specced → planned → dispatched → in-review → changes-requested → ready → merged → closed`, plus `blocked` and `parked`.
+- Status flow: `proposed → specced → planned → dispatched → in-review → changes-requested → ready → merged → closed`, plus `blocked` and `parked`. Quick items (`[quick]`) skip spec and plan: `proposed → dispatched → in-review → ready → merged → closed`.
+- **Waiting on** says who has the next move: `child <taskId>`, `review <taskId>`, `ci`, `human: <why>`, or `lead: <next action>`. The lead sets it on every status change. A row needs the lead when Waiting on starts with `lead`, or when it's empty and the status is dispatched, in-review, changes-requested, ready, or merged. `blocked` and `parked` rows never need the lead.
+
+## 5a. Autonomy (lead)
+
+- **Look it up, don't ask to.** Never ask permission for read-only investigation: just do it, then report what you found. That includes GBrain, this repo, sibling local checkouts (e.g. `ls ~/.t3/projects`), other GitHub repos (`gh repo list <owner>`, `gh search code`, `gh api repos/<o>/<r>/contents/<path>`), installed package source (`node_modules/<pkg>`), and public docs. If it's broad, hand it to a read-only research subagent. "Shall I go and look at X?" is never a question for the human.
+- **Ask only what's theirs to decide**: product, design, or scope choices the code and docs can't settle. Research first so the question is informed, give your recommendation and the options, and batch the questions in one message. Keep researching anything that isn't blocked by the answer while you wait.
+- **Suggest, with evidence.** Keep the ledger's Suggestions table current: next steps, improvements, code efficiencies, better libraries or stack, and risks. Sources are reviewer suggestions, implementer follow-ups, the health scan in `orch-sweep`, and anything you notice while reading code. Every suggestion cites evidence (file:line, a measurement, a benchmark or doc link) and gives effort and value. Don't re-suggest a declined one unless something has changed, and say what.
+- **Suggesting isn't doing.** A suggestion becomes work only when the human accepts it (it then gets a `proposed` row), except a small efficiency or fix with clear evidence that fits the quick lane and §5a's merge limits. Stack, dependency, architecture, and API changes always wait for the human.
+- **End reports with next steps.** After a merge, a sweep, or a status report, close with up to 3 top suggestions (new or still open), each with one line of why and your recommendation. No suggestions is fine. Filler isn't.
+- **Be proactive.** When nothing is in flight, or at the start of a session, run `orch-sweep`: act on ledger rows that need you, adopt open PRs that aren't in the ledger, and turn small, clear fixes into quick items.
+- **Merge without asking** only when all of these hold: `AUTO_MERGE` is `small` (this repo: `small`); the review verdict is approve; every check passes on the reviewed head; the diff is at most 50 changed lines; and it doesn't touch schema or migrations, public APIs, dependencies, CI or infra, or auth and secrets.
+- Anything else: ask the human, and set Waiting on to `human: <why>`.
+- Never close someone else's PR or issue without asking.
 
 ## 6. Definition of done (implementer)
 
@@ -88,7 +110,7 @@ Related words: **"park"** means write a handoff addressed to `future` and set th
 
 ## 7. Escalate, don't improvise
 
-If the spec is ambiguous, the plan is wrong, or scope needs to grow: stop, write the question into the return handoff, set it to `blocked`, and finish. A short honest handback is better than a confident wrong one.
+First resolve what you can yourself: read the code, linked repos, packages, docs, and GBrain (§5a "Look it up"). Escalate only what's left. If the spec is still ambiguous, the plan is wrong, or scope needs to grow: stop, write the question into the return handoff, set it to `blocked`, and finish. A short honest handback is better than a confident wrong one.
 
 ## 8. GBrain (cross-project memory)
 

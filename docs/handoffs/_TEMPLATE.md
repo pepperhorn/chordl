@@ -1,7 +1,7 @@
 # Handoff: K — <title> (<from> → <to>)
 
 - **Date:** YYYY-MM-DD
-- **Type:** dispatch | return | review | park | human
+- **Type:** dispatch | quick | return | review | park | human
 - **Ledger:** NNNN · **Spec:** <path> · **Plan:** <path> (task Tn)
 - **Branch:** orch/K-<slug> · **Worktree:** <path or "created by T3">
 - **PR:** <url once opened>
@@ -11,6 +11,7 @@
 
 ## Goal
 <!-- One paragraph. What "done" looks like. -->
+<!-- Type `quick`: fill in only Goal, Files you own, Acceptance criteria, and Verify with. -->
 
 ## Context you need
 <!-- Links first. Inline only what removes ambiguity. Assume zero chat history. -->

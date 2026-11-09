@@ -1,5 +1,5 @@
 {
-  "kitVersion": "v2",
+  "kitVersion": "v3",
   "DOCS": "docs",
   "DECISIONS": "docs/decisions",
   "DECISIONS_REL": "decisions",
@@ -23,5 +23,10 @@
   "REVIEW_OPTIONS": "{\"effort\":\"high\"}",
   "ALT_REVIEW_PROVIDER": "codex",
   "ALT_REVIEW_MODEL": "gpt-6.1-sol",
-  "ALT_REVIEW_OPTIONS": "{\"reasoningEffort\":\"high\"}"
+  "ALT_REVIEW_OPTIONS": "{\"reasoningEffort\":\"high\"}",
+  "AUTO_MERGE": "small",
+  "AUTO_MERGE_MAX_LINES": "50",
+  "SWEEP_PRS": true,
+  "SCAN_DAYS": 7,
+  "STOP_MAX_BLOCKS": 3
 }
