@@ -3,6 +3,25 @@ import { parseChordDescription, resolveChord } from "@pepperhorn/chordl-core";
 
 describe("parseChordDescription", () => {
   it.each([
+    ["@@@ not a chord @@@", ""], ["Zbq9", ""], ["hello world", ""],
+    ["play Bb7 over D", "Bb7"], ["C7 alt", "C7alt"], ["C7(alt)", "C7alt"],
+    ["C7alt9", ""], ["Calt7", "C7alt"],
+    ["play a C major chord", "C"], ["a C major chord", "C"], ["a Bb7", "Bb7"],
+    ["A", "A"], ["a", "A"], ["a minor", "Am"], ["A over C#", "A"],
+    ["show me G", "G"], ["(Bb7)", "Bb7"], ["play: c7 ALT!", "C7alt"],
+    ["c7(ALT)/e", "C7alt/E"], ["bbALT7", "Bb7alt"],
+    ["xC7", ""], ["C7foo", ""], ["123C7", ""], ["C7alt9/E", ""],
+  ])("reads a standalone chord in '%s'", (input, chordName) => {
+    const parsed = parseChordDescription(input);
+    expect(parsed.chordName).toBe(chordName);
+    if (input === "play Bb7 over D") expect(parsed.bassNote).toBe("D");
+    if (input === "A over C#") expect(parsed.bassNote).toBe("C#");
+    if (chordName.includes("alt")) {
+      expect(resolveChord(chordName).notes.length).toBeGreaterThan(0);
+    }
+  });
+
+  it.each([
     ["C7alt", "C7alt", ["C", "E", "G#", "Bb", "D#"]],
     ["G7alt", "G7alt", ["G", "B", "D#", "F", "A#"]],
     ["Bb7alt", "Bb7alt", ["Bb", "D", "F#", "Ab", "C#"]],
@@ -21,7 +40,7 @@ describe("parseChordDescription", () => {
   });
 
   it.each(["alto", "alternate", "alternative"])("does not capture '%s' as an alt suffix", (word) => {
-    expect(parseChordDescription(`C7${word}`).chordName).toBe("C7");
+    expect(parseChordDescription(`C7${word}`).chordName).toBe("");
     expect(parseChordDescription(`C7 ${word}`).chordName).toBe("C7");
   });
 

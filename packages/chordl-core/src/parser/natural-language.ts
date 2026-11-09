@@ -39,6 +39,9 @@ function stripArticles(text: string, input: string): string {
     const rest = whole.slice(offset + token.length);
     if (/^[#/]/.test(rest)) return token;
     if (token === "A") return token;
+    // A lowercase lone "a" before another chord ("play a C major chord")
+    // is an article. Before its own quality ("a minor"), it is the root A.
+    if (token === "a" && /^\s+(?:major|minor|diminished|augmented|dominant|suspended)\b/i.test(rest)) return token;
     if (/^\s*$/.test(rest) && bareArticleAtEnd) return token;
     return "";
   });
@@ -412,11 +415,14 @@ const QUALITY_WORDS: Record<string, string> = {
 // Slash-bass is captured as its own group (any note letter, not just B) rather
 // than folded into the quality-suffix class — the old catch-all `[0-9#b/]+`
 // let '/' bleed into the flat-symbol 'b', so only B/Bb bass notes round-tripped.
-// `alt\b` keeps altered-dominant suffixes without consuming words like "alto".
+// Only standalone tokens may supply a root; neither edge may touch a word
+// character or accidental. Exclude slash at the leading edge too, so a rejected
+// symbol cannot silently fall back to its bass note ("C7alt9/E").
+// The alt alternatives accept spaced, parenthesized and reversed-7 aliases.
 // `\/[0-9]+` stays in the quality group so "6/9"-style suffixes (slash
 // followed by digits, not a bass letter) aren't mistaken for a slash bass.
 const CHORD_RE =
-  /([A-Ga-g][#b]?)\s*(maj|min|m|aug|dim|sus|add|dom|alt\b|M|°|ø|\/[0-9]+|[0-9#b]+|\((?:[#b](?:5|9|11|13)|add(?:9|11|13|b9|#9|b13|#11))(?:,(?:[#b](?:5|9|11|13)|add(?:9|11|13|b9|#9|b13|#11)))*\))*(\/[A-Ga-g][#b]?)?/i;
+  /(?<![\p{L}\p{N}_#\/])([A-Ga-g][#b]?)\s*(maj|min|m|aug|dim|sus|add|dom|alt7\b|alt\b|\s+alt\b|\(alt\)|M|°|ø|\/[0-9]+|[0-9#b]+|\((?:[#b](?:5|9|11|13)|add(?:9|11|13|b9|#9|b13|#11))(?:,(?:[#b](?:5|9|11|13)|add(?:9|11|13|b9|#9|b13|#11)))*\))*(\/[A-Ga-g][#b]?)?(?![\p{L}\p{N}_#]|\/[\p{L}\p{N}])/iu;
 
 function capitalizeNote(note: string): string {
   return note.charAt(0).toUpperCase() + note.slice(1);
@@ -980,6 +986,7 @@ export function parseChordDescription(input: string): ParsedChordRequest {
       const afterRoot = chordMatch[0]
         .slice(chordMatch[1].length)
         .trim()
+        .replace(/^7(?:\s+alt|\(alt\))|^alt7/i, "7alt")
         .replace(/alt\b/i, "alt")
         .replace(/\/([A-Ga-g])/, (_m, letter: string) => `/${letter.toUpperCase()}`);
       result.chordName = root + afterRoot;
