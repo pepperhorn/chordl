@@ -29,6 +29,7 @@
     "build:data": "node scripts/build-data.mjs",
     "build:top3": "node scripts/build-top3.mjs",
     "build": "pnpm run build:data && tsc",
+    "lint:test": "tsc --project tsconfig.test.json",
     "lint": "pnpm run build:data && tsc --noEmit",
     "test": "pnpm run build:data && vitest",
     "test:run": "pnpm run build:data && vitest run"
@@ -38,6 +39,7 @@
     "svguitar": "^2.5.1"
   },
   "devDependencies": {
+    "@types/node": "^22.0.0",
     "typescript": "^5.7.0",
     "vitest": "^4.1.1"
   },
