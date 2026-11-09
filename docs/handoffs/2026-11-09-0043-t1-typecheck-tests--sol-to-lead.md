@@ -7,7 +7,7 @@
 - **Branch:** orch/0043-t1-typecheck-tests
 - **Worktree:** /home/shaun/.t3/worktrees/chordl/t3-343f4392
 - **Base commit:** 382678d (implementation starts after dispatch docs at 9e3e270)
-- **PR:** Created after this return is committed; linked in the PR body.
+- **PR:** https://github.com/pepperhorn/chordl/pull/115 (draft)
 - **Status:** closed
 
 ## Goal
