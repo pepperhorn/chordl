@@ -34,3 +34,4 @@ none
 
 ---
 ## Receiver ack
+Acknowledged: preserve the `alt` suffix in chord symbols and modifier-bearing requests, prove the failing cases before the fix, compare resolved notes with `resolveChord`, and guard against capturing prose such as alto/alternate/alternative. I will edit only the two owned parser/test files plus my task handoffs, run the full required verification, and open a draft PR on `orch/0032-c7alt-parse`. No open questions. GBrain searched for chordl and C7alt; no directly relevant parser decision found.
