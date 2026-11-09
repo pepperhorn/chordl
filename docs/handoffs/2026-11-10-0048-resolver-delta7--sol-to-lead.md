@@ -115,3 +115,91 @@ Direct comparison using the sweep's baseline/head resolver modules: all six requ
 - **Open questions:** none.
 - **Out-of-scope issues / follow-ups:** none identified.
 - **For GBrain (lead to promote):** Δ7/mΔ7 and ∆ spellings now resolve in core; parser no longer needs the 0038 Δ7 exception. No architectural decision needed.
+
+## Review r1 response
+
+- **Review:** [5832235935](https://github.com/pepperhorn/chordl/pull/118#pullrequestreview-5832235935), reviewed head 200e264.
+- **Lead decisions:** [8f3ad13 dispatch](https://github.com/pepperhorn/chordl/blob/8f3ad13/docs/handoffs/2026-11-10-0048-resolver-delta7--lead-r1-decisions.md). Acknowledged: guard capital M and extend the resolver sweep; preserve all explicitly deferred behaviors.
+- **Fix commit:** da3b166.
+- **Scope added by lead:** `packages/chordl-core/test/resolver-regression-sweep.mjs`.
+- **Blocking finding fixed:** Δ7 rewriting now uses `/(?<!M)Δ7/g` after ∆ normalization. CMΔ7 and CM∆7 throw; both have unit regressions.
+- **Coverage fixed:** the sweep generates Δ7, mΔ7, ∆7, m∆7, ∆ and ∆9 for all 15 roots, standalone and with all 15 slash basses (1440 canonical-result checks). It also checks 480 MΔ7/M∆7 rejection cases. Canonical checks run before skipping unchanged rows, so loss of new spelling support fails even when the baseline also rejects it.
+- **Sweep failure checks:** temporary script copies injected mutations into the in-memory source, leaving tracked sources untouched. Removing the M guard failed with 480 symbols; removing normalization failed with 1440 symbols (exit 1 each). Temporary scripts removed.
+- **Deferred exactly as directed:** pre-existing `/mmaj/i`, rootless Δ, and rewritten error names.
+
+### R1 sweep summaries
+```json
+{
+  "base": "main",
+  "total": 56400,
+  "aliases": 235,
+  "roots": 15,
+  "bassForms": 16,
+  "newSpellingCases": 1440,
+  "rejectionCases": 480,
+  "expectedNewlyAccepted": 1440,
+  "differences": 1440,
+  "byKind": {
+    "newly accepted": 1440
+  },
+  "failures": [],
+  "report": "/tmp/chordl-resolver-sweep-hRJKNh/diff.json"
+}
+```
+```json
+{
+  "base": "4911f61",
+  "baseHead": "4911f61fa7c950362882f97c7a3e523675e73242",
+  "noteGroupInterpretations": 1362,
+  "symbols": 3248,
+  "slash": 1800,
+  "inputs": 61196,
+  "same": 61196,
+  "differences": 0,
+  "expectedChanges": {
+    "interjection": 0,
+    "trailingSlashHand": 0
+  },
+  "unexpected": 0,
+  "report": "/tmp/chordl-parser-compat-vWO3aM/diffs.json"
+}
+```
+
+### R1 verification
+All commands below exited 0 on the r1 implementation (da3b166); handoff-only commit follows. Full tests: **2961 passed across 159 files** (core 712).
+
+```bash
+pnpm build && pnpm lint && pnpm lint:test && pnpm test:run && pnpm --filter @pepperhorn/chordl-react build:site
+node packages/chordl-core/test/resolver-regression-sweep.mjs
+node packages/chordl-core/test/parser-compat-sweep.mjs 4911f61
+```
+
+```text
+pnpm build: PASS
+pnpm lint: PASS
+pnpm lint:test: PASS
+pnpm test:run:
+Test Files  9 passed (9)
+Tests  176 passed (176)
+Test Files  16 passed (16)
+Tests  712 passed (712)
+Test Files  1 passed (1)
+Tests  13 passed (13)
+Test Files  19 passed (19)
+Tests  337 passed (337)
+Test Files  9 passed (9)
+Tests  161 passed (161)
+Test Files  51 passed (51)
+Tests  394 passed (394)
+Test Files  26 passed (26)
+Tests  823 passed (823)
+Test Files  28 passed (28)
+Tests  345 passed (345)
+pnpm --filter @pepperhorn/chordl-react build:site: PASS
+✓ built in 11.26s
+resolver sweep: 56400 comparisons; 1440 intended newly accepted; 1440 canonical checks; 480 rejection checks; failures []
+parser sweep vs 4911f61: 61196 inputs; differences 0; unexpected 0
+git diff --check: PASS
+```
+
+Logs: `/tmp/chordl-0048-r1-{build,lint,lint-test,test,site}.log`. Scope audit: only the resolver guard, core regression tests, newly owned resolver sweep, and this return handoff changed in r1. No open questions. Ready for lead's independent re-review; no merge performed.
