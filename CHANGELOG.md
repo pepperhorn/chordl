@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- **chordl-cards 0.2.0:** `describeShape(chord, face, { theme, request? })` returns plain-English "how to play" text for any card face: `play` (steps in the order you place fingers), `read` (how to read that kind of diagram), `text` (both, for display, with glyph-ready names like `Bb`) and `spoken` (both, for text-to-speech: "B flat", "second fret", no digits or symbols). It is built from the same request and playback the card draws, so it matches the diagram; pass a `positionsFor` request to describe an alternative position. Pure and deterministic, templates only. Re-vendor with `pnpm vendor:chordl` in crf-chords.
+- The string (guitar/ukulele) view has the same `.zip` export as the keyboard view: This/All, with SVG, PNG, MIDI and block/arpeggio WAVs. MIDI and WAV use the shape's real sounding pitches (including re-entrant ukulele tuning). `generateMidiFile` and `generateWav` also accept exact MIDI numbers. Bass and violin get the button once they have shapes (#100).
+- Chord input accepts instrument and experience-level words and aliases (for example, `ukulele am beginner`), switching the editor frame/display and Level control. Existing bass-clef/bass-note and key-padding/format phrasing is preserved. Bare `bass` retains its existing meanings; use `bass4`, `bass guitar`, or explicit string counts for bass guitar. Words apply only when typing, so opening saved cards preserves their stored controls.
+
 ## 2026-11-10 — chordl-core 0.6.3, chordl-react 0.5.3 (release prep)
 
 Publish `chordl-core@0.6.3` first, then `chordl-react@0.5.3`, which depends on
@@ -12,6 +18,10 @@ publication; this change does not publish them.
 - **Core fixes:** ignore `Ah`/`Eh` interjections and retain chord symbols after
   hand-note extraction leaves a trailing slash (#113); resolve `Δ7`/`mΔ7` and
   `∆` spellings, including slash basses (#118).
+- **React audio (first publish since 0.5.1):** includes unpublished 0.5.2's
+  on-demand smplr loading on first audio play or WAV export (#112).
+- **React guitar and notation:** load the guitar renderer and data on first use,
+  expose loading/ready markers, and remove idle Verovio prefetch (#114).
 - **Staff readiness:** `StaffNotation` exposes loading/ready/error markers, with
   ready following SVG injection and failed retries returning to loading; board
   notation cards aggregate those states, with any staff error taking priority (#119).
@@ -20,12 +30,6 @@ publication; this change does not publish them.
 - **Consumers:** `GuitarChord` now renders through a lazy boundary, so
   server-rendered HTML contains the loading placeholder. Wait for
   `data-chordl-state="ready"` rather than for an SVG to exist (#114, #119).
-
-## Unreleased
-
-- **chordl-cards 0.2.0:** `describeShape(chord, face, { theme, request? })` returns plain-English "how to play" text for any card face: `play` (steps in the order you place fingers), `read` (how to read that kind of diagram), `text` (both, for display, with glyph-ready names like `Bb`) and `spoken` (both, for text-to-speech: "B flat", "second fret", no digits or symbols). It is built from the same request and playback the card draws, so it matches the diagram; pass a `positionsFor` request to describe an alternative position. Pure and deterministic, templates only. Re-vendor with `pnpm vendor:chordl` in crf-chords.
-- The string (guitar/ukulele) view has the same `.zip` export as the keyboard view: This/All, with SVG, PNG, MIDI and block/arpeggio WAVs. MIDI and WAV use the shape's real sounding pitches (including re-entrant ukulele tuning). `generateMidiFile` and `generateWav` also accept exact MIDI numbers. Bass and violin get the button once they have shapes (#100).
-- Chord input accepts instrument and experience-level words and aliases (for example, `ukulele am beginner`), switching the editor frame/display and Level control. Existing bass-clef/bass-note and key-padding/format phrasing is preserved. Bare `bass` retains its existing meanings; use `bass4`, `bass guitar`, or explicit string counts for bass guitar. Words apply only when typing, so opening saved cards preserves their stored controls.
 
 ## 2026-11-01 — chordl-guitar 0.3.1
 

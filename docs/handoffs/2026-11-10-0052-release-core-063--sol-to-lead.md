@@ -8,7 +8,7 @@
 - **Base commit:** b03f80a9abafe53187aeb835d1d82a0c8481d097 (contains required 67f95a1)
 - **Implementation commit:** 1332c790de0836fc294792285a64d2e8329a82a9
 - **PR:** https://github.com/pepperhorn/chordl/pull/122 (draft against main).
-- **Status:** blocked on full-suite verification; scoped edits complete
+- **Status:** review r1 addressed; requested r1 verification passes (original full-suite timing failures retained below)
 
 ## Goal and context
 Prepare core 0.6.3 and React 0.5.3 release notes without tagging or publishing. [Dispatch and committed receiver ack](2026-11-10-0052-release-core-063--lead-to-sol.md). No spec, plan or ADR for this quick item.
@@ -66,3 +66,25 @@ GBrain searches for chordl / release returned no task-specific pages; no GBrain 
 - **Out-of-scope issues:** core timeout is already tracked as S12 / 0054 in the ledger; cards lazy-playback wait failed once and passed targeted rerun. No evidence this metadata/docs change caused either timing failure.
 - **Open question / follow-up:** lead to resolve verification through the existing test-timeout work (and assess the cards playback wait), arrange independent review, and decide merge/publication. No publish/tag performed; no PR watch or polling.
 - **For GBrain (lead to promote):** core 0.6.3 / React 0.5.3 release preparation is separate from publication; board 0.2.4 remains held for downstream readiness work 0047.
+
+
+## Review r1 response
+
+- **Review:** [5833369268](https://github.com/pepperhorn/chordl/pull/122#pullrequestreview-5833369268), reviewed head `caa1a8c750f4b175598a65b95f5fb56993b61474`. Verdict approve with two documentation findings; human requested both corrections.
+- **Outcome:** addressed both findings within the owned root changelog and this return handoff.
+- **Release coverage:** the root React 0.5.3 notes now explain this is the first publish since 0.5.1, including unpublished 0.5.2's on-demand smplr loading on first audio play or WAV export (#112). A separate #114 bullet covers guitar renderer/data loading on first use, loading/ready markers and removed idle Verovio prefetch. The existing #119 staff-readiness bullet remains.
+- **Ordering:** moved the dated release-prep section below the leading Unreleased section and its entries, before the previous dated release. No tags or publication.
+- **Verification:** requested command exited 0:
+```bash
+pnpm build && pnpm lint && node scripts/verify-board-package.mjs
+```
+```text
+pnpm build: exit 0
+pnpm lint: exit 0
+node scripts/verify-board-package.mjs: exit 0
+  Packed editor/player SSR, exports and scoped stylesheet pass.
+  Packed consumer typecheck and Vite build pass.
+git diff --check: clean
+```
+- **Evidence:** `/tmp/chordl-0052-r1-{build,lint,packed-board}.log`. Only root CHANGELOG.md and this return handoff changed in r1. Existing build advisories remain non-fatal. Full tests were not rerun for this docs-only response; original local timing failures remain recorded above. The r1 review reports a passing full CI run at the previously reviewed head.
+- **GBrain:** searched again for chordl release context; no task-specific page used, no implementer writes. No new decisions or open questions. Ready for lead re-review/merge decision; no PR watching or polling.
