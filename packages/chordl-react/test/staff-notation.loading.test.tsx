@@ -6,7 +6,7 @@ import { StaffNotation } from "../src/components/StaffNotation";
 // already resolved, so none of its tests ever sees a slow load. This file owns
 // the cold-start behaviour instead: a mock whose resolution we control, so the
 // "engine is still downloading" window can be held open across fake timers.
-const pending: { resolve: (svg: string) => void }[] = [];
+const pending: { resolve: (svg: string) => void; reject: (error: Error) => void }[] = [];
 let mode: "instant" | "held" = "instant";
 // Whether the toolkit itself has finished loading. A held render with a READY
 // toolkit is the board case: 20 cards queued through one main-thread engraver,
@@ -22,7 +22,7 @@ vi.mock("../src/verovio", () => ({
   renderMeiToSvg: () =>
     mode === "instant"
       ? Promise.resolve(SVG)
-      : new Promise<string>((resolve) => { pending.push({ resolve }); }),
+      : new Promise<string>((resolve, reject) => { pending.push({ resolve, reject }); }),
   isVerovioReady: () => toolkitReady,
 }));
 
@@ -154,5 +154,50 @@ describe("the slow-load explanation reaches a screen reader", () => {
     expect(region.textContent).toMatch(/Loading notation engine\s+first time only/i);
     // The region's static name is unchanged; the content carries the news.
     expect(region.getAttribute("aria-label")).toBe("Rendering notation");
+  });
+});
+
+
+describe("staff readiness marker", () => {
+  it("reports loading until the current SVG is injected, including after prop changes", async () => {
+    mode = "held";
+    const { container, rerender } = render(<StaffNotation notes={["C", "E", "G"]} />);
+    const staff = container.querySelector(".bc-staff")!;
+    expect(staff.getAttribute("data-chordl-state")).toBe("loading");
+    const observer = new MutationObserver(() => {
+      if (staff.getAttribute("data-chordl-state") === "ready") {
+        expect(staff.querySelector(".bc-staff__engraving svg")).toBeTruthy();
+      }
+    });
+    observer.observe(staff, { attributes: true, subtree: true, childList: true });
+    try {
+      await act(async () => pending[0]!.resolve(SVG));
+      expect(staff.getAttribute("data-chordl-state")).toBe("ready");
+      expect(staff.querySelector(".bc-staff__engraving svg")).toBeTruthy();
+      rerender(<StaffNotation notes={["D", "F#", "A"]} />);
+      expect(staff.getAttribute("data-chordl-state")).toBe("loading");
+      expect(staff.querySelector(".bc-staff__engraving svg")).toBeNull();
+      // Returning to the last completed request still remounts the engraving.
+      rerender(<StaffNotation notes={["C", "E", "G"]} />);
+      await act(async () => pending[2]!.resolve(SVG));
+      expect(staff.getAttribute("data-chordl-state")).toBe("ready");
+      expect(staff.querySelector(".bc-staff__engraving svg")).toBeTruthy();
+    } finally {
+      observer.disconnect();
+    }
+  });
+
+  it("reports error on Verovio failure and can render a later request", async () => {
+    mode = "held";
+    const { container, rerender } = render(<StaffNotation notes={["C"]} />);
+    const staff = container.querySelector(".bc-staff")!;
+    await act(async () => pending[0]!.reject(new Error("Verovio failed")));
+    expect(staff.getAttribute("data-chordl-state")).toBe("error");
+    expect(staff.textContent).toContain("notation unavailable");
+    expect(staff.querySelector(".bc-staff__engraving svg")).toBeNull();
+    rerender(<StaffNotation notes={["D"]} />);
+    expect(staff.getAttribute("data-chordl-state")).toBe("loading");
+    await act(async () => pending[1]!.resolve(SVG));
+    expect(staff.getAttribute("data-chordl-state")).toBe("ready");
   });
 });
