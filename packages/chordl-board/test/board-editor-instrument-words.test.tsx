@@ -73,9 +73,7 @@ describe("BoardEditor instrument and level input words", () => {
     expect(display()).toContain("Guitar");
     expect(selectedInstrument()).toBe("Ukulele");
     expect(level("Emerging").checked).toBe(true);
-  // This integration case redraws several real SVG frames; under the full
-  // parallel suite it measured 7.4s, exceeding Vitest's default 5s budget.
-  }, 15_000);
+  });
 
   it.each(["guitar", "keyboard"] as const)("opening a saved %s card preserves stored controls and values", async (savedDisplay) => {
     const item = { id: "saved", nl: "uke Am beginner", display: savedDisplay,
