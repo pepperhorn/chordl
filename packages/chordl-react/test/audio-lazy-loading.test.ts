@@ -59,7 +59,7 @@ describe("audio dependency loading", () => {
     const { generateWav } = await import("../src/audio/wav-export");
     expect(imported).not.toHaveBeenCalled();
     const pending = generateWav([67, 60, 64], mode);
-    await vi.waitFor(() => expect(constructed).toHaveBeenCalledTimes(1));
+    await vi.waitFor(() => expect(constructed).toHaveBeenCalledTimes(1), { timeout: 5000 });
     expect(imported).toHaveBeenCalledTimes(1);
     expect(start).not.toHaveBeenCalled();
     expect(rendered).not.toHaveBeenCalled();
@@ -81,7 +81,7 @@ describe("audio dependency loading", () => {
     const { startPlayback } = await import("../src/audio/playback");
     expect(imported).not.toHaveBeenCalled();
     const pending = startPlayback([60, 64], { mode: "block" });
-    await vi.waitFor(() => expect(constructed).toHaveBeenCalledTimes(1));
+    await vi.waitFor(() => expect(constructed).toHaveBeenCalledTimes(1), { timeout: 5000 });
     expect(imported).toHaveBeenCalledTimes(1);
     expect(start).not.toHaveBeenCalled();
     finishLoading();

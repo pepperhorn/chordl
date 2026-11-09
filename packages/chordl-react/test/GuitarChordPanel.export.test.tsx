@@ -37,7 +37,7 @@ async function exportZip(container: HTMLElement, mode: "This" | "All") {
   fireEvent.click(container.querySelector(".variant-pill-zip")!);
   const btn = Array.from(container.querySelectorAll(".zip-menu-btn")).find((b) => b.textContent === mode)!;
   fireEvent.click(btn);
-  await waitFor(() => expect(downloads.length).toBe(before + 1), { timeout: 4000 });
+  await waitFor(() => expect(downloads.length).toBe(before + 1));
   const { blob, filename } = downloads[downloads.length - 1];
   return { zip: await JSZip.loadAsync(blob), filename };
 }
