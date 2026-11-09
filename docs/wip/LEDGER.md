@@ -12,7 +12,7 @@ Next ID: 0048  (0001–0024 were used before the ledger existed; see orch/0024-*
 | K | Title | Status | Waiting on | Owner (provider/model) | Branch | PR | Worktree | T3 task/thread | Spec | Plan | Latest handoff | Updated |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
 | 0047 | [external] becreative: PDF readiness must wait for `data-chordl-state="ready"` (needed before publishing chordl-board with 0045-t2) | proposed | human: becreative's lead to schedule (rule in 0045-t2 return handoff, "Downstream becreative readiness"); hold chordl-board publish until it lands | — | | | | | [0045 spec](../specs/0045-load-on-demand.md) | | | 2026-11-10 |
-| 0043-t2 | Type-check tests: react, cards, board | in-review | review 0043-t2-review-r1 (claude-opus) | codex/gpt-6.1-sol | orch/0043-t2-typecheck-tests | [#116](https://github.com/pepperhorn/chordl/pull/116) @ 5107153 | /home/shaun/.t3/worktrees/chordl/t3-08ebcd6f | task `node:delegated-task:command%3Amcp%3A8171515d-9a8b-4268-a6b9-8eda267c872b%3Adelegate-task%3A0043-t2-impl-r1` | [spec](../specs/0043-typecheck-tests.md) | [plan](../plans/0043-typecheck-tests.md) | [sol→lead](../handoffs/2026-11-10-0043-t2-typecheck-tests--sol-to-lead.md) (on branch) | 2026-11-10 |
+| 0043-t2 | Type-check tests: react, cards, board | ready | human: approve merge (109 code lines + @types/node devDependency) | codex/gpt-6.1-sol | orch/0043-t2-typecheck-tests | [#116](https://github.com/pepperhorn/chordl/pull/116) @ 5107153 (r1 approve) | /home/shaun/.t3/worktrees/chordl/t3-08ebcd6f | task `node:delegated-task:command%3Amcp%3A8171515d-9a8b-4268-a6b9-8eda267c872b%3Adelegate-task%3A0043-t2-impl-r1` | [spec](../specs/0043-typecheck-tests.md) | [plan](../plans/0043-typecheck-tests.md) | [sol→lead](../handoffs/2026-11-10-0043-t2-typecheck-tests--sol-to-lead.md) (on branch) | 2026-11-10 |
 | 0039 | Notation view: annotations to the right of the stave; scales/runs as beamed eighths | proposed | human: needs spec (3 defects: StaffNotationProps has no annotation props; scale/run branches of PianoChord skip display; mei-builder.ts:115,117 hard-code dur="1") | — | | | | | | | | 2026-11-09 |
 
 ## Done / closed
@@ -62,11 +62,14 @@ Next ID: 0048  (0001–0024 were used before the ledger existed; see orch/0024-*
 | S17 | risk | Resolver accepts `CΔ` but rejects `CΔ7` (and `B♭`-style input relied on parser normalisation) — add Δ7 alias in resolveChord | 0038 r2 implementer question 2026-11-09; resolveChord("CΔ7") throws on main | S | M | 0038 r2 | new |
 | S18 | efficiency | guitar and voicing `lint:test` don't run their data-generation step first (unlike `lint`), so it fails on a clean clone before a build; CI unaffected | PR #115 review r1 (5824799412) | S | L | review 0043-t1 r1 | new |
 | S19 | risk | StaffNotation should mark its own failure (`data-chordl-state="error"`) so consumers needn't infer failure from a missing SVG | PR #114 review r1 (5824873163) | S | M | review 0045-t2 r1 | new |
+| S20 | efficiency | Drop the no-op `exact: true` option and its cast in a board test (getByRole ignores it) | packages/chordl-board/test/board-editor-instrument-words.test.tsx:54; PR #116 review r1 (5831960114) | S | L | review 0043-t2 r1 | new |
+| S21 | stack | Export `BoardCardSize` from chordl-board's public index (tests currently reach into src/types) — public API, human's call | PR #116 review r1 (5831960114) | S | L | review 0043-t2 r1 | new |
 
 Last health scan: 2026-11-09
 
 ## Log
 <!-- One line per status change, newest first: YYYY-MM-DD NNNN old→new — note -->
+- 2026-11-10 0043-t2 in-review→ready — r1 (opus) approve @5107153; strict inherited, all tests covered, planted errors fail; dependency → human
 - 2026-11-10 0043-t2 dispatched→in-review — PR #116 @5107153; errors react 1→0, cards 22→0, board 36→0; 2943 tests; review r1 → opus
 - 2026-11-10 0043-t2 planned→dispatched
 - 2026-11-10 0045-t2 ready→merged→closed — #114 @745bd30 (human approved); verify on main passes, 2943 tests. 0045 complete (t1 #112, t2 #114)
