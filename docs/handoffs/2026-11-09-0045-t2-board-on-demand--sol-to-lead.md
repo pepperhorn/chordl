@@ -6,7 +6,7 @@
 - **Dispatch:** [lead → sol](2026-11-09-0045-t2-board-on-demand--lead-to-sol.md)
 - **Branch:** orch/0045-t2-board-on-demand
 - **Worktree:** /home/shaun/.t3/worktrees/chordl/t3-c5320047
-- **Base:** b4b8f3d (contains pinned 024825e)
+- **Base:** a7faf17 (contains pinned 024825e)
 - **Acknowledgement:** b1f5fe4
 - **Implementation:** 3bc9ddb
 - **PR:** https://github.com/pepperhorn/chordl/pull/114 (draft against main)
