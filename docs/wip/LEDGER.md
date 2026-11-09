@@ -12,8 +12,8 @@ Next ID: 0048  (0001–0024 were used before the ledger existed; see orch/0024-*
 | K | Title | Status | Waiting on | Owner (provider/model) | Branch | PR | Worktree | T3 task/thread | Spec | Plan | Latest handoff | Updated |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
 | 0047 | [external] becreative: PDF readiness must wait for `data-chordl-state="ready"` (needed before publishing chordl-board with 0045-t2) | proposed | human: becreative's lead to schedule (rule in 0045-t2 return handoff, "Downstream becreative readiness"); hold chordl-board publish until it lands | — | | | | | [0045 spec](../specs/0045-load-on-demand.md) | | | 2026-11-10 |
-| 0045-t2 | Load on demand: board — no idle Verovio prefetch, lazy guitar (inside react), loading/ready markers | in-review | review 0045-t2-review-r1 (claude-opus) | codex/gpt-6.1-sol | orch/0045-t2-board-on-demand | [#114](https://github.com/pepperhorn/chordl/pull/114) @ a20d98c | /home/shaun/.t3/worktrees/chordl/t3-c5320047 | task `node:delegated-task:command%3Amcp%3A8171515d-9a8b-4268-a6b9-8eda267c872b%3Adelegate-task%3A0045-t2-impl-r1` | [spec](../specs/0045-load-on-demand.md) | [plan](../plans/0045-load-on-demand.md) | [sol→lead](../handoffs/2026-11-09-0045-t2-board-on-demand--sol-to-lead.md) (on branch) | 2026-11-09 |
-| 0043-t2 | Type-check tests: react, cards, board | planned | review 0045-t2-review-r1 (0043-t1 merged; dispatch once 0045-t2 merges) | — | orch/0043-t2-typecheck-tests | | | | [spec](../specs/0043-typecheck-tests.md) | [plan](../plans/0043-typecheck-tests.md) | | 2026-11-09 |
+| 0045-t2 | Load on demand: board — no idle Verovio prefetch, lazy guitar (inside react), loading/ready markers | changes-requested | child 0045-t2-impl-r2 | codex/gpt-6.1-sol | orch/0045-t2-board-on-demand | [#114](https://github.com/pepperhorn/chordl/pull/114) @ a20d98c | /home/shaun/.t3/worktrees/chordl/t3-c5320047 | task `node:delegated-task:command%3Amcp%3A8171515d-9a8b-4268-a6b9-8eda267c872b%3Adelegate-task%3A0045-t2-impl-r1` | [spec](../specs/0045-load-on-demand.md) | [plan](../plans/0045-load-on-demand.md) | [r1 decisions](../handoffs/2026-11-10-0045-t2-board-on-demand--lead-r1-decisions.md) | 2026-11-09 |
+| 0043-t2 | Type-check tests: react, cards, board | planned | child 0045-t2-impl-r2 (0043-t1 merged; dispatch once 0045-t2 merges) | — | orch/0043-t2-typecheck-tests | | | | [spec](../specs/0043-typecheck-tests.md) | [plan](../plans/0043-typecheck-tests.md) | | 2026-11-09 |
 | 0039 | Notation view: annotations to the right of the stave; scales/runs as beamed eighths | proposed | human: needs spec (3 defects: StaffNotationProps has no annotation props; scale/run branches of PianoChord skip display; mei-builder.ts:115,117 hard-code dur="1") | — | | | | | | | | 2026-11-09 |
 
 ## Done / closed
@@ -61,11 +61,13 @@ Next ID: 0048  (0001–0024 were used before the ledger existed; see orch/0024-*
 | S16 | efficiency | Library-level first-load cut (r1 review confirms: Verovio 3 chunks requested within 1.5 s idle; guitar data/rendering ≈51% of entry; wav-export static smplr import): the idle Verovio prefetch downloads ~2.9 MB gzip (91% of no-interaction JS) on every visit, even piano-only; guitar data/SVGuitar and smplr are static imports in the entry. Product trade-off: instant notation vs lighter visits | packages/chordl-board/src/BoardEditor.tsx:757 `prefetchVerovioWhenIdle()`; 0044 return handoff @51f5523 | M | H | 0044 implementer | accepted → 0045 |
 | S17 | risk | Resolver accepts `CΔ` but rejects `CΔ7` (and `B♭`-style input relied on parser normalisation) — add Δ7 alias in resolveChord | 0038 r2 implementer question 2026-11-09; resolveChord("CΔ7") throws on main | S | M | 0038 r2 | new |
 | S18 | efficiency | guitar and voicing `lint:test` don't run their data-generation step first (unlike `lint`), so it fails on a clean clone before a build; CI unaffected | PR #115 review r1 (5824799412) | S | L | review 0043-t1 r1 | new |
+| S19 | risk | StaffNotation should mark its own failure (`data-chordl-state="error"`) so consumers needn't infer failure from a missing SVG | PR #114 review r1 (5824873163) | S | M | review 0045-t2 r1 | new |
 
 Last health scan: 2026-11-09
 
 ## Log
 <!-- One line per status change, newest first: YYYY-MM-DD NNNN old→new — note -->
+- 2026-11-10 0045-t2 in-review→changes-requested — r1 (opus) @a20d98c: notice cards never reach a terminal marker; public JSDoc lost. Lead adds: captureBoard waits for no loading markers; static GuitarChordPanel import. AC1 re-derived: entry −47.1%, no-interaction JS 4.6% of baseline
 - 2026-11-10 0047 →proposed — human: track becreative's readiness change before publishing chordl-board with 0045-t2
 - 2026-11-10 0043-t1 ready→merged→closed — #115 @fb1e85e (human approved); verify + lint:test on main pass, 2929 tests
 - 2026-11-09 0043-t1 in-review→ready — r1 (opus) approve @7d88030: NodeNext 55 = 53 config artefacts + 2 real; planted errors fail in all 5 packages; CI change → human
