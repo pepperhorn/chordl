@@ -4,6 +4,25 @@ import { Note } from "tonal";
 import { resolveChord } from "@pepperhorn/chordl-core";
 
 describe("resolveChord", () => {
+  it.each<[string, string[], string]>([
+    ["CΔ7", ["C", "E", "G", "B"], "Cmaj7"],
+    ["CmΔ7", ["C", "Eb", "G", "B"], "CmMaj7"],
+    ["C∆7", ["C", "E", "G", "B"], "Cmaj7"],
+    ["C∆", ["C", "E", "G", "B"], "Cmaj7"],
+    ["BbΔ7/D", ["D", "F", "A", "Bb"], "Bbmaj7/D"],
+    ["F#mΔ7", ["F#", "A", "C#", "F"], "F#mMaj7"],
+    ["CΔ", ["C", "E", "G", "B"], "Cmaj7"],
+    ["CΔ9", ["C", "E", "G", "B", "D"], "Cmaj9"],
+    ["CmΔ", ["C", "Eb", "G", "B"], "CmMaj7"],
+    ["Cm∆7", ["C", "Eb", "G", "B"], "CmMaj7"],
+    ["C∆9", ["C", "E", "G", "B", "D"], "Cmaj9"],
+    ["CΔ7#11", ["C", "E", "G", "B", "F#"], "Cmaj7#11"],
+  ])("resolves jazz spelling %s", (symbol, notes, canonical) => {
+    const result = resolveChord(symbol);
+    expect(result.notes).toEqual(notes);
+    expect(result).toEqual(resolveChord(canonical));
+  });
+
   it("resolves Cmaj7 to [C, E, G, B]", () => {
     const result = resolveChord("Cmaj7");
     expect(result.notes).toEqual(["C", "E", "G", "B"]);

@@ -3,7 +3,7 @@ import { parseChordDescription, resolveChord } from "@pepperhorn/chordl-core";
 
 describe("parseChordDescription", () => {
   it.each([
-    "Δ", "Δ9", "Δ#4", "Δ#11", "Δ9#11", "ma7", "mi7", "mΔ",
+    "Δ", "Δ7", "mΔ7", "∆7", "m∆7", "Δ9", "Δ#4", "Δ#11", "Δ9#11", "ma7", "mi7", "mΔ",
     "m/ma7", "m/maj7", "m/M7", "o", "o7", "oM7", "o7M7", "h", "h7",
     "phryg", "quartal", "m11A", "-7", "+7",
   ])("rescues resolver spelling C%s without truncation", suffix => {
@@ -33,7 +33,7 @@ describe("parseChordDescription", () => {
     ["B♭7", "Bb7"], ["F♯m", "F#m"], ["E♭maj7/G", "Ebmaj7/G"],
   ])("handles review edge '%s'", (input, expected) => {
     expect(parseChordDescription(input).chordName).toBe(expected);
-    if (input === "CΔ7") expect(() => resolveChord(expected)).toThrow('Unknown chord');
+    if (input === "CΔ7") expect(resolveChord(expected).notes).toEqual(["C", "E", "G", "B"]);
   });
 
   it.each([

@@ -446,9 +446,6 @@ function resolverTokenFallback(text: string, strictIndex?: number): string | und
       resolveChord(token);
       return token;
     } catch {
-      // Lead-approved exception: preserve the written Δ7 token for the
-      // resolver's error path; it currently supports Δ but rejects Δ7.
-      if (/^[A-G][#b]?Δ7(?:\/[A-G][#b]?)?$/.test(token)) return token;
       // Other resolver rejections leave the strict parser or next token in charge.
     }
   }
