@@ -6,7 +6,7 @@
 - **Branch:** orch/0046-parser-ah-slash · **Worktree:** created by T3
 - **PR:** <url once opened>
 - **Base commit:** 9da3066
-- **Status:** open
+- **Status:** closed
 
 ## Goal
 Fix the two minor findings from 0038's review r2 (https://github.com/pepperhorn/chordl/pull/110#pullrequestreview-5822329616):

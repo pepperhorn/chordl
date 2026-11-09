@@ -11,15 +11,16 @@ Next ID: 0047  (0001–0024 were used before the ledger existed; see orch/0024-*
 
 | K | Title | Status | Waiting on | Owner (provider/model) | Branch | PR | Worktree | T3 task/thread | Spec | Plan | Latest handoff | Updated |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 0046 | [quick] Parser: "Ah"/"Eh" interjections; trailing slash before a bass | in-review | review 0046-review-r1 (claude-opus) | codex/gpt-6.1-sol | orch/0046-parser-ah-slash | [#113](https://github.com/pepperhorn/chordl/pull/113) @ 1d31388 | /home/shaun/.t3/worktrees/chordl/t3-8585972f | task `node:delegated-task:command%3Amcp%3A8171515d-9a8b-4268-a6b9-8eda267c872b%3Adelegate-task%3A0046-impl-r1` | — | — | [sol→lead](../handoffs/2026-11-09-0046-parser-ah-slash--sol-to-lead.md) (on branch) | 2026-11-09 |
 | 0045-t2 | Load on demand: board — no idle Verovio prefetch, lazy guitar (inside react), loading/ready markers | dispatched | child 0045-t2-impl-r1-answers | codex/gpt-6.1-sol | orch/0045-t2-board-on-demand | [#114](https://github.com/pepperhorn/chordl/pull/114) @ 1cf3f84 (blocked r0) | /home/shaun/.t3/worktrees/chordl/t3-c5320047 | task `node:delegated-task:command%3Amcp%3A8171515d-9a8b-4268-a6b9-8eda267c872b%3Adelegate-task%3A0045-t2-impl-r1` | [spec](../specs/0045-load-on-demand.md) | [plan](../plans/0045-load-on-demand.md) | [lead answers](../handoffs/2026-11-09-0045-t2-board-on-demand--lead-answers.md) | 2026-11-09 |
-| 0043 | Type-check test files in every package (tsconfig.test.json + lint:test in CI) | planned | review 0046-review-r1 (dispatch after 0046 merges: both edit core/test/natural-language.test.ts) | — | orch/0043-typecheck-tests | | | | [spec](../specs/0043-typecheck-tests.md) | [plan](../plans/0043-typecheck-tests.md) | | 2026-11-09 |
+| 0043-t1 | Type-check tests: plumbing + voicings/core/listen/guitar/voicing | dispatched | lead: delegate | codex/gpt-6.1-sol | orch/0043-t1-typecheck-tests | | | | [spec](../specs/0043-typecheck-tests.md) | [plan](../plans/0043-typecheck-tests.md) | [lead→sol](../handoffs/2026-11-09-0043-t1-typecheck-tests--lead-to-sol.md) | 2026-11-09 |
+| 0043-t2 | Type-check tests: react, cards, board | planned | child 0045-t2-impl-r1-answers (needs 0043-t1 and 0045-t2 merged) | — | orch/0043-t2-typecheck-tests | | | | [spec](../specs/0043-typecheck-tests.md) | [plan](../plans/0043-typecheck-tests.md) | | 2026-11-09 |
 | 0039 | Notation view: annotations to the right of the stave; scales/runs as beamed eighths | proposed | human: needs spec (3 defects: StaffNotationProps has no annotation props; scale/run branches of PianoChord skip display; mei-builder.ts:115,117 hard-code dur="1") | — | | | | | | | | 2026-11-09 |
 
 ## Done / closed
 
 | K | Title | PR | Merged | Notes |
 |---|---|---|---|---|
+| 0046 | [quick] Parser: Ah/Eh interjections; trailing slash before a bass | [#113](https://github.com/pepperhorn/chordl/pull/113) | 2026-11-09 @ 382678d | r0 blocked on lead's wrong LH expectation (corrected); Opus r1 approve (sweep classification can't hide regressions). Auto-merged (32 code lines). Verify on main 2929 pass |
 | 0045-t1 | Load on demand: react smplr | [#112](https://github.com/pepperhorn/chordl/pull/112) | 2026-11-09 @ 024825e | wav-export imports smplr dynamically; entry gzip −7.19%; chordl-react 0.5.2. Opus r1 approve (browser WAV check); human approved merge. Verify + packed-board on main: 2920 pass |
 | 0038 | Chord parser: only read a root from a standalone chord token (+S11, S13) | [#110](https://github.com/pepperhorn/chordl/pull/110) | 2026-11-09 @ 9da3066 | Codex; r0 blocked → lead answers; Opus r1 changes-requested @12c80e5 (21 resolver spellings, article, alt); r2 approve @1eb82f8; human approved merge. New test/parser-compat-sweep.mjs (61,196 inputs, 0 unexpected). Verify on main 2916. Follow-up 0046 |
 | 0044 | chordl.app: ship less JavaScript on first load (site layer) | [#111](https://github.com/pepperhorn/chordl/pull/111) | 2026-11-09 @ dc6f8d2 | Examples/ChordSheet lazy (−1.07% entry gzip); AC2 met by justification: idle Verovio prefetch is 91% of first-visit JS → 0045. Opus r1 approve; human approved merge. Verify on main 2819 pass |
@@ -63,6 +64,8 @@ Last health scan: 2026-11-09
 
 ## Log
 <!-- One line per status change, newest first: YYYY-MM-DD NNNN old→new — note -->
+- 2026-11-09 0043 split: t1 (plumbing + 5 packages) →dispatched; t2 (react/cards/board) waits for 0045-t2
+- 2026-11-09 0046 in-review→merged→closed — #113 @382678d, auto-merged (§5a); verify on main passes, 2929 tests
 - 2026-11-09 0045-t2 blocked (PR #114 @1cf3f84) — no-interaction JS −95.4% (3.18 MB→147 KB gzip), entry −47%; blocked on sync guitar assertion in cards test. Lead: test ownership granted, check ChordCardPlayer playback marking, finish AC3 smoke
 - 2026-11-09 0046 dispatched→in-review — PR #113 @1d31388, 2925 tests, sweep exit 0; review r1 → opus (focus: sweep expectations don't hide regressions)
 - 2026-11-09 0046 blocked (PR #113 @42076ff) — lead's left-hand expectation was wrong (Cm7/E in LH → Cm7 + E note group); amended; sweep expectations granted

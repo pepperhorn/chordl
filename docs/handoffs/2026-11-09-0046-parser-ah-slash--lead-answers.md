@@ -3,7 +3,7 @@
 - **Date:** 2026-11-09
 - **Type:** dispatch (answers)
 - **Ledger:** 0046 · **PR:** https://github.com/pepperhorn/chordl/pull/113 (head 42076ff)
-- **Status:** open
+- **Status:** closed
 
 ## Answers
 1. **Left-hand case: my dispatch expectation was wrong; yours is right.** Amend the test so `Cmi7/E in the left hand` → `{ chordName: "Cmi7", notesGroups: [{ notes: ["E"], hand: "lh" }] }`, which matches the existing `Cm7/E in the left hand` semantics. Assert the note group as well as the chordName. No change to slash/hand semantics.
