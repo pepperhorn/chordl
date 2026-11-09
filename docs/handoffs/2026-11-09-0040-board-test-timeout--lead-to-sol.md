@@ -33,3 +33,5 @@ none
 
 ---
 ## Receiver ack
+
+Acknowledged 2026-11-09 (sol): I will change only the board Vitest config to set bounded test and hook timeouts, justify them with measured test durations, and run at least three board suites alongside workspace tests. I will preserve pool settings unless measurements show they must change, run all required verification, and commit a return handoff and open a draft PR. No open questions. GBrain search `chordl board test timeout` returned no task-specific guidance; repo docs remain authoritative.

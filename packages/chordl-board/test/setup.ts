@@ -1,5 +1,7 @@
 import { afterEach } from "vitest";
-import { cleanup } from "@testing-library/react";
+import { cleanup, configure } from "@testing-library/react";
+
+configure({ asyncUtilTimeout: 5000 });
 
 // Board cards render chord diagrams, and svguitar measures text via getBBox,
 // which jsdom does not implement. A fixed-size box is enough for layout to
