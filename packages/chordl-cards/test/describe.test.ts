@@ -2,6 +2,7 @@
 // strings are the wording the chord site shows and reads aloud, so a change to
 // one is a decision, not a fix.
 import { describe, expect, it } from "vitest";
+import assert from "node:assert/strict";
 import { INSTRUMENTS } from "@pepperhorn/chordl-guitar";
 import { CHORD_TYPES, ROOTS } from "../src/catalogue";
 import { describeShape } from "../src/describe";
@@ -226,17 +227,18 @@ function stringFacts(req: GuitarFaceRequest) {
   return { open, muted: sounding.size < strings };
 }
 
+// Native strict assertions keep the exhaustive text checks cheap.
 function checkText(chord: string, face: CardFace, out: ReturnType<typeof d>) {
   const label = `${chord} on ${face}`;
-  expect(out.play.length, label).toBeGreaterThan(0);
-  expect(out.read.length, label).toBeGreaterThan(0);
-  expect(out.text.trim(), label).not.toBe("");
-  expect(out.text, label).toBe([...out.play, ...out.read].join(" "));
+  assert.ok(out.play.length > 0, label);
+  assert.ok(out.read.length > 0, label);
+  assert.notEqual(out.text.trim(), "", label);
+  assert.equal(out.text, [...out.play, ...out.read].join(" "), label);
   // Text is for the screen: ASCII accidentals ("Bb"), no glyphs, no "undefined".
-  expect(out.text, label).not.toMatch(/[♭♯♮]|undefined|NaN/);
+  assert.doesNotMatch(out.text, /[♭♯♮]|undefined|NaN/, label);
   // Speech is for text-to-speech: ordinals and names in words, no symbols.
-  expect(out.spoken, label).not.toMatch(/[#♭♯♮0-9]|undefined|NaN/);
-  expect(out.spoken.trim(), label).not.toBe("");
+  assert.doesNotMatch(out.spoken, /[#♭♯♮0-9]|undefined|NaN/, label);
+  assert.notEqual(out.spoken.trim(), "", label);
 }
 
 describe("describeShape: every face the model can build", () => {

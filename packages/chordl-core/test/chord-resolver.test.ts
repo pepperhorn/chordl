@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, assert } from "vitest";
 import { CHORD_TYPES, ROOTS, spellChord } from "../../chordl-cards/src/catalogue";
 import { Note } from "tonal";
 import { resolveChord } from "@pepperhorn/chordl-core";
@@ -341,6 +341,8 @@ describe("alteration fallback with slash bass", () => {
     for (const type of CHORD_TYPES) {
       for (const alias of new Set([type.symbol, type.displaySymbol, ...type.aliases].filter((s) => s.includes("(")))) {
         for (const root of ROOTS) {
+          const expectedNotes = spellChord(root, type);
+          const rootPc = Note.chroma(root);
           for (const bass of ROOTS) {
             const symbol = root + alias + "/" + bass;
             let actual;
@@ -350,11 +352,12 @@ describe("alteration fallback with slash bass", () => {
               continue;
             }
             accepted.set(alias, (accepted.get(alias) ?? 0) + 1);
-            if (JSON.stringify(pcs(actual.notes)) !== JSON.stringify(pcs([...spellChord(root, type), bass]))) {
+            if (JSON.stringify(pcs(actual.notes)) !== JSON.stringify(pcs([...expectedNotes, bass]))) {
               mismatches.push(symbol + ": " + actual.notes.join(" "));
             }
-            expect(Note.chroma(actual.notes[0]), symbol).toBe(Note.chroma(bass));
-            expect(Note.chroma(actual.root), symbol).toBe(Note.chroma(root));
+            // Same scalar checks without constructing 25,000+ matcher chains.
+            assert.strictEqual(Note.chroma(actual.notes[0]), Note.chroma(bass), symbol);
+            assert.strictEqual(Note.chroma(actual.root), rootPc, symbol);
           }
         }
       }

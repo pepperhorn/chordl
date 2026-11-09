@@ -13,14 +13,23 @@ const ROOTS = ["C", "C#", "Db", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb",
 const QUALITIES = ["", "m", "7", "m7", "maj7", "m7b5", "dim", "6", "sus4", "9"];
 const SWEEP = ROOTS.flatMap((r) => QUALITIES.map((q) => r + q));
 
+// The sweep tests only read these results. Generate each chord/face once,
+// then check the same real positions against every independent invariant.
+const positionCache = new Map<string, FacePosition[] | null>();
+
 /** positionsFor, or null where the face cannot print the chord (requestFor throws). */
 function tryPositions(chord: string, face: FrettedCardFace): FacePosition[] | null {
+  const key = `${chord}:${face}`;
+  if (positionCache.has(key)) return positionCache.get(key)!;
   try {
     requestFor(chord, face, THEME);
   } catch {
+    positionCache.set(key, null);
     return null;
   }
-  return positionsFor(chord, face, THEME);
+  const positions = positionsFor(chord, face, THEME);
+  positionCache.set(key, positions);
+  return positions;
 }
 
 /** Absolute frets per string, low to high, from a request's svguitar shape (as playbackFor reads it). */
