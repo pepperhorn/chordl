@@ -1039,13 +1039,13 @@ describe("instrument and level words", () => {
   it.each([
     ["C/E", { chordName: "C/E" }],
     ["C over E", { chordName: "C", bassNote: "E" }],
-    ...["bass", "bottom", "lowest"].flatMap((word) => [
+    ...["bass", "bottom", "lowest"].flatMap<[string, Partial<ReturnType<typeof parseChordDescription>>]>((word) => [
       [`C with E in the ${word}`, { chordName: "C", bassNote: "E" }],
       [`C E ${word}`, { chordName: "C", bassNote: "E" }],
       [`C with the 5th in the ${word}`, { chordName: "C", bassDegree: 5 }],
     ]),
   ])("preserves bass-note phrasing: %s", (input, expected) => {
-    const result = parseChordDescription(input as string);
+    const result = parseChordDescription(input);
     expect(result).toMatchObject(expected);
     expect(result.instrument).toBeUndefined();
   });
