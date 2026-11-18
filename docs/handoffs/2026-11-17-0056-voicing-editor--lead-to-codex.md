@@ -83,6 +83,8 @@ pnpm install --frozen-lockfile=false && pnpm build && pnpm lint && pnpm test:run
 ---
 ## Receiver ack
 
+Codex, 2026-11-17: I will implement the new fretted/keyboard editor, live checks and overlay, plus additive voicing levels and card conversion/alternative helpers within the listed owned files. I will preserve default requestFor behavior, verify all six faces and the mobile browser flow, commit a return handoff, push this branch and open a draft PR. No npm publishing. No blocking questions. GBrain: unavailable in this session.
+
 ---
 ## Return
 Write it in `docs/handoffs/2026-11-17-0056-voicing-editor--codex-to-lead.md`.
