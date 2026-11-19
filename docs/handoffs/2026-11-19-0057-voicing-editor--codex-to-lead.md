@@ -9,7 +9,8 @@
 - **Branch:** orch/0057-voicing-editor
 - **Worktree:** /home/shaun/.t3/worktrees/chordl/orch-0057-voicing-edito-c3380c80a408b95b
 - **Base commit:** fea29ac (dispatch and keyboard-default amendment)
-- **PR:** draft; linked in completion message and PR body
+- **Implementation commit:** 5bd5841 (full verify passed before committing)
+- **PR:** [draft #125](https://github.com/pepperhorn/chordl/pull/125)
 - **Port:** 5770 (demo)
 - **Status:** ready for review
 
