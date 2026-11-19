@@ -69,7 +69,7 @@ pnpm install --frozen-lockfile=false && pnpm build && pnpm lint && pnpm test:run
 
 ---
 ## Receiver ack
-<!-- Implementer: restate your understanding here and commit it on your branch before coding. -->
+Accepted: implement the single-chord KeyboardSpeller and frames-derived FrettedEditor, shared checks and additive voicing/cards helpers within the declared owned paths. Preserve default requestFor and BoardEditor behaviour; no publishing or ledger edits. Verify round trips, DOM behaviour, 360px Chromium demo and the full workspace chain, then push a draft PR and commit a return handoff. GBrain projects/chordcards confirms low-string-first zero-based barre indices. No blocking questions identified; use core parsing directly without extracting BoardEditor.
 
 ---
 ## Return
