@@ -49,7 +49,8 @@ function keyboardPlayback(req: KeyboardFaceRequest): FacePlayback {
     return key.octave * 12 + PC[note];
   });
   const first = (FIRST_NOTE_OCTAVE + 1) * 12 + (semis[0] % 12);
-  const notes = semis.map((s) => first + s - semis[0]);
+  if (req.midiNotes && req.midiNotes.length !== req.notes.length) throw new Error("Custom MIDI notes must align with keys");
+  const notes = req.midiNotes ? [...req.midiNotes] : semis.map((s) => first + s - semis[0]);
   return {
     notes,
     instrument: "acoustic_grand_piano",

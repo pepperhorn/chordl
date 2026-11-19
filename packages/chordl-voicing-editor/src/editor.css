@@ -1,0 +1,119 @@
+:where(.cve-editor) {
+  --cve-ink: #141210;
+  --cve-paper: #fff;
+  --cve-line: #dcd9d3;
+  --cve-accent: #6bc6a0;
+}
+.cve-editor {
+  color: var(--cve-ink);
+  background: var(--cve-paper);
+  font: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  max-width: 100%;
+}
+.cve-editor * {
+  box-sizing: border-box;
+}
+.cve-editor button,
+.cve-editor input,
+.cve-editor select,
+.cve-editor summary {
+  font: inherit;
+  color: inherit;
+  min-height: 44px;
+  border: 1px solid var(--cve-line);
+  border-radius: 8px;
+  background: var(--cve-paper);
+  padding: 8px;
+  min-width: 0;
+}
+.cve-editor button {
+  cursor: pointer;
+}
+.cve-editor button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+.cve-editor :focus-visible {
+  outline: 3px solid var(--cve-accent);
+  outline-offset: 2px;
+}
+.cve-editor .cve-examples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.cve-editor .cve-keyboard {
+  overflow-x: auto;
+  max-width: 100%;
+}
+.cve-editor .cve-keyboard-inner {
+  min-width: 620px;
+}
+.cve-editor .cve-diagram {
+  position: relative;
+  width: 325px;
+  max-width: 100%;
+  margin: auto;
+}
+.cve-editor .cve-hit {
+  position: absolute;
+  min-height: 36px;
+  min-width: 36px;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+}
+.cve-editor .cve-hit:focus-visible {
+  background: color-mix(in srgb, var(--cve-accent) 25%, transparent);
+}
+.cve-editor .cve-stepper {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.cve-editor .cve-stepper input {
+  width: 60px;
+}
+.cve-editor .cve-string {
+  display: grid;
+  grid-template-columns: 1fr 70px 70px;
+  gap: 6px;
+  align-items: center;
+  margin: 8px 0;
+}
+.cve-editor .cve-string span {
+  grid-column: 1/-1;
+}
+.cve-editor .cve-string label {
+  font-size: 0.85em;
+}
+.cve-editor .cve-string input {
+  grid-column: 2;
+  grid-row: auto;
+}
+.cve-editor .cve-string select {
+  grid-column: 3;
+}
+.cve-editor .cve-barre {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 12px 0;
+}
+.cve-editor .cve-barre input {
+  width: 100%;
+}
+.cve-editor .cve-checks {
+  border: 1px solid var(--cve-line);
+  border-radius: 8px;
+  padding: 12px;
+  overflow-wrap: anywhere;
+}
+.cve-editor .cve-checks p {
+  margin: 6px 0;
+}
