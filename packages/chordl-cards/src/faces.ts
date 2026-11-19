@@ -30,6 +30,8 @@ export type FrettedShape = NonNullable<ReturnType<typeof lookupTop3Chord>>;
 export interface KeyboardFaceRequest {
   kind: "keyboard";
   chordLabel: string;
+  /** Optional absolute MIDI register for a custom voicing, aligned with notes. */
+  midiNotes?: number[];
   /** Octave-qualified highlight keys ("B:0", "D:1"), relative to the window's first key. */
   notes: string[];
   /** White key the window starts on. */
@@ -47,6 +49,8 @@ export interface KeyboardFaceRequest {
 
 export interface GuitarFaceRequest {
   kind: "guitar";
+  /** Custom frames may need a wider box than the standard five frets. */
+  frets?: number;
   /** Fingers carry per-note colours when the theme's fret colorMode is "pitch". */
   shape: FrettedShape;
   instrument: "guitar-top3" | "guitar" | "ukulele" | "bass4";

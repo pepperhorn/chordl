@@ -1,0 +1,28 @@
+{
+  "date": "2026-11-19",
+  "browser": "T3 preview Chromium",
+  "url": "http://localhost:5770/",
+  "viewport": { "width": 360, "height": 900 },
+  "fretted": {
+    "tapped": ["String 5 fret 3", "String 4 fret 2", "String 3 open", "String 2 open", "String 1 open"],
+    "code": "x32000",
+    "notes": ["C3", "E3", "G3", "B3", "E4"],
+    "ready": true,
+    "targets": 36,
+    "minimumTargetWidth": 49.3984375,
+    "nutTargetHeight": 44,
+    "documentWidth": 360
+  },
+  "keyboard": {
+    "text": "rh G C E lh C",
+    "notes": ["C3", "G4", "C5", "E5"],
+    "highlightedKeys": 4,
+    "otherExamplesChecked": ["C maj 2nd inversion", "E G C", "E F# A B", "Eb Gb Bb // Db F", "nonsense gibberish"],
+    "documentWidth": 360,
+    "scrollContainerWidth": 328,
+    "keyboardScrollWidth": 620
+  },
+  "consoleErrors": [],
+  "unhandledErrors": [],
+  "limits": "No physical device or audible playback certification. Screenshots capture the viewport; string fields and checks extend below it."
+}

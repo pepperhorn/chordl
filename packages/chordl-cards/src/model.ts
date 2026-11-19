@@ -68,3 +68,6 @@ export type { SlugInput } from "./slug";
 
 export { inversionsFor, figuredBassFor, ordinal } from "./inversions";
 export type { ChordInversion, InversionOptions } from "./inversions";
+
+export { chordIdFor, voicingForRealization, requestForVoicing, voicingFromRequest, alternativesFor } from './voicing';
+export type { VoicingAlternative } from './voicing';

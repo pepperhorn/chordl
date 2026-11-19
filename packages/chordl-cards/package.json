@@ -46,7 +46,8 @@
   "dependencies": {
     "@pepperhorn/chordl-core": "workspace:*",
     "@pepperhorn/chordl-guitar": "workspace:*",
-    "@pepperhorn/chordl-react": "workspace:*"
+    "@pepperhorn/chordl-react": "workspace:*",
+    "@pepperhorn/chordl-voicing": "workspace:*"
   },
   "devDependencies": {
     "@testing-library/react": "^16.1.0",

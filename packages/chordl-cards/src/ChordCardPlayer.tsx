@@ -365,7 +365,7 @@ function GuitarDiagram({ req, playback, active, highlight }: {
       <GuitarChord
         className="ccp-guitar"
         chord={shape as never}
-        frets={inst.frets}
+        frets={req.frets ?? inst.frets}
         settings={{
           strings: inst.strings,
           tuning: inst.tuning,

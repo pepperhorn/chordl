@@ -18,3 +18,6 @@ export { checkVoicing } from "./checks.js";
 export type { CheckResult } from "./checks.js";
 export { chordFilePath, validateCatalogue } from "./catalogue.js";
 export type { CatalogueIssue, CatalogueReport } from "./catalogue.js";
+export { levelOf } from './level.js';
+export { newVoicingId } from './id.js';
+export { keyboardVariantsFor } from './variants.js';
