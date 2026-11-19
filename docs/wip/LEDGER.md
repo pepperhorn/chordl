@@ -5,13 +5,13 @@
 > Waiting on: `child <taskId>` · `review <taskId>` · `ci` · `human: <why>` · `lead: <next action>`. Set it on every status change. A row needs the lead when it starts with `lead`, or when it's empty and Status is dispatched, in-review, changes-requested, ready, or merged. The lead's Stop hook won't let the lead end its turn while any row needs it.
 > Type: normal items have a spec and plan. Quick items have the title prefix `[quick]` (no spec or plan, a short handoff). PRs adopted by `orch-sweep` have the prefix `[pr]`.
 
-Next ID: 0057  (0001–0024 were used before the ledger existed; see orch/0024-* branches; 0027–0031, 0033–0037 also come from the crf-transcribe lead's ledger (/home/shaun/trans); 0037 merged as #105)
+Next ID: 0058  (0001–0024 were used before the ledger existed; see orch/0024-* branches; 0027–0031, 0033–0037 also come from the crf-transcribe lead's ledger (/home/shaun/trans); 0037 merged as #105)
 
 ## Active
 
 | K | Title | Status | Waiting on | Owner (provider/model) | Branch | PR | Worktree | T3 task/thread | Spec | Plan | Latest handoff | Updated |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 0056 | Voicing editor package (fretted + keyboard builders, overlay) + requestForVoicing / alternativesFor / levelOf (crf-staff 0030 T1) | dispatched | child thread mcp:launch:960e0684… (crf-staff lead) | codex/gpt-6.1-sol | orch/0056-voicing-editor | — | — | — | docs/superpowers/specs/2026-10-29-voicing-submissions-design.md + crf-staff 0030 | crf-staff 0030 T1 | [dispatch](../handoffs/2026-11-17-0056-voicing-editor--lead-to-codex.md) | 2026-11-17 |
+| 0057 | Voicing editor package r2: KeyboardSpeller (text speller, no boards) + FrettedEditor (frames port + tappable diagram) + requestForVoicing / alternativesFor / levelOf (crf-staff 0030 t1; replaces 0056) | dispatched | lead: delegate (crf-staff lead) | codex/gpt-6.1-sol | orch/0057-voicing-editor | — | — | — | crf-staff spec 0030 r2 | crf-staff plan 0030 r2 t1 | [dispatch](../handoffs/2026-11-19-0057-voicing-editor--lead-to-codex.md) | 2026-11-19 |
 | 0053 | [external] crf-chords: upgrade to chordl core 0.6.3 / react 0.5.3 and adapt (SSR guitar placeholder, readiness waits, parser strictness) | proposed | human: hand the handoff to the crf-chords lead (core 0.6.3 + react 0.5.3 published 2026-11-10) | — | | | | | | | [chordl→chords](../handoffs/2026-11-10-adhoc-chordl-upgrade--chordl-lead-to-chords-lead.md) | 2026-11-10 |
 | 0047 | [external] becreative: PDF readiness must wait for `data-chordl-state="ready"` (needed before publishing chordl-board with 0045-t2) | proposed | human: becreative's lead to schedule (rule in 0045-t2 return handoff, "Downstream becreative readiness"); hold chordl-board publish until it lands | — | | | | | [0045 spec](../specs/0045-load-on-demand.md) | | | 2026-11-10 |
 | 0039 | Notation view: annotations to the right of the stave; scales/runs as beamed eighths | proposed | human: needs spec (3 defects: StaffNotationProps has no annotation props; scale/run branches of PianoChord skip display; mei-builder.ts:115,117 hard-code dur="1") | — | | | | | | | | 2026-11-09 |
@@ -20,6 +20,7 @@ Next ID: 0057  (0001–0024 were used before the ledger existed; see orch/0024-*
 
 | K | Title | PR | Merged | Notes |
 |---|---|---|---|---|
+| 0056 | Voicing editor package (r1) — superseded by 0057 | [#124](https://github.com/pepperhorn/chordl/pull/124) (docs only) | 2026-11-17 | Returned blocked (chordl-cards/package.json out of scope); nothing built. Closed 2026-11-19, replaced by 0057. |
 | 0055 | [quick] Close remaining test-budget gaps | [#123](https://github.com/pepperhorn/chordl/pull/123) | 2026-11-10 @ c7f491c | cards asyncUtilTimeout 5000, guitar 30s, five vi.waitFor 1s gaps → 5s (vi.waitFor ignores RTL's setting). Legacy-level 1s theory disproved (5s wait under heavy load). Opus r1 approve; auto-merged (17 lines). Verify on main 2966 |
 | 0052 | Release: chordl-core 0.6.3 + chordl-react 0.5.3 | [#122](https://github.com/pepperhorn/chordl/pull/122) | 2026-11-10 @ b99978d | Published via release tags (runs 42714448779, 42714942893; both PUT 202). core 0.6.3 visible on npm; react 0.5.3 registry read lagging at close. Board 0.2.4 held (0047) |
 | 0054 | [quick] cards and core tests: timeouts under load (S12) | [#121](https://github.com/pepperhorn/chordl/pull/121) | 2026-11-10 @ 4438c76 | Test-work reuse + 30s budgets in cards/core (new core vitest.config.ts; same 16 files / 712 tests). Opus r1 approve (mutations fail). Auto-merged (48 lines). Verify on main 2966 at load ~37. Follow-up 0055 |
@@ -81,6 +82,7 @@ Last health scan: 2026-11-09
 
 ## Log
 <!-- One line per status change, newest first: YYYY-MM-DD NNNN old→new — note -->
+- 2026-11-19 0056 blocked→closed, 0057 →dispatched — crf-staff spec 0030 r2 (owner approved): KeyboardSpeller + FrettedEditor; chordl-cards/package.json now in scope. Dispatched by the crf-staff lead.
 - 2026-11-10 0055 in-review→merged→closed — #123 @c7f491c, auto-merged (§5a); verify on main passes, 2966 tests. react 0.5.3 now visible on npm
 - 2026-11-10 0052 merged→closed — chordl-core@0.6.3 and chordl-react@0.5.3 published; 0053 ready for the crf-chords lead
 - 2026-11-10 0052 — chordl-core@0.6.3 published (run 42714448779, PUT 202; registry read lagging); tag chordl-react@0.5.3 pushed, run 42714942893
